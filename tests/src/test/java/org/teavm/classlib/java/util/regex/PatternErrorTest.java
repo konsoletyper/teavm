@@ -32,8 +32,10 @@
 
 package org.teavm.classlib.java.util.regex;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -84,5 +86,12 @@ public class PatternErrorTest {
         } catch (IllegalArgumentException e) {
             // This is the expected exception
         }*/
+    }
+    
+    @Test
+    public void invalidGroupName() {
+        assertThrows(PatternSyntaxException.class, () -> Pattern.compile("(?<>)"));
+        assertThrows(PatternSyntaxException.class, () -> Pattern.compile("(?<1>)"));
+        assertThrows(PatternSyntaxException.class, () -> Pattern.compile("(?<a_>)"));
     }
 }

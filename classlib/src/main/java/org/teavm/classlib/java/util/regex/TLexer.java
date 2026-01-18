@@ -105,6 +105,8 @@ class TLexer {
 
     public static final int CHAR_NEG_LOOKBEHIND = 0xfc000000 | '(';
 
+    public static final int CHAR_NAMED_GROUP = 0x81000000 | '(';
+
     public static final int CHAR_ATOMIC_GROUP = 0xfe000000 | '(';
 
     public static final int CHAR_FLAGS = 0xff000000 | '(';
@@ -187,6 +189,8 @@ class TLexer {
 
     // next character
     private int lookAhead;
+
+    String groupName;
 
     // index of last char in pattern plus one
     private int patternFullLength;
@@ -569,9 +573,10 @@ class TLexer {
                         if (pattern[index] == '?') {
                             nextIndex();
                             char nonCap = pattern[index];
-                            boolean behind = false;
+                            boolean behindOrNamed = false;
+                            StringBuilder nameBuilder = null;
                             do {
-                                if (!behind) {
+                                if (!behindOrNamed) {
                                     switch (nonCap) {
                                         case '!':
                                             lookAhead = CHAR_NEG_LOOKAHEAD;
@@ -588,7 +593,7 @@ class TLexer {
                                         case '<': {
                                             nextIndex();
                                             nonCap = pattern[index];
-                                            behind = true;
+                                            behindOrNamed = true;
                                             break;
                                         }
                                         default: {
@@ -615,21 +620,51 @@ class TLexer {
                                         }
                                     }
                                 } else {
-                                    behind = false;
                                     switch (nonCap) {
                                         case '!':
+                                            behindOrNamed = false;
                                             lookAhead = CHAR_NEG_LOOKBEHIND;
                                             nextIndex();
                                             break;
                                         case '=':
+                                            behindOrNamed = false;
                                             lookAhead = CHAR_POS_LOOKBEHIND;
                                             nextIndex();
                                             break;
+                                        case '>':
+                                            if (nameBuilder == null) {
+                                                throw new TPatternSyntaxException("", this.toString(), index);
+                                            }
+                                            groupName = nameBuilder.toString();
+                                            nextIndex();
+                                            nameBuilder = null;
+                                            behindOrNamed = false;
+                                            lookAhead = CHAR_NAMED_GROUP;
+                                            break;
                                         default:
+                                            if (nonCap >= 'A' && nonCap <= 'Z' || nonCap >= 'a' && nonCap <= 'z') {
+                                                if (nameBuilder == null) {
+                                                    nameBuilder = new StringBuilder();
+                                                }
+                                                nameBuilder.append(nonCap);
+                                                nextIndex();
+                                                nonCap = pattern[index];
+                                                break;
+                                            }
+                                            if (nonCap >= '0' && nonCap <= '9') {
+                                                if (nameBuilder == null) {
+                                                    throw new TPatternSyntaxException("Name capturing group should "
+                                                            + "start with letter", this.toString(), index);
+                                                }
+                                                nameBuilder.append(nonCap);
+                                                nextIndex();
+                                                nonCap = pattern[index];
+                                                break;
+                                            }
                                             throw new TPatternSyntaxException("", this.toString(), index);
                                     }
                                 }
-                            } while (behind);
+                            } while (behindOrNamed);
                         } else {
                             lookAhead = CHAR_LEFT_PARENTHESIS;
                         }

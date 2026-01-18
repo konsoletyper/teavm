@@ -36,6 +36,8 @@
  */
 package org.teavm.classlib.java.util.regex;
 
+import java.util.Map;
+
 /**
  * Holds the results of a successful match of a {@link TPattern} against a
  * given string. The result is divided into groups, with one group for each
@@ -70,6 +72,14 @@ public interface TMatchResult {
      */
     int end(int group);
 
+    default int end(String name) {
+        var index = namedGroups().get(name);
+        if (index == null) {
+            throw new IllegalArgumentException("No group " + name);
+        }
+        return end(index);
+    }
+
     /**
      * Returns the text that matched the whole regular expression.
      *
@@ -87,6 +97,14 @@ public interface TMatchResult {
      * @return the text that matched the group.
      */
     String group(int group);
+
+    default String group(String name) {
+        var index = namedGroups().get(name);
+        if (index == null) {
+            throw new IllegalArgumentException("No group " + name);
+        }
+        return group(index);
+    }
 
     /**
      * Returns the number of groups in the result, which is always equal to
@@ -115,4 +133,14 @@ public interface TMatchResult {
      * @return the character index.
      */
     int start(int group);
+
+    default int start(String name) {
+        var index = namedGroups().get(name);
+        if (index == null) {
+            throw new IllegalArgumentException("No group " + name);
+        }
+        return start(index);
+    }
+
+    Map<String, Integer> namedGroups();
 }

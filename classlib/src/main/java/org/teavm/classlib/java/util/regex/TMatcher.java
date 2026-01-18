@@ -34,6 +34,7 @@
 package org.teavm.classlib.java.util.regex;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 public final class TMatcher implements TMatchResult {
 
@@ -659,10 +660,15 @@ public final class TMatcher implements TMatchResult {
         this.pat = pattern;
         this.start = pattern.start;
         matchResult = new TMatchResultImpl(this.string, leftBound, rightBound, pattern.groupCount(),
-                pattern.compCount(), pattern.consCount());
+                pattern.compCount(), pattern.consCount(), pattern.namedGroups());
         matchResult.setStartIndex(startIndex);
         matchResult.setMode(mode);
         return this;
+    }
+
+    @Override
+    public Map<String, Integer> namedGroups() {
+        return pattern().namedGroups();
     }
 
     TMatcher(TPattern pat, CharSequence cs) {
@@ -672,7 +678,7 @@ public final class TMatcher implements TMatchResult {
         this.leftBound = 0;
         this.rightBound = string.length();
         matchResult = new TMatchResultImpl(cs, leftBound, rightBound, pat.groupCount(), pat.compCount(),
-                pat.consCount());
+                pat.consCount(), pat.namedGroups());
         matchResult.useAnchoringBounds(true);
     }
 

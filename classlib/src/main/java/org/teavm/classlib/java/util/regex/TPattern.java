@@ -38,6 +38,9 @@ package org.teavm.classlib.java.util.regex;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public final class TPattern implements Serializable {
 
@@ -134,6 +137,8 @@ public final class TPattern implements Serializable {
     transient private int consCount = -1;
 
     transient TAbstractSet start;
+
+    private Map<String, Integer> namedGroups;
 
     /**
      * Returns a {@link TMatcher} for the {@code Pattern} and a given input. The
@@ -381,6 +386,12 @@ public final class TPattern implements Serializable {
 
                     // expr = new JointSet(globalGroupIndex);
                     fSet = new TFSet(globalGroupIndex);
+                    if (ch == TLexer.CHAR_NAMED_GROUP) {
+                        if (namedGroups == null) {
+                            namedGroups = new LinkedHashMap<>();
+                        }
+                        namedGroups.put(lexemes.groupName, globalGroupIndex);
+                    }
                 }
                 if (globalGroupIndex > -1 && globalGroupIndex < 10) {
                     backRefs[globalGroupIndex] = fSet;
@@ -1255,6 +1266,11 @@ public final class TPattern implements Serializable {
             start.processSecondPass();
         }
 
+        if (namedGroups != null) {
+            namedGroups = Collections.unmodifiableMap(namedGroups);
+        } else {
+            namedGroups = Collections.emptyMap();
+        }
     }
 
     /**
@@ -1299,6 +1315,10 @@ public final class TPattern implements Serializable {
         }
 
         return sb.append(s.substring(apos)).append("\\E").toString(); //$NON-NLS-1$
+    }
+
+    public Map<String, Integer> namedGroups() {
+        return namedGroups;
     }
 
     /**

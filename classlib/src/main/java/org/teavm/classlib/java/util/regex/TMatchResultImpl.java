@@ -37,6 +37,7 @@
 package org.teavm.classlib.java.util.regex;
 
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Match result implementation Note: probably it might make sense to combine
@@ -76,10 +77,13 @@ class TMatchResultImpl implements TMatchResult {
 
     private int mode;
 
+    private Map<String, Integer> namedGroups;
+
     TMatchResultImpl(CharSequence string, int leftBound, int rightBound, int groupCount, int compQuantCount,
-            int consumersCount) {
+            int consumersCount, Map<String, Integer> namedGroups) {
         this.groupCount = ++groupCount;
         this.groupBounds = new int[groupCount * 2];
+        this.namedGroups = namedGroups;
 
         this.consumers = new int[consumersCount];
         Arrays.fill(consumers, -1);
@@ -93,7 +97,7 @@ class TMatchResultImpl implements TMatchResult {
 
     TMatchResult cloneImpl() {
         TMatchResultImpl res = new TMatchResultImpl(this.string, this.leftBound, this.rightBound, this.groupCount - 1,
-                0, 0);
+                0, 0, namedGroups);
 
         res.valid = valid;
         if (valid) {
@@ -284,5 +288,10 @@ class TMatchResultImpl implements TMatchResult {
 
     int getPreviousMatchEnd() {
         return previousMatch;
+    }
+
+    @Override
+    public Map<String, Integer> namedGroups() {
+        return namedGroups;
     }
 }

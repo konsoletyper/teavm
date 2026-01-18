@@ -36,8 +36,10 @@ package org.teavm.classlib.java.util.regex;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -1371,5 +1373,22 @@ public class PatternTest {
         Pattern p = Pattern.compile("\\p{javaLowerCase}");
         Matcher matcher = p.matcher("\uD801\uDC28");
         assertTrue(matcher.find());
+    }
+    
+    @Test
+    public void namedGroup() {
+        var pattern = Pattern.compile("a(?<test>.+)b");
+        assertEquals(Map.of("test", 1), pattern.namedGroups());
+        
+        var matcher = pattern.matcher("--a123b..");
+        assertTrue(matcher.find());
+        assertEquals(2, matcher.start());
+        assertEquals("123", matcher.group("test"));
+        assertEquals(3, matcher.start("test"));
+        assertEquals(6, matcher.end("test"));
+        
+        assertThrows(IllegalArgumentException.class, () -> matcher.group("qwe"));
+        assertThrows(IllegalArgumentException.class, () -> matcher.start("qwe"));
+        assertThrows(IllegalArgumentException.class, () -> matcher.end("qwe"));
     }
 }
