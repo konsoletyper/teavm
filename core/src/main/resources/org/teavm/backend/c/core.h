@@ -46,7 +46,10 @@ typedef struct TeaVM_Class {
     TeaVM_Object** simpleName;
     TeaVM_Object* simpleNameCache;
     TeaVM_Object* canonicalName;
+    void *reflectionState;
     struct TeaVM_Services* services;
+    void *reflectionExt;
+    void (*initReflection)();
     #if TEAVM_HEAP_DUMP
         TeaVM_FieldDescriptors* fieldDescriptors;
         TeaVM_StaticFieldDescriptors* staticFieldDescriptors;
@@ -201,6 +204,7 @@ extern TeaVM_Class* teavm_stringClass;
 extern TeaVM_Class* teavm_charArrayClass;
 extern int32_t teavm_classReferencesCount;
 extern void teavm_initClasses();
+extern void teavm_initReflection();
 
 
 inline static void teavm_gc_writeBarrier(void* object) {

@@ -65,7 +65,7 @@ import org.teavm.classlib.impl.unicode.NumberFormatMetadataGenerator;
 import org.teavm.classlib.impl.unicode.TimeZoneLocalizationGenerator;
 import org.teavm.classlib.java.lang.CharacterMetadataGenerator;
 import org.teavm.classlib.java.lang.reflect.JSAnnotationDependencyListener;
-import org.teavm.classlib.java.lang.reflect.WasmGCAnnotationDependencyListener;
+import org.teavm.classlib.java.lang.reflect.NativeAnnotationDependencyListener;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -115,7 +115,9 @@ public class JCLPlugin implements TeaVMPlugin {
             var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
             if (wasmGCHost != null) {
                 wasmGCHost.addGeneratorFactory(new ServiceLoaderWasmGCSupport());
-                host.add(new WasmGCAnnotationDependencyListener());
+            }
+            if (wasmGCHost != null || cHost != null) {
+                host.add(new NativeAnnotationDependencyListener());
             }
         }
 

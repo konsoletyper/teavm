@@ -16,6 +16,8 @@
 package org.teavm.backend.c.generate;
 
 import java.io.IOException;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -29,6 +31,9 @@ import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.generators.Generator;
+import org.teavm.backend.c.generators.ReflectionGenerator;
+import org.teavm.backend.c.generators.ReflectionGeneratorContext;
+import org.teavm.backend.c.generators.ReflectionPartGenerator;
 import org.teavm.backend.c.util.InteropUtil;
 import org.teavm.backend.lowlevel.generate.ClassGeneratorUtil;
 import org.teavm.cache.AstCacheEntry;
@@ -55,7 +60,6 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
-import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
@@ -80,6 +84,7 @@ public class ClassGenerator {
     private GenerationContext context;
     private Decompiler decompiler;
     private CacheStatus cacheStatus;
+    private List<ReflectionGenerator> reflectionGenerators;
     private TagRegistry tagRegistry;
     private CodeGenerator codeGenerator;
     private FieldReference[] staticGcRoots;
@@ -94,18 +99,18 @@ public class ClassGenerator {
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
     private List<CallSiteDescriptor> callSites;
-    private ClassMetadataRequirements metadataRequirements;
     private static final int VT_STRUCTURE_INITIALIZER_DEPTH_THRESHOLD = 9;
     private Set<ValueType> types;
 
     public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler,
-            CacheStatus cacheStatus, Set<ValueType> types) {
+            CacheStatus cacheStatus, Set<ValueType> types,
+            List<ReflectionGenerator> reflectionGenerators) {
         this.context = context;
         this.tagRegistry = tagRegistry;
         this.decompiler = decompiler;
         this.cacheStatus = cacheStatus;
-        metadataRequirements = new ClassMetadataRequirements(context.getDependencies());
         this.types = types;
+        this.reflectionGenerators = reflectionGenerators;
     }
 
     public void setAstCache(MethodNodeCache astCache) {
@@ -695,6 +700,15 @@ public class ClassGenerator {
                 if (cls.hasModifier(ElementModifier.ENUM)) {
                     flags |= RuntimeClass.ENUM;
                 }
+                if (cls.hasModifier(ElementModifier.ANNOTATION)) {
+                    var retention = cls.getAnnotations().get(Retention.class.getName());
+                    if (retention != null && retention.getValue("value").getEnumValue().getFieldName()
+                            .equals("RUNTIME")) {
+                        if (cls.getAnnotations().get(Inherited.class.getName()) != null) {
+                            flags |= RuntimeClass.INHERITED_ANNOTATION;
+                        }
+                    }
+                }
             }
             List<TagRegistry.Range> ranges = tagRegistry != null ? tagRegistry.getRanges(className) : null;
             tag = !context.isIncremental() && ranges != null && !ranges.isEmpty() ? ranges.get(0).lower : 0;
@@ -818,10 +832,18 @@ public class ClassGenerator {
         initializers.add(new FieldInitializer("enclosingClass", enclosingClass));
         initializers.add(new FieldInitializer("init", initFunction));
 
+        var reflectionInitializerParts = new ArrayList<ReflectionPartGenerator>();
+        var reflectionTopLevelParts = new ArrayList<ReflectionPartGenerator>();
         if (initMethod) {
             for (FieldInitializer initializer : initializers) {
                 initWriter.print("vt_").print(String.valueOf(depth)).print("->").print(initializer.name)
                         .print(" = ").print(initializer.value).println(";");
+            }
+            if (type instanceof ValueType.Object) {
+                initWriter.print("vt_").print(String.valueOf(depth)).print("->reflectionExt = ");
+                writeInitializers(initWriter, ((ValueType.Object) type).getClassName(),
+                        reflectionInitializerParts, reflectionTopLevelParts);
+                initWriter.println(";");
             }
         } else {
             for (int i = 0; i < initializers.size(); ++i) {
@@ -831,6 +853,31 @@ public class ClassGenerator {
                 FieldInitializer initializer = initializers.get(i);
                 codeWriter.print(".").print(initializer.name).print(" = ").print(initializer.value);
             }
+            if (type instanceof ValueType.Object) {
+                if (!initializers.isEmpty()) {
+                    codeWriter.println(",");
+                }
+                codeWriter.print(".reflectionExt = ");
+                writeInitializers(codeWriter, ((ValueType.Object) type).getClassName(),
+                        reflectionInitializerParts, reflectionTopLevelParts);
+            }
+        }
+
+        if (!reflectionTopLevelParts.isEmpty()) {
+            for (var part : reflectionTopLevelParts) {
+                part.generate(prologueWriter);
+            }
+        }
+        if (!reflectionInitializerParts.isEmpty()) {
+            var initName = context.getNames().createTopLevelName(context.getNames().forClassInstance(type)
+                    + "_initReflection");
+            codeWriter.println(",");
+            codeWriter.print(".initReflection = &").print(initName);
+            prologueWriter.print("static void ").print(initName).println("() {").indent();
+            for (var part : reflectionInitializerParts) {
+                part.generate(prologueWriter);
+            }
+            prologueWriter.outdent().println("}");
         }
 
         if (context.isHeapDump() && type instanceof ValueType.Object) {
@@ -841,6 +888,60 @@ public class ClassGenerator {
         if (!initMethod) {
             codeWriter.println();
         }
+    }
+
+    private void writeInitializers(CodeWriter writer, String className,
+            List<ReflectionPartGenerator> initializerGenerators,
+            List<ReflectionPartGenerator> topLevelGenerators) {
+        var reflectionGenList = reflectionGenerators.stream()
+                .filter(gen -> gen.isApplicable(context, className))
+                .collect(Collectors.toList());
+        if (reflectionGenList.isEmpty()) {
+            writer.print("NULL");
+            return;
+        }
+
+        includes.includePath("reflection-ext.h");
+        writer.print("&(TeaVM_ClassReflection){").indent();
+        var first = true;
+        var ctx = new ReflectionGeneratorContext() {
+            @Override
+            public GenerationContext globalContext() {
+                return context;
+            }
+
+            @Override
+            public CodeWriter writer() {
+                return writer;
+            }
+
+            @Override
+            public IncludeManager includes() {
+                return includes;
+            }
+
+            @Override
+            public void addToInitializer(ReflectionPartGenerator generator) {
+                initializerGenerators.add(generator);
+            }
+
+            @Override
+            public void addTopLevel(ReflectionPartGenerator generator) {
+                topLevelGenerators.add(generator);
+            }
+        };
+        for (var gen : reflectionGenList) {
+            if (!first) {
+                writer.print(",");
+            }
+            writer.println();
+            first = false;
+            gen.generate(ctx, className);
+        }
+        if (!first) {
+            writer.println();
+        }
+        writer.outdent().print("}");
     }
 
     static class FieldInitializer {
@@ -1234,7 +1335,7 @@ public class ClassGenerator {
             return "void";
         } else if (type instanceof ValueType.Object) {
             String name = ((ValueType.Object) type).getClassName();
-            return metadataRequirements.getInfo(name).name() ? name : null;
+            return context.getMetadataRequirements().getInfo(name).name() ? name : null;
         } else {
             throw new AssertionError();
         }

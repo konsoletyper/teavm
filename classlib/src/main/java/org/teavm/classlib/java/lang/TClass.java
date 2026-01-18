@@ -62,14 +62,12 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     String simpleName;
     String canonicalName;
     private PlatformClass platformClass;
-    private TAnnotation[] annotationsCache;
-    private TAnnotation[] declaredAnnotationsCache;
-    private Map<TClass<?>, TAnnotation> annotationsByType;
     private TField[] declaredFields;
     private TField[] fields;
     private TConstructor<T>[] declaredConstructors;
     private TMethod[] declaredMethods;
     private static boolean reflectionInitialized;
+    private ReflectionState reflectionState;
 
     private TClass(PlatformClass platformClass) {
         this.platformClass = platformClass;
@@ -881,19 +879,20 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     @Override
     public boolean isAnnotationPresent(TClass<? extends TAnnotation> annotationClass) {
         ensureAnnotationsByType();
-        return annotationsByType.containsKey(annotationClass);
+        return getReflectionState().annotationsByType.containsKey(annotationClass);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <S extends TAnnotation> S getAnnotation(TClass<S> annotationClass) {
         ensureAnnotationsByType();
-        return (S) annotationsByType.get(annotationClass);
+        return (S) getReflectionState().annotationsByType.get(annotationClass);
     }
 
     @Override
     public TAnnotation[] getAnnotations() {
-        if (annotationsCache == null) {
+        var state = getReflectionState();
+        if (state.annotationCache == null) {
             TClass<?> cls = this;
             var initial = true;
             var map = new LinkedHashMap<Class<?>, TAnnotation>();
@@ -906,15 +905,42 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                 cls = cls.getSuperclass();
                 initial = false;
             }
-            annotationsCache = map.values().toArray(new TAnnotation[0]);
+            state.annotationCache = map.values().toArray(new TAnnotation[0]);
         }
-        return annotationsCache.clone();
+        return state.annotationCache.clone();
     }
+
+    private ReflectionState getReflectionState() {
+        if (PlatformDetector.isC()) {
+            var result = getReflectionStateC();
+            if (result == null) {
+                result = new ReflectionState();
+                setReflectionStateC(result);
+            }
+            return result;
+        } else {
+            var result = reflectionState;
+            if (result == null) {
+                result = new ReflectionState();
+                reflectionState = result;
+            }
+            return reflectionState;
+        }
+    }
+
+    @PluggableDependency(ClassDependencyListener.class)
+    private native ReflectionState getReflectionStateC();
+
+    private native void setReflectionStateC(ReflectionState annotations);
 
     private static boolean isInherited(TAnnotation annot) {
         if (PlatformDetector.isWebAssemblyGC()) {
             var flags = ((TClass<?>) (Object) annot.annotationType()).getWasmGCFlags();
             return (flags & WasmGCClassFlags.INHERITED_ANNOTATIONS) != 0;
+        } else if (PlatformDetector.isC()) {
+            var type = (TClass<?>) (Object) annot.annotationType();
+            var flags = Address.ofObject(type).<RuntimeClass>toStructure().flags;
+            return (flags & RuntimeClass.INHERITED_ANNOTATION) != 0;
         } else {
             var platformClass = ((TClass<?>) (Object) annot.annotationType()).platformClass;
             return (platformClass.getMetadata().getFlags() & Flags.INHERITED_ANNOTATION) != 0;
@@ -923,28 +949,30 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
 
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
-        if (declaredAnnotationsCache == null) {
-            if (PlatformDetector.isWebAssemblyGC()) {
-                declaredAnnotationsCache = getDeclaredAnnotationsImpl();
+        var state = getReflectionState();
+        if (state.declaredAnnotationsCache == null) {
+            if (PlatformDetector.isWebAssemblyGC() || PlatformDetector.isC()) {
+                state.declaredAnnotationsCache = getDeclaredAnnotationsImpl();
             } else {
-                declaredAnnotationsCache = (TAnnotation[]) Platform.getAnnotations(getPlatformClass());
+                state.declaredAnnotationsCache = (TAnnotation[]) Platform.getAnnotations(getPlatformClass());
             }
-            if (declaredAnnotationsCache == null) {
-                declaredAnnotationsCache = new TAnnotation[0];
+            if (state.declaredAnnotationsCache == null) {
+                state.declaredAnnotationsCache = new TAnnotation[0];
             }
         }
-        return declaredAnnotationsCache.clone();
+        return state.declaredAnnotationsCache.clone();
     }
 
     private native TAnnotation[] getDeclaredAnnotationsImpl();
 
     private void ensureAnnotationsByType() {
-        if (annotationsByType != null) {
+        var state = getReflectionState();
+        if (state.annotationsByType != null) {
             return;
         }
-        annotationsByType = new HashMap<>();
+        state.annotationsByType = new HashMap<>();
         for (TAnnotation annot : getAnnotations()) {
-            annotationsByType.put((TClass<?>) (Object) annot.annotationType(), annot);
+            state.annotationsByType.put((TClass<?>) (Object) annot.annotationType(), annot);
         }
     }
 
@@ -1000,5 +1028,11 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         return isArray()
             ? getComponentType().getTypeName() + "[]"
             : getName();
+    }
+
+    static class ReflectionState {
+        TAnnotation[] annotationCache;
+        TAnnotation[] declaredAnnotationsCache;
+        private Map<TClass<?>, TAnnotation> annotationsByType;
     }
 }

@@ -67,6 +67,9 @@ public class ClassDependencyListener implements DependencyPlugin {
                 });
                 break;
             }
+            case "getReflectionStateC":
+                method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class$ReflectionState")));
+                break;
         }
     }
 }

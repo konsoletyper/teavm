@@ -43,6 +43,7 @@ public class RuntimeClass extends RuntimeObject {
     public static final int TRANSIENT = 1 << (FLAGS_SHIFT + 12);
     public static final int VARARGS = 1 << (FLAGS_SHIFT + 13);
     public static final int VOLATILE = 1 << (FLAGS_SHIFT + 14);
+    public static final int INHERITED_ANNOTATION = 1 << (FLAGS_SHIFT + 15);
 
     public static final int BOOLEAN_PRIMITIVE = 0;
     public static final int BYTE_PRIMITIVE = 1;
@@ -79,6 +80,7 @@ public class RuntimeClass extends RuntimeObject {
     public RuntimeObjectPtr simpleName;
     public RuntimeObject simpleNameCache;
     public RuntimeObject canonicalName;
+    public Address reflectionState;
 
     @Unmanaged
     public static int computeCanary(int size, int tag) {

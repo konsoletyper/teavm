@@ -98,7 +98,8 @@ public class WasmClassGenerator {
             DataPrimitives.ADDRESS, /* layout */
             DataPrimitives.ADDRESS,  /* simple name */
             DataPrimitives.ADDRESS,  /* simple name cache */
-            DataPrimitives.ADDRESS   /* canonical name cache */);
+            DataPrimitives.ADDRESS,  /* canonical name cache */
+            DataPrimitives.ADDRESS   /* reflection state */);
     private IntegerArray staticGcRoots = new IntegerArray(1);
     private int staticGcRootsAddress;
     private int classesAddress;
