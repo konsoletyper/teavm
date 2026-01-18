@@ -72,6 +72,13 @@ void teavm_initClasses() {
         teavm_classReferences[i]->parent.header = classHeader;
         teavm_classReferences[i]->services = NULL;
     }
+    for (int i = 0; i < teavm_classReferencesCount; ++i) {
+        TeaVM_Class* cls = teavm_classReferences[i];
+        void (*fn)() = cls->initReflection;
+        if (fn != NULL) {
+            (*fn)();
+        }
+    }
 }
 
 #define TEAVM_FILL_ARRAY_F(name, type, arrayType) \

@@ -38,7 +38,6 @@ public class CNameProvider extends LowLevelNameProvider {
     )));
 
     public CNameProvider() {
-
         occupiedTopLevelNames.add("TeaVM_Object");
         occupiedTopLevelNames.add("TeaVM_Array");
         occupiedTopLevelNames.add("TeaVM_String");

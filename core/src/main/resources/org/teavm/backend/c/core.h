@@ -46,7 +46,10 @@ typedef struct TeaVM_Class {
     TeaVM_Object** simpleName;
     TeaVM_Object* simpleNameCache;
     TeaVM_Object* canonicalName;
+    void *reflectionState;
     struct TeaVM_Services* services;
+    void *reflectionExt;
+    void (*initReflection)();
     #if TEAVM_HEAP_DUMP
         TeaVM_FieldDescriptors* fieldDescriptors;
         TeaVM_StaticFieldDescriptors* staticFieldDescriptors;

@@ -78,6 +78,7 @@ public class RuntimeClass extends RuntimeObject {
     public RuntimeObjectPtr simpleName;
     public RuntimeObject simpleNameCache;
     public RuntimeObject canonicalName;
+    public Address reflectionState;
 
     @Unmanaged
     public static int computeCanary(int size, int tag) {

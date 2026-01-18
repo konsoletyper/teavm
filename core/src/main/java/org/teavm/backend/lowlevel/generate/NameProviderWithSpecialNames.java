@@ -108,4 +108,9 @@ public class NameProviderWithSpecialNames implements NameProvider {
     public String forSupertypeFunction(ValueType type) {
         return underlyingProvider.forSupertypeFunction(type);
     }
+
+    @Override
+    public String createTopLevelName(String template) {
+        return underlyingProvider.createTopLevelName(template);
+    }
 }

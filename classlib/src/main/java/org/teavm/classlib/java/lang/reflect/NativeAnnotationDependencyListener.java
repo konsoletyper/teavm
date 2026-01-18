@@ -22,8 +22,8 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class WasmGCAnnotationDependencyListener extends BaseAnnotationDependencyListener {
-    public WasmGCAnnotationDependencyListener() {
+public class NativeAnnotationDependencyListener extends BaseAnnotationDependencyListener {
+    public NativeAnnotationDependencyListener() {
         super(true, false);
     }
 
