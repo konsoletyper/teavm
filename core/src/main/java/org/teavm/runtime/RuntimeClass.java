@@ -57,6 +57,7 @@ public class RuntimeClass extends RuntimeObject {
     public static final int VM_TYPE_REGULAR = 0;
     public static final int VM_TYPE_WEAKREFERENCE = 1;
     public static final int VM_TYPE_REFERENCEQUEUE = 2;
+    public static final int VM_TYPE_BUFFER = 3;
 
     public int size;
     public int flags;

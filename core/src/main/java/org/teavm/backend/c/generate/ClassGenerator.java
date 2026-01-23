@@ -454,7 +454,7 @@ public class ClassGenerator {
             if (writeNeeded) {
                 headerWriter.printStrictType(field.getType()).print(" ").print(fieldName).println(";");
             }
-            if (isReferenceType(field.getType())) {
+            if (isReferenceType(field.getType()) && !isBufferNextField(field.getReference())) {
                 instanceFields[instanceIndex++] = field.getReference();
             }
         }
@@ -470,6 +470,10 @@ public class ClassGenerator {
 
     private boolean isMonitorField(FieldReference field) {
         return field.getClassName().equals("java.lang.Object") && field.getFieldName().equals("monitor");
+    }
+
+    private boolean isBufferNextField(FieldReference field) {
+        return field.getClassName().equals("java.nio.Buffer") && field.getFieldName().equals("nextRef");
     }
 
     private void generateClassStaticFields(ClassHolder cls) {

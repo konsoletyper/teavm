@@ -444,6 +444,9 @@ public final class GC {
                     hasObjectsFromYoungGen |= markReferenceQueue((RuntimeReferenceQueue) object);
                     break;
 
+                case RuntimeClass.VM_TYPE_BUFFER:
+                    break;
+
                 default:
                     hasObjectsFromYoungGen |= markFields(cls, object);
                     break;
@@ -1001,6 +1004,13 @@ public final class GC {
         } else {
             updatePointersFromObjectsYoung();
         }
+        updateReferenceToFirstBuffer();
+    }
+
+    private static void updateReferenceToFirstBuffer() {
+        if (firstDirectBuffer != null) {
+            firstDirectBuffer = updatePointer(firstDirectBuffer.toAddress()).toStructure();
+        }
     }
 
     private static void updatePointersFromObjectsFull() {
@@ -1156,6 +1166,10 @@ public final class GC {
                     referenceHolder.putAddress(referenceHolder.getAddress().add(diff));
                 }
             }
+        }
+        if (bufferFieldOffset >= 0) {
+            var buffer = (RuntimeBuffer) object;
+            buffer.nextRef = updatePointer(buffer.nextRef.toAddress()).toStructure();
         }
     }
 
