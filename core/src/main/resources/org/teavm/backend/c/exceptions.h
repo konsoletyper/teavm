@@ -45,6 +45,9 @@
     #if TEAVM_WINDOWS
         #define TEAVM_UNREACHABLE __assume(0);
     #endif
+    #if TEAVM_PSP
+        #define TEAVM_UNREACHABLE __builtin_unreachable();
+    #endif
     #ifndef TEAVM_UNREACHABLE
         #define TEAVM_UNREACHABLE return;
     #endif

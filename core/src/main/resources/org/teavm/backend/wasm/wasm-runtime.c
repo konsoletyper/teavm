@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
-#include <wchar.h>
+#include "wchar.h"
 #include <wctype.h>
 #include <time.h>
 #include <uchar.h>

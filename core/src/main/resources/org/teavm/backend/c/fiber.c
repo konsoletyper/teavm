@@ -93,3 +93,16 @@ void teavm_initFiber() {
         SetEvent(teavm_queueTimer);
     }
 #endif
+
+#if TEAVM_PSP
+    void teavm_waitFor(int64_t timeout) {
+        // PSP implementation: simple delay
+        if (timeout > 0) {
+            sceKernelDelayThread(timeout * 1000); // timeout in ms, sceKernelDelayThread in us
+        }
+    }
+
+    void teavm_interrupt() {
+        // Stub for PSP
+    }
+#endif

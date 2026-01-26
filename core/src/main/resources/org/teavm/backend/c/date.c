@@ -33,7 +33,11 @@ void teavm_date_init() {
         .tm_sec = 0,
         .tm_isdst = -1
     };
+#if TEAVM_PSP
+    teavm_epochStart = 0;
+#else
     teavm_epochStart = timegm(&epochStart);
+#endif
     localtime_r(&teavm_epochStart, &teavm_epochStartTm);
 }
 
@@ -57,7 +61,11 @@ time_t teavm_date_timestampToTime(int64_t timestamp) {
         .tm_sec = (int) (seconds % 60),
         .tm_isdst = -1
     };
+#if TEAVM_PSP
+    return mktime(&t) + timestamp % 1000;  // Approximate with mktime for PSP
+#else
     return timegm(&t) + timestamp % 1000;
+#endif
 }
 
 inline static struct tm* teavm_date_decompose(int64_t timestamp, struct tm *t) {
@@ -93,7 +101,11 @@ int64_t teavm_date_createUtc(int32_t year, int32_t month, int32_t day, int32_t h
         .tm_sec = second,
         .tm_isdst = -1
     };
+#if TEAVM_PSP
+    time_t result = mktime(&t);  // Approximate with mktime for PSP
+#else
     time_t result = timegm(&t);
+#endif
     return (int64_t) (1000 * difftime(result, teavm_epochStart));
 }
 

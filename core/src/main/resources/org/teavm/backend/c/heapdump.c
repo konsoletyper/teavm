@@ -1,6 +1,6 @@
 #include "heapdump.h"
 #include <stdio.h>
-#include <uchar.h>
+#include "uchar.h"
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdlib.h>

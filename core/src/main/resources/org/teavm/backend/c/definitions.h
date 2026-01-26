@@ -29,6 +29,13 @@
     #include <stdalign.h>
 #endif
 
+#ifdef __PSP__
+    #undef TEAVM_UNIX
+    #define TEAVM_UNIX 0
+    #undef TEAVM_PSP
+    #define TEAVM_PSP 1
+#endif
+
 #ifndef TEAVM_USE_SETJMP
     #define TEAVM_USE_SETJMP 1
 #endif

@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include <uchar.h>
+#include "uchar.h"
 #include <math.h>
 #include "definitions.h"
 #include "heapdump.h"

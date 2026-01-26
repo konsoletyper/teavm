@@ -59,6 +59,14 @@ void teavm_initTime() {
     }
 #endif
 
+#if TEAVM_PSP
+    int64_t teavm_currentTimeMillis() {
+        return (int64_t) sceKernelLibcTime(NULL) * 1000;
+    }
+    int64_t teavm_currentTimeNano() {
+        return (int64_t) sceKernelLibcTime(NULL) * 1000000000;
+    }
+#endif
 
 #if TEAVM_WINDOWS
     #undef gmtime_r

@@ -147,7 +147,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             "exceptions.h", "fiber.c", "fiber.h", "file.c", "file.h", "heapdump.c", "heapdump.h", "heaptrace.c",
             "heaptrace.h", "log.c", "log.h", "memory.c", "memory.h", "references.c", "references.h",
             "resource.c", "resource.h", "runtime.h", "stack.c", "stack.h", "string.c", "string.h",
-            "stringhash.c", "stringhash.h", "time.c", "time.h", "virtcall.c", "virtcall.h"
+            "stringhash.c", "stringhash.h", "time.c", "time.h", "virtcall.c", "virtcall.h", "uchar.h", "wchar.h"
     };
 
     private TeaVMTargetController controller;

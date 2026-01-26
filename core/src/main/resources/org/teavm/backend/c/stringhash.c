@@ -2,8 +2,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <uchar.h>
-#include <wchar.h>
+#include "uchar.h"
+#include "wchar.h"
 
 static TeaVM_HashtableEntry** teavm_stringHashtable = NULL;
 TeaVM_HashtableEntrySet* teavm_stringHashtableData = NULL;

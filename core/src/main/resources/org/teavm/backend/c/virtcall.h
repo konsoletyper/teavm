@@ -1,7 +1,7 @@
 #pragma once
 #include "core.h"
 #include "definitions.h"
-#include <uchar.h>
+#include "uchar.h"
 
 struct TeaVM_DynamicClass;
 
