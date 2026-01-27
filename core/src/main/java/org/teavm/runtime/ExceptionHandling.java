@@ -111,7 +111,8 @@ public final class ExceptionHandling {
                 ExceptionHandler handler = callSite.firstHandler;
 
                 while (handler != null) {
-                    if (handler.exceptionClass == null || handler.exceptionClass.isSupertypeOf.apply(exceptionClass)) {
+                    if (handler.exceptionClass == null
+                            || handler.exceptionClass.isSupertypeOf.apply(handler.exceptionClass, exceptionClass)) {
                         handlerId = handler.id;
                         if (!isJumpSupported()) {
                             ShadowStack.setExceptionHandlerId(stackFrame, handlerId);

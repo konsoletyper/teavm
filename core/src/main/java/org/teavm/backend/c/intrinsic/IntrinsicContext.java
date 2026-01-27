@@ -23,6 +23,7 @@ import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public interface IntrinsicContext {
     CodeWriter writer();

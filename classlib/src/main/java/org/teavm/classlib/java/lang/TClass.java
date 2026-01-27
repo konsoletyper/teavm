@@ -120,7 +120,8 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
 
     @Unmanaged
     private boolean isAssignableFromLowLevel(RuntimeClass other) {
-        return Address.ofObject(this).<RuntimeClass>toStructure().isSupertypeOf.apply(other);
+        var self = Address.ofObject(this).<RuntimeClass>toStructure();
+        return self.isSupertypeOf.apply(self, other);
     }
 
     public String getName() {

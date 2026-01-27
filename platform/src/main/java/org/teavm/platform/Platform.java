@@ -84,7 +84,7 @@ public final class Platform {
     @SuppressWarnings("unused")
     @Unmanaged
     private static boolean isAssignableLowLevel(RuntimeClass from, RuntimeClass to) {
-        return to.isSupertypeOf.apply(from);
+        return to.isSupertypeOf.apply(to, from);
     }
 
     @InjectedBy(PlatformGenerator.class)

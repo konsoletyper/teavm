@@ -297,16 +297,25 @@ public final class GC {
         Address classPtr = Mutator.getClasses();
         for (int i = 0; i < classCount; ++i) {
             RuntimeClass cls = classPtr.getAddress().toStructure();
-            if (cls.simpleNameCache != null) {
-                mark(cls.simpleNameCache);
-            }
-            if (cls.canonicalName != null) {
-                mark(cls.canonicalName);
-            }
-            if (cls.nameCache != null) {
-                mark(cls.nameCache);
-            }
+            markFromClass(cls);
             classPtr = classPtr.add(Address.sizeOf());
+        }
+
+        classCount = Mutator.getDynamicClassCount();
+        for (var i = 0; i < classCount; ++i) {
+            markFromClass(Mutator.getDynamicClass(i).toStructure());
+        }
+    }
+
+    private static void markFromClass(RuntimeClass cls) {
+        if (cls.simpleNameCache != null) {
+            mark(cls.simpleNameCache);
+        }
+        if (cls.canonicalName != null) {
+            mark(cls.canonicalName);
+        }
+        if (cls.nameCache != null) {
+            mark(cls.nameCache);
         }
     }
 

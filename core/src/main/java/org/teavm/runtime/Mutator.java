@@ -30,4 +30,8 @@ public final class Mutator {
     public static native Address getClasses();
 
     public static native int getClassCount();
+
+    public static native Address getDynamicClass(int index);
+
+    public static native int getDynamicClassCount();
 }

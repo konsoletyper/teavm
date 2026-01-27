@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -147,7 +148,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             "exceptions.h", "fiber.c", "fiber.h", "file.c", "file.h", "heapdump.c", "heapdump.h", "heaptrace.c",
             "heaptrace.h", "log.c", "log.h", "memory.c", "memory.h", "references.c", "references.h",
             "resource.c", "resource.h", "runtime.h", "stack.c", "stack.h", "string.c", "string.h",
-            "stringhash.c", "stringhash.h", "time.c", "time.h", "virtcall.c", "virtcall.h"
+            "stringhash.c", "stringhash.h", "time.c", "time.h", "virtcall.c", "virtcall.h",
+            "arrayclass.c", "arrayclass.h"
     };
 
     private TeaVMTargetController controller;
@@ -396,11 +398,12 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         stringPool = new SimpleStringPool();
         boolean vmAssertions = Boolean.parseBoolean(System.getProperty("teavm.c.vmAssertions", "false"));
         boolean gcStats = Boolean.parseBoolean(System.getProperty("teavm.c.gcStats", "false"));
+        var types = new LinkedHashSet<ValueType>();
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, fileNames,
                 controller.getDiagnostics(), classes, controller.getUnprocessedClassSource(), hierarchy, intrinsics,
                 generators, asyncMethods::contains, buildTarget, controller.getClassInitializerInfo(), incremental,
-                vmAssertions, vmAssertions || heapDump, obfuscated);
+                vmAssertions, vmAssertions || heapDump, obfuscated, types);
 
         BufferedCodeWriter specialWriter = new BufferedCodeWriter(false);
         BufferedCodeWriter configHeaderWriter = new BufferedCodeWriter(false);
@@ -438,7 +441,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             context.addGenerator(generatorFactory.createGenerator(intrinsicFactoryContext));
         }
 
-        generateClasses(classes, classGenerator, buildTarget);
+        generateClasses(classes, classGenerator, buildTarget, types);
 
         generateSpecialFunctions(context, specialWriter);
         OutputFileUtil.write(configHeaderWriter, "config.h", buildTarget);
@@ -446,14 +449,15 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         for (String runtimeFile : RUNTIME_FILES) {
             copyResource(runtimeFile, buildTarget);
         }
+        generateArrayClassGen(buildTarget, context, classes.getClassNames().size());
         generateCallSites(buildTarget, context, classes.getClassNames());
         generateStrings(buildTarget, context);
 
-        List<ValueType> types = classGenerator.getTypes().stream()
+        List<ValueType> filteredTypes = types.stream()
                 .filter(c -> ClassGenerator.needsVirtualTable(characteristics, c))
                 .collect(Collectors.toList());
-        generateMainFile(context, classes, types, buildTarget);
-        generateAllFile(classes, types, buildTarget);
+        generateMainFile(context, classes, filteredTypes, buildTarget);
+        generateAllFile(classes, filteredTypes, buildTarget);
     }
 
     private void copyResource(String name, BuildTarget buildTarget) throws IOException {
@@ -479,9 +483,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     }
 
     private void generateClasses(ListableClassHolderSource classes, ClassGenerator classGenerator,
-            BuildTarget buildTarget) throws IOException {
-        classGenerator.prepare(classes);
-
+            BuildTarget buildTarget, Collection<ValueType> types) throws IOException {
         for (String className : classes.getClassNames()) {
             BufferedCodeWriter writer = new BufferedCodeWriter(lineNumbersGenerated);
             BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
@@ -497,7 +499,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             }
         }
 
-        for (ValueType type : classGenerator.getTypes()) {
+        for (var type : types) {
             if (type instanceof ValueType.Object) {
                 continue;
             }
@@ -511,6 +513,22 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 stringPool.reset();
             }
         }
+    }
+
+    private void generateArrayClassGen(BuildTarget buildTarget, GenerationContext context,
+            int classCount) throws IOException {
+        var writer = new BufferedCodeWriter(false);
+
+        var includes = new SimpleIncludeManager(context.getFileNames(), writer);
+        includes.init("arrayclass_gen.h");
+        includes.includeClass("java.lang.Object");
+
+        writer.print("#define TEAVM_OBJECT_CLASS ").println(context.getNames().forClassClass("java.lang.Object"));
+        writer.print("#define TEAVM_OBJECT_CLASS_PTR ").println(context.getNames().forClassInstance(
+                ValueType.object("java.lang.Object")));
+        writer.println("#define TEAVM_DYNAMIC_CLASS_POOL_CAPACITY " + (classCount * 8) + "");
+
+        OutputFileUtil.write(writer, "arrayclass_gen.h", buildTarget);
     }
 
     private void generateCallSites(BuildTarget buildTarget, GenerationContext context,
@@ -746,6 +764,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         files.add("strings.c");
         files.add("time.c");
         files.add("virtcall.c");
+        files.add("arrayclass.c");
 
         for (String className : classes.getClassNames()) {
             files.add(fileNames.fileName(className) + ".c");
