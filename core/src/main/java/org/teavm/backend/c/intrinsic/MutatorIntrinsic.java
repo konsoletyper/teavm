@@ -30,6 +30,8 @@ public class MutatorIntrinsic implements Intrinsic {
             case "getStaticGCRoots":
             case "getClasses":
             case "getClassCount":
+            case "getDynamicClass":
+            case "getDynamicClassCount":
                 return true;
             default:
                 return false;
@@ -47,6 +49,14 @@ public class MutatorIntrinsic implements Intrinsic {
                 break;
             case "getClassCount":
                 context.writer().print("teavm_classReferencesCount");
+                break;
+            case "getDynamicClass":
+                context.writer().print("teavm_arrayClass(");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(")");
+                break;
+            case "getDynamicClassCount":
+                context.writer().print("teavm_arrayClassCount()");
                 break;
         }
     }

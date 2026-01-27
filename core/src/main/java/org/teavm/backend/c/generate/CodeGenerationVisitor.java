@@ -946,10 +946,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         ValueType type = ValueType.arrayOf(expr.getType());
-        writer.print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(&")
-                .print(names.forClassInstance(type)).print(", ");
+        writer.print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(");
+        CodeGeneratorUtil.writeTypeReference(writer, context, includes, type);
+        writer.print(", ");
         classContext.importMethod(ALLOC_ARRAY_METHOD, true);
-        includes.includeType(type);
         expr.getLength().acceptVisitor(this);
         writer.print(")");
 
@@ -1003,10 +1003,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         writer.print("(");
 
         ValueType type = ValueType.arrayOf(expr.getType());
-        writer.print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(&")
-                .print(names.forClassInstance(type)).print(", ");
         classContext.importMethod(ALLOC_ARRAY_METHOD, true);
-        includes.includeType(type);
+        writer.print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(");
+        CodeGeneratorUtil.writeTypeReference(writer, context, includes, type);
+        writer.print(", ");
         writer.print(expr.getData().size() + ")");
 
         for (Expr element : expr.getData()) {
@@ -1033,8 +1033,9 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             withCallSite();
         }
 
-        writer.print(names.forMethod(ALLOC_MULTI_ARRAY_METHOD)).print("(&")
-                .print(names.forClassInstance(expr.getType())).print(", ");
+        writer.print(names.forMethod(ALLOC_MULTI_ARRAY_METHOD)).print("(");
+        CodeGeneratorUtil.writeTypeReference(writer, context, includes, expr.getType());
+        writer.print(", ");
         classContext.importMethod(ALLOC_MULTI_ARRAY_METHOD, true);
         includes.includeType(expr.getType());
 
@@ -1059,8 +1060,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         pushLocation(expr.getLocation());
         writer.print("teavm_instanceof(");
         visitReference(expr.getExpr());
-        includes.includeType(expr.getType());
-        writer.print(", ").print(names.forSupertypeFunction(expr.getType())).print(")");
+        writer.print(", ");
+        CodeGeneratorUtil.writeTypeReference(writer, context, includes, expr.getType());
+        writer.print(", ");
+        CodeGeneratorUtil.writeIsSupertypeFunctionRef(writer, context, includes, expr.getType());
+        writer.print(")");
         popLocation(expr.getLocation());
     }
 
@@ -1089,8 +1093,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
         writer.print("teavm_checkcast(");
         visitReference(expr.getValue());
-        includes.includeType(expr.getTarget());
-        writer.print(", ").print(names.forSupertypeFunction(expr.getTarget())).print(")");
+        writer.print(", ");
+        CodeGeneratorUtil.writeTypeReference(writer, context, includes, expr.getTarget());
+        writer.print(", ");
+        CodeGeneratorUtil.writeIsSupertypeFunctionRef(writer, context, includes, expr.getTarget());
+        writer.print(")");
 
         if (needParenthesis) {
             writer.print(")");

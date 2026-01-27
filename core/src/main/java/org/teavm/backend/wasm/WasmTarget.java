@@ -909,6 +909,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         for (ValueType type : classGenerator.getRegisteredClasses()) {
             var function = functions.forSupertype(type);
 
+            function.add(new WasmLocal(WasmType.INT32, "supertype"));
             WasmLocal subtypeVar = new WasmLocal(WasmType.INT32, "subtype");
             function.add(subtypeVar);
 
@@ -992,6 +993,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         itemTest.getThenBlock().getBody().add(new WasmInt32Constant(0));
 
         WasmCall delegateToItem = new WasmCall(functions.forSupertype(itemType));
+        delegateToItem.getArguments().add(new WasmInt32Constant(0));
         delegateToItem.getArguments().add(new WasmGetLocal(subtypeVar));
         itemTest.getElseBlock().getBody().add(delegateToItem);
 

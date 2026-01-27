@@ -36,7 +36,7 @@ typedef struct TeaVM_Class {
     struct TeaVM_Class* arrayType;
     struct TeaVM_Class* declaringClass;
     struct TeaVM_Class* enclosingClass;
-    int32_t (*isSupertypeOf)(struct TeaVM_Class*);
+    int32_t (*isSupertypeOf)(struct TeaVM_Class*,struct TeaVM_Class*);
     void (*init)();
     struct TeaVM_Class* superclass;
     int32_t superinterfaceCount;
@@ -151,11 +151,11 @@ static inline int32_t teavm_compare_double_less(double a, double b) {
     return a == b ? INT32_C(0) : a > b ? INT32_C(1) : INT32_C(-1);
 }
 
-static inline int32_t teavm_instanceof(void* obj, int32_t (*cls)(TeaVM_Class*)) {
-    return obj != NULL && cls(TEAVM_CLASS_OF(obj));
+static inline int32_t teavm_instanceof(void* obj, void* cls, int32_t (*fn)(TeaVM_Class*,TeaVM_Class*)) {
+    return obj != NULL && fn((TeaVM_Class*) cls, TEAVM_CLASS_OF(obj));
 }
-static inline void* teavm_checkcast(void* obj, int32_t (*cls)(TeaVM_Class*)) {
-    return obj == NULL || cls(TEAVM_CLASS_OF(obj)) ? obj : teavm_throwClassCastException();
+static inline void* teavm_checkcast(void* obj, void* cls, int32_t (*fn)(TeaVM_Class*,TeaVM_Class*)) {
+    return obj == NULL || fn((TeaVM_Class*) cls, TEAVM_CLASS_OF(obj)) ? obj : teavm_throwClassCastException();
 }
 
 extern double teavm_rand();

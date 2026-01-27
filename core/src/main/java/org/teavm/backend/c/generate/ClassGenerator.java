@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,7 +43,6 @@ import org.teavm.interop.NoGcRoot;
 import org.teavm.interop.Structure;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
-import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
@@ -52,27 +50,15 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
-import org.teavm.model.Instruction;
-import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
-import org.teavm.model.instructions.AbstractInstructionVisitor;
-import org.teavm.model.instructions.CastInstruction;
-import org.teavm.model.instructions.ClassConstantInstruction;
-import org.teavm.model.instructions.ConstructArrayInstruction;
-import org.teavm.model.instructions.ConstructInstruction;
-import org.teavm.model.instructions.ConstructMultiArrayInstruction;
-import org.teavm.model.instructions.InstructionVisitor;
-import org.teavm.model.instructions.IsInstanceInstruction;
-import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.util.ReflectionUtil;
@@ -98,7 +84,6 @@ public class ClassGenerator {
     private CodeGenerator codeGenerator;
     private FieldReference[] staticGcRoots;
     private FieldReference[] classLayout;
-    private Set<ValueType> types = new LinkedHashSet<>();
     private CodeWriter prologueWriter;
     private CodeWriter codeWriter;
     private CodeWriter initWriter;
@@ -111,14 +96,16 @@ public class ClassGenerator {
     private List<CallSiteDescriptor> callSites;
     private ClassMetadataRequirements metadataRequirements;
     private static final int VT_STRUCTURE_INITIALIZER_DEPTH_THRESHOLD = 9;
+    private Set<ValueType> types;
 
     public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler,
-            CacheStatus cacheStatus) {
+            CacheStatus cacheStatus, Set<ValueType> types) {
         this.context = context;
         this.tagRegistry = tagRegistry;
         this.decompiler = decompiler;
         this.cacheStatus = cacheStatus;
         metadataRequirements = new ClassMetadataRequirements(context.getDependencies());
+        this.types = types;
     }
 
     public void setAstCache(MethodNodeCache astCache) {
@@ -128,82 +115,6 @@ public class ClassGenerator {
     public void setCallSites(List<CallSiteDescriptor> callSites) {
         this.callSites = callSites;
     }
-
-    public void prepare(ListableClassHolderSource classes) {
-        for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.get(className);
-            prepareClass(cls);
-        }
-    }
-
-    private void prepareClass(ClassHolder cls) {
-        types.add(ValueType.object(cls.getName()));
-        if (cls.getParent() != null) {
-            types.add(ValueType.object(cls.getParent()));
-        }
-        for (String itf : cls.getInterfaces()) {
-            types.add(ValueType.object(itf));
-        }
-        for (MethodHolder method : cls.getMethods()) {
-            if (method.getProgram() != null) {
-                prepareProgram(method.getProgram());
-            }
-        }
-    }
-
-    private void prepareProgram(Program program) {
-        for (BasicBlock block : program.getBasicBlocks()) {
-            for (Instruction insn : block) {
-                insn.acceptVisitor(prepareVisitor);
-            }
-        }
-    }
-
-    private void addType(ValueType type) {
-        if (!types.add(type)) {
-            return;
-        }
-        if (type instanceof ValueType.Array) {
-            addType(((ValueType.Array) type).getItemType());
-        }
-    }
-
-    private InstructionVisitor prepareVisitor = new AbstractInstructionVisitor() {
-        @Override
-        public void visit(ClassConstantInstruction insn) {
-            addType(insn.getConstant());
-        }
-
-        @Override
-        public void visit(StringConstantInstruction insn) {
-            addType(ValueType.object("java.lang.String"));
-        }
-
-        @Override
-        public void visit(ConstructArrayInstruction insn) {
-            addType(ValueType.arrayOf(insn.getItemType()));
-        }
-
-        @Override
-        public void visit(ConstructInstruction insn) {
-            addType(ValueType.object(insn.getType()));
-        }
-
-        @Override
-        public void visit(IsInstanceInstruction insn) {
-            addType(insn.getType());
-        }
-
-        @Override
-        public void visit(CastInstruction insn) {
-            addType(insn.getTargetType());
-        }
-
-        @Override
-        public void visit(ConstructMultiArrayInstruction insn) {
-            addType(insn.getItemType());
-        }
-    };
 
     public void generateClass(CodeWriter writer, CodeWriter headerWriter, ClassHolder cls) {
         ValueType type = ValueType.object(cls.getName());
@@ -293,9 +204,6 @@ public class ClassGenerator {
         poolGenerator.generateStringPoolHeaders(initWriter, includes);
     }
 
-    public Set<ValueType> getTypes() {
-        return types;
-    }
 
     private void generateClassMethods(ClassHolder cls) {
         boolean needsVirtualTable = needsVirtualTable(context.getCharacteristics(), ValueType.object(cls.getName()));
@@ -791,7 +699,7 @@ public class ClassGenerator {
             List<TagRegistry.Range> ranges = tagRegistry != null ? tagRegistry.getRanges(className) : null;
             tag = !context.isIncremental() && ranges != null && !ranges.isEmpty() ? ranges.get(0).lower : 0;
 
-            if (cls != null && cls.getParent() != null && types.contains(ValueType.object(cls.getParent()))) {
+            if (cls != null && cls.getParent() != null) {
                 includes.includeClass(cls.getParent());
                 parent = "(TeaVM_Class*) &" + context.getNames().forClassInstance(ValueType.object(cls.getParent()));
             } else {
@@ -805,9 +713,7 @@ public class ClassGenerator {
             }
 
             Set<String> interfaces = cls != null
-                    ? cls.getInterfaces().stream()
-                            .filter(c -> types.contains(ValueType.object(c)))
-                            .collect(Collectors.toSet())
+                    ? cls.getInterfaces()
                     : Collections.emptySet();
             if (!interfaces.isEmpty()) {
                 superinterfaceCount = Integer.toString(cls.getInterfaces().size());
@@ -877,7 +783,7 @@ public class ClassGenerator {
 
         ValueType arrayType = ValueType.arrayOf(type);
         String arrayTypeExpr;
-        if (types.contains(arrayType)) {
+        if (type instanceof ValueType.Primitive && types.contains(arrayType)) {
             includes.includeType(arrayType);
             arrayTypeExpr = "(TeaVM_Class*) &" + context.getNames().forClassInstance(arrayType);
         } else {
@@ -1343,8 +1249,8 @@ public class ClassGenerator {
 
     private void generateIsSupertypeFunction(ValueType type) {
         String name = context.getNames().forSupertypeFunction(type);
-        headerWriter.println("extern int32_t " + name + "(TeaVM_Class*);");
-        codeWriter.println("int32_t " + name + "(TeaVM_Class* cls) {").indent();
+        headerWriter.println("extern int32_t " + name + "(TeaVM_Class*, TeaVM_Class*);");
+        codeWriter.println("int32_t " + name + "(TeaVM_Class*, TeaVM_Class* cls) {").indent();
 
         if (type instanceof ValueType.Object) {
             generateIsSuperclassFunction(((ValueType.Object) type).getClassName());
@@ -1394,7 +1300,7 @@ public class ClassGenerator {
     private void generateIncrementalSuperclassFunction(String className) {
         String functionName = context.getNames().forSupertypeFunction(ValueType.object(className));
         ClassReader cls = context.getClassSource().get(className);
-        if (cls != null && types.contains(ValueType.object(className))) {
+        if (cls != null) {
             includes.includeClass(className);
             String name = context.getNames().forClassInstance(ValueType.object(className));
             codeWriter.println("if (cls == (TeaVM_Class*) &" + name + ") return INT32_C(1);");

@@ -20,5 +20,5 @@ import org.teavm.interop.Unmanaged;
 
 public abstract class IsSupertypeFunction extends Function {
     @Unmanaged
-    public abstract boolean apply(RuntimeClass superType);
+    public abstract boolean apply(RuntimeClass superType, RuntimeClass subtype);
 }

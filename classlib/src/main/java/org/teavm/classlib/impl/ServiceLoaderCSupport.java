@@ -17,6 +17,7 @@ package org.teavm.classlib.impl;
 
 import java.util.Collection;
 import java.util.ServiceLoader;
+import org.teavm.backend.c.generate.CodeGeneratorUtil;
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.generators.GeneratorContext;
@@ -120,10 +121,10 @@ public class ServiceLoaderCSupport implements GeneratorFactory {
             writer.println("if (services == NULL) goto exit;");
             writer.println("TEAVM_GC_ROOT_RELEASE(0);");
             writer.println("TEAVM_GC_ROOT_RELEASE(1);");
-            writer.print("result = ")
-                    .print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(&")
-                    .print(names.forClassInstance(ValueType.parse(Object[].class))).print(", ")
-                    .println("services->size);");
+            writer.print("result = ").print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(");
+            CodeGeneratorUtil.writeTypeReference(writer, context.mainContext(), context.includes(),
+                    ValueType.parse(Object[].class));
+            writer.print(", ").println("services->size);");
 
             writer.println("TEAVM_GC_ROOT(0, result);");
             writer.println("void** arrayData = (void**) TEAVM_ARRAY_DATA(result, void*);");
