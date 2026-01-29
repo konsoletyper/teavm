@@ -183,6 +183,7 @@ public class GenerationContext {
         }
         if (type instanceof ValueType.Array) {
             var item = ((ValueType.Array) type).getItemType();
+            addType(item);
             if (!(item instanceof ValueType.Primitive)) {
                 return;
             }

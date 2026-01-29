@@ -1037,7 +1037,6 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         CodeGeneratorUtil.writeTypeReference(writer, context, includes, expr.getType());
         writer.print(", ");
         classContext.importMethod(ALLOC_MULTI_ARRAY_METHOD, true);
-        includes.includeType(expr.getType());
 
         writer.print("(int32_t[]) {");
         expr.getDimensions().get(0).acceptVisitor(this);
