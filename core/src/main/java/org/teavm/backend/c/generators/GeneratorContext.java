@@ -17,6 +17,7 @@ package org.teavm.backend.c.generators;
 
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.FileGenerator;
+import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.IncludeManager;
 import org.teavm.backend.c.generate.StringPool;
 import org.teavm.backend.lowlevel.generate.NameProvider;
@@ -30,6 +31,8 @@ import org.teavm.model.lowlevel.CallSiteLocation;
 import org.teavm.model.lowlevel.ExceptionHandlerDescriptor;
 
 public interface GeneratorContext {
+    GenerationContext mainContext();
+
     CodeWriter writer();
 
     NameProvider names();

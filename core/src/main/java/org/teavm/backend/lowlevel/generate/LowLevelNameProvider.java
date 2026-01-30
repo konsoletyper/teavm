@@ -177,7 +177,7 @@ public abstract class LowLevelNameProvider implements NameProvider {
         return isIdentifierStart(c) || c >= '0' && c <= '9';
     }
 
-    private String pickUnoccupied(String name) {
+    protected String pickUnoccupied(String name) {
         return pickUnoccupied(name, occupiedTopLevelNames);
     }
 
@@ -194,5 +194,10 @@ public abstract class LowLevelNameProvider implements NameProvider {
 
     protected Set<? extends String> getKeywords() {
         return Collections.emptySet();
+    }
+
+    @Override
+    public String createTopLevelName(String base) {
+        return pickUnoccupied(base);
     }
 }

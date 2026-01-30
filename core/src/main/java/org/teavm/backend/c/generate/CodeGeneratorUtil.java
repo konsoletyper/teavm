@@ -95,15 +95,49 @@ public final class CodeGeneratorUtil {
         } else if (value instanceof Character) {
             writeIntValue(writer, (char) value);
         } else if (value instanceof ValueType) {
-            ValueType type = (ValueType) value;
-            if (type instanceof ValueType.Object
-                    && !context.getCharacteristics().isManaged(((ValueType.Object) type).getClassName())) {
-                writer.print("NULL");
-            } else {
-                includes.includeType(type);
-                writer.print("&").print(context.getNames().forClassInstance(type));
-            }
+            var type = (ValueType) value;
+            writeTypeReference(writer, context, includes, type);
         }
+    }
+
+    public static void writeTypeReference(CodeWriter writer, GenerationContext context, IncludeManager includes,
+            ValueType type) {
+        if (type instanceof ValueType.Object
+                && !context.getCharacteristics().isManaged(((ValueType.Object) type).getClassName())) {
+            writer.print("NULL");
+        } else if (isObjectArray(type)) {
+            includes.includePath("arrayclass.h");
+            writer.print("teavm_getArrayClass((TeaVM_Class*) ");
+            var item = ((ValueType.Array) type).getItemType();
+            writeTypeReference(writer, context, includes, item);
+            writer.print(")");
+        } else {
+            includes.includeType(type);
+            context.addType(type);
+            writer.print("&").print(context.getNames().forClassInstance(type));
+        }
+    }
+
+    public static void writeIsSupertypeFunctionRef(CodeWriter writer, GenerationContext context,
+            IncludeManager includes, ValueType type) {
+        if (type instanceof ValueType.Object
+                && !context.getCharacteristics().isManaged(((ValueType.Object) type).getClassName())) {
+            writer.print("NULL");
+        } else if (isObjectArray(type)) {
+            includes.includePath("arrayclass.h");
+            writer.print("&teavm_isSupertypeOfArray");
+        } else {
+            includes.includeType(type);
+            writer.print("&").print(context.getNames().forSupertypeFunction(type));
+        }
+    }
+
+    public static boolean isObjectArray(ValueType type) {
+        if (!(type instanceof ValueType.Array)) {
+            return false;
+        }
+        var itemType = ((ValueType.Array) type).getItemType();
+        return itemType instanceof ValueType.Object || itemType instanceof ValueType.Array;
     }
 
     private static void writeLongConstant(CodeWriter writer, long v) {

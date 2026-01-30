@@ -55,6 +55,8 @@ public class MutatorIntrinsic implements WasmIntrinsic {
             case "getStaticGCRoots":
             case "getClasses":
             case "getClassCount":
+            case "getDynamicClass":
+            case "getDynamicClassCount":
                 return true;
             default:
                 return false;
@@ -79,6 +81,9 @@ public class MutatorIntrinsic implements WasmIntrinsic {
                 classCountExpressions.add(constant);
                 return constant;
             }
+            case "getDynamicClass":
+            case "getDynamicClassCount":
+                return new WasmInt32Constant(0);
         }
         throw new IllegalArgumentException(invocation.getMethod().toString());
     }

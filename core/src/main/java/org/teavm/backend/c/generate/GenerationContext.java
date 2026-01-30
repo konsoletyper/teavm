@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.intrinsic.Intrinsic;
@@ -28,7 +29,9 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.vm.BuildTarget;
@@ -54,6 +57,8 @@ public class GenerationContext {
     private boolean vmAssertions;
     private boolean heapDump;
     private boolean obfuscated;
+    private Set<ValueType> types;
+    private ClassMetadataRequirements metadataRequirements;
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, FileNameProvider fileNames,
@@ -61,7 +66,7 @@ public class GenerationContext {
             ClassHierarchy hierarchy, List<Intrinsic> intrinsics, List<Generator> generators,
             Predicate<MethodReference> asyncMethods, BuildTarget buildTarget,
             ClassInitializerInfo classInitializerInfo, boolean incremental, boolean vmAssertions, boolean heapDump,
-            boolean obfuscated) {
+            boolean obfuscated, Set<ValueType> types, ClassMetadataRequirements metadataRequirements) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -81,6 +86,8 @@ public class GenerationContext {
         this.vmAssertions = vmAssertions;
         this.heapDump = heapDump;
         this.obfuscated = obfuscated;
+        this.types = types;
+        this.metadataRequirements = metadataRequirements;
     }
 
     public void addIntrinsic(Intrinsic intrinsic) {
@@ -171,5 +178,28 @@ public class GenerationContext {
 
     public boolean isObfuscated() {
         return obfuscated;
+    }
+
+    public void addType(ValueType type) {
+        if (type instanceof ValueType.Object) {
+            return;
+        }
+        if (type instanceof ValueType.Array) {
+            var item = ((ValueType.Array) type).getItemType();
+            addType(item);
+            if (!(item instanceof ValueType.Primitive)) {
+                return;
+            }
+        }
+        if (!types.add(type)) {
+            return;
+        }
+        if (type instanceof ValueType.Array) {
+            addType(((ValueType.Array) type).getItemType());
+        }
+    }
+
+    public ClassMetadataRequirements getMetadataRequirements() {
+        return metadataRequirements;
     }
 }

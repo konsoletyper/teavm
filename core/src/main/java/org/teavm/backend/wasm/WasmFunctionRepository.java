@@ -94,7 +94,7 @@ public class WasmFunctionRepository implements BaseWasmFunctionRepository {
 
     public WasmFunction forSupertype(ValueType type) {
         return supertypes.computeIfAbsent(type, key -> {
-            var wasmFunction = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.INT32));
+            var wasmFunction = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.INT32, WasmType.INT32));
             wasmFunction.setName(nameProvider.forSupertypeFunction(key));
             module.functions.add(wasmFunction);
             return wasmFunction;

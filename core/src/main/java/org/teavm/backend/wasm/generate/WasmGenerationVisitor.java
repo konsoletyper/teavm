@@ -912,6 +912,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
         WasmExpression classRef = new WasmLoadInt32(4, expression, WasmInt32Subtype.INT32);
         classRef = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classRef,
                 new WasmInt32Constant(3));
+        supertypeCall.getArguments().add(new WasmInt32Constant(0));
         supertypeCall.getArguments().add(classRef);
         return supertypeCall;
     }

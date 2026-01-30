@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.runtime;
+package org.teavm.backend.c.generators;
 
-import org.teavm.interop.Function;
-import org.teavm.interop.Unmanaged;
+import org.teavm.backend.c.generate.CodeWriter;
 
-public abstract class IsSupertypeFunction extends Function {
-    @Unmanaged
-    public abstract boolean apply(RuntimeClass superType, RuntimeClass subtype);
+public interface ReflectionPartGenerator {
+    void generate(CodeWriter writer);
 }

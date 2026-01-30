@@ -40,4 +40,6 @@ public interface NameProvider {
     String forClassInstance(ValueType type);
 
     String forSupertypeFunction(ValueType type);
+
+    String createTopLevelName(String template);
 }

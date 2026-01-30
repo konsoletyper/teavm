@@ -53,6 +53,11 @@ class GeneratorContextImpl implements GeneratorContext {
     }
 
     @Override
+    public GenerationContext mainContext() {
+        return classContext.getContext();
+    }
+
+    @Override
     public NameProvider names() {
         return context.getNames();
     }
