@@ -10,7 +10,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "wchar.h"
+#include <wchar.h>
 #include <wctype.h>
 #include <stdbool.h>
 

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#include "wchar.h"
+#include <wchar.h>
 
 #if TEAVM_WINDOWS
     #include <Windows.h>
@@ -26,6 +26,8 @@
     void teavm_printString(char16_t* s) {
         #if !TEAVM_WINDOWS_LOG
             #if TEAVM_WINDOWS
+                fprintf(stderr, "%ls", s);
+            #elif TEAVM_PSP
                 fprintf(stderr, "%ls", s);
             #else
                 int32_t cap = 128;

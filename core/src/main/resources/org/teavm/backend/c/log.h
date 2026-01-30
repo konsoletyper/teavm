@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "uchar.h"
-#include "wchar.h"
+#include <wchar.h>
 
 extern void teavm_printString(char16_t*);
 extern void teavm_printWString(wchar_t*);
