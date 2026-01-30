@@ -97,6 +97,8 @@ public class WasmBinaryReader {
         switch (typeId) {
             case 0x70:
                 return special(WasmType.SpecialReferenceKind.FUNC, nullable);
+            case 0x69:
+                return special(WasmType.SpecialReferenceKind.EXN, nullable);
             case 0x6F:
                 return special(WasmType.SpecialReferenceKind.EXTERN, nullable);
             case 0x6E:
