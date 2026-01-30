@@ -253,7 +253,6 @@ void teavm_initStaticGcRoots() {
 }
 
 #if TEAVM_PSP
-#include <stdlib.h>
 
 int64_t teavm_pageSize() {
     return 4096LL;
