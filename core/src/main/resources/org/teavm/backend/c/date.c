@@ -34,7 +34,7 @@ void teavm_date_init() {
         .tm_isdst = -1
     };
 #if TEAVM_PSP
-    teavm_epochStart = 0;
+    teavm_epochStart = mktime(&epochStart);
 #else
     teavm_epochStart = timegm(&epochStart);
 #endif
