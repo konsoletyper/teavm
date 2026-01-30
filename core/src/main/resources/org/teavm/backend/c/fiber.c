@@ -11,6 +11,9 @@
     #include <Windows.h>
     #include <synchapi.h>
 #endif
+#if TEAVM_PSP
+    #include <pspkernel.h>
+#endif
 
 #if TEAVM_UNIX
     static timer_t teavm_queueTimer;
