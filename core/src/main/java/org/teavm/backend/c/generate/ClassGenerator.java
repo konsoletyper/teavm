@@ -1351,7 +1351,7 @@ public class ClassGenerator {
     private void generateIsSupertypeFunction(ValueType type) {
         String name = context.getNames().forSupertypeFunction(type);
         headerWriter.println("extern int32_t " + name + "(TeaVM_Class*, TeaVM_Class*);");
-        codeWriter.println("int32_t " + name + "(TeaVM_Class*, TeaVM_Class* cls) {").indent();
+        codeWriter.println("int32_t " + name + "(TeaVM_Class* supercls, TeaVM_Class* cls) {").indent();
 
         if (type instanceof ValueType.Object) {
             generateIsSuperclassFunction(((ValueType.Object) type).getClassName());

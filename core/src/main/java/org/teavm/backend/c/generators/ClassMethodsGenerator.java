@@ -76,7 +76,7 @@ public class ClassMethodsGenerator implements Generator {
                         ValueType.arrayOf(annotType));
         writer.print(", reflect->annotationCount);").println();
         writer.println("void** arrayData = TEAVM_ARRAY_DATA(array, void*);");
-        writer.println("for (auto i = 0; i < reflect->annotationCount; ++i) {").indent();
+        writer.println("for (int32_t i = 0; i < reflect->annotationCount; ++i) {").indent();
         writer.println("arrayData[i] = reflect->annotationsRef[i];");
         writer.outdent().println("}");
         writer.println("return array;");
