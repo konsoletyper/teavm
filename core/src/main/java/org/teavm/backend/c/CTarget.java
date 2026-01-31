@@ -155,7 +155,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             "heaptrace.h", "log.c", "log.h", "memory.c", "memory.h", "references.c", "references.h",
             "resource.c", "resource.h", "runtime.h", "stack.c", "stack.h", "string.c", "string.h",
             "stringhash.c", "stringhash.h", "time.c", "time.h", "virtcall.c", "virtcall.h",
-            "arrayclass.c", "arrayclass.h"
+            "arrayclass.c", "arrayclass.h", "uchar.h"
     };
 
     private TeaVMTargetController controller;

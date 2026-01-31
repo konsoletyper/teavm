@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <uchar.h>
+#include "uchar.h"
 
 #define TEAVM_FIELD_TYPE_OBJECT 0
 #define TEAVM_FIELD_TYPE_ARRAY 1

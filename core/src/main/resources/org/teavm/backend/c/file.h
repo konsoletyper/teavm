@@ -1,7 +1,7 @@
 #pragma once
 #include "string.h"
 #include <stdint.h>
-#include <uchar.h>
+#include "uchar.h"
 
 extern int32_t teavm_file_homeDirectory(char16_t**);
 extern int32_t teavm_file_workDirectory(char16_t**);

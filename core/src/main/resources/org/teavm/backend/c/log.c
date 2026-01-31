@@ -27,6 +27,8 @@
         #if !TEAVM_WINDOWS_LOG
             #if TEAVM_WINDOWS
                 fprintf(stderr, "%ls", s);
+            #elif TEAVM_PSP
+                fprintf(stderr, "%ls", s);
             #else
                 int32_t cap = 128;
                 wchar_t* buf = malloc(sizeof(wchar_t) * cap);

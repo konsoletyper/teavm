@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <uchar.h>
+#include "uchar.h"
 #include <wchar.h>
 
 static TeaVM_HashtableEntry** teavm_stringHashtable = NULL;

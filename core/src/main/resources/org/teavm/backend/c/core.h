@@ -1,8 +1,8 @@
 #pragma once
 #include <stdint.h>
-#include <uchar.h>
 #include <math.h>
 #include "definitions.h"
+#include "uchar.h"
 #include "heapdump.h"
 #include "memory.h"
 #include <stdlib.h>

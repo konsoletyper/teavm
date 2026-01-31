@@ -17,6 +17,13 @@
     #include "heaptrace.h"
 #endif
 
+#if TEAVM_PSP
+int64_t teavm_pageSize();
+void* teavm_virtualAlloc(int64_t size);
+void teavm_virtualCommit(void* address, int64_t size);
+void teavm_virtualUncommit(void* address, int64_t size);
+#endif
+
 void* teavm_gc_heapAddress = NULL;
 void* teavm_gc_gcStorageAddress = NULL;
 int32_t teavm_gc_gcStorageSize = INT32_C(0);
@@ -244,3 +251,22 @@ void teavm_initStaticGcRoots() {
         builder = next;
     }
 }
+
+#if TEAVM_PSP
+
+int64_t teavm_pageSize() {
+    return 4096LL;
+}
+
+void* teavm_virtualAlloc(int64_t size) {
+    return malloc(size);
+}
+
+void teavm_virtualCommit(void* addr, int64_t size) {
+    // No-op for PSP
+}
+
+void teavm_virtualUncommit(void* addr, int64_t size) {
+    // No-op for PSP
+}
+#endif

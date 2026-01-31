@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include <uchar.h>
+#include "uchar.h"
 #include <wchar.h>
 
 extern void teavm_printString(char16_t*);

@@ -11,6 +11,9 @@
     #include <Windows.h>
     #include <synchapi.h>
 #endif
+#if TEAVM_PSP
+    #include <pspkernel.h>
+#endif
 
 #if TEAVM_UNIX
     static timer_t teavm_queueTimer;
@@ -91,5 +94,18 @@ void teavm_initFiber() {
 
     void teavm_interrupt() {
         SetEvent(teavm_queueTimer);
+    }
+#endif
+
+#if TEAVM_PSP
+    void teavm_waitFor(int64_t timeout) {
+        // PSP implementation: simple delay
+        if (timeout > 0) {
+            sceKernelDelayThread(timeout * 1000); // timeout in ms, sceKernelDelayThread in us
+        }
+    }
+
+    void teavm_interrupt() {
+        // Stub for PSP
     }
 #endif
