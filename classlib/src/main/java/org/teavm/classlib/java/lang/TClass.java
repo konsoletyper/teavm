@@ -62,8 +62,6 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     String simpleName;
     String canonicalName;
     private PlatformClass platformClass;
-    private TField[] declaredFields;
-    private TField[] fields;
     private TConstructor<T>[] declaredConstructors;
     private TMethod[] declaredMethods;
     private static boolean reflectionInitialized;
@@ -356,16 +354,17 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         if (isPrimitive() || isArray()) {
             return new TField[0];
         }
-        if (declaredFields == null) {
+        var state = getReflectionState();
+        if (state.declaredFields == null) {
             initReflection();
             var infoList = getDeclaredFieldsImpl();
             if (infoList == null) {
-                declaredFields = new TField[0];
+                state.declaredFields = new TField[0];
             } else {
-                declaredFields = new TField[infoList.count()];
-                for (var i = 0; i < declaredFields.length; ++i) {
+                state.declaredFields = new TField[infoList.count()];
+                for (var i = 0; i < state.declaredFields.length; ++i) {
                     var fieldInfo = infoList.get(i);
-                    declaredFields[i] = new TField(this, fieldInfo.name(), fieldInfo.modifiers(),
+                    state.declaredFields[i] = new TField(this, fieldInfo.name(), fieldInfo.modifiers(),
                             fieldInfo.accessLevel(),
                             (TClass<?>) (Object) fieldInfo.type(), fieldInfo.genericType(),
                             fieldInfo.reader(), fieldInfo.writer(),
@@ -373,7 +372,7 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                 }
             }
         }
-        return declaredFields.clone();
+        return state.declaredFields.clone();
     }
 
     @InjectedBy(ClassGenerator.class)
@@ -395,7 +394,8 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
             return new TField[0];
         }
 
-        if (fields == null) {
+        var state = getReflectionState();
+        if (state.fields == null) {
             List<TField> fieldList = new ArrayList<>();
             TClass<?> cls = this;
 
@@ -412,9 +412,9 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                 }
             }
 
-            fields = fieldList.toArray(new TField[fieldList.size()]);
+            state.fields = fieldList.toArray(new TField[fieldList.size()]);
         }
-        return fields.clone();
+        return state.fields.clone();
     }
 
     public TField getDeclaredField(String name) throws TNoSuchFieldException {
@@ -1034,5 +1034,7 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         TAnnotation[] annotationCache;
         TAnnotation[] declaredAnnotationsCache;
         private Map<TClass<?>, TAnnotation> annotationsByType;
+        private TField[] declaredFields;
+        private TField[] fields;
     }
 }

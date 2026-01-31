@@ -42,6 +42,8 @@ import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.impl.reflection.ReflectionTransformer;
 import org.teavm.classlib.impl.reflection.WasmGCReflectionIntrinsics;
 import org.teavm.classlib.impl.reflection.WasmGCReflectionTypeMapper;
+import org.teavm.classlib.impl.reflection.c.CFieldInfoIntrinsicFactory;
+import org.teavm.classlib.impl.reflection.c.CMembersReflectionGeneratorFactory;
 import org.teavm.classlib.impl.string.DefaultStringTransformer;
 import org.teavm.classlib.impl.string.JSStringConstructorGenerator;
 import org.teavm.classlib.impl.string.JSStringInjector;
@@ -199,6 +201,7 @@ public class JCLPlugin implements TeaVMPlugin {
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
                 cHost.addIntrinsic(context -> new DateTimeZoneProviderIntrinsic(context.getProperties()));
+                registerCReflection(cHost, reflection);
             }
 
             TeaVMWasmHost wasmHost = host.getExtension(TeaVMWasmHost.class);
@@ -363,6 +366,12 @@ public class JCLPlugin implements TeaVMPlugin {
 
         wasmGCHost.addIntrinsic(new MethodReference(Class.class, "createMetadata", void.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(Class.class, "newInstanceImpl", Object.class), intrinsics);
+    }
+
+    private void registerCReflection(TeaVMCHost cHost,
+            ReflectionDependencyListener reflectionDependencyListener) {
+        cHost.addReflectionGenerator(new CMembersReflectionGeneratorFactory(reflectionDependencyListener));
+        cHost.addIntrinsic(new CFieldInfoIntrinsicFactory());
     }
 
     @PlatformMarker

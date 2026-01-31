@@ -37,7 +37,7 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+@SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
 public class FieldTest {
     @Test
     public void fieldsEnumerated() {
@@ -161,6 +161,7 @@ public class FieldTest {
     }
     
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void annotationsRead() throws Exception {
         var field = ReflectableType.class.getDeclaredField("a");
         var annot = field.getAnnotation(TestAnnot.class);

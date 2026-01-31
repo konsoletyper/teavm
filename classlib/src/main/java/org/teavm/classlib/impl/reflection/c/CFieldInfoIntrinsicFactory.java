@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.c;
+package org.teavm.classlib.impl.reflection.c;
 
-import org.teavm.backend.c.generators.GeneratorFactory;
-import org.teavm.backend.c.generators.ReflectionGeneratorFactory;
+import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicFactory;
-import org.teavm.vm.spi.TeaVMHostExtension;
+import org.teavm.backend.c.intrinsic.IntrinsicFactoryContext;
 
-public interface TeaVMCHost extends TeaVMHostExtension {
-    void addIntrinsic(IntrinsicFactory intrinsicFactory);
-
-    void addGenerator(GeneratorFactory generatorFactory);
-
-    void addReflectionGenerator(ReflectionGeneratorFactory generatorFactory);
+public class CFieldInfoIntrinsicFactory implements IntrinsicFactory {
+    @Override
+    public Intrinsic createIntrinsic(IntrinsicFactoryContext context) {
+        return new CFieldInfoIntrinsic();
+    }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.c;
+package org.teavm.backend.c.generators;
 
-import org.teavm.backend.c.generators.GeneratorFactory;
-import org.teavm.backend.c.generators.ReflectionGeneratorFactory;
-import org.teavm.backend.c.intrinsic.IntrinsicFactory;
-import org.teavm.vm.spi.TeaVMHostExtension;
+import java.util.Properties;
+import org.teavm.common.ServiceRepository;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.parsing.resource.ResourceProvider;
 
-public interface TeaVMCHost extends TeaVMHostExtension {
-    void addIntrinsic(IntrinsicFactory intrinsicFactory);
+public interface ReflectionGeneratorFactoryContext {
+    ClassReaderSource getClassSource();
 
-    void addGenerator(GeneratorFactory generatorFactory);
+    ResourceProvider getResourceProvider();
 
-    void addReflectionGenerator(ReflectionGeneratorFactory generatorFactory);
+    ClassLoader getClassLoader();
+
+    ServiceRepository getServices();
+
+    Properties getProperties();
 }

@@ -46,7 +46,7 @@ typedef struct TeaVM_Class {
     TeaVM_Object** simpleName;
     TeaVM_Object* simpleNameCache;
     TeaVM_Object* canonicalName;
-    void *reflectionState;
+    TeaVM_Object* reflectionState;
     struct TeaVM_Services* services;
     void *reflectionExt;
     void (*initReflection)();

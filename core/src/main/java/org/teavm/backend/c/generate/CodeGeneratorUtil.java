@@ -49,6 +49,10 @@ public final class CodeGeneratorUtil {
             writer.print("TEAVM_GET_STRING(" + index + ")");
         } else if (value instanceof Integer) {
             writeIntValue(writer, (Integer) value);
+        } else if (value instanceof Byte) {
+            writeIntValue(writer, (Byte) value);
+        } else if (value instanceof Short) {
+            writeIntValue(writer, (Short) value);
         } else if (value instanceof Long) {
             long v = (Long) value;
             if (v == Long.MIN_VALUE) {

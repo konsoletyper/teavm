@@ -35,6 +35,9 @@ public class ClassMethodsGenerator implements Generator {
             case "getDeclaredAnnotationsImpl":
             case "getReflectionStateC":
             case "setReflectionStateC":
+            case "getDeclaredFieldsImpl":
+            case "createMetadata":
+            case "getTypeParametersImpl":
                 return true;
             default:
                 return false;
@@ -47,11 +50,19 @@ public class ClassMethodsGenerator implements Generator {
             case "getDeclaredAnnotationsImpl":
                 generateGetDeclaredAnnot(context);
                 break;
+            case "getDeclaredFieldsImpl":
+                generateGetDeclaredFieldsImpl(context);
+                break;
             case "getReflectionStateC":
                 generateGetReflectionState(context);
                 break;
             case "setReflectionStateC":
                 generateSetReflectionState(context);
+                break;
+            case "createMetadata":
+                break;
+            case "getTypeParametersImpl":
+                context.writer().print("NULL");
                 break;
         }
     }
@@ -80,6 +91,13 @@ public class ClassMethodsGenerator implements Generator {
         writer.println("arrayData[i] = reflect->annotationsRef[i];");
         writer.outdent().println("}");
         writer.println("return array;");
+    }
+
+    private void generateGetDeclaredFieldsImpl(GeneratorContext context) {
+        var writer = context.writer();
+        context.includes().includePath("reflection-ext.h");
+        writer.println("TeaVM_ClassReflection* reflect = teavm_class_reflect(" + context.parameterName(0) + ");");
+        writer.println("return reflect != NULL ? reflect->fields : NULL;");
     }
 
     private void generateGetReflectionState(GeneratorContext context) {
