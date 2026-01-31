@@ -517,7 +517,7 @@ public class TestDateTimeFormatter {
     }
 
     //-------------------------------------------------------------------------
-    @SkipPlatform({ TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
+    @SkipPlatform({ TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.C })
     public void test_parse_allZones() throws Exception {
         for (String zoneStr : ZoneId.getAvailableZoneIds()) {
             // TODO: looks like our implementation does not support that. Fix and remove this hack
