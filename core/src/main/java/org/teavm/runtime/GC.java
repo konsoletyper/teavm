@@ -317,6 +317,9 @@ public final class GC {
         if (cls.nameCache != null) {
             mark(cls.nameCache);
         }
+        if (cls.reflectionState != null) {
+            mark(cls.reflectionState);
+        }
     }
 
     private static void markFromStack() {
