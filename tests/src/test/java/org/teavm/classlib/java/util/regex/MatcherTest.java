@@ -41,9 +41,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @SuppressWarnings("nls")
 @RunWith(TeaVMTestRunner.class)
@@ -518,7 +516,6 @@ public class MatcherTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void testRelAltGroup() {
 
         Matcher mat;

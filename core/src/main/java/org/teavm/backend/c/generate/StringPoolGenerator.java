@@ -115,6 +115,9 @@ public class StringPoolGenerator {
                     case '\t':
                         writer.print("\\t");
                         break;
+                    case '?':
+                        writer.print("\\?");
+                        break;
                     default:
                         if (c < 32) {
                             writer.print("\\0" + Character.forDigit(c >> 3, 8) + Character.forDigit(c & 0x7, 8));

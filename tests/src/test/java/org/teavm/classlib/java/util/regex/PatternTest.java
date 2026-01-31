@@ -45,9 +45,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class PatternTest {
@@ -385,7 +383,6 @@ public class PatternTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void testQuantCompileNeg() {
         String[] patterns = { "5{,2}", "{5asd", "{hgdhg", "{5,hjkh", "{,5hdsh",
                 "{5,3shdfkjh}" };
