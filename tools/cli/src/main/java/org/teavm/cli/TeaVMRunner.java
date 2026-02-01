@@ -221,6 +221,9 @@ public final class TeaVMRunner {
                 case "wasm":
                     tool.setTargetType(TeaVMTargetType.WEBASSEMBLY);
                     break;
+                case "webassembly-gc";
+                    tool.setTargetType(TeaVMTargetType.WEBASSEMBLY_GC);
+                    break;
                 case "webassembly-wasi":
                 case "wasm-wasi":
                 case "wasi":
