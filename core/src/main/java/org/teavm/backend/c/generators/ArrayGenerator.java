@@ -21,21 +21,21 @@ import java.util.HashSet;
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.dependency.ValueDependencyInfo;
-import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.runtime.RuntimeClass;
+import org.teavm.runtime.reflect.ClassInfo;
 
 public class ArrayGenerator implements Generator {
     private static final int[] primitives = {
-            RuntimeClass.BYTE_PRIMITIVE,
-            RuntimeClass.SHORT_PRIMITIVE,
-            RuntimeClass.CHAR_PRIMITIVE,
-            RuntimeClass.INT_PRIMITIVE,
-            RuntimeClass.LONG_PRIMITIVE,
-            RuntimeClass.FLOAT_PRIMITIVE,
-            RuntimeClass.DOUBLE_PRIMITIVE,
-            RuntimeClass.BOOLEAN_PRIMITIVE
+            ClassInfo.PrimitiveKind.BYTE,
+            ClassInfo.PrimitiveKind.SHORT,
+            ClassInfo.PrimitiveKind.CHAR,
+            ClassInfo.PrimitiveKind.INT,
+            ClassInfo.PrimitiveKind.LONG,
+            ClassInfo.PrimitiveKind.FLOAT,
+            ClassInfo.PrimitiveKind.DOUBLE,
+            ClassInfo.PrimitiveKind.BOOLEAN
     };
     private static final String[] primitiveWrappers = { "Byte", "Short", "Character", "Integer", "Long",
             "Float", "Double", "Boolean" };
@@ -60,18 +60,15 @@ public class ArrayGenerator implements Generator {
     public void generate(GeneratorContext context, MethodReference method) {
         String array = context.parameterName(1);
         String index = context.parameterName(2);
-        String componentTypeField = context.names().forMemberField(
-                new FieldReference(RuntimeClass.class.getName(), "itemType"));
-        String flagsField = context.names().forMemberField(
-                new FieldReference(RuntimeClass.class.getName(), "flags"));
 
         context.writer().println("TeaVM_Class* componentType = (TeaVM_Class*) TEAVM_CLASS_OF(" + array + ")"
-                + "->" + componentTypeField + ";");
-        context.writer().println("int32_t flags = componentType->" + flagsField + ";");
-        context.writer().println("if (flags & " + RuntimeClass.PRIMITIVE + ") {").indent();
+                + "->itemType;");
+        context.writer().println("int32_t flags = componentType->flags;");
+        context.writer().println("if (((flags & " + RuntimeClass.PRIMITIVE_TYPE_MASK + ") >> "
+                + RuntimeClass.PRIMITIVE_TYPE_SHIFT + ") != 0) {").indent();
 
-        context.writer().println("switch ((flags >> " + RuntimeClass.PRIMITIVE_SHIFT + ") & "
-                + RuntimeClass.PRIMITIVE_MASK + ") {").indent();
+        context.writer().println("switch ((flags >> " + RuntimeClass.PRIMITIVE_TYPE_SHIFT + ") & "
+                + RuntimeClass.PRIMITIVE_TYPE_MASK + ") {").indent();
         MethodDependencyInfo dependency = context.dependencies().getMethod(new MethodReference(Array.class,
                 "getImpl", Object.class, int.class, Object.class));
         ValueDependencyInfo arrayDependency = dependency.getVariable(1);

@@ -16,81 +16,45 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
+import org.teavm.interop.c.Name;
+import org.teavm.interop.c.Native;
 
-public class RuntimeClass extends RuntimeObject {
+@Native
+@Name("TeaVM_Class")
+public class RuntimeClass extends Structure {
     public static final int INITIALIZED = 1;
-    public static final int PRIMITIVE = 2;
-
-    public static final int PRIMITIVE_SHIFT = 2;
-    public static final int PRIMITIVE_MASK = 15;
-    public static final int VM_TYPE_SHIFT = 6;
+    public static final int VM_TYPE_SHIFT = 1;
     public static final int VM_TYPE_MASK = 7;
-
-    public static final int FLAGS_SHIFT = 9;
-    public static final int ABSTRACT = 1 << FLAGS_SHIFT;
-    public static final int INTERFACE = 1 << (FLAGS_SHIFT + 1);
-    public static final int FINAL = 1 << (FLAGS_SHIFT + 2);
-    public static final int ENUM = 1 << (FLAGS_SHIFT + 3);
-    public static final int ANNOTATION = 1 << (FLAGS_SHIFT + 4);
-    public static final int SYNTHETIC = 1 << (FLAGS_SHIFT + 5);
-    public static final int BRIDGE = 1 << (FLAGS_SHIFT + 6);
-    public static final int DEPRECATED = 1 << (FLAGS_SHIFT + 7);
-    public static final int NATIVE = 1 << (FLAGS_SHIFT + 8);
-    public static final int STATIC = 1 << (FLAGS_SHIFT + 9);
-    public static final int STRICT = 1 << (FLAGS_SHIFT + 10);
-    public static final int SYNCHRONIZED = 1 << (FLAGS_SHIFT + 11);
-    public static final int TRANSIENT = 1 << (FLAGS_SHIFT + 12);
-    public static final int VARARGS = 1 << (FLAGS_SHIFT + 13);
-    public static final int VOLATILE = 1 << (FLAGS_SHIFT + 14);
-    public static final int INHERITED_ANNOTATION = 1 << (FLAGS_SHIFT + 15);
-
-    public static final int BOOLEAN_PRIMITIVE = 0;
-    public static final int BYTE_PRIMITIVE = 1;
-    public static final int SHORT_PRIMITIVE = 2;
-    public static final int CHAR_PRIMITIVE = 3;
-    public static final int INT_PRIMITIVE = 4;
-    public static final int LONG_PRIMITIVE = 5;
-    public static final int FLOAT_PRIMITIVE = 6;
-    public static final int DOUBLE_PRIMITIVE = 7;
-    public static final int VOID_PRIMITIVE = 8;
+    public static final int PRIMITIVE_TYPE_SHIFT = 4;
+    public static final int PRIMITIVE_TYPE_MASK = 15;
 
     public static final int VM_TYPE_REGULAR = 0;
     public static final int VM_TYPE_WEAKREFERENCE = 1;
     public static final int VM_TYPE_REFERENCEQUEUE = 2;
     public static final int VM_TYPE_BUFFER = 3;
 
+    public RuntimeObject classObject;
+    public RuntimeClass next;
     public int size;
     public int flags;
     public int tag;
-    public int canary;
+    public int modifiers;
     public RuntimeObjectPtr name;
-    public RuntimeObject nameCache;
+    public RuntimeObjectPtr simpleName;
+
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
     public RuntimeClass declaringClass;
     public RuntimeClass enclosingClass;
     public IsSupertypeFunction isSupertypeOf;
     public InitFunction init;
-    public RuntimeClass parent;
+    public RuntimeClass superclass;
     public int superinterfaceCount;
     public RuntimeClassPointer superinterfaces;
     public Address enumValues;
     public Address layout;
-    public RuntimeObjectPtr simpleName;
-    public RuntimeObject simpleNameCache;
-    public RuntimeObject canonicalName;
-    public RuntimeObject reflectionState;
-
-    @Unmanaged
-    public static int computeCanary(int size, int tag) {
-        return size ^ (tag << 8) ^ (tag >>> 24) ^ 0xAAAAAAAA;
-    }
-
-    @Unmanaged
-    public int computeCanary() {
-        return computeCanary(size, tag);
-    }
 
     @Unmanaged
     public static RuntimeClass getClass(RuntimeObject object) {
@@ -102,4 +66,12 @@ public class RuntimeClass extends RuntimeObject {
 
     @Unmanaged
     public final native int pack();
+
+    @Unmanaged
+    public static boolean isPrimitive(RuntimeClass cls) {
+        return ((cls.flags >> RuntimeClass.PRIMITIVE_TYPE_SHIFT) & RuntimeClass.PRIMITIVE_TYPE_MASK) != 0;
+    }
+
+    @Unmanaged
+    public static native RuntimeClass first();
 }

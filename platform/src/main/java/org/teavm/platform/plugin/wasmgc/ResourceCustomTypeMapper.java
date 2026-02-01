@@ -61,12 +61,12 @@ public class ResourceCustomTypeMapper implements WasmGCCustomTypeMapper {
         }
 
         if (className.equals(Resource.class.getName())) {
-            return WasmType.Reference.EQ;
+            return WasmType.EQ;
         }
         if (className.equals(ResourceArray.class.getName())) {
             if (array == null) {
-                array = new WasmArray(names.topLevel(names.suggestForClass(className)),
-                        WasmType.Reference.EQ.asStorage());
+                array = new WasmArray(names.topLevel(names.suggestForArray(names.suggestForClass(className))),
+                        WasmType.EQ.asStorage());
                 array.setImmutable(true);
                 module.types.add(array);
             }

@@ -17,8 +17,6 @@ package org.teavm.backend.javascript.rendering;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -99,8 +97,8 @@ public class Renderer implements RenderingManager {
 
     public static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
-    public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, RenderingContext context,
-            Diagnostics diagnostics, Map<MethodReference, Generator> generators,
+    public Renderer(SourceWriter writer, SourceWriter metadataWriter, Set<MethodReference> asyncMethods,
+            RenderingContext context, Diagnostics diagnostics, Map<MethodReference, Generator> generators,
             MethodNodeCache astCache, CacheStatus cacheStatus, JavaScriptTemplateFactory templateFactory,
             List<ExportedDeclaration> exports, String entryPoint) {
         this.writer = writer;
@@ -112,7 +110,7 @@ public class Renderer implements RenderingManager {
         this.context = context;
         variableNameGenerator = new VariableNameGenerator(context.isMinifying());
         methodBodyRenderer = new MethodBodyRenderer(context, diagnostics, context.isMinifying(), asyncMethods,
-                writer, variableNameGenerator);
+                writer, metadataWriter, variableNameGenerator);
         this.generators = generators;
         this.astCache = astCache;
         this.cacheStatus = cacheStatus;
@@ -206,6 +204,10 @@ public class Renderer implements RenderingManager {
             writer.append(";").softNewLine();
             writer.markSectionEnd();
         }
+    }
+
+    public void renderReflection() {
+
     }
 
     public void renderCompatibilityStubs() throws RenderingException {
@@ -532,17 +534,8 @@ public class Renderer implements RenderingManager {
             }
             writer.append("],").ws();
 
-            var flags = ElementModifier.pack(cls.readModifiers());
-            if (cls.hasModifier(ElementModifier.ANNOTATION)) {
-                var retention = cls.getAnnotations().get(Retention.class.getName());
-                if (retention != null && retention.getValue("value").getEnumValue().getFieldName().equals("RUNTIME")) {
-                    if (cls.getAnnotations().get(Inherited.class.getName()) != null) {
-                        flags |= 32768;
-                    }
-                }
-            }
-            writer.append(flags).append(',').ws();
-            writer.append(cls.getLevel().ordinal()).append(',').ws();
+            var modifiers = ElementModifier.encodeModifiers(cls);
+            writer.append(modifiers).append(',').ws();
 
             if (!requiredMetadata.enclosingClass() && !requiredMetadata.declaringClass()
                     && !requiredMetadata.simpleName()) {

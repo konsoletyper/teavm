@@ -20,7 +20,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.dependency.DependencyInfo;
@@ -182,19 +181,13 @@ public class ClassMetadataRequirements {
             }
         }
 
-        var enumConstants = Arrays.asList(
-            dependencyInfo.getMethod(new MethodReference("org.teavm.platform.Platform", "getEnumConstants",
-                    ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Enum[].class))),
-            dependencyInfo.getMethod(new MethodReference("org.teavm.classlib.impl.reflection.ClassSupport",
-                    "getEnumConstants", ValueType.parse(Class.class), ValueType.parse(Enum[].class)))
-        );
-        for (var enumConstantsDep : enumConstants) {
-            if (enumConstantsDep != null) {
-                hasEnumConstants = true;
-                var types = enumConstantsDep.getVariable(1).getClassValueNode().getTypes();
-                for (var type : types) {
-                    requirements.computeIfAbsent(type, k -> new ClassInfo()).enumConstants = true;
-                }
+        var enumConstantsDep = dependencyInfo.getMethod(new MethodReference(Class.class, "getEnumConstants",
+                Object[].class));
+        if (enumConstantsDep != null && enumConstantsDep.isUsed()) {
+            hasEnumConstants = true;
+            var types = enumConstantsDep.getVariable(0).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).enumConstants = true;
             }
         }
 

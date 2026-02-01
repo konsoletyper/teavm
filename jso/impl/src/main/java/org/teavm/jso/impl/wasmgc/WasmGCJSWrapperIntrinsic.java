@@ -56,7 +56,7 @@ class WasmGCJSWrapperIntrinsic implements WasmGCIntrinsic {
     private WasmFunction getWrapFunction(WasmGCIntrinsicContext context) {
         if (wrapFunction == null) {
             var objectType = context.typeMapper().mapType(ValueType.parse(Object.class));
-            wrapFunction = new WasmFunction(context.functionTypes().of(objectType, WasmType.Reference.EXTERN));
+            wrapFunction = new WasmFunction(context.functionTypes().of(objectType, WasmType.EXTERN));
             wrapFunction.setImportName("wrapObject");
             wrapFunction.setImportModule("teavmJso");
             context.module().functions.add(wrapFunction);

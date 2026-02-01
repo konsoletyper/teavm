@@ -54,11 +54,12 @@ class WasmGCSystemFunctionGenerator {
     private WasmFunction createFillObjectVirtualTableFunction() {
         var objectCls = standardClasses.objectClass();
         var struct = objectCls.getVirtualTableStructure();
+        var classInfoType = classGenerator.reflectionTypes().classInfo();
         var function = new WasmFunction(functionTypes.of(null, struct.getNonNullReference(),
-                standardClasses.classClass().getStructure().getNonNullReference()));
+                classInfoType.structure().getNonNullReference()));
         function.setName(names.topLevel("teavm@objectVirtualTable"));
         var vtParam = new WasmLocal(struct.getNonNullReference(), "vt");
-        var clsParam = new WasmLocal(standardClasses.classClass().getStructure().getNonNullReference());
+        var clsParam = new WasmLocal(classInfoType.structure().getNonNullReference());
         function.add(vtParam);
         function.add(clsParam);
         var virtualTable = virtualTables.lookup("java.lang.Object");
@@ -67,12 +68,11 @@ class WasmGCSystemFunctionGenerator {
             classGenerator.fillVirtualTableEntry(function.getBody(), () -> new WasmGetLocal(vtParam), struct,
                     virtualTable, entry);
         }
-        standardClasses.classClass().getStructure().init();
         function.getBody().add(new WasmStructSet(struct,
                 new WasmGetLocal(vtParam), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
                 new WasmGetLocal(clsParam)));
-        function.getBody().add(new WasmStructSet(standardClasses.classClass().getStructure(),
-                new WasmGetLocal(clsParam), classGenerator.getClassVtFieldOffset(),
+        function.getBody().add(new WasmStructSet(classInfoType.structure(),
+                new WasmGetLocal(clsParam), classInfoType.vtableIndex(),
                 new WasmGetLocal(vtParam)));
         module.functions.add(function);
         return function;

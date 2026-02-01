@@ -15,13 +15,12 @@
  */
 package org.teavm.backend.wasm.intrinsics.gc;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
+import org.teavm.backend.wasm.intrinsics.gc.reflection.ReflectionIntrinsics;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.gc.WasmGCResources;
@@ -29,30 +28,33 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.heap.Heap;
+import org.teavm.runtime.reflect.ClassInfo;
 
 public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private Map<MethodReference, IntrinsicContainer> intrinsics = new HashMap<>();
     private List<WasmGCIntrinsicFactory> factories;
     private ClassReaderSource classes;
     private ServiceRepository services;
+    private ReflectionIntrinsics reflectionIntrinsics;
 
-    public WasmGCIntrinsics(ClassReaderSource classes, ServiceRepository services,
-            List<WasmGCIntrinsicFactory> factories, Map<MethodReference, WasmGCIntrinsic> customIntrinsics) {
+    public WasmGCIntrinsics(ListableClassReaderSource classes, ServiceRepository services,
+            List<WasmGCIntrinsicFactory> factories, Map<MethodReference, WasmGCIntrinsic> customIntrinsics,
+            ReflectionDependencyListener reflection) {
         this.classes = classes;
         this.services = services;
         this.factories = List.copyOf(factories);
+        reflectionIntrinsics = new ReflectionIntrinsics(classes, reflection);
         fillWasmRuntime();
         fillObject();
-        fillClass();
-        fillClassSupport();
         fillSystem();
         fillLongAndInteger();
         fillFloat();
         fillDouble();
-        fillArray();
         fillString();
         fillResources();
         fillHeap();
@@ -81,7 +83,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
 
     private void fillObject() {
         var intrinsic = new ObjectIntrinsic();
-        add(new MethodReference(Object.class, "getClass", Class.class), intrinsic);
+        add(new MethodReference(Object.class, "getClassInfo", ClassInfo.class), intrinsic);
         add(new MethodReference(Object.class, "cloneObject", Object.class), intrinsic);
         add(new MethodReference(Object.class.getName(), "getMonitor",
                 ValueType.object("java.lang.Object$Monitor")), intrinsic);
@@ -90,39 +92,6 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Object.class.getName(), "wasmGCIdentity", ValueType.INTEGER), intrinsic);
         add(new MethodReference(Object.class.getName(), "setWasmGCIdentity", ValueType.INTEGER,
                 ValueType.VOID), intrinsic);
-    }
-
-    private void fillClass() {
-        var intrinsic = new ClassIntrinsic();
-        add(new MethodReference(Class.class, "getComponentType", Class.class), intrinsic);
-        add(new MethodReference(Class.class, "getWasmGCFlags", int.class), intrinsic);
-        add(new MethodReference(Class.class, "getNameImpl", String.class), intrinsic);
-        add(new MethodReference(Class.class, "setNameImpl", String.class, void.class), intrinsic);
-        add(new MethodReference(Class.class, "getEnclosingClass", Class.class), intrinsic);
-        add(new MethodReference(Class.class, "getDeclaringClass", Class.class), intrinsic);
-        add(new MethodReference(Class.class, "getSuperclass", Class.class), intrinsic);
-        add(new MethodReference(Class.class, "getSimpleNameCache", Class.class, String.class), intrinsic);
-        add(new MethodReference(Class.class, "setSimpleNameCache", Class.class, String.class, void.class), intrinsic);
-        add(new MethodReference(Class.class, "getCanonicalNameCache", String.class), intrinsic);
-        add(new MethodReference(Class.class, "setCanonicalNameCache", String.class, void.class), intrinsic);
-        add(new MethodReference(Class.class, "getDeclaredAnnotationsImpl", Annotation[].class), intrinsic);
-        add(new MethodReference(Class.class, "getInterfacesImpl", Class[].class), intrinsic);
-        add(new MethodReference(Class.class, "previous", Class.class), intrinsic);
-        add(new MethodReference(Class.class, "last", Class.class), intrinsic);
-        add(new MethodReference(Class.class, "initializeImpl", void.class), intrinsic);
-        add(new MethodReference("java.lang.Class", "getDeclaredFieldsImpl",
-                ValueType.object("org.teavm.classlib.impl.reflection.FieldInfoList")), intrinsic);
-        add(new MethodReference("java.lang.Class", "getDeclaredMethodsImpl",
-                ValueType.object("org.teavm.classlib.impl.reflection.MethodInfoList")), intrinsic);
-        add(new MethodReference("java.lang.Class", "getTypeParametersImpl",
-                ValueType.object("org.teavm.classlib.impl.reflection.ObjectList")), intrinsic);
-    }
-
-    private void fillClassSupport() {
-        var intrinsic = new ClassSupportIntrinsic();
-        add(new MethodReference("org.teavm.classlib.impl.reflection.ClassSupport",
-                "getEnumConstants", ValueType.object("java.lang.Class"),
-                ValueType.arrayOf(ValueType.object("java.lang.Enum"))), intrinsic);
     }
 
     private void fillSystem() {
@@ -165,13 +134,6 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Double.class, "isFinite", double.class, boolean.class), intrinsic);
         add(new MethodReference(Double.class, "doubleToRawLongBits", double.class, long.class), intrinsic);
         add(new MethodReference(Double.class, "longBitsToDouble", long.class, double.class), intrinsic);
-    }
-
-    private void fillArray() {
-        var intrinsic = new ArrayIntrinsic();
-        add(new MethodReference(Array.class, "getLength", Object.class, int.class), intrinsic);
-        add(new MethodReference(Array.class, "getImpl", Object.class, int.class, Object.class), intrinsic);
-        add(new MethodReference(Array.class, "setImpl", Object.class, int.class, Object.class, void.class), intrinsic);
     }
 
     private void fillString() {
@@ -241,6 +203,10 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
 
     @Override
     public WasmGCIntrinsic get(MethodReference method) {
+        var reflection = reflectionIntrinsics.get(method);
+        if (reflection != null) {
+            return reflection;
+        }
         var result = intrinsics.get(method);
         if (result == null) {
             WasmGCIntrinsic intrinsic = null;

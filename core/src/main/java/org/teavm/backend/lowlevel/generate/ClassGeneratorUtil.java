@@ -19,6 +19,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReader;
 import org.teavm.model.ValueType;
 import org.teavm.runtime.RuntimeClass;
+import org.teavm.runtime.reflect.ClassInfo;
 
 public final class ClassGeneratorUtil {
     private ClassGeneratorUtil() {
@@ -26,9 +27,9 @@ public final class ClassGeneratorUtil {
 
     public static int applyPrimitiveFlags(int flags, ValueType type) {
         if (type instanceof ValueType.Primitive) {
-            flags |= getPrimitiveFlag((ValueType.Primitive) type) << RuntimeClass.PRIMITIVE_SHIFT;
+            flags |= getPrimitiveFlag((ValueType.Primitive) type) << RuntimeClass.PRIMITIVE_TYPE_SHIFT;
         } else {
-            flags |= RuntimeClass.VOID_PRIMITIVE << RuntimeClass.PRIMITIVE_SHIFT;
+            flags |=  ClassInfo.PrimitiveKind.VOID << RuntimeClass.PRIMITIVE_TYPE_SHIFT;
         }
         return flags;
     }
@@ -36,21 +37,21 @@ public final class ClassGeneratorUtil {
     private static int getPrimitiveFlag(ValueType.Primitive type) {
         switch (type.getKind()) {
             case BOOLEAN:
-                return RuntimeClass.BOOLEAN_PRIMITIVE;
+                return ClassInfo.PrimitiveKind.BOOLEAN;
             case BYTE:
-                return RuntimeClass.BYTE_PRIMITIVE;
+                return ClassInfo.PrimitiveKind.BYTE;
             case SHORT:
-                return RuntimeClass.SHORT_PRIMITIVE;
+                return ClassInfo.PrimitiveKind.SHORT;
             case CHARACTER:
-                return RuntimeClass.CHAR_PRIMITIVE;
+                return ClassInfo.PrimitiveKind.CHAR;
             case INTEGER:
-                return RuntimeClass.INT_PRIMITIVE;
+                return ClassInfo.PrimitiveKind.INT;
             case LONG:
-                return RuntimeClass.LONG_PRIMITIVE;
+                return ClassInfo.PrimitiveKind.LONG;
             case FLOAT:
-                return RuntimeClass.FLOAT_PRIMITIVE;
+                return ClassInfo.PrimitiveKind.FLOAT;
             case DOUBLE:
-                return RuntimeClass.DOUBLE_PRIMITIVE;
+                return ClassInfo.PrimitiveKind.DOUBLE;
             default:
                 throw new AssertionError();
         }

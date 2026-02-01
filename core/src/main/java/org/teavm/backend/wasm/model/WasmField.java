@@ -29,8 +29,24 @@ public class WasmField {
         this.name = name;
     }
 
+    public WasmField(WasmType type, String name) {
+        this(type.asStorage(), name);
+    }
+
+    public WasmField(WasmCompositeType type, String name) {
+        this(type.getReference(), name);
+    }
+
     public WasmField(WasmStorageType type) {
         this.type = Objects.requireNonNull(type);
+    }
+
+    public WasmField(WasmType type) {
+        this(type.asStorage());
+    }
+
+    public WasmField(WasmCompositeType type) {
+        this(type.getReference());
     }
 
     public WasmStructure getStructure() {

@@ -22,6 +22,7 @@ import java.util.Set;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.model.ValueType;
 
 public final class RenderingUtil {
     public static final Set<String> KEYWORDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("break", "case",
@@ -170,5 +171,71 @@ public final class RenderingUtil {
 
         int value = (Integer) constant;
         return Math.abs(value) < (1 << 18);
+    }
+
+    public static void typeToClsString(SourceWriter writer, ValueType type) {
+        int arrayCount = 0;
+        while (type instanceof ValueType.Array) {
+            arrayCount++;
+            type = ((ValueType.Array) type).getItemType();
+        }
+
+        for (int i = 0; i < arrayCount; ++i) {
+            writer.appendFunction("$rt_arraycls").append("(");
+        }
+
+        if (type instanceof ValueType.Object) {
+            ValueType.Object objType = (ValueType.Object) type;
+            writer.appendClass(objType.getClassName());
+        } else if (type instanceof ValueType.Void) {
+            writer.appendFunction("$rt_voidcls");
+        } else if (type instanceof ValueType.Primitive) {
+            ValueType.Primitive primitiveType = (ValueType.Primitive) type;
+            switch (primitiveType.getKind()) {
+                case BOOLEAN:
+                    writer.appendFunction("$rt_booleancls");
+                    break;
+                case CHARACTER:
+                    writer.appendFunction("$rt_charcls");
+                    break;
+                case BYTE:
+                    writer.appendFunction("$rt_bytecls");
+                    break;
+                case SHORT:
+                    writer.appendFunction("$rt_shortcls");
+                    break;
+                case INTEGER:
+                    writer.appendFunction("$rt_intcls");
+                    break;
+                case LONG:
+                    writer.appendFunction("$rt_longcls");
+                    break;
+                case FLOAT:
+                    writer.appendFunction("$rt_floatcls");
+                    break;
+                case DOUBLE:
+                    writer.appendFunction("$rt_doublecls");
+                    break;
+                default:
+                    throw new IllegalArgumentException("The type is not renderable");
+            }
+        } else {
+            throw new IllegalArgumentException("The type is not renderable");
+        }
+
+        for (int i = 0; i < arrayCount; ++i) {
+            writer.append(")");
+        }
+    }
+
+    public static void appendLongConstant(SourceWriter writer, long value) {
+        if (value == 0) {
+            writer.appendFunction("Long_ZERO");
+        } else if ((int) value == value) {
+            writer.appendFunction("Long_fromInt").append("(").append(String.valueOf(value)).append(")");
+        } else {
+            writer.appendFunction("Long_create").append("(" + (value & 0xFFFFFFFFL)
+                    + ", " + (value >>> 32) + ")");
+        }
     }
 }

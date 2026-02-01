@@ -57,7 +57,6 @@ import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.util.ReflectionUtil;
-import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public class WasmClassGenerator {
@@ -230,7 +229,7 @@ public class WasmClassGenerator {
             binaryData.data.setInt(CLASS_SIZE, 4);
             binaryData.data.setAddress(CLASS_ITEM_TYPE, itemBinaryData.start);
             binaryData.data.setInt(CLASS_IS_INSTANCE, getFunctionPointer(functions.forSupertype(type)));
-            binaryData.data.setInt(CLASS_CANARY, RuntimeClass.computeCanary(4, 0));
+            //binaryData.data.setInt(CLASS_CANARY, RuntimeClass.computeCanary(4, 0));
             binaryData.data.setAddress(CLASS_NAME, stringPool.getStringPointer(type.toString().replace('/', '.')));
             binaryData.data.setAddress(CLASS_SIMPLE_NAME, 0);
             binaryData.data.setInt(CLASS_INIT, -1);
@@ -243,7 +242,7 @@ public class WasmClassGenerator {
 
     private DataValue createPrimitiveClassData(DataValue value, int size, ValueType type) {
         value.setInt(CLASS_SIZE, size);
-        value.setInt(CLASS_FLAGS, RuntimeClass.PRIMITIVE);
+        //value.setInt(CLASS_FLAGS, RuntimeClass.PRIMITIVE);
         value.setInt(CLASS_IS_INSTANCE, getFunctionPointer(functions.forSupertype(type)));
         value.setAddress(CLASS_SIMPLE_NAME, 0);
         value.setInt(CLASS_INIT, -1);
@@ -298,7 +297,7 @@ public class WasmClassGenerator {
         List<TagRegistry.Range> ranges = tagRegistry.getRanges(name);
         int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
         header.setInt(CLASS_TAG, tag);
-        header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(occupiedSize, tag));
+        //header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(occupiedSize, tag));
         int nameAddress = requirements.name() ? stringPool.getStringPointer(name) : 0;
         header.setAddress(CLASS_NAME, nameAddress);
         header.setInt(CLASS_IS_INSTANCE, getFunctionPointer(functions.forSupertype(ValueType.object(name))));
@@ -346,10 +345,10 @@ public class WasmClassGenerator {
         if (cls != null) {
             if (cls.hasModifier(ElementModifier.ENUM)) {
                 header.setAddress(CLASS_ENUM_VALUES, generateEnumValues(cls, binaryData));
-                flags |= RuntimeClass.ENUM;
+                //flags |= RuntimeClass.ENUM;
             }
             if (cls.hasModifier(ElementModifier.SYNTHETIC)) {
-                flags |= RuntimeClass.SYNTHETIC;
+                //flags |= RuntimeClass.SYNTHETIC;
             }
         }
 

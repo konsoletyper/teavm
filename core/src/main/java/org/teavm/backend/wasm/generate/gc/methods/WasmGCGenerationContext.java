@@ -40,7 +40,6 @@ import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -163,7 +162,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     }
 
     @Override
-    public ClassReaderSource classes() {
+    public ListableClassReaderSource classes() {
         return classes;
     }
 

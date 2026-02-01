@@ -38,6 +38,7 @@ import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
+import org.teavm.runtime.reflect.ClassInfo;
 
 @Superclass("")
 public class TObject {
@@ -232,8 +233,10 @@ public class TObject {
 
     @Rename("getClass")
     public final TClass<?> getClass0() {
-        return TClass.getClass(Platform.getPlatformObject(this).getPlatformClass());
+        return (TClass<?>) (Object) getClassInfo().classObject();
     }
+
+    private native ClassInfo getClassInfo();
 
     @Override
     public int hashCode() {
@@ -359,8 +362,8 @@ public class TObject {
         if (PlatformDetector.isWebAssemblyGC()) {
             return cloneObject();
         }
-        if (!(this instanceof TCloneable) && Platform.getPlatformObject(this)
-                .getPlatformClass().getMetadata().getArrayItem() == null) {
+        var cls = ((TClass<?>) (Object) getClass()).getClassInfo();
+        if (!(this instanceof TCloneable) && cls.itemType() == null) {
             throw new TCloneNotSupportedException();
         }
         Object result = Platform.clone(this);
@@ -382,7 +385,7 @@ public class TObject {
         } else {
             RuntimeArray array = (RuntimeArray) self;
             copy = Allocator.allocateArray(cls, array.size).toStructure();
-            int itemSize = (cls.itemType.flags & RuntimeClass.PRIMITIVE) == 0 ? Address.sizeOf() : cls.itemType.size;
+            int itemSize = RuntimeClass.isPrimitive(cls) ? cls.itemType.size : Address.sizeOf();
             Address headerSize = Address.align(Address.fromInt(Structure.sizeOf(RuntimeArray.class)), itemSize);
             size = itemSize * array.size + headerSize.toInt();
         }

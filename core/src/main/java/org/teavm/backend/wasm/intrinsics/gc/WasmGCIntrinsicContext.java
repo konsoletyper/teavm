@@ -34,6 +34,7 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.parsing.resource.ResourceProvider;
@@ -50,6 +51,8 @@ public interface WasmGCIntrinsicContext {
     BaseWasmFunctionRepository functions();
 
     ClassHierarchy hierarchy();
+
+    ListableClassReaderSource classes();
 
     WasmGCTypeMapper typeMapper();
 

@@ -19,7 +19,6 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
@@ -29,7 +28,6 @@ import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
@@ -74,25 +72,22 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
     }
 
     private WasmExpression generateDoArrayCopy(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var objStruct = context.classInfoProvider().getClassInfo(Object.class.getName()).getStructure();
-        var arrayClsStruct = context.classInfoProvider().getArrayVirtualTableStructure();
+        var classInfoStruct = context.classInfoProvider().reflectionTypes().classInfo();
+        var objInfo = context.classInfoProvider().getClassInfo(Object.class.getName());
         var block = new WasmBlock(false);
 
         var source = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
-                objStruct.getReference(), invocation.getLocation(), block.getBody());
-        WasmExpression sourceCls = new WasmStructGet(objStruct, source.expr(),
+                objInfo.getType(), invocation.getLocation(), block.getBody());
+        WasmExpression sourceCls = new WasmStructGet(objInfo.getStructure(), source.expr(),
                 WasmGCClassInfoProvider.VT_FIELD_OFFSET);
-        sourceCls = new WasmCast(sourceCls, arrayClsStruct.getNonNullReference());
-        var sourceClsCached = context.exprCache().create(sourceCls, arrayClsStruct.getNonNullReference(),
+        sourceCls = new WasmStructGet(objInfo.getVirtualTableStructure(), sourceCls,
+                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        var sourceClsCached = context.exprCache().create(sourceCls, classInfoStruct.structure().getReference(),
                 invocation.getLocation(), block.getBody());
-        var copyFunction = new WasmStructGet(arrayClsStruct, sourceClsCached.expr(),
-                context.classInfoProvider().getArrayCopyOffset());
-        var functionTypeRef = (WasmType.CompositeReference) arrayClsStruct.getFields().get(
-                context.classInfoProvider().getArrayCopyOffset()).getUnpackedType();
-        var functionType = (WasmFunctionType) functionTypeRef.composite;
-        var call = new WasmCallReference(copyFunction, functionType);
-        call.getArguments().add(new WasmStructGet(arrayClsStruct, sourceClsCached.expr(),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET));
+        var copyFunction = new WasmStructGet(classInfoStruct.structure(), sourceClsCached.expr(),
+                classInfoStruct.copyArrayIndex());
+        var call = new WasmCallReference(copyFunction, classInfoStruct.copyArrayFunctionType());
+        call.getArguments().add(sourceClsCached.expr());
         call.getArguments().add(source.expr());
         call.getArguments().add(context.generate(invocation.getArguments().get(1)));
         call.getArguments().add(context.generate(invocation.getArguments().get(2)));
@@ -190,14 +185,14 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
 
     private WasmFunction createArgsCheckFunction(WasmGCIntrinsicContext context) {
         var function = new WasmFunction(context.functionTypes().of(null,
-                WasmType.Reference.ARRAY, WasmType.INT32, WasmType.Reference.ARRAY,
+                WasmType.ARRAY, WasmType.INT32, WasmType.ARRAY,
                 WasmType.INT32, WasmType.INT32));
         function.setName(context.names().topLevel("teavm@checkArrayCopy"));
         context.module().functions.add(function);
 
-        var targetArrayLocal = new WasmLocal(WasmType.Reference.ARRAY, "targetArray");
+        var targetArrayLocal = new WasmLocal(WasmType.ARRAY, "targetArray");
         var targetArrayIndexLocal = new WasmLocal(WasmType.INT32, "targetIndex");
-        var sourceArrayLocal = new WasmLocal(WasmType.Reference.ARRAY, "sourceArray");
+        var sourceArrayLocal = new WasmLocal(WasmType.ARRAY, "sourceArray");
         var sourceArrayIndexLocal = new WasmLocal(WasmType.INT32, "sourceIndex");
         var countLocal = new WasmLocal(WasmType.INT32, "count");
         function.add(targetArrayLocal);

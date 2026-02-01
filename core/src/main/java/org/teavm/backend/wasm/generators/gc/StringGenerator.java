@@ -32,7 +32,7 @@ public class StringGenerator implements WasmGCCustomGenerator {
         var worker = context.functions().forStaticMethod(new MethodReference(StringInternPool.class,
                 "query", String.class, String.class));
         var stringType = context.typeMapper().mapType(ValueType.parse(String.class));
-        var instanceType = context.isCompactMode() ? WasmType.Reference.ANY : stringType;
+        var instanceType = context.isCompactMode() ? WasmType.ANY : stringType;
         var instanceLocal = new WasmLocal(instanceType, "this");
         function.add(instanceLocal);
         WasmExpression instance = new WasmGetLocal(instanceLocal);

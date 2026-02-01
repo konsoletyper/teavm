@@ -61,10 +61,9 @@ public class CNameProvider extends LowLevelNameProvider {
         memberFieldNames.put(new FieldReference(String.class.getName(), "characters"), "characters");
         memberFieldNames.put(new FieldReference(String.class.getName(), "hashCode"), "hashCode");
 
-        preserveFieldNames(RuntimeClass.class.getName(), "size", "flags", "tag", "canary", "name", "itemType",
+        preserveFieldNames(RuntimeClass.class.getName(), "size", "flags", "tag", "modifiers", "name", "itemType",
                 "arrayType", "isSupertypeOf", "init", "enumValues", "layout", "simpleName", "superinterfaceCount",
-                "superinterfaces", "simpleNameCache", "declaringClass", "enclosingClass", "canonicalName",
-                "nameCache", "reflectionState");
+                "superinterfaces", "declaringClass", "enclosingClass");
         memberFieldNames.put(new FieldReference(RuntimeClass.class.getName(), "parent"), "superclass");
         preserveFieldNames(RuntimeReference.class.getName(), "queue", "object", "next");
         preserveFieldNames(RuntimeReferenceQueue.class.getName(), "first", "last");

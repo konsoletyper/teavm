@@ -58,6 +58,7 @@ public class GenerationContext {
     private boolean heapDump;
     private boolean obfuscated;
     private Set<ValueType> types;
+    private Set<ValueType> typeLiterals;
     private ClassMetadataRequirements metadataRequirements;
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
@@ -66,7 +67,8 @@ public class GenerationContext {
             ClassHierarchy hierarchy, List<Intrinsic> intrinsics, List<Generator> generators,
             Predicate<MethodReference> asyncMethods, BuildTarget buildTarget,
             ClassInitializerInfo classInitializerInfo, boolean incremental, boolean vmAssertions, boolean heapDump,
-            boolean obfuscated, Set<ValueType> types, ClassMetadataRequirements metadataRequirements) {
+            boolean obfuscated, Set<ValueType> types, Set<ValueType> typeLiterals,
+            ClassMetadataRequirements metadataRequirements) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -87,6 +89,7 @@ public class GenerationContext {
         this.heapDump = heapDump;
         this.obfuscated = obfuscated;
         this.types = types;
+        this.typeLiterals = typeLiterals;
         this.metadataRequirements = metadataRequirements;
     }
 
@@ -178,6 +181,10 @@ public class GenerationContext {
 
     public boolean isObfuscated() {
         return obfuscated;
+    }
+
+    public void addTypeLiteral(ValueType type) {
+        typeLiterals.add(type);
     }
 
     public void addType(ValueType type) {

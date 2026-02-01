@@ -81,6 +81,11 @@ public abstract class GenericValueType {
         public int hashCode() {
             return hash;
         }
+
+        @Override
+        public boolean canBeRepresentedAsRaw() {
+            return true;
+        }
     }
 
     public static final class Void extends GenericValueType {
@@ -105,6 +110,11 @@ public abstract class GenericValueType {
         @Override
         public int hashCode() {
             return 53604390;
+        }
+
+        @Override
+        public boolean canBeRepresentedAsRaw() {
+            return true;
         }
     }
 
@@ -293,6 +303,11 @@ public abstract class GenericValueType {
             }
             return hash;
         }
+
+        @Override
+        public boolean canBeRepresentedAsRaw() {
+            return arguments == null || arguments.length == 0;
+        }
     }
 
     public static final class Variable extends Reference {
@@ -340,6 +355,11 @@ public abstract class GenericValueType {
             sb.append("T");
             sb.append(name);
             sb.append(";");
+        }
+
+        @Override
+        public boolean canBeRepresentedAsRaw() {
+            return false;
         }
     }
 
@@ -389,6 +409,11 @@ public abstract class GenericValueType {
         void toString(StringBuilder sb) {
             sb.append("[");
             itemType.toString(sb);
+        }
+
+        @Override
+        public boolean canBeRepresentedAsRaw() {
+            return itemType.canBeRepresentedAsRaw();
         }
     }
 
@@ -603,6 +628,8 @@ public abstract class GenericValueType {
         GenericValueType type = parse(text, position);
         return position.index == text.length() ? type : null;
     }
+
+    public abstract boolean canBeRepresentedAsRaw();
 
     public static class ParsePosition {
         public int index;

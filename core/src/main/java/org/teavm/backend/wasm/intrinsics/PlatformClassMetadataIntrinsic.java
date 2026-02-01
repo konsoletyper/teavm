@@ -74,7 +74,7 @@ public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
             case "getFlags": {
                 var flags = fieldAccess(manager, invocation, FLAGS_FIELD);
                 return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHR_UNSIGNED, flags,
-                        new WasmInt32Constant(RuntimeClass.FLAGS_SHIFT));
+                        new WasmInt32Constant(0));
             }
             default:
                 return new WasmUnreachable();

@@ -23,6 +23,7 @@ import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
+import org.teavm.runtime.reflect.ModifiersInfo;
 
 @Unmanaged
 @StaticInit
@@ -293,32 +294,14 @@ public final class GC {
     }
 
     private static void markFromClasses() {
-        int classCount = Mutator.getClassCount();
-        Address classPtr = Mutator.getClasses();
-        for (int i = 0; i < classCount; ++i) {
-            RuntimeClass cls = classPtr.getAddress().toStructure();
+        for (var cls = RuntimeClass.first(); cls != null; cls = cls.next) {
             markFromClass(cls);
-            classPtr = classPtr.add(Address.sizeOf());
-        }
-
-        classCount = Mutator.getDynamicClassCount();
-        for (var i = 0; i < classCount; ++i) {
-            markFromClass(Mutator.getDynamicClass(i).toStructure());
         }
     }
 
     private static void markFromClass(RuntimeClass cls) {
-        if (cls.simpleNameCache != null) {
-            mark(cls.simpleNameCache);
-        }
-        if (cls.canonicalName != null) {
-            mark(cls.canonicalName);
-        }
-        if (cls.nameCache != null) {
-            mark(cls.nameCache);
-        }
-        if (cls.reflectionState != null) {
-            mark(cls.reflectionState);
+        if (cls.classObject != null) {
+            mark(cls.classObject);
         }
     }
 
@@ -463,7 +446,7 @@ public final class GC {
                     hasObjectsFromYoungGen |= markFields(cls, object);
                     break;
             }
-            cls = cls.parent;
+            cls = cls.superclass;
         }
         return hasObjectsFromYoungGen;
     }
@@ -511,7 +494,7 @@ public final class GC {
     }
 
     private static boolean markArray(RuntimeClass cls, RuntimeArray array) {
-        if ((cls.itemType.flags & RuntimeClass.PRIMITIVE) != 0) {
+        if (RuntimeClass.isPrimitive(cls.itemType)) {
             return false;
         }
         Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), Address.sizeOf());
@@ -611,7 +594,7 @@ public final class GC {
                 }
                 return;
             }
-            cls = cls.parent;
+            cls = cls.superclass;
         }
     }
 
@@ -993,20 +976,10 @@ public final class GC {
     }
 
     private static void updatePointersFromClasses() {
-        int classCount = Mutator.getClassCount();
-        Address classPtr = Mutator.getClasses();
-        for (int i = 0; i < classCount; ++i) {
-            RuntimeClass cls = classPtr.getAddress().toStructure();
-            if (cls.simpleNameCache != null) {
-                cls.simpleNameCache = updatePointer(cls.simpleNameCache.toAddress()).toStructure();
+        for (var cls = RuntimeClass.first(); cls != null; cls = cls.next) {
+            if (cls.classObject != null) {
+                cls.classObject = updatePointer(cls.classObject.toAddress()).toStructure();
             }
-            if (cls.canonicalName != null) {
-                cls.canonicalName = updatePointer(cls.canonicalName.toAddress()).toStructure();
-            }
-            if (cls.nameCache != null) {
-                cls.nameCache = updatePointer(cls.nameCache.toAddress()).toStructure();
-            }
-            classPtr = classPtr.add(Address.sizeOf());
         }
     }
 
@@ -1142,7 +1115,7 @@ public final class GC {
                     updatePointersInFields(cls, object);
                     break;
             }
-            cls = cls.parent;
+            cls = cls.superclass;
         }
     }
 
@@ -1160,7 +1133,7 @@ public final class GC {
     private static void updatePointersInFields(RuntimeClass cls, RuntimeObject object) {
         Address layout = cls.layout;
         int bufferFieldOffset = -1;
-        if (cls.enumValues != null && (cls.flags & RuntimeClass.ENUM) == 0) {
+        if (cls.enumValues != null && (cls.modifiers & ModifiersInfo.ENUM) == 0) {
             bufferFieldOffset = cls.enumValues.toInt();
         }
         if (layout != null) {
@@ -1186,7 +1159,7 @@ public final class GC {
     }
 
     private static void updatePointersInArray(RuntimeClass cls, RuntimeArray array) {
-        if ((cls.itemType.flags & RuntimeClass.PRIMITIVE) != 0) {
+        if (RuntimeClass.isPrimitive(cls.itemType)) {
             return;
         }
         Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), Address.sizeOf());
@@ -1551,9 +1524,7 @@ public final class GC {
         if (cls.itemType == null) {
             return cls.size;
         }
-        int itemSize = (cls.itemType.flags & RuntimeClass.PRIMITIVE) == 0
-                ? Address.sizeOf()
-                : cls.itemType.size;
+        int itemSize = !RuntimeClass.isPrimitive(cls.itemType) ? Address.sizeOf() : cls.itemType.size;
         RuntimeArray array = object.toAddress().toStructure();
         Address address = Address.fromInt(Structure.sizeOf(RuntimeArray.class));
         address = Address.align(address, itemSize);

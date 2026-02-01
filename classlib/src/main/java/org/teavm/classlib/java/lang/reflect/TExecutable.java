@@ -15,36 +15,26 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.java.lang.TClass;
+import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
+import org.teavm.runtime.reflect.AnnotationInfoUtil;
+import org.teavm.runtime.reflect.ClassInfo;
+import org.teavm.runtime.reflect.ClassInfoUtil;
+import org.teavm.runtime.reflect.MethodInfo;
+import org.teavm.runtime.reflect.ModifiersInfo;
 
 public abstract class TExecutable extends TAccessibleObject implements TMember, TGenericDeclaration {
     TClass<?> declaringClass;
-    int flags;
-    int accessLevel;
-    TClass<?>[] parameterTypes;
-    Object[] genericParameterTypes;
-    TType[] resolvedGenericParameterTypes;
-    Object[] declaredAnnotations;
-    TTypeVariableImpl[] typeParameters;
+    MethodInfo methodInfo;
+    private TClass<?>[] parameterTypes;
+    private TType[] genericParameterTypes;
+    private TAnnotation[] declaredAnnotations;
+    private TTypeVariable<?>[] typeParameters;
 
-    TExecutable(TClass<?> declaringClass, int flags, int accessLevel,
-            TClass<?>[] parameterTypes, Object[] genericParameterTypes,
-            Annotation[] declaredAnnotations, TTypeVariableImpl[] typeParameters) {
+    TExecutable(TClass<?> declaringClass, MethodInfo methodInfo) {
         this.declaringClass = declaringClass;
-        this.flags = flags;
-        this.accessLevel = accessLevel;
-        this.parameterTypes = parameterTypes;
-        this.genericParameterTypes = genericParameterTypes;
-        this.declaredAnnotations = declaredAnnotations;
-        this.typeParameters = typeParameters;
-        if (typeParameters != null) {
-            for (var param : typeParameters) {
-                param.declaration = this;
-            }
-        }
+        this.methodInfo = methodInfo;
     }
 
     @Override
@@ -54,52 +44,110 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
 
     @Override
     public int getModifiers() {
-        return Flags.getModifiers(flags, accessLevel);
+        return methodInfo.modifiers() & ModifiersInfo.JVM_FLAGS_MASK;
     }
 
     public TClass<?>[] getParameterTypes() {
+        resolveParameterTypes();
         return parameterTypes.clone();
     }
 
+    private void resolveParameterTypes() {
+        if (parameterTypes == null) {
+            parameterTypes = new TClass<?>[methodInfo.parameterCount()];
+            for (var i = 0; i < parameterTypes.length; ++i) {
+                parameterTypes[i] = (TClass<?>) (Object) ClassInfoUtil.resolve(methodInfo.parameterType(i))
+                        .classObject();
+            }
+        }
+    }
+
+    private TClass<?> parameterType(int index) {
+        return parameterTypes[index];
+    }
+
     public int getParameterCount() {
-        return parameterTypes.length;
+        return methodInfo.parameterCount();
     }
 
     public TType[] getGenericParameterTypes() {
-        if (resolvedGenericParameterTypes == null) {
-            resolvedGenericParameterTypes = new TType[parameterTypes.length];
-            if (genericParameterTypes == null) {
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    resolvedGenericParameterTypes[i] = parameterTypes[i];
-                }
+        if (genericParameterTypes == null) {
+            var reflection = methodInfo.reflection();
+            if (reflection == null) {
+                genericParameterTypes = new TType[0];
             } else {
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    var type = (TType) genericParameterTypes[i];
-                    resolvedGenericParameterTypes[i] = type != null
-                            ? TTypeVariableStub.resolve(type, this)
-                            : parameterTypes[i];
+                genericParameterTypes = new TType[parameterTypes.length];
+                var count = reflection.genericParameterTypeCount();
+                for (var i = 0; i < count; ++i) {
+                    var paramTypeInfo = reflection.genericParameterType(i);
+                    genericParameterTypes[i] = paramTypeInfo != null
+                            ? TGenericTypeFactory.create(this, paramTypeInfo)
+                            : (TClass<?>) (Object) ClassInfoUtil.resolve(methodInfo.parameterType(i)).classObject();
+                }
+                for (var i = count; i < genericParameterTypes.length; ++i) {
+                    genericParameterTypes[i] = (TClass<?>) (Object) ClassInfoUtil.resolve(
+                            methodInfo.parameterType(i)).classObject();
                 }
             }
         }
-        return resolvedGenericParameterTypes.clone();
+        return genericParameterTypes.clone();
     }
 
     @Override
     public boolean isSynthetic() {
-        return (flags & Flags.SYNTHETIC) != 0;
+        return (methodInfo.modifiers() & ModifiersInfo.SYNTHETIC) != 0;
     }
 
     public boolean isVarArgs() {
-        return (flags & Flags.VARARGS) != 0;
+        return (methodInfo.modifiers() & ModifiersInfo.VARARGS) != 0;
     }
 
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
-        return declaredAnnotations != null ? (TAnnotation[]) declaredAnnotations.clone() : new TAnnotation[0];
+        if (declaredAnnotations == null) {
+            var reflection = methodInfo.reflection();
+            if (reflection == null) {
+                declaredAnnotations = new TAnnotation[0];
+            } else {
+                declaredAnnotations = new TAnnotation[reflection.annotationCount()];
+                for (var i = 0; i < declaredAnnotations.length; ++i) {
+                    declaredAnnotations[i] = (TAnnotation) AnnotationInfoUtil.createAnnotation(
+                            reflection.annotation(i));
+                }
+            }
+        }
+        return declaredAnnotations.clone();
     }
 
     @Override
     public TTypeVariable<?>[] getTypeParameters() {
-        return typeParameters != null ? typeParameters.clone() : new TTypeVariable<?>[0];
+        if (typeParameters == null) {
+            var reflection = methodInfo.reflection();
+            if (reflection == null) {
+                typeParameters = new TTypeVariable<?>[0];
+            } else {
+                typeParameters = new TTypeVariable<?>[reflection.typeParameterCount()];
+                for (var i = 0; i < typeParameters.length; ++i) {
+                    typeParameters[i] = new TTypeVariableImpl(this, reflection.typeParameter(i));
+                }
+            }
+        }
+        return typeParameters.clone();
+    }
+
+    void validateArgs(Object[] args) {
+        resolveParameterTypes();
+        for (int i = 0; i < args.length; ++i) {
+            var parameterType = parameterType(i);
+            if (parameterType.getClassInfo().primitiveKind() == ClassInfo.PrimitiveKind.NOT) {
+                if (args[i] != null && !parameterType.isInstance(args[i])) {
+                    throw new TIllegalArgumentException();
+                }
+            } else {
+                if (args[i] == null) {
+                    throw new TIllegalArgumentException();
+                }
+            }
+        }
     }
 }

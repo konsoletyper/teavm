@@ -93,15 +93,15 @@ let $rt_eraseClinit = target => target.$clinit = () => {};
 let $dbg_class = obj => {
     let cls = obj.constructor;
     let arrayDegree = 0;
-    while (cls.$meta && cls.$meta.item) {
+    while (cls[$rt_meta] && cls[$rt_meta].item) {
         ++arrayDegree;
-        cls = cls.$meta.item;
+        cls = cls[$rt_meta].item;
     }
     let clsName = "";
-    if (cls.$meta.primitive) {
-        clsName = cls.$meta.name;
+    if (cls[$rt_meta].primitiveKind !== 0) {
+        clsName = cls[$rt_meta].name;
     } else {
-        clsName = cls.$meta ? (cls.$meta.name || ("a/" + cls.name)) : "@" + cls.name;
+        clsName = cls[$rt_meta] ? (cls[$rt_meta].name || ("a/" + cls.name)) : "@" + cls.name;
     }
     while (arrayDegree-- > 0) {
         clsName += "[]";
@@ -121,10 +121,15 @@ let $rt_classWithoutFields = superclass => {
     };
 }
 
+let $rt_meta = Symbol("teavm_meta");
 
-let $rt_cls = (cls) => teavm_javaMethod("java.lang.Class",
-        "getClass(Lorg/teavm/platform/PlatformClass;)Ljava/lang/Class;")(cls);
-
+let $rt_cls = (cls) => {
+    if (cls[$rt_meta].classObject === null) {
+        cls[$rt_meta].classObject = teavm_javaMethod("java.lang.Class",
+            "createClass(Lorg/teavm/runtime/reflect/ClassInfo;)Ljava/lang/Class;")(cls);
+    }
+    return cls[$rt_meta].classObject;
+}
 
 let $rt_objcls = () => teavm_javaClass("java.lang.Object");
 
@@ -150,3 +155,40 @@ let $rt_callWithReceiver = f => function() {
 }
 
 let $rt_undefinedAsNull = v => typeof v === 'undefined' ? null : v;
+
+
+let $rt_newClassMetadata = source => {
+    return Object.assign({
+        name: null,
+        binaryName: null,
+        parent: null,
+        superinterfaces: [],
+        modifiers: 0,
+        primitiveKind: 0,
+        itemType: null,
+        arrayType: null,
+        enclosingClass: null,
+        declaringClass: null,
+        simpleName: null,
+        clinit: () => {},
+        constructor: null,
+        enumConstants: () => null,
+        resolvedEnumConstants: null,
+        reflection: null,
+        classObject: null,
+        assignableCache: null,
+        valueToObject: o => o,
+        objectToValue: o => o
+    }, source || {});
+};
+let $rt_classReflectionMetadata = (cls) => {
+    if (cls[$rt_meta].reflection === null) {
+        cls[$rt_meta].reflection = {
+            annotations: [],
+            fields: [],
+            methods: [],
+            typeParameters: []
+        };
+    }
+    return cls[$rt_meta].reflection;
+}

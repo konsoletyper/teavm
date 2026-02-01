@@ -71,6 +71,7 @@ import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -86,6 +87,7 @@ import org.teavm.vm.RenderingException;
 public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private RenderingContext context;
     private SourceWriter writer;
+    private SourceWriter metadataWriter;
     private ClassReaderSource classSource;
     private boolean async;
     private boolean minifying;
@@ -101,10 +103,11 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private TextLocation lastEmittedLocation = TextLocation.EMPTY;
 
-    public StatementRenderer(RenderingContext context, SourceWriter writer,
+    public StatementRenderer(RenderingContext context, SourceWriter writer, SourceWriter metadataWriter,
             VariableNameGenerator variableNameGenerator) {
         this.context = context;
         this.writer = writer;
+        this.metadataWriter = metadataWriter;
         this.classSource = context.getClassSource();
         this.minifying = context.isMinifying();
         this.naming = context.getNaming();
@@ -870,10 +873,16 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 }
                 break;
             case NULL_CHECK:
+                if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+                    writer.append('(');
+                }
                 writer.appendFunction("$rt_nullCheck").append("(");
                 precedence = Precedence.min();
                 expr.getOperand().acceptVisitor(this);
                 writer.append(')');
+                if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+                    writer.append(')');
+                }
                 break;
         }
         if (expr.getLocation() != null) {
@@ -897,7 +906,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             precedence = Precedence.min();
             expr.getValue().acceptVisitor(this);
             writer.append(",").ws();
-            context.typeToClsString(writer, expr.getTarget());
+            RenderingUtil.typeToClsString(writer, expr.getTarget());
             writer.append(")");
             if (expr.getLocation() != null) {
                 popLocation();
@@ -1260,7 +1269,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
         } else {
             writer.appendFunction("$rt_createArray").append("(");
-            context.typeToClsString(writer, expr.getType());
+            RenderingUtil.typeToClsString(writer, expr.getType());
             writer.append(",").ws();
             precedence = Precedence.min();
             expr.getLength().acceptVisitor(this);
@@ -1307,7 +1316,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             writer.append("(");
         } else {
             writer.appendFunction("$rt_wrapArray").append("(");
-            context.typeToClsString(writer, expr.getType());
+            RenderingUtil.typeToClsString(writer, expr.getType());
             writer.append(",").ws();
         }
 
@@ -1370,7 +1379,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
         } else {
             writer.appendFunction("$rt_createMultiArray").append("(");
-            context.typeToClsString(writer, type);
+            RenderingUtil.typeToClsString(writer, type);
             writer.append(",").ws();
         }
         writer.append("[");
@@ -1404,7 +1413,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             precedence = Precedence.CONDITIONAL.next();
             expr.getExpr().acceptVisitor(this);
             writer.append(" instanceof ");
-            context.typeToClsString(writer, expr.getType());
+            RenderingUtil.typeToClsString(writer, expr.getType());
             if (needsParentheses) {
                 writer.append(')');
             }
@@ -1413,7 +1422,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             precedence = Precedence.min();
             expr.getExpr().acceptVisitor(this);
             writer.append(",").ws();
-            context.typeToClsString(writer, expr.getType());
+            RenderingUtil.typeToClsString(writer, expr.getType());
             writer.append(")");
         }
         if (expr.getLocation() != null) {
@@ -1601,13 +1610,18 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
 
         @Override
+        public SourceWriter getMetadataWriter() {
+            return metadataWriter;
+        }
+
+        @Override
         public void writeEscaped(String str) {
             writer.append(RenderingUtil.escapeString(str));
         }
 
         @Override
         public void writeType(ValueType type) {
-            context.typeToClsString(writer, type);
+            RenderingUtil.typeToClsString(writer, type);
         }
 
         @Override
@@ -1649,6 +1663,11 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         @Override
         public ListableClassReaderSource getClassSource() {
             return context.getClassSource();
+        }
+
+        @Override
+        public DependencyInfo getDependencies() {
+            return context.getDependencyInfo();
         }
 
         @Override

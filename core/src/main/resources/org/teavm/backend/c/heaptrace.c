@@ -170,7 +170,7 @@ int32_t teavm_gc_objectSize(void* address) {
         return cls->size;
     }
 
-    int32_t itemSize = cls->itemType->flags & 2 ? cls->itemType->size : sizeof(void*);
+    int32_t itemSize = teavm_primitiveKind(cls->itemType) != 0 ? cls->itemType->size : sizeof(void*);
     TeaVM_Array* array = (TeaVM_Array*) address;
     char* size = TEAVM_ALIGN((void*) sizeof(TeaVM_Array), itemSize);
     size += array->size * itemSize;
@@ -350,7 +350,7 @@ FILE* teavm_gc_openDumpFile(wchar_t* name) {
                 }
                 TeaVM_Class* cls = TEAVM_CLASS_OF(obj);
                 if (cls->itemType != NULL) {
-                    if (!(cls->itemType->flags & 2)) {
+                    if (teavm_primitiveKind(cls->itemType) == 0) {
                         char* offset = NULL;
                         offset += sizeof(TeaVM_Array);
                         offset = TEAVM_ALIGN(offset, sizeof(void*));
@@ -362,7 +362,7 @@ FILE* teavm_gc_openDumpFile(wchar_t* name) {
                     }
                 } else {
                     while (cls != NULL) {
-                        int32_t kind = (cls->flags >> 7) & 7;
+                        int32_t kind = (cls->flags >> 1) & 7;
                         if (kind == 1) {
                             TeaVM_Reference* reference = (TeaVM_Reference*) obj;
                             teavm_verify(reference->next);

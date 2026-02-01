@@ -18,28 +18,33 @@ package org.teavm.backend.wasm.generate.gc.classes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.gc.reflection.ReflectionTypes;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmPackedType;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.interop.Address;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.ValueType;
+import org.teavm.reflection.AnnotationGenerationHelper;
+import org.teavm.runtime.reflect.AnnotationData;
 
 public class WasmGCTypeMapper {
     private ClassReaderSource classes;
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmFunctionTypes functionTypes;
+    private ReflectionTypes reflectionTypes;
     private List<WasmGCCustomTypeMapper> customTypeMappers;
     private Map<String, WasmType> typeCache = new HashMap<>();
 
     WasmGCTypeMapper(ClassReaderSource classes, WasmGCClassInfoProvider classInfoProvider,
-            WasmFunctionTypes functionTypes) {
+            WasmFunctionTypes functionTypes, ReflectionTypes reflectionTypes) {
         this.classes = classes;
         this.classInfoProvider = classInfoProvider;
         this.functionTypes = functionTypes;
+        this.reflectionTypes = reflectionTypes;
     }
 
     void setCustomTypeMappers(List<WasmGCCustomTypeMapper> customTypeMappers) {
@@ -125,18 +130,83 @@ public class WasmGCTypeMapper {
                 }
             }
             if (result == null) {
-                if (className.equals(Address.class.getName())) {
-                    result = WasmType.INT32;
-                } else {
-                    var cls = classes.get(className);
-                    if (cls == null) {
-                        className = "java.lang.Object";
-                    }
-                    var classInfo = classInfoProvider.getClassInfo(className);
-                    if (classInfo.isHeapStructure()) {
+                switch (className) {
+                    case "org.teavm.interop.Address":
                         result = WasmType.INT32;
-                    } else {
-                        result = classInfo.getType();
+                        break;
+                    case "org.teavm.runtime.reflect.ClassInfo":
+                        result = reflectionTypes.classInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.ClassReflectionInfo":
+                        result = reflectionTypes.classReflectionInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.DerivedClassInfo":
+                        result = reflectionTypes.derivedClassInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.AnnotationInfo":
+                        result = reflectionTypes.annotationInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.AnnotationData":
+                        result = WasmType.STRUCT;
+                        break;
+                    case "org.teavm.runtime.reflect.AnnotationConstructor":
+                        result = reflectionTypes.annotationInfo().constructorType().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.AnnotationValueArray":
+                        result = WasmType.ARRAY;
+                        break;
+                    case "org.teavm.runtime.reflect.FieldInfo":
+                        result = reflectionTypes.fieldInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.FieldReflectionInfo":
+                        result = reflectionTypes.fieldReflectionInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.MethodInfo":
+                        result = reflectionTypes.methodInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.MethodReflectionInfo":
+                        result = reflectionTypes.methodReflectionInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.TypeVariableInfo":
+                        result = reflectionTypes.typeVariableInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.GenericTypeInfo":
+                        result = WasmType.STRUCT;
+                        break;
+                    case "org.teavm.runtime.reflect.ParameterizedTypeInfo":
+                        result = reflectionTypes.parameterizedTypeInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.TypeVariableReference":
+                        result = reflectionTypes.typeVariableReference().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.GenericArrayInfo":
+                        result = reflectionTypes.genericArrayInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.WildcardTypeInfo":
+                        result = reflectionTypes.wildcardTypeInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.reflect.RawTypeInfo":
+                        result = reflectionTypes.derivedClassInfo().structure().getReference();
+                        break;
+                    case "org.teavm.runtime.StringInfo":
+                        result = classInfoProvider.getClassInfo("java.lang.String").getType();
+                        break;
+                    default: {
+                        var cls = classes.get(className);
+                        if (cls == null) {
+                            className = "java.lang.Object";
+                        } else if (Objects.equals(cls.getParent(), AnnotationData.class.getName())) {
+                            var annotClassName = cls.getName().substring(0, cls.getName().length()
+                                    - AnnotationGenerationHelper.ANNOTATION_DATA_SUFFIX.length());
+                            return classInfoProvider.reflectionTypes().annotationData(annotClassName)
+                                    .structure().getReference();
+                        }
+                        var classInfo = classInfoProvider.getClassInfo(className);
+                        if (classInfo.isHeapStructure()) {
+                            result = WasmType.INT32;
+                        } else {
+                            result = classInfo.getType();
+                        }
                     }
                 }
                 typeCache.put(className, result);

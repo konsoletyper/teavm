@@ -15,10 +15,10 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import org.teavm.backend.wasm.generate.gc.reflection.ReflectionTypes;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
-import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ValueType;
 
@@ -33,8 +33,6 @@ public interface WasmGCClassInfoProvider {
     int STRING_POOL_ENTRY_OFFSET = 5;
 
     WasmGCClassInfo getClassInfo(ValueType type);
-
-    WasmStructure getArrayVirtualTableStructure();
 
     WasmGCReflectionProvider reflection();
 
@@ -54,59 +52,7 @@ public interface WasmGCClassInfoProvider {
 
     WasmFunction getGetArrayClassFunction();
 
-    int getClassArrayItemOffset();
-
-    int getClassFlagsOffset();
-
-    int getClassSupertypeFunctionOffset();
-
-    int getClassEnclosingClassOffset();
-
-    int getClassDeclaringClassOffset();
-
-    int getClassParentOffset();
-
-    int getClassInitializerOffset();
-
-    int getClassTypeParametersOffset();
-
-    int getPreviousRegularClassOffset();
-
-    WasmGlobal getLastRegularClassGlobal();
-
-    int getNewArrayFunctionOffset();
-
-    int getClassNameOffset();
-
-    int getClassSimpleNameOffset();
-
-    int getClassCanonicalNameOffset();
-
-    int getClassVtFieldOffset();
-
-    int getClassAnnotationsOffset();
-
-    int getClassInterfacesOffset();
-
-    int getClassFieldsOffset();
-
-    int getClassMethodsOffset();
-
-    int getClassInstantiatorOffset();
-
-    int getArrayGetOffset();
-
-    int getArraySetOffset();
-
-    int getArrayLengthOffset();
-
-    int getArrayCopyOffset();
-
-    int getEnumConstantsFunctionOffset();
-
-    int getCloneOffset();
-
-    int getServicesOffset();
+    ReflectionTypes reflectionTypes();
 
     int getThrowableNativeOffset();
 

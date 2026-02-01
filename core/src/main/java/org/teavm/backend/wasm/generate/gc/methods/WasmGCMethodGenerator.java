@@ -244,7 +244,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         var compactMethod = compactMode
                 && typeMapper.mapType(ValueType.object(methodReference.getClassName())) instanceof WasmType.Reference;
         parameterTypes[0] = compactMethod
-                ? WasmType.Reference.ANY
+                ? WasmType.ANY
                 : typeMapper.mapType(ValueType.object(methodReference.getClassName()));
         for (var i = 0; i < methodReference.parameterCount(); ++i) {
             parameterTypes[i + 1] = typeMapper.mapType(methodReference.parameterType(i));
@@ -366,7 +366,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var inferredType = preciseTypes[i];
             WasmType type;
             if (i == 0 && compactMode) {
-                type = WasmType.Reference.ANY;
+                type = WasmType.ANY;
             } else if (!inferredType.isArrayUnwrap || inferredType.valueType == null) {
                 type = typeMapper.mapType(inferredType.valueType);
             } else {
@@ -524,15 +524,16 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private void addInitializerErase(MethodReader method, WasmFunction function) {
         if (method.hasModifier(ElementModifier.STATIC) && method.getName().equals("<clinit>")
                 && method.parameterCount() == 0 && classInitInfo.isDynamicInitializer(method.getOwnerName())) {
+            var classInfoStruct = classInfoProvider.reflectionTypes().classInfo();
             var classInfo = classInfoProvider.getClassInfo(method.getOwnerName());
             var erase = new WasmSetGlobal(classInfo.getInitializerPointer(),
                     new WasmFunctionReference(getDummyInitializer()));
             function.getBody().add(erase);
-            if (classInfoProvider.getClassInitializerOffset() >= 0) {
+            if (classInfoStruct.initializerIndex() >= 0) {
                 function.getBody().add(new WasmStructSet(
-                        standardClasses.classClass().getStructure(),
+                        classInfoStruct.structure(),
                         new WasmGetGlobal(classInfo.getPointer()),
-                        classInfoProvider.getClassInitializerOffset(),
+                        classInfoStruct.initializerIndex(),
                         new WasmFunctionReference(getDummyInitializer())
                 ));
             }

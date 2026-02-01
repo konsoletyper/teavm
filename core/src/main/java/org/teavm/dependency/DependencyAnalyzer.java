@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -297,7 +298,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     protected abstract void processMethod(MethodDependency methodDep);
 
     public void addDependencyListener(DependencyListener listener) {
-        listeners.add(listener);
+        listeners.add(Objects.requireNonNull(listener));
     }
 
     public void addClassTransformer(ClassHolderTransformer transformer) {

@@ -21,11 +21,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
 public interface PlatformObject extends JSObject {
-    @JSProperty("constructor")
-    @Unmanaged
-    @NoSideEffects
-    PlatformClass getPlatformClass();
-
     @JSProperty("$id$")
     @Unmanaged
     @NoSideEffects

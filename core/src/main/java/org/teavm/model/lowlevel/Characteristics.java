@@ -26,10 +26,12 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.runtime.reflect.ReflectionInfo;
 
 public class Characteristics {
     private ClassReaderSource classSource;
     private ObjectByteMap<String> isStructure = new ObjectByteHashMap<>();
+    private ObjectByteMap<String> isReflectionSpecial = new ObjectByteHashMap<>();
     private ObjectByteMap<String> isStaticInit = new ObjectByteHashMap<>();
     private ObjectByteMap<String> isFunction = new ObjectByteHashMap<>();
     private ObjectByteMap<String> isResource = new ObjectByteHashMap<>();
@@ -53,6 +55,24 @@ public class Characteristics {
                 }
             }
             isStructure.put(className, result);
+        }
+        return result != 0;
+    }
+
+    public boolean isReflectionSpecial(String className) {
+        byte result = isReflectionSpecial.getOrDefault(className, (byte) -1);
+        if (result < 0) {
+            if (className.equals(ReflectionInfo.class.getName())) {
+                result = 1;
+            } else {
+                ClassReader cls = classSource.get(className);
+                if (cls != null && cls.getParent() != null) {
+                    result = isReflectionSpecial(cls.getParent()) ? (byte) 1 : 0;
+                } else {
+                    result = 0;
+                }
+            }
+            isReflectionSpecial.put(className, result);
         }
         return result != 0;
     }
@@ -115,7 +135,8 @@ public class Characteristics {
     }
 
     public boolean isManaged(String className) {
-        return !isStructure(className) && !isFunction(className) && !className.equals(Address.class.getName());
+        return !isStructure(className) && !isFunction(className) && !isReflectionSpecial(className)
+                && !className.equals(Address.class.getName());
     }
 
     public boolean isManaged(MethodReference methodReference) {

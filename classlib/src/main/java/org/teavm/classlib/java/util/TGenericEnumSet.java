@@ -18,11 +18,6 @@ package org.teavm.classlib.java.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import org.teavm.classlib.PlatformDetector;
-import org.teavm.classlib.impl.reflection.ClassSupport;
-import org.teavm.classlib.java.lang.TClass;
-import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformClass;
 
 class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     Class<E> cls;
@@ -45,13 +40,7 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     }
 
     static Enum<?>[] getConstants(Class<?> cls) {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return ClassSupport.getEnumConstants(cls);
-        } else {
-            PlatformClass platformClass = ((TClass<?>) (Object) cls).getPlatformClass();
-            Platform.initClass(platformClass);
-            return Platform.getEnumConstants(platformClass);
-        }
+        return (Enum<?>[]) cls.getEnumConstants();
     }
 
     @Override

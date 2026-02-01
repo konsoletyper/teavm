@@ -16,8 +16,6 @@
 package org.teavm.backend.c.generate;
 
 import java.io.IOException;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -26,14 +24,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.generators.Generator;
-import org.teavm.backend.c.generators.ReflectionGenerator;
-import org.teavm.backend.c.generators.ReflectionGeneratorContext;
-import org.teavm.backend.c.generators.ReflectionPartGenerator;
 import org.teavm.backend.c.util.InteropUtil;
 import org.teavm.backend.lowlevel.generate.ClassGeneratorUtil;
 import org.teavm.cache.AstCacheEntry;
@@ -66,16 +62,20 @@ import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.util.ReflectionUtil;
+import org.teavm.reflection.AnnotationGenerationHelper;
+import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.CallSite;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 import org.teavm.runtime.RuntimeReference;
 import org.teavm.runtime.RuntimeReferenceQueue;
+import org.teavm.runtime.reflect.ClassInfo;
+import org.teavm.runtime.reflect.ClassReflectionInfo;
 
 public class ClassGenerator {
     private static final Set<String> classesWithDeclaredStructures = new HashSet<>(Arrays.asList(
-            "java.lang.Object", "java.lang.String", "java.lang.Class",
+            "java.lang.Object", "java.lang.String",
             RuntimeArray.class.getName(), RuntimeClass.class.getName(), RuntimeObject.class.getName(),
             WeakReference.class.getName(), ReferenceQueue.class.getName(),
             RuntimeReferenceQueue.class.getName(), RuntimeReference.class.getName()
@@ -84,7 +84,6 @@ public class ClassGenerator {
     private GenerationContext context;
     private Decompiler decompiler;
     private CacheStatus cacheStatus;
-    private List<ReflectionGenerator> reflectionGenerators;
     private TagRegistry tagRegistry;
     private CodeGenerator codeGenerator;
     private FieldReference[] staticGcRoots;
@@ -101,16 +100,16 @@ public class ClassGenerator {
     private List<CallSiteDescriptor> callSites;
     private static final int VT_STRUCTURE_INITIALIZER_DEPTH_THRESHOLD = 9;
     private Set<ValueType> types;
+    private ClassReflectionGenerator reflectionGenerator;
 
     public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler,
-            CacheStatus cacheStatus, Set<ValueType> types,
-            List<ReflectionGenerator> reflectionGenerators) {
+            CacheStatus cacheStatus, Set<ValueType> types, ReflectionDependencyListener reflection) {
         this.context = context;
         this.tagRegistry = tagRegistry;
         this.decompiler = decompiler;
         this.cacheStatus = cacheStatus;
         this.types = types;
-        this.reflectionGenerators = reflectionGenerators;
+        reflectionGenerator = new ClassReflectionGenerator(context, reflection, types);
     }
 
     public void setAstCache(MethodNodeCache astCache) {
@@ -119,6 +118,116 @@ public class ClassGenerator {
 
     public void setCallSites(List<CallSiteDescriptor> callSites) {
         this.callSites = callSites;
+    }
+
+    public void generateAnnotationDataClass(CodeWriter writer, String className, String fileName) {
+        writer.println("#pragma once");
+        includes = new SimpleIncludeManager(context.getFileNames(), writer);
+        includes.init(fileName + ".c");
+
+        writer.println("typedef struct {").indent();
+        var cls = context.getClassSource().get(className.substring(0, className.length()
+                - AnnotationGenerationHelper.ANNOTATION_DATA_SUFFIX.length()));
+        if (cls != null) {
+            for (var method : cls.getMethods()) {
+                if (context.getDependencies().getMethod(method.getReference()) != null) {
+                    includes.includePath("reflection.h");
+                    var fieldName =
+                            context.getNames().forMemberField(new FieldReference(cls.getName(), method.getName()));
+                    generateAnnotationFieldType(context, includes, writer, method.getResultType());
+                    writer.print(" ").print(fieldName).println(";");
+                }
+            }
+        }
+        writer.outdent().print("} ").print(context.getNames().forClass(className)).println(";");
+        includes = null;
+    }
+
+    static void generateAnnotationFieldType(GenerationContext context, IncludeManager includes, CodeWriter writer,
+            ValueType type) {
+        if (type instanceof ValueType.Array) {
+             var itemType = ((ValueType.Array) type).getItemType();
+             if (itemType instanceof ValueType.Primitive) {
+                 includes.includePath("reflection.h");
+                 switch (((ValueType.Primitive) itemType).getKind()) {
+                     case BOOLEAN:
+                     case BYTE:
+                         writer.print("TeaVM_ByteArray*");
+                         break;
+                     case SHORT:
+                         writer.print("TeaVM_ShortArray*");
+                         break;
+                     case CHARACTER:
+                         writer.print("TeaVM_CharArray*");
+                         break;
+                     case INTEGER:
+                         writer.print("TeaVM_IntArray*");
+                         break;
+                     case LONG:
+                         writer.print("TeaVM_LongArray*");
+                         break;
+                     case FLOAT:
+                         writer.print("TeaVM_FloatArray*");
+                         break;
+                     case DOUBLE:
+                         writer.print("TeaVM_DoubleArray*");
+                         break;
+                 }
+             } else if (itemType instanceof ValueType.Object) {
+                 includes.includePath("reflection.h");
+                 var name = ((ValueType.Object) itemType).getClassName();
+                 if (name.equals("java.lang.Class")) {
+                     writer.print("TeaVM_ClassArray*");
+                     return;
+                 }
+                 var cls = context.getClassSource().get(name);
+                 if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
+                     writer.print("TeaVM_ShortArray*");
+                     return;
+                 }
+                 writer.print("TeaVM_RefArray*");
+             }
+        } else if (type instanceof ValueType.Primitive) {
+            includes.addInclude("<stdint.h>");
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    writer.print("int8_t");
+                    break;
+                case SHORT:
+                    writer.print("int16_t");
+                    break;
+                case CHARACTER:
+                    writer.print("uint16_t");
+                    break;
+                case INTEGER:
+                    writer.print("int32_t");
+                    break;
+                case LONG:
+                    writer.print("int64_t");
+                    break;
+                case FLOAT:
+                    writer.print("float");
+                    break;
+                case DOUBLE:
+                    writer.print("double");
+                    break;
+            }
+        } else if (type instanceof ValueType.Object) {
+            var name = ((ValueType.Object) type).getClassName();
+            if (name.equals("java.lang.Class")) {
+                includes.includePath("reflection.h");
+                writer.print("TeaVM_ClassPtr");
+                return;
+            }
+            var cls = context.getClassSource().get(name);
+            if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
+                includes.addInclude("<stdint.h>");
+                writer.print("int16_t");
+                return;
+            }
+            writer.print("void*");
+        }
     }
 
     public void generateClass(CodeWriter writer, CodeWriter headerWriter, ClassHolder cls) {
@@ -659,6 +768,7 @@ public class ClassGenerator {
         String parent;
         String itemTypeExpr;
         int flags = 0;
+        int modifiers = 0;
         String layout = "NULL";
         String initFunction = "NULL";
         String superinterfaceCount = "0";
@@ -666,6 +776,8 @@ public class ClassGenerator {
         String simpleName = null;
         String declaringClass = "NULL";
         String enclosingClass = "NULL";
+
+        var metadataReq = context.getMetadataRequirements().getInfo(type);
 
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
@@ -675,40 +787,14 @@ public class ClassGenerator {
                 className = RuntimeObject.class.getName();
             }
 
-            if (cls != null && needsData(cls) && !className.equals("java.lang.Class")) {
+            if (cls != null && needsData(cls)) {
                 String structName = context.getNames().forClass(className);
                 sizeExpr = "(int32_t) (intptr_t) TEAVM_ALIGN(sizeof(" + structName + "), sizeof(void*))";
             } else {
                 sizeExpr = "0";
             }
             if (cls != null) {
-                if (cls.hasModifier(ElementModifier.ABSTRACT)) {
-                    flags |= RuntimeClass.ABSTRACT;
-                }
-                if (cls.hasModifier(ElementModifier.INTERFACE)) {
-                    flags |= RuntimeClass.INTERFACE;
-                }
-                if (cls.hasModifier(ElementModifier.FINAL)) {
-                    flags |= RuntimeClass.FINAL;
-                }
-                if (cls.hasModifier(ElementModifier.ANNOTATION)) {
-                    flags |= RuntimeClass.ANNOTATION;
-                }
-                if (cls.hasModifier(ElementModifier.SYNTHETIC)) {
-                    flags |= RuntimeClass.SYNTHETIC;
-                }
-                if (cls.hasModifier(ElementModifier.ENUM)) {
-                    flags |= RuntimeClass.ENUM;
-                }
-                if (cls.hasModifier(ElementModifier.ANNOTATION)) {
-                    var retention = cls.getAnnotations().get(Retention.class.getName());
-                    if (retention != null && retention.getValue("value").getEnumValue().getFieldName()
-                            .equals("RUNTIME")) {
-                        if (cls.getAnnotations().get(Inherited.class.getName()) != null) {
-                            flags |= RuntimeClass.INHERITED_ANNOTATION;
-                        }
-                    }
-                }
+                modifiers = ElementModifier.encodeModifiers(cls);
             }
             List<TagRegistry.Range> ranges = tagRegistry != null ? tagRegistry.getRanges(className) : null;
             tag = !context.isIncremental() && ranges != null && !ranges.isEmpty() ? ranges.get(0).lower : 0;
@@ -722,14 +808,14 @@ public class ClassGenerator {
             itemTypeExpr = "NULL";
             layout = classLayout != null ? "teavm_classLayouts_" + context.getNames().forClassInstance(type) : "NULL";
 
-            if (cls != null && needsInitializer(cls)) {
+            if (cls != null && needsInitializer(cls) && metadataReq.classInit()) {
                 initFunction = context.getNames().forClassInitializer(className);
             }
 
             Set<String> interfaces = cls != null
                     ? cls.getInterfaces()
                     : Collections.emptySet();
-            if (!interfaces.isEmpty()) {
+            if (!interfaces.isEmpty() && metadataReq.interfaces()) {
                 superinterfaceCount = Integer.toString(cls.getInterfaces().size());
                 StringBuilder sb = new StringBuilder("(TeaVM_Class*[]) { ");
                 boolean first = true;
@@ -747,16 +833,16 @@ public class ClassGenerator {
             flags = ClassGeneratorUtil.contributeToFlags(cls, flags);
 
             if (cls != null) {
-                simpleName = cls.getSimpleName();
+                simpleName = metadataReq.simpleName() ? cls.getSimpleName() : null;
 
-                if (cls.getDeclaringClassName() != null
+                if (metadataReq.declaringClass() && cls.getDeclaringClassName() != null
                         && context.getDependencies().getClass(cls.getDeclaringClassName()) != null) {
                     declaringClass = "(TeaVM_Class*) &" + context.getNames().forClassInstance(
                             ValueType.object(cls.getDeclaringClassName()));
                     includes.includeClass(cls.getDeclaringClassName());
                 }
 
-                if (cls.getOwnerName() != null
+                if (metadataReq.enclosingClass() && cls.getOwnerName() != null
                         && context.getDependencies().getClass(cls.getOwnerName()) != null) {
                     enclosingClass = "(TeaVM_Class*) &" + context.getNames().forClassInstance(
                             ValueType.object(cls.getOwnerName()));
@@ -777,13 +863,11 @@ public class ClassGenerator {
             tag = 0;
             sizeExpr = "0";
             itemTypeExpr = "NULL";
-            flags |= RuntimeClass.PRIMITIVE;
             flags = ClassGeneratorUtil.applyPrimitiveFlags(flags, type);
         } else {
             parent = "NULL";
             tag = Integer.MAX_VALUE;
             sizeExpr = "sizeof(" + CodeWriter.strictTypeAsString(type) + ")";
-            flags |= RuntimeClass.PRIMITIVE;
             flags = ClassGeneratorUtil.applyPrimitiveFlags(flags, type);
             itemTypeExpr = "NULL";
         }
@@ -817,32 +901,49 @@ public class ClassGenerator {
         initializers.add(new FieldInitializer("size", sizeExpr));
         initializers.add(new FieldInitializer("flags", String.valueOf(flags)));
         initializers.add(new FieldInitializer("tag", String.valueOf(tag)));
-        initializers.add(new FieldInitializer("canary", "0"));
-        initializers.add(new FieldInitializer("name", nameRef));
-        initializers.add(new FieldInitializer("simpleName", simpleName));
+        initializers.add(new FieldInitializer("modifiers", String.valueOf(modifiers)));
+        if (context.getMetadataRequirements().hasName()) {
+            initializers.add(new FieldInitializer("name", nameRef));
+        }
+        if (context.getMetadataRequirements().hasSimpleName()) {
+            initializers.add(new FieldInitializer("simpleName", simpleName));
+        }
         initializers.add(new FieldInitializer("arrayType", arrayTypeExpr));
         initializers.add(new FieldInitializer("itemType", itemTypeExpr));
         initializers.add(new FieldInitializer("isSupertypeOf", "&" + superTypeFunction));
         initializers.add(new FieldInitializer("superclass", parent));
-        initializers.add(new FieldInitializer("superinterfaceCount", superinterfaceCount));
-        initializers.add(new FieldInitializer("superinterfaces", superinterfaces));
+        if (context.getMetadataRequirements().hasGetInterfaces()) {
+            initializers.add(new FieldInitializer("superinterfaceCount", superinterfaceCount));
+            initializers.add(new FieldInitializer("superinterfaces", superinterfaces));
+        }
         initializers.add(new FieldInitializer("layout", layout));
         initializers.add(new FieldInitializer("enumValues", enumConstants));
-        initializers.add(new FieldInitializer("declaringClass", declaringClass));
-        initializers.add(new FieldInitializer("enclosingClass", enclosingClass));
-        initializers.add(new FieldInitializer("init", initFunction));
+        if (context.getMetadataRequirements().hasDeclaringClass()) {
+            initializers.add(new FieldInitializer("declaringClass", declaringClass));
+        }
+        if (context.getMetadataRequirements().hasEnclosingClass()) {
+            initializers.add(new FieldInitializer("enclosingClass", enclosingClass));
+        }
+        if (context.getMetadataRequirements().hasClassInit()) {
+            initializers.add(new FieldInitializer("init", initFunction));
+        }
+        if (context.getDependencies().getMethod(new MethodReference(ClassInfo.class, "reflection",
+                ClassReflectionInfo.class)) != null) {
+            if (type instanceof ValueType.Object) {
+                var className = ((ValueType.Object) type).getClassName();
+                var cls = context.getClassSource().get(className);
+                if (cls != null) {
+                    initializers.add(new FieldInitializer("reflection",
+                            w -> reflectionGenerator.generate(w, includes, cls)));
+                }
+            }
+        }
 
-        var reflectionInitializerParts = new ArrayList<ReflectionPartGenerator>();
-        var reflectionTopLevelParts = new ArrayList<ReflectionPartGenerator>();
         if (initMethod) {
             for (FieldInitializer initializer : initializers) {
                 initWriter.print("vt_").print(String.valueOf(depth)).print("->").print(initializer.name)
-                        .print(" = ").print(initializer.value).println(";");
-            }
-            if (type instanceof ValueType.Object) {
-                initWriter.print("vt_").print(String.valueOf(depth)).print("->reflectionExt = ");
-                writeInitializers(initWriter, ((ValueType.Object) type).getClassName(),
-                        reflectionInitializerParts, reflectionTopLevelParts);
+                        .print(" = ");
+                initializer.value.accept(initWriter);
                 initWriter.println(";");
             }
         } else {
@@ -851,33 +952,9 @@ public class ClassGenerator {
                     codeWriter.println(",");
                 }
                 FieldInitializer initializer = initializers.get(i);
-                codeWriter.print(".").print(initializer.name).print(" = ").print(initializer.value);
+                codeWriter.print(".").print(initializer.name).print(" = ");
+                initializer.value.accept(codeWriter);
             }
-            if (type instanceof ValueType.Object) {
-                if (!initializers.isEmpty()) {
-                    codeWriter.println(",");
-                }
-                codeWriter.print(".reflectionExt = ");
-                writeInitializers(codeWriter, ((ValueType.Object) type).getClassName(),
-                        reflectionInitializerParts, reflectionTopLevelParts);
-            }
-        }
-
-        if (!reflectionTopLevelParts.isEmpty()) {
-            for (var part : reflectionTopLevelParts) {
-                part.generate(prologueWriter);
-            }
-        }
-        if (!reflectionInitializerParts.isEmpty()) {
-            var initName = context.getNames().createTopLevelName(context.getNames().forClassInstance(type)
-                    + "_initReflection");
-            codeWriter.println(",");
-            codeWriter.print(".initReflection = &").print(initName);
-            prologueWriter.print("static void ").print(initName).println("() {").indent();
-            for (var part : reflectionInitializerParts) {
-                part.generate(prologueWriter);
-            }
-            prologueWriter.outdent().println("}");
         }
 
         if (context.isHeapDump() && type instanceof ValueType.Object) {
@@ -890,65 +967,15 @@ public class ClassGenerator {
         }
     }
 
-    private void writeInitializers(CodeWriter writer, String className,
-            List<ReflectionPartGenerator> initializerGenerators,
-            List<ReflectionPartGenerator> topLevelGenerators) {
-        var reflectionGenList = reflectionGenerators.stream()
-                .filter(gen -> gen.isApplicable(context, className))
-                .collect(Collectors.toList());
-        if (reflectionGenList.isEmpty()) {
-            writer.print("NULL");
-            return;
-        }
-
-        includes.includePath("reflection-ext.h");
-        writer.print("&(TeaVM_ClassReflection){").indent();
-        var first = true;
-        var ctx = new ReflectionGeneratorContext() {
-            @Override
-            public GenerationContext globalContext() {
-                return context;
-            }
-
-            @Override
-            public CodeWriter writer() {
-                return writer;
-            }
-
-            @Override
-            public IncludeManager includes() {
-                return includes;
-            }
-
-            @Override
-            public void addToInitializer(ReflectionPartGenerator generator) {
-                initializerGenerators.add(generator);
-            }
-
-            @Override
-            public void addTopLevel(ReflectionPartGenerator generator) {
-                topLevelGenerators.add(generator);
-            }
-        };
-        for (var gen : reflectionGenList) {
-            if (!first) {
-                writer.print(",");
-            }
-            writer.println();
-            first = false;
-            gen.generate(ctx, className);
-        }
-        if (!first) {
-            writer.println();
-        }
-        writer.outdent().print("}");
-    }
-
     static class FieldInitializer {
         final String name;
-        final String value;
+        final Consumer<CodeWriter> value;
 
         FieldInitializer(String name, String value) {
+            this(name, w -> w.print(value));
+        }
+
+        FieldInitializer(String name, Consumer<CodeWriter> value) {
             this.name = name;
             this.value = value;
         }
@@ -1026,10 +1053,6 @@ public class ClassGenerator {
             case "java.lang.ref.ReferenceQueue":
             case "java.lang.ref.WeakReference":
             case "java.lang.ref.SoftReference":
-                break;
-            case "java.lang.Class":
-                fields.add(new HeapDumpField("name", "offsetof(TeaVM_Class, name)", TYPE_OBJECT));
-                fields.add(new HeapDumpField("simpleName", "offsetof(TeaVM_Class, simpleName)", TYPE_OBJECT));
                 break;
             case "java.lang.ref.Reference":
                 fields.add(new HeapDumpField("referent", "offsetof(TeaVM_Reference, object)", TYPE_OBJECT));
@@ -1168,6 +1191,7 @@ public class ClassGenerator {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
             return !context.getCharacteristics().isStructure(className)
+                    && !context.getCharacteristics().isReflectionSpecial(className)
                     && !context.getCharacteristics().isFunction(className)
                     && !context.getCharacteristics().isResource(className)
                     && !className.equals(Address.class.getName());
@@ -1242,6 +1266,7 @@ public class ClassGenerator {
     private boolean needsInitializer(ClassReader cls) {
         return !context.getCharacteristics().isStaticInit(cls.getName())
                 && !context.getCharacteristics().isStructure(cls.getName())
+                && !context.getCharacteristics().isReflectionSpecial(cls.getName())
                 && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null
                 && context.getClassInitializerInfo().isDynamicInitializer(cls.getName());
     }

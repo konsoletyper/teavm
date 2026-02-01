@@ -56,7 +56,7 @@ class StringInternPoolIntrinsic implements WasmGCIntrinsic {
 
     private WasmFunction createRefFunction(WasmGCIntrinsicContext context) {
         var function = new WasmFunction(context.functionTypes().of(
-                WasmType.Reference.EXTERN,
+                WasmType.EXTERN,
                 context.typeMapper().mapType(ValueType.parse(String.class)),
                 context.typeMapper().mapType(ValueType.object(StringInternPool.class.getName() + "$Entry"))
         ));
@@ -70,7 +70,7 @@ class StringInternPoolIntrinsic implements WasmGCIntrinsic {
     private WasmFunction createDerefFunction(WasmGCIntrinsicContext context) {
         var function = new WasmFunction(context.functionTypes().of(
                 context.typeMapper().mapType(ValueType.parse(String.class)),
-                WasmType.Reference.EXTERN
+                WasmType.EXTERN
         ));
         function.setName(context.names().topLevel("teavm@stringDeref"));
         function.setImportModule("teavm");

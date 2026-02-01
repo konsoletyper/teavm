@@ -29,6 +29,7 @@ public class RuntimeClassIntrinsic implements Intrinsic {
         switch (method.getName()) {
             case "pack":
             case "unpack":
+            case "first":
                 return true;
             default:
                 return false;
@@ -47,6 +48,9 @@ public class RuntimeClassIntrinsic implements Intrinsic {
                 context.writer().print("TEAVM_UNPACK_CLASS(");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
+                break;
+            case "first":
+                context.writer().print("teavm_firstClass");
                 break;
         }
     }

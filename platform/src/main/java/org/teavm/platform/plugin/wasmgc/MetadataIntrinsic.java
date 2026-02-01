@@ -153,7 +153,7 @@ class MetadataIntrinsic implements WasmGCIntrinsic {
                 expr.getElements().add(new WasmNullConstant(entryType));
             } else {
                 var value = map.values.get(key);
-                var wasmValue = generateMetadata(context, value, WasmType.Reference.EQ);
+                var wasmValue = generateMetadata(context, value, WasmType.EQ);
                 var entryExpr = new WasmStructNew(entryStruct);
                 var keyConstant = context.strings().getStringConstant(key);
                 entryExpr.getInitializers().add(new WasmGetGlobal(keyConstant.global));

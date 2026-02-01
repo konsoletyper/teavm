@@ -25,9 +25,9 @@ public class WasmGCAsyncTypeMapperFactory implements WasmGCCustomTypeMapperFacto
     public WasmGCCustomTypeMapper createTypeMapper(WasmGCCustomTypeMapperFactoryContext context) {
         return className -> {
             if (className.equals("org.teavm.runtime.Fiber$PlatformObject")) {
-                return WasmType.Reference.ANY;
+                return WasmType.ANY;
             } else if (className.equals("org.teavm.runtime.Fiber$PlatformFunction")) {
-                return WasmType.Reference.FUNC;
+                return WasmType.FUNC;
             }
             return null;
         };

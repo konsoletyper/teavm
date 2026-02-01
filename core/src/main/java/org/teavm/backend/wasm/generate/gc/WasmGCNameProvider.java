@@ -69,6 +69,10 @@ public class WasmGCNameProvider {
         return sanitize(className);
     }
 
+    public String suggestForArray(String item) {
+        return "Array<" + item + ">";
+    }
+
     public String suggestForType(ValueType type) {
         StringBuilder sb = new StringBuilder();
         suggestForType(type, sb);

@@ -2,30 +2,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "core.h"
+#include "core_defs.h"
 
-#define TEAVM_VALUE_CONV_REF     0
-#define TEAVM_VALUE_CONV_BOOLEAN 1
-#define TEAVM_VALUE_CONV_BYTE    2
-#define TEAVM_VALUE_CONV_CHAR    3
-#define TEAVM_VALUE_CONV_SHORT   4
-#define TEAVM_VALUE_CONV_INT     5
-#define TEAVM_VALUE_CONV_LONG    6
-#define TEAVM_VALUE_CONV_FLOAT   7
-#define TEAVM_VALUE_CONV_DOUBLE  8
-
-typedef struct {
-    bool isStatic;
-    union {
-        int16_t instance;
-        void* memory;
-    } offset;
+typedef union {
+    int16_t instance;
+    void* memory;
 } TeaVM_FieldLocation;
-
-typedef struct {
-    TeaVM_FieldLocation location;
-    void (*initializer)();
-    int32_t valueConv;
-} TeaVM_FieldReaderWriter;
 
 typedef struct {
     TeaVM_Class* baseClass;
@@ -35,11 +17,14 @@ typedef struct {
 typedef struct {
     TeaVM_String** name;
     int32_t modifiers;
-    int32_t accessLevel;
-    TeaVM_Array* annotations;
+    #if TEAVM_FIELD_ANNOTATIONS_USED
+        TeaVM_Array* annotations;
+    #endif
     TeaVM_ClassPtr type;
-    TeaVM_Object* genericType;
-    TeaVM_FieldReaderWriter readerWriter;
+    #if TEAVM_FIELD_GENERIC_TYPE_USED
+        TeaVM_Object* genericType;
+    #endif
+    TeaVM_FieldLocation location;
 } TeaVM_FieldInfo;
 
 typedef struct {
@@ -47,13 +32,90 @@ typedef struct {
     TeaVM_FieldInfo data[0];
 } TeaVM_FieldInfoList;
 
-extern void* teavm_reflection_readField(void* obj, TeaVM_FieldReaderWriter* field);
-extern void teavm_reflection_writeField(void* obj, TeaVM_FieldReaderWriter* field, void* value);
+typedef void* TeaVM_AnnotationConstructor(void* data);
 
-extern void* teavm_reflection_fieldPtr(void* obj, TeaVM_FieldLocation* location);
+typedef struct {
+    void* data;
+    TeaVM_AnnotationConstructor* constructor;
+} TeaVM_AnnotationInfo;
+
+typedef struct {
+    int32_t count;
+    TeaVM_AnnotationInfo data[0];
+} TeaVM_AnnotationInfoList;
+
+typedef struct {
+    int32_t count;
+    int8_t data[];
+} TeaVM_ByteArray;
+
+typedef struct {
+    int32_t count;
+    int16_t data[];
+} TeaVM_ShortArray;
+
+typedef struct {
+    int32_t count;
+    uint16_t data[];
+} TeaVM_CharArray;
+
+typedef struct {
+    int32_t count;
+    int32_t data[];
+} TeaVM_IntArray;
+
+typedef struct {
+    int32_t count;
+    int64_t data[];
+} TeaVM_LongArray;
+
+typedef struct {
+    int32_t count;
+    float data[];
+} TeaVM_FloatArray;
+
+typedef struct {
+    int32_t count;
+    double data[];
+} TeaVM_DoubleArray;
+
+typedef struct {
+    int32_t count;
+    void* data[];
+} TeaVM_RefArray;
+
+typedef struct {
+    int32_t count;
+    TeaVM_ClassPtr data[];
+} TeaVM_ClassArray;
+
+typedef struct {
+    #if TEAVM_CLASS_REFLECTION_FIELDS_USED
+        TeaVM_FieldInfoList* fields;
+    #endif
+    #if TEAVM_CLASS_REFLECTION_ANNOTATIONS_USED
+        TeaVM_AnnotationInfoList* annotations;
+    #endif
+} TeaVM_ClassReflection;
+
+extern void* teavm_reflection_readField(void* obj, TeaVM_FieldInfo* field);
+extern void teavm_reflection_writeField(void* obj, TeaVM_FieldInfo* field, void* value);
 
 extern void* teavm_reflection_box(int32_t conv, void* ptr);
-
 extern void teavm_reflection_unbox(int32_t conv, void* ptr, void* value);
 
+extern void* teavm_reflection_getItem(void* array, int32_t index);
+extern void teavm_reflection_putItem(void* array, int32_t index, void* item);
+
 extern TeaVM_Class* teavm_reflection_extractType(TeaVM_ClassPtr* type);
+
+#ifdef TEAVM_CLASS_REFLECTION_FIELDS_USED
+    static inline int32_t teavm_reflection_fieldCount(TeaVM_ClassReflection* cls) {
+        return cls->fields != NULL ? cls->fields->count : 0;
+    }
+#endif
+#ifdef TEAVM_CLASS_REFLECTION_ANNOTATIONS_USED
+    static inline int32_t teavm_reflection_annotationCount(TeaVM_ClassReflection* cls) {
+        return cls->annotations != NULL ? cls->annotations->count : 0;
+    }
+#endif

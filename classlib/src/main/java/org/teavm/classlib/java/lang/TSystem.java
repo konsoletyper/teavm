@@ -143,7 +143,7 @@ public final class TSystem extends TObject {
     static void doArrayCopyLowLevel(RuntimeArray src, int srcPos, RuntimeArray dest, int destPos, int length) {
         RuntimeClass type = RuntimeClass.getClass(src);
         int itemSize = type.itemType.size;
-        if ((type.itemType.flags & RuntimeClass.PRIMITIVE) == 0) {
+        if (!RuntimeClass.isPrimitive(type.itemType)) {
             itemSize = Address.sizeOf();
             GC.writeBarrier(dest);
         }

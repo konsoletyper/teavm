@@ -5,6 +5,7 @@
 #include "uchar.h"
 #include "heapdump.h"
 #include "memory.h"
+#include "core_defs.h"
 #include <stdlib.h>
 
 #if TEAVM_MEMORY_TRACE
@@ -25,36 +26,62 @@ typedef struct TeaVM_Array {
 struct TeaVM_Services;
 
 typedef struct TeaVM_Class {
-    TeaVM_Object parent;
+    TeaVM_Object* classObject;
+    struct TeaVM_Class* next;
     int32_t size;
     int32_t flags;
     int32_t tag;
-    int32_t canary;
-    TeaVM_Object** name;
-    TeaVM_Object* nameCache;
+    int32_t modifiers;
+    #if TEAVM_CLASS_NAME_USED
+        TeaVM_Object** name;
+    #endif
+    #if TEAVM_CLASS_SIMPLE_NAME_USED
+        TeaVM_Object** simpleName;
+    #endif
     struct TeaVM_Class* itemType;
     struct TeaVM_Class* arrayType;
-    struct TeaVM_Class* declaringClass;
-    struct TeaVM_Class* enclosingClass;
+    #if TEAVM_CLASS_DECLARING_CLASS_USED
+        struct TeaVM_Class* declaringClass;
+    #endif
+    #if TEAVM_CLASS_ENCLOSING_CLASS_USED
+        struct TeaVM_Class* enclosingClass;
+    #endif
     int32_t (*isSupertypeOf)(struct TeaVM_Class*,struct TeaVM_Class*);
-    void (*init)();
+    #if TEAVM_CLASS_INIT_USED
+        void (*init)();
+    #endif
     struct TeaVM_Class* superclass;
-    int32_t superinterfaceCount;
-    struct TeaVM_Class** superinterfaces;
+    #if TEAVM_CLASS_SUPERINTERFACES_USED
+        int32_t superinterfaceCount;
+        struct TeaVM_Class** superinterfaces;
+    #endif
     void* enumValues;
     void* layout;
-    TeaVM_Object** simpleName;
-    TeaVM_Object* simpleNameCache;
-    TeaVM_Object* canonicalName;
-    TeaVM_Object* reflectionState;
     struct TeaVM_Services* services;
-    void *reflectionExt;
-    void (*initReflection)();
+    #if TEAVM_CLASS_REFLECTION_USED
+        void *reflection;
+    #endif
     #if TEAVM_HEAP_DUMP
         TeaVM_FieldDescriptors* fieldDescriptors;
         TeaVM_StaticFieldDescriptors* staticFieldDescriptors;
     #endif
 } TeaVM_Class;
+
+inline static int32_t teavm_primitiveKind(TeaVM_Class* cls) {
+    return (cls->flags >> 4) & 15;
+}
+
+inline static int32_t teavm_enumConstantCount(TeaVM_Class* cls) {
+    void* values = cls->enumValues;
+    if (values == NULL) {
+        return 0;
+    }
+    return *(intptr_t*) values;
+}
+inline static void* teavm_enumConstant(TeaVM_Class* cls, int32_t index) {
+    void* values = cls->enumValues;
+    return **((void***) values + (index + 1));
+}
 
 typedef struct TeaVM_Service {
     TeaVM_Class* cls;
@@ -73,10 +100,29 @@ typedef struct TeaVM_String {
 } TeaVM_String;
 
 extern char* teavm_beforeClasses;
+extern TeaVM_Object* teavm_getClassObject(TeaVM_Class* cls);
 
 extern void* teavm_throwClassCastException();
 extern void teavm_throwNullPointerException();
 extern void teavm_throwArrayIndexOutOfBoundsException();
+
+static inline int32_t teavm_isSupertypeOf(TeaVM_Class* superclass, TeaVM_Class* subclass) {
+    return superclass->isSupertypeOf(superclass, subclass);
+}
+
+static inline void teavm_initializeClass(TeaVM_Class* cls, void (*initializer)()) {
+    if ((cls->flags & 1) == 0) {
+        initializer();
+    }
+}
+
+#if TEAVM_CLASS_INIT_USED
+    static inline void teavm_initializeClassDefault(TeaVM_Class* cls) {
+        if (cls->init != NULL) {
+            teavm_initializeClass(cls, cls->init);
+        }
+    }
+#endif
 
 #define TEAVM_PACK_CLASS(cls) ((int32_t) ((uintptr_t) ((char*) (cls) - teavm_beforeClasses) >> 3))
 #define TEAVM_UNPACK_CLASS(cls) ((TeaVM_Class*) (teavm_beforeClasses + ((cls) << 3)))
@@ -198,13 +244,13 @@ static inline TeaVM_Object* teavm_dereferenceNullable(TeaVM_Object** o) {
 
 
 extern TeaVM_Class* teavm_classReferences[];
+extern TeaVM_Class* teavm_firstClass;
 extern TeaVM_Class* teavm_classClass;
 extern TeaVM_Class* teavm_objectClass;
 extern TeaVM_Class* teavm_stringClass;
 extern TeaVM_Class* teavm_charArrayClass;
 extern int32_t teavm_classReferencesCount;
 extern void teavm_initClasses();
-extern void teavm_initReflection();
 
 
 inline static void teavm_gc_writeBarrier(void* object) {
@@ -221,3 +267,16 @@ extern void* teavm_fillIntArray(void* array, ...);
 extern void* teavm_fillLongArray(void* array, ...);
 extern void* teavm_fillFloatArray(void* array, ...);
 extern void* teavm_fillDoubleArray(void* array, ...);
+
+
+#define TEAVM_PRIMITIVE_NONE    0
+#define TEAVM_PRIMITIVE_BOOLEAN 1
+#define TEAVM_PRIMITIVE_BYTE    2
+#define TEAVM_PRIMITIVE_SHORT   3
+#define TEAVM_PRIMITIVE_CHAR    4
+#define TEAVM_PRIMITIVE_INT     5
+#define TEAVM_PRIMITIVE_LONG    6
+#define TEAVM_PRIMITIVE_FLOAT   7
+#define TEAVM_PRIMITIVE_DOUBLE  8
+
+#define TEAVM_MODIFIER_STATIC  (1 << 3)

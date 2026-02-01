@@ -20,6 +20,7 @@ import org.teavm.ast.Expr;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.common.ServiceRepository;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.ValueType;
 
@@ -34,6 +35,8 @@ public interface InjectorContext extends ServiceRepository {
 
     SourceWriter getWriter();
 
+    SourceWriter getMetadataWriter();
+
     Properties getProperties();
 
     void writeEscaped(String str);
@@ -47,6 +50,8 @@ public interface InjectorContext extends ServiceRepository {
     Precedence getPrecedence();
 
     ClassLoader getClassLoader();
+
+    DependencyInfo getDependencies();
 
     ListableClassReaderSource getClassSource();
 }

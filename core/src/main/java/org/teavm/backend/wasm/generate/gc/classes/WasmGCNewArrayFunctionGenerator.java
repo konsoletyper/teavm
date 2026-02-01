@@ -52,7 +52,6 @@ class WasmGCNewArrayFunctionGenerator {
     private WasmModule module;
     private WasmFunctionTypes functionTypes;
     private WasmGCClassInfoProvider classInfoProvider;
-    private WasmFunctionType newArrayFunctionType;
     private WasmGCNameProvider names;
     private Queue<Runnable> queue;
     private WasmFunction newObjectArrayFunction;
@@ -69,18 +68,19 @@ class WasmGCNewArrayFunctionGenerator {
 
     WasmFunction generateNewArrayFunction(ValueType itemType) {
         if (itemType instanceof ValueType.Primitive) {
+            var classInfoType = classInfoProvider.reflectionTypes().classInfo();
             var classInfo = classInfoProvider.getClassInfo(ValueType.arrayOf(itemType));
-            var classClass = classInfoProvider.getClassInfo("java.lang.Class").getType();
-            var functionType = new WasmFunctionType(null, classInfo.getType(), List.of(classClass, WasmType.INT32));
+            var functionType = new WasmFunctionType(null, classInfo.getType(),
+                    List.of(classInfoType.structure().getReference(), WasmType.INT32));
             module.types.add(functionType);
             functionType.setFinal(true);
-            functionType.getSupertypes().add(getNewArrayFunctionType());
+            functionType.getSupertypes().add(classInfoType.newArrayFunctionType());
             var function = new WasmFunction(functionType);
             function.setName(names.topLevel("Array<" + names.suggestForType(itemType) + ">@new"));
             module.functions.add(function);
 
             queue.add(() -> {
-                var clsLocal = new WasmLocal(classClass, "this");
+                var clsLocal = new WasmLocal(classInfoType.structure().getReference(), "this");
                 var sizeLocal = new WasmLocal(WasmType.INT32, "length");
                 function.add(clsLocal);
                 function.add(sizeLocal);
@@ -104,7 +104,7 @@ class WasmGCNewArrayFunctionGenerator {
 
         var structNew = new WasmStructNew(classInfo.getStructure());
         structNew.getInitializers().add(new WasmGetGlobal(classInfo.getVirtualTablePointer()));
-        structNew.getInitializers().add(new WasmNullConstant(WasmType.Reference.EQ));
+        structNew.getInitializers().add(new WasmNullConstant(WasmType.EQ));
         structNew.getInitializers().add(new WasmArrayNewDefault(wasmArray, new WasmGetLocal(sizeLocal)));
         return structNew;
     }
@@ -118,18 +118,20 @@ class WasmGCNewArrayFunctionGenerator {
 
     private WasmFunction generateNewObjectArrayFunction() {
         var classInfo = classInfoProvider.getClassInfo(ValueType.arrayOf(ValueType.object("java.lang.Object")));
-        var classClass = classInfoProvider.getClassInfo("java.lang.Class");
-        var functionType = new WasmFunctionType(null, classInfo.getType(), List.of(classClass.getType(),
-                WasmType.INT32));
+        var classInfoType = classInfoProvider.reflectionTypes().classInfo();
+
+        var functionType = new WasmFunctionType(null, classInfo.getType(),
+                List.of(classInfoType.structure().getReference(), WasmType.INT32));
         module.types.add(functionType);
         functionType.setFinal(true);
-        functionType.getSupertypes().add(getNewArrayFunctionType());
+        functionType.getSupertypes().add(classInfoType.newArrayFunctionType());
+
         var function = new WasmFunction(functionType);
         function.setName(names.topLevel("Array<" + names.suggestForClass("java.lang.Object") + ">@new"));
         module.functions.add(function);
 
         queue.add(() -> {
-            var clsLocal = new WasmLocal(classClass.getType(), "this");
+            var clsLocal = new WasmLocal(classInfoType.structure().getReference(), "this");
             var sizeLocal = new WasmLocal(WasmType.INT32, "length");
             function.add(clsLocal);
             function.add(sizeLocal);
@@ -142,12 +144,11 @@ class WasmGCNewArrayFunctionGenerator {
             var wasmArray = (WasmArray) wasmArrayType.composite;
 
             var arrayCls = new WasmCall(classInfoProvider.getGetArrayClassFunction(), new WasmGetLocal(clsLocal));
-            var arrayVt = new WasmStructGet(classClass.getStructure(), arrayCls,
-                    classInfoProvider.getClassVtFieldOffset());
+            var arrayVt = new WasmStructGet(classInfoType.structure(), arrayCls, classInfoType.vtableIndex());
 
             var structNew = new WasmStructNew(classInfo.getStructure());
             structNew.getInitializers().add(arrayVt);
-            structNew.getInitializers().add(new WasmNullConstant(WasmType.Reference.EQ));
+            structNew.getInitializers().add(new WasmNullConstant(WasmType.EQ));
             structNew.getInitializers().add(new WasmArrayNewDefault(wasmArray, new WasmGetLocal(sizeLocal)));
             function.getBody().add(structNew);
         });
@@ -158,11 +159,11 @@ class WasmGCNewArrayFunctionGenerator {
         var arrayType = ValueType.arrayOf(ValueType.object("java.lang.Object"));
         var arrayClass = classInfoProvider.getClassInfo(arrayType);
         var objectClass = classInfoProvider.getClassInfo("java.lang.Object");
-        var classClass = classInfoProvider.getClassInfo("java.lang.Class");
+        var classInfoType = classInfoProvider.reflectionTypes().classInfo();
 
         var parameterTypes = new WasmType[depth + 1];
         Arrays.fill(parameterTypes, WasmType.INT32);
-        parameterTypes[0] = classClass.getType();
+        parameterTypes[0] = classInfoType.structure().getReference();
         var functionType = functionTypes.of(arrayClass.getType(), parameterTypes);
 
         var function = new WasmFunction(functionType);
@@ -170,7 +171,7 @@ class WasmGCNewArrayFunctionGenerator {
         module.functions.add(function);
 
         queue.add(() -> {
-            var itemTypeLocal = new WasmLocal(classClass.getType(), "itemType");
+            var itemTypeLocal = new WasmLocal(classInfoType.structure().getReference(), "itemType");
             function.add(itemTypeLocal);
             var dimensionLocals = new WasmLocal[depth];
             for (var i = 0; i < depth; ++i) {
@@ -179,7 +180,7 @@ class WasmGCNewArrayFunctionGenerator {
                 function.add(dimensionLocal);
             }
             var indexLocal = new WasmLocal(WasmType.INT32, "index");
-            var nextItemTypeLocal = new WasmLocal(classClass.getType(), "nextItemType");
+            var nextItemTypeLocal = new WasmLocal(classInfoType.structure().getReference(), "nextItemType");
             function.add(indexLocal);
             function.add(nextItemTypeLocal);
 
@@ -197,8 +198,8 @@ class WasmGCNewArrayFunctionGenerator {
                     new WasmGetLocal(itemTypeLocal), new WasmGetLocal(dimensionLocals[0]))));
             function.getBody().add(new WasmSetLocal(dataLocal, new WasmStructGet(arrayClass.getStructure(),
                     new WasmGetLocal(resultVar), WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)));
-            function.getBody().add(new WasmSetLocal(nextItemTypeLocal, new WasmStructGet(classClass.getStructure(),
-                    new WasmGetLocal(itemTypeLocal), classInfoProvider.getClassArrayItemOffset())));
+            function.getBody().add(new WasmSetLocal(nextItemTypeLocal, new WasmStructGet(classInfoType.structure(),
+                    new WasmGetLocal(itemTypeLocal), classInfoType.itemTypeIndex())));
 
             var zeroGuard = new WasmBlock(false);
             function.getBody().add(zeroGuard);
@@ -208,12 +209,12 @@ class WasmGCNewArrayFunctionGenerator {
             Function<WasmExpression[], WasmExpression> nextArrayConstructor;
             if (depth == 2) {
                 var nextFunctionType = functionTypes.of(objectClass.getType(),
-                        classClass.getType(), WasmType.INT32);
+                        classInfoType.structure().getReference(), WasmType.INT32);
                 var createNextArrayLocal = new WasmLocal(nextFunctionType.getReference(), "createNextArray");
                 function.add(createNextArrayLocal);
                 zeroGuard.getBody().add(new WasmSetLocal(createNextArrayLocal, new WasmStructGet(
-                        classClass.getStructure(), new WasmGetLocal(nextItemTypeLocal),
-                        classInfoProvider.getNewArrayFunctionOffset())));
+                        classInfoType.structure(), new WasmGetLocal(nextItemTypeLocal),
+                        classInfoType.newArrayFunctionIndex())));
                 nextArrayConstructor = args -> new WasmCallReference(new WasmGetLocal(createNextArrayLocal),
                         nextFunctionType, args);
             } else {
@@ -241,15 +242,4 @@ class WasmGCNewArrayFunctionGenerator {
         return function;
     }
 
-    WasmFunctionType getNewArrayFunctionType() {
-        if (newArrayFunctionType == null) {
-            newArrayFunctionType = functionTypes.of(
-                    classInfoProvider.getClassInfo("java.lang.Object").getType(),
-                    classInfoProvider.getClassInfo("java.lang.Class").getType(),
-                    WasmType.INT32
-            );
-            newArrayFunctionType.setFinal(false);
-        }
-        return newArrayFunctionType;
-    }
 }

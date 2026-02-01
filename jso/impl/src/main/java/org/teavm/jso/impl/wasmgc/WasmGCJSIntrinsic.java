@@ -158,8 +158,7 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
 
     private WasmFunction getGlobalFunction(WasmGCIntrinsicContext context) {
         if (globalFunction == null) {
-            globalFunction = new WasmFunction(context.functionTypes().of(WasmType.Reference.EXTERN,
-                    WasmType.Reference.EXTERN));
+            globalFunction = new WasmFunction(context.functionTypes().of(WasmType.EXTERN, WasmType.EXTERN));
             globalFunction.setName(context.names().suggestForMethod(new MethodReference(JS_CLASS,
                     "global", STRING, JS_OBJECT)));
             globalFunction.setImportName("global");
@@ -171,7 +170,7 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
 
     private WasmExpression throwCCEIfFalse(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var block = new WasmBlock(false);
-        block.setType(WasmType.Reference.EXTERN.asBlock());
+        block.setType(WasmType.EXTERN.asBlock());
 
         var innerBlock = new WasmBlock(false);
         block.getBody().add(innerBlock);

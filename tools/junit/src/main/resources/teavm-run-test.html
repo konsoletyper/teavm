@@ -7,22 +7,16 @@
 <body>
 <script type="text/javascript" src="${SCRIPT}"></script>
 <script type="text/javascript">
-    main(["${IDENTIFIER}"], function(result) {
-        var message = result instanceof Error ? buildErrorMessage(result) : "OK";
-        var pre = document.createElement("pre");
+    main(["${IDENTIFIER}"], result => {
+        let message = result instanceof Error ? buildErrorMessage(result) : "OK";
+        let pre = document.createElement("pre");
         document.body.appendChild(pre);
         pre.appendChild(document.createTextNode(message));
     });
 
     function buildErrorMessage(e) {
-        var stack = "";
-        var je = main.javaException(e);
-        if (je && je.constructor.$meta) {
-            stack = je.constructor.$meta.name + ": ";
-            stack += je.getMessage() || "";
-            stack += "\n";
-        }
-        stack += e.stack;
+        let stack = "";
+        stack += e.message + "\n" + e.stack;
         return stack;
     }
 </script>

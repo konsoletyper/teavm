@@ -3,6 +3,7 @@
 #include "fiber.h"
 #include "string.h"
 #include "definitions.h"
+#include "core_gen.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -55,6 +56,7 @@ void teavm_afterInitClasses() {
     #endif
 }
 
+TeaVM_Class* teavm_firstClass = NULL;
 TeaVM_Class* teavm_classClass;
 TeaVM_Class* teavm_objectClass;
 TeaVM_Class* teavm_stringClass;
@@ -67,21 +69,20 @@ void teavm_initClasses() {
         if (c < teavm_beforeClasses) teavm_beforeClasses = c;
     }
     teavm_beforeClasses -= 4096;
-    int32_t classHeader = TEAVM_PACK_CLASS(teavm_classClass) | (int32_t) INT32_C(0x80000000);
     for (int i = 0; i < teavm_classReferencesCount; ++i) {
-        teavm_classReferences[i]->parent.header = classHeader;
-        teavm_classReferences[i]->services = NULL;
+        TeaVM_Class* cls = teavm_classReferences[i];
+        cls->next = teavm_firstClass;
+        teavm_firstClass = cls;
     }
 }
 
-void teavm_initReflection() {
-    for (int i = 0; i < teavm_classReferencesCount; ++i) {
-        TeaVM_Class* cls = teavm_classReferences[i];
-        void (*fn)() = cls->initReflection;
-        if (fn != NULL) {
-            (*fn)();
-        }
+TeaVM_Object* teavm_getClassObject(TeaVM_Class* cls) {
+    TeaVM_Object* result = cls->classObject;
+    if (result == NULL) {
+        result = TEAVM_CREATE_CLASS_OBJECT(cls);
+        cls->classObject = result;
     }
+    return result;
 }
 
 #define TEAVM_FILL_ARRAY_F(name, type, arrayType) \
@@ -106,3 +107,4 @@ TEAVM_FILL_ARRAY_F(teavm_fillIntArray, int32_t, int)
 TEAVM_FILL_ARRAY_F(teavm_fillLongArray, int64_t, int64_t)
 TEAVM_FILL_ARRAY_F(teavm_fillFloatArray, float, double)
 TEAVM_FILL_ARRAY_F(teavm_fillDoubleArray, double, double)
+

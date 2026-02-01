@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.teavm.backend.wasm.debug.CompositeDebugLines;
@@ -69,6 +70,7 @@ import org.teavm.backend.wasm.transformation.gc.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.gc.ClassLoaderResourceTransformation;
 import org.teavm.backend.wasm.transformation.gc.EntryPointTransformation;
 import org.teavm.backend.wasm.transformation.gc.ReferenceQueueTransformation;
+import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.common.JsonUtil;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyInfo;
@@ -88,6 +90,8 @@ import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.VariableCategoryProvider;
+import org.teavm.reflection.AnnotationGenerationHelper;
+import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.heap.Heap;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.TeaVMTarget;
@@ -117,6 +121,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private List<WasmGCClassConsumer> classConsumers = new ArrayList<>();
     private List<Supplier<Collection<MethodReference>>> additionalMethodsOnCallSites = new ArrayList<>();
     private boolean importedMemory;
+
+    private ReflectionDependencyListener reflection;
 
     public WasmGCTarget() {
         customTypeMapperFactories.add(new WasmGCAsyncTypeMapperFactory());
@@ -206,6 +212,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var characteristics = new Characteristics(controller.getUnprocessedClassSource());
         nullCheckInsertion = new NullCheckInsertion(new LowLevelNullCheckFilter(characteristics));
         this.controller = controller;
+        controller.addVirtualMethods(reflection::isVirtual);
     }
 
     @Override
@@ -239,6 +246,13 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var deps = new WasmGCDependencies(dependencyAnalyzer);
         deps.contribute();
         deps.contributeStandardExports();
+
+        var reflectionSuppliers = new ArrayList<ReflectionSupplier>();
+        for (var supplier : ServiceLoader.load(ReflectionSupplier.class, dependencyAnalyzer.getClassLoader())) {
+            reflectionSuppliers.add(supplier);
+        }
+        reflection = new ReflectionDependencyListener(reflectionSuppliers, new AnnotationGenerationHelper());
+        dependencyAnalyzer.addDependencyListener(reflection);
     }
 
     @Override
@@ -293,10 +307,13 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             module.memoryImportName = "memory";
             module.memoryImportModule = "teavm";
         }
+        controller.addVirtualMethods(reflection::isVirtual);
+        addMethodsOnCallSites(reflection::getVirtualCallSites);
         var customGenerators = new WasmGCCustomGenerators(classes, controller.getServices(),
                 customGeneratorFactories, customCustomGenerators,
                 controller.getProperties());
-        var intrinsics = new WasmGCIntrinsics(classes, controller.getServices(), intrinsicFactories, customIntrinsics);
+        var intrinsics = new WasmGCIntrinsics(classes, controller.getServices(), intrinsicFactories, customIntrinsics,
+                reflection);
         var debugInfoBuilder = new GCDebugInfoBuilder();
         var methodsOnCallSites = new LinkedHashSet<MethodReference>();
         for (var provider : additionalMethodsOnCallSites) {
@@ -371,9 +388,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var throwableType = declarationsGenerator.classInfoProvider().getClassInfo("java.lang.Throwable")
                 .getStructure();
 
-        var getFunction = new WasmFunction(declarationsGenerator.functionTypes.of(
-                WasmType.Reference.EXTERN, throwableType.getReference()
-        ));
+        var getFunction = new WasmFunction(declarationsGenerator.functionTypes.of(WasmType.EXTERN,
+                throwableType.getReference()));
         getFunction.setName("teavm.getJsException");
         getFunction.setExportName("teavm.getJsException");
         var getParam = new WasmLocal(throwableType.getReference(), "javaException");
@@ -383,11 +399,11 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         declarationsGenerator.module.functions.add(getFunction);
 
         var setFunction = new WasmFunction(declarationsGenerator.functionTypes.of(null, throwableType.getReference(),
-                WasmType.Reference.EXTERN));
+                WasmType.EXTERN));
         setFunction.setName("teavm.setJsException");
         setFunction.setExportName("teavm.setJsException");
         var setParam = new WasmLocal(throwableType.getReference(), "javaException");
-        var setValue = new WasmLocal(WasmType.Reference.EXTERN, "jsException");
+        var setValue = new WasmLocal(WasmType.EXTERN, "jsException");
         setFunction.add(setParam);
         setFunction.add(setValue);
         var setField = new WasmStructSet(throwableType, new WasmGetLocal(setParam),

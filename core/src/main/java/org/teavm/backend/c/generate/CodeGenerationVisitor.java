@@ -1396,7 +1396,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         includes.includeClass(statement.getClassName());
-        writer.print(names.forClassInitializer(statement.getClassName()) + "()");
+        writer.print("teavm_initializeClass((TeaVM_Class*) &")
+                .print(names.forClassInstance(ValueType.object(statement.getClassName())))
+                .print(", &")
+                .print(names.forClassInitializer(statement.getClassName()))
+                .print(")");
 
         if (needParenthesis) {
             writer.print(")");

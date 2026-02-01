@@ -114,18 +114,10 @@ function prepareJsLauncher() {
 }
 
 function buildErrorMessage(e) {
-    if (typeof $rt_decodeStack === "function" && typeof teavmException == "string") {
+    if (typeof $rt_decodeStack === "function" && typeof teavmException === "string") {
         return teavmException;
     }
-    let stack = "";
-    let je = main.javaException ? main.javaException(e) : void 0;
-    if (je && je.constructor.$meta) {
-        stack = je.constructor.$meta.name + ": ";
-        stack += je.getMessage();
-        stack += "\n";
-    }
-    stack += e.stack;
-    return stack;
+    return e.message + "\n" + e.stack;
 }
 
 async function prepareWasmLauncher(file) {

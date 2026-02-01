@@ -156,8 +156,10 @@ public class WasmGCDeclarationsGenerator {
 
     public void generate() {
         asyncMethodFinder.find(classes);
+        var asyncSplitMethods = asyncMethodFinder.getAsyncFamilyMethods();
+        classGenerator.setAsyncSplitMethods(asyncSplitMethods);
         methodGenerator.setAsyncMethods(asyncMethodFinder.getAsyncMethods());
-        methodGenerator.setAsyncSplitMethods(asyncMethodFinder.getAsyncFamilyMethods());
+        methodGenerator.setAsyncSplitMethods(asyncSplitMethods);
         var lastTypeIndex = 0;
         do {
             generateRound();

@@ -34,7 +34,6 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 import org.teavm.parsing.resource.ResourceProvider;
 
 public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
@@ -48,13 +47,14 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     private boolean threadLibraryUsed;
 
     public MethodBodyRenderer(RenderingContext context, Diagnostics diagnostics, boolean minifying,
-            Set<MethodReference> asyncMethods, SourceWriter writer, VariableNameGenerator variableNameGenerator) {
+            Set<MethodReference> asyncMethods, SourceWriter writer, SourceWriter metadataWriter,
+            VariableNameGenerator variableNameGenerator) {
         this.context = context;
         this.diagnostics = diagnostics;
         this.minifying = minifying;
         this.asyncMethods = asyncMethods;
         this.writer = writer;
-        statementRenderer = new StatementRenderer(context, writer, variableNameGenerator);
+        statementRenderer = new StatementRenderer(context, writer, metadataWriter, variableNameGenerator);
     }
 
     public void setCurrentMethod(MethodNode node) {
@@ -328,11 +328,6 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     @Override
     public Diagnostics getDiagnostics() {
         return diagnostics;
-    }
-
-    @Override
-    public void typeToClassString(SourceWriter writer, ValueType type) {
-        context.typeToClsString(writer, type);
     }
 
     @Override

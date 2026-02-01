@@ -43,7 +43,7 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         switch (invocation.getMethod().getName()) {
-            case "getClass":
+            case "getClassInfo":
                 return generateGetClass(invocation, context);
             case "getMonitor":
                 return generateGetMonitor(invocation, context);
@@ -80,7 +80,7 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
                 .getStructure();
         var block = new WasmBlock(false);
         block.setType(monitorType.asBlock());
-        var tmpVar = context.tempVars().acquire(WasmType.Reference.ANY);
+        var tmpVar = context.tempVars().acquire(WasmType.ANY);
         var instance = context.generate(invocation.getArguments().get(0));
         block.getBody().add(new WasmSetLocal(tmpVar, new WasmStructGet(objectStruct, instance,
                 WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET)));
@@ -109,7 +109,7 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
                 .getStructure();
         var block = new WasmBlock(false);
         block.setType(WasmType.INT32.asBlock());
-        var tmpVar = context.tempVars().acquire(WasmType.Reference.ANY);
+        var tmpVar = context.tempVars().acquire(WasmType.ANY);
         var instance = context.generate(invocation.getArguments().get(0));
         block.getBody().add(new WasmSetLocal(tmpVar, new WasmStructGet(objectStruct, instance,
                 WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET)));
@@ -140,7 +140,7 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
     private WasmExpression generateClone(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var objectInfo = context.classInfoProvider().getClassInfo("java.lang.Object");
         var objectStruct = objectInfo.getStructure();
-        var classStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
+        var classStruct = context.classInfoProvider().reflectionTypes().classInfo();
 
         var block = new WasmBlock(false);
         block.setType(objectStruct.getReference().asBlock());
@@ -149,7 +149,7 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
         var vt = new WasmStructGet(objectStruct, obj.expr(), WasmGCClassInfoProvider.VT_FIELD_OFFSET);
         var cls = new WasmStructGet(objectInfo.getVirtualTableStructure(), vt,
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var functionRef = new WasmStructGet(classStruct, cls, context.classInfoProvider().getCloneOffset());
+        var functionRef = new WasmStructGet(classStruct.structure(), cls, classStruct.cloneFunctionIndex());
         var call = new WasmCallReference(functionRef, context.functionTypes().of(
                 objectStruct.getReference(), objectStruct.getReference()));
         call.getArguments().add(obj.expr());

@@ -21,6 +21,14 @@ public abstract class WasmType {
     public static final WasmType.Number FLOAT32 = new Number(WasmNumType.FLOAT32);
     public static final WasmType.Number FLOAT64 = new Number(WasmNumType.FLOAT64);
 
+    public static final SpecialReference FUNC = SpecialReferenceKind.FUNC.asType();
+    public static final SpecialReference ANY = SpecialReferenceKind.ANY.asType();
+    public static final SpecialReference EQ = SpecialReferenceKind.EQ.asType();
+    public static final SpecialReference EXTERN = SpecialReferenceKind.EXTERN.asType();
+    public static final SpecialReference STRUCT = SpecialReferenceKind.STRUCT.asType();
+    public static final SpecialReference ARRAY = SpecialReferenceKind.ARRAY.asType();
+    public static final SpecialReference I31 = SpecialReferenceKind.I31.asType();
+
     private WasmStorageType.Regular storageType;
     private WasmBlockType.Value blockType;
 
@@ -65,14 +73,6 @@ public abstract class WasmType {
     }
 
     public static abstract class Reference extends WasmType {
-        public static final SpecialReference FUNC = SpecialReferenceKind.FUNC.asType();
-        public static final SpecialReference ANY = SpecialReferenceKind.ANY.asType();
-        public static final SpecialReference EQ = SpecialReferenceKind.EQ.asType();
-        public static final SpecialReference EXTERN = SpecialReferenceKind.EXTERN.asType();
-        public static final SpecialReference STRUCT = SpecialReferenceKind.STRUCT.asType();
-        public static final SpecialReference ARRAY = SpecialReferenceKind.ARRAY.asType();
-        public static final SpecialReference I31 = SpecialReferenceKind.I31.asType();
-
         private final boolean nullable;
 
         Reference(boolean nullable) {

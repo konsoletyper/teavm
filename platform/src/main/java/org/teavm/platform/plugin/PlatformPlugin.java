@@ -103,13 +103,6 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
         var isJs = host.getExtension(TeaVMJavaScriptHost.class) != null;
         host.add(new AsyncMethodProcessor(!isJs));
         if (!isBootstrap()) {
-            if (isJs) {
-                host.add(new NewInstanceDependencySupport());
-            }
-            host.add(new ClassLookupDependencySupport());
-            host.add(new EnumDependencySupport());
-            host.add(new PlatformDependencyListener());
-
             TeaVMPluginUtil.handleNatives(host, Platform.class);
         }
 

@@ -30,7 +30,7 @@ class WasmGCJSTypeMapper implements WasmGCCustomTypeMapper, WasmGCCustomTypeMapp
     @Override
     public WasmType map(String className) {
         if (typeHelper.isJavaScriptClass(className)) {
-            return WasmType.Reference.EXTERN;
+            return WasmType.EXTERN;
         } else if (className.equals(WasmGCJSRuntime.CharArrayData.class.getName())) {
             var cls = classInfoProvider.getClassInfo(ValueType.arrayOf(ValueType.CHARACTER));
             var field = cls.getStructure().getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);

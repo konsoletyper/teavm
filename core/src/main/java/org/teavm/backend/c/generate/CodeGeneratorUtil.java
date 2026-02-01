@@ -54,53 +54,65 @@ public final class CodeGeneratorUtil {
         } else if (value instanceof Short) {
             writeIntValue(writer, (Short) value);
         } else if (value instanceof Long) {
-            long v = (Long) value;
-            if (v == Long.MIN_VALUE) {
-                writer.print("(int64_t) INT64_C(0x8000000000000000)");
-            } else {
-                if (v < 0) {
-                    writer.print("-");
-                    v = -v;
-                }
-                writer.print("INT64_C(");
-                writeLongConstant(writer, v);
-                writer.print(")");
-            }
+            writeValue(writer, (Long) value);
         } else if (value instanceof Float) {
-            float f = (Float) value;
-            if (Float.isInfinite(f)) {
-                if (f < 0) {
-                    writer.print("-");
-                }
-                writer.print("INFINITY");
-            } else if (Float.isNaN(f)) {
-                writer.print("NAN");
-            } else  if ((int) f == f) {
-                writer.print(f + "f");
-            } else {
-                writer.print(Float.toHexString(f) + "f");
-            }
+            writeValue(writer, (Float) value);
         } else if (value instanceof Double) {
-            double d = (Double) value;
-            if (Double.isInfinite(d)) {
-                if (d < 0) {
-                    writer.print("-");
-                }
-                writer.print("INFINITY");
-            } else if (Double.isNaN(d)) {
-                writer.print("NAN");
-            } else if ((int) d == d) {
-                writer.print(value.toString());
-            } else {
-                writer.print(Double.toHexString(d));
-            }
+            writeValue(writer, (Double) value);
         } else if (value instanceof Boolean) {
             writer.print((Boolean) value ? "1" : "0");
         } else if (value instanceof Character) {
             writeIntValue(writer, (char) value);
         } else if (value instanceof ValueType) {
             var type = (ValueType) value;
+            context.addTypeLiteral(type);
+            writer.print("teavm_getClassObject((TeaVM_Class*) ");
             writeTypeReference(writer, context, includes, type);
+            writer.print(")");
+        }
+    }
+
+    public static void writeValue(CodeWriter writer, long value) {
+        if (value == Long.MIN_VALUE) {
+            writer.print("(int64_t) INT64_C(0x8000000000000000)");
+        } else {
+            if (value < 0) {
+                writer.print("-");
+                value = -value;
+            }
+            writer.print("INT64_C(");
+            writeLongConstant(writer, value);
+            writer.print(")");
+        }
+    }
+
+    public static void writeValue(CodeWriter writer, float value) {
+        if (Float.isInfinite(value)) {
+            if (value < 0) {
+                writer.print("-");
+            }
+            writer.print("INFINITY");
+        } else if (Float.isNaN(value)) {
+            writer.print("NAN");
+        } else  if ((int) value == value) {
+            writer.print(value + "f");
+        } else {
+            writer.print(Float.toHexString(value) + "f");
+        }
+    }
+
+    public static void writeValue(CodeWriter writer, double value) {
+        if (Double.isInfinite(value)) {
+            if (value < 0) {
+                writer.print("-");
+            }
+            writer.print("INFINITY");
+        } else if (Double.isNaN(value)) {
+            writer.print("NAN");
+        } else if ((long) value == value) {
+            writer.print(String.valueOf(value));
+        } else {
+            writer.print(Double.toHexString(value));
         }
     }
 

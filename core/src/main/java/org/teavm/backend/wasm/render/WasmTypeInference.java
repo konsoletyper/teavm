@@ -361,10 +361,10 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     public void visit(WasmExternConversion expression) {
         switch (expression.getType()) {
             case EXTERN_TO_ANY:
-                result = List.of(WasmType.Reference.ANY);
+                result = List.of(WasmType.ANY);
                 break;
             case ANY_TO_EXTERN:
-                result = List.of(WasmType.Reference.EXTERN);
+                result = List.of(WasmType.EXTERN);
                 break;
         }
     }

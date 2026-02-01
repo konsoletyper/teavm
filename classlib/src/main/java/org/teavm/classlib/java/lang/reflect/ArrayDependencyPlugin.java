@@ -55,10 +55,10 @@ public class ArrayDependencyPlugin implements DependencyPlugin {
                     }
                 });
                 break;
-            case "getImpl":
+            case "get":
                 reachGet(agent, method);
                 break;
-            case "setImpl":
+            case "set":
                 reachSet(agent, method);
                 break;
         }

@@ -46,16 +46,8 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         if (cls.getName().equals("java.lang.Object")) {
             for (var method : cls.getMethods()) {
-                switch (method.getName()) {
-                    case "getClass":
-                        method.setProgram(null);
-                        method.getModifiers().add(ElementModifier.NATIVE);
-                        break;
-                    default:
-                        if (method.getProgram() != null) {
-                            transformMonitorFieldAccess(method.getProgram());
-                        }
-                        break;
+                if (method.getProgram() != null) {
+                    transformMonitorFieldAccess(method.getProgram());
                 }
             }
             var getMonitorMethod = new MethodHolder(GET_MONITOR.getDescriptor());
@@ -67,21 +59,6 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
             setMonitorMethod.setLevel(AccessLevel.PRIVATE);
             setMonitorMethod.getModifiers().add(ElementModifier.NATIVE);
             cls.addMethod(setMonitorMethod);
-        } else if (cls.getName().equals("java.lang.Class")) {
-            for (var method : cls.getMethods()) {
-                switch (method.getName()) {
-                    case "getComponentType":
-                    case "isAssignableFrom":
-                    case "getEnclosingClass":
-                    case "getDeclaringClass":
-                    case "getSimpleNameCache":
-                    case "setSimpleNameCache":
-                    case "getSuperclass":
-                        method.setProgram(null);
-                        method.getModifiers().add(ElementModifier.NATIVE);
-                        break;
-                }
-            }
         } else if (cls.getName().equals("java.lang.System")) {
             Program arrayCopyProgram = null;
             MethodDescriptor arrayCopyDescriptor = null;

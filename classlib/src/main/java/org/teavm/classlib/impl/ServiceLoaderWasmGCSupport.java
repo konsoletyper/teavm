@@ -70,14 +70,14 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
 
         @Override
         public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
+            var classInfoStruct = context.classInfoProvider().reflectionTypes().classInfo();
+
             var initializer = generateInitializer(context);
             var emptyInitializer = generateEmptyInitializer(context);
             var arrayType = (WasmType.Reference) context.typeMapper().mapType(ValueType.parse(Object[].class));
             var servicesFunctionType = context.functionTypes().of(arrayType);
-            var classLocal = new WasmLocal(context.typeMapper().mapType(ValueType.parse(Class.class)));
+            var classLocal = new WasmLocal(classInfoStruct.structure().getReference());
             function.add(classLocal);
-
-            var classStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
 
             var initializerGlobalName = context.names().topLevel("teavm@initializeServicesRef");
             var global = new WasmGlobal(initializerGlobalName, initializer.getType().getReference(),
@@ -88,8 +88,8 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             function.getBody().add(new WasmCallReference(new WasmGetGlobal(global), initializer.getType()));
 
             var block = new WasmBlock(false);
-            var servicesFunctionRef = new WasmStructGet(classStruct, new WasmGetLocal(classLocal),
-                    context.classInfoProvider().getServicesOffset());
+            var servicesFunctionRef = new WasmStructGet(classInfoStruct.structure(), new WasmGetLocal(classLocal),
+                    classInfoStruct.servicesIndex());
             var nullCheckedRef = new WasmNullBranch(WasmNullCondition.NULL, servicesFunctionRef, block);
             var getServices = new WasmCallReference(nullCheckedRef, servicesFunctionType);
             block.getBody().add(new WasmReturn(getServices));
@@ -99,14 +99,15 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
         }
 
         private WasmFunction generateInitializer(WasmGCCustomGeneratorContext context) {
+            var classInfoStruct = context.classInfoProvider().reflectionTypes().classInfo();
+
             var function = new WasmFunction(context.functionTypes().of(null));
             function.setReferenced(true);
             function.setName(context.names().topLevel("teavm@initializeServices"));
             context.module().functions.add(function);
 
             var serviceTypes = information.serviceTypes();
-            var classStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
-            var fieldIndex = context.classInfoProvider().getServicesOffset();
+            var fieldIndex = classInfoStruct.servicesIndex();
 
             for (var serviceType : serviceTypes) {
                 var implementations = information.serviceImplementations(serviceType);
@@ -114,7 +115,8 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
                 var classInfo = context.classInfoProvider().getClassInfo(serviceType);
                 var classRef = new WasmGetGlobal(classInfo.getPointer());
                 var providerRef = new WasmFunctionReference(providerFunction);
-                function.getBody().add(new WasmStructSet(classStruct, classRef, fieldIndex, providerRef));
+                function.getBody().add(new WasmStructSet(classInfoStruct.structure(), classRef, fieldIndex,
+                        providerRef));
             }
 
             return function;

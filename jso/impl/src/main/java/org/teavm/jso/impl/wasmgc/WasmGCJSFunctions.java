@@ -30,7 +30,7 @@ class WasmGCJSFunctions {
         if (function == null) {
             var extern = WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
             var constructorParamTypes = new WasmType[index + 1];
-            Arrays.fill(constructorParamTypes, WasmType.Reference.EXTERN);
+            Arrays.fill(constructorParamTypes, WasmType.EXTERN);
             var functionType = context.functionTypes().of(extern, constructorParamTypes);
             function = new WasmFunction(functionType);
             function.setName(context.names().topLevel("teavm.js:createFunction" + index));
@@ -47,7 +47,7 @@ class WasmGCJSFunctions {
         if (function == null) {
             var extern = WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
             var constructorParamTypes = new WasmType[index + 1];
-            Arrays.fill(constructorParamTypes, WasmType.Reference.EXTERN);
+            Arrays.fill(constructorParamTypes, WasmType.EXTERN);
             var functionType = context.functionTypes().of(extern, constructorParamTypes);
             function = new WasmFunction(functionType);
             function.setName(context.names().topLevel("teavm.js:bindFunction" + index));
@@ -62,8 +62,7 @@ class WasmGCJSFunctions {
     WasmFunction getGet(WasmGCJsoContext context) {
         var function = getFunction;
         if (function == null) {
-            var functionType = context.functionTypes().of(WasmType.Reference.EXTERN, WasmType.Reference.EXTERN,
-                    WasmType.Reference.EXTERN);
+            var functionType = context.functionTypes().of(WasmType.EXTERN, WasmType.EXTERN, WasmType.EXTERN);
             function = new WasmFunction(functionType);
             function.setName(context.names().topLevel("teavm.js:getProperty"));
             function.setImportModule("teavmJso");
@@ -78,8 +77,8 @@ class WasmGCJSFunctions {
         var function = callers[index];
         if (function == null) {
             var paramTypes = new WasmType[index + 1];
-            Arrays.fill(paramTypes, WasmType.Reference.EXTERN);
-            var functionType = context.functionTypes().of(WasmType.Reference.EXTERN, paramTypes);
+            Arrays.fill(paramTypes, WasmType.EXTERN);
+            var functionType = context.functionTypes().of(WasmType.EXTERN, paramTypes);
             function = new WasmFunction(functionType);
             function.setName(context.names().topLevel("teavm.js:callFunction" + index));
             function.setImportModule("teavmJso");

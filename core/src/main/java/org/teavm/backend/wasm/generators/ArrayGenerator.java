@@ -21,7 +21,6 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
@@ -88,10 +87,10 @@ public class ArrayGenerator implements WasmMethodGenerator {
         WasmExpression flags = new WasmLoadInt32(4, componentClass, WasmInt32Subtype.INT32, flagsOffset);
         function.getBody().add(new WasmSetLocal(flagsVar, flags));
 
-        WasmExpression isPrimitive = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND,
-                new WasmGetLocal(flagsVar), new WasmInt32Constant(RuntimeClass.PRIMITIVE));
+        /*WasmExpression isPrimitive = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND,
+                new WasmGetLocal(flagsVar), new WasmInt32Constant(RuntimeClass.PRIMITIVE));*/
         WasmBlock objectBlock = new WasmBlock(false);
-        objectBlock.getBody().add(new WasmBranch(isPrimitive, objectBlock));
+        //objectBlock.getBody().add(new WasmBranch(isPrimitive, objectBlock));
         function.getBody().add(objectBlock);
         int base = context.getClassGenerator().getClassSize(RuntimeArray.class.getName());
 
@@ -100,9 +99,9 @@ public class ArrayGenerator implements WasmMethodGenerator {
         function.getBody().add(new WasmReturn(new WasmInt32Constant(0)));
 
         var primitiveExpr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHR_UNSIGNED,
-                new WasmGetLocal(flagsVar), new WasmInt32Constant(RuntimeClass.PRIMITIVE_SHIFT));
+                new WasmGetLocal(flagsVar), new WasmInt32Constant(0));
         primitiveExpr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                new WasmGetLocal(flagsVar), new WasmInt32Constant(RuntimeClass.PRIMITIVE_MASK));
+                new WasmGetLocal(flagsVar), new WasmInt32Constant(0));
         WasmSwitch primitiveSwitch = new WasmSwitch(primitiveExpr, currentBlock);
         for (int i = 0; i <= 8; ++i) {
             primitiveSwitch.getTargets().add(currentBlock);

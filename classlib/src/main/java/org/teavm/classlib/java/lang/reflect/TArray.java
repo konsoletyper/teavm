@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TArrayIndexOutOfBoundsException;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
@@ -24,33 +22,19 @@ import org.teavm.classlib.java.lang.TNegativeArraySizeException;
 import org.teavm.classlib.java.lang.TNullPointerException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.interop.DelegateTo;
-import org.teavm.interop.NoSideEffects;
-import org.teavm.platform.PlatformClass;
-import org.teavm.runtime.Allocator;
-import org.teavm.runtime.RuntimeArray;
-import org.teavm.runtime.RuntimeClass;
-import org.teavm.runtime.RuntimeObject;
 
 public final class TArray extends TObject {
-    @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayDependencyPlugin.class)
-    @DelegateTo("getLengthLowLevel")
-    @NoSideEffects
-    public static native int getLength(TObject array) throws TIllegalArgumentException;
-
-    @SuppressWarnings("unused")
-    private static int getLengthLowLevel(RuntimeObject obj) {
-        RuntimeClass cls = RuntimeClass.getClass(obj);
-        if (cls.itemType == null) {
+    public static int getLength(Object array) throws TIllegalArgumentException {
+        var cls = ((TClass<?>) (Object) array.getClass()).getClassInfo();
+        if (cls.itemType() == null) {
             throw new TIllegalArgumentException();
         }
-        RuntimeArray array = (RuntimeArray) obj;
-        return array.size;
+        return cls.arrayLength(array);
     }
 
     @PluggableDependency(ArrayDependencyPlugin.class)
-    public static TObject newInstance(Class<?> componentType, int length) throws TNegativeArraySizeException {
+    public static Object newInstance(Class<?> componentType, int length) throws TNegativeArraySizeException {
         if (componentType == null) {
             throw new TNullPointerException();
         }
@@ -60,48 +44,28 @@ public final class TArray extends TObject {
         if (length < 0) {
             throw new TNegativeArraySizeException();
         }
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return newInstanceImpl(componentType, length);
-        } else {
-            return newInstanceImpl(((TClass<?>) (Object) componentType).getPlatformClass(), length);
-        }
+
+        var cls = ((TClass<?>) (Object) componentType).getClassInfo();
+        return cls.newArrayInstance(length);
     }
 
-    private static native TObject newInstanceImpl(Class<?> componentType, int length);
-
-    @GeneratedBy(ArrayNativeGenerator.class)
-    @DelegateTo("newInstanceLowLevel")
-    @NoSideEffects
-    private static native TObject newInstanceImpl(PlatformClass componentType, int length);
-
-    @SuppressWarnings("unused")
-    private static RuntimeObject newInstanceLowLevel(RuntimeClass cls, int length) {
-        return Allocator.allocateArray(cls.arrayType, length).toStructure();
-    }
-
-    public static TObject get(TObject array, int index) throws TIllegalArgumentException,
+    @PluggableDependency(ArrayDependencyPlugin.class)
+    public static Object get(Object array, int index) throws TIllegalArgumentException,
             TArrayIndexOutOfBoundsException {
         if (index < 0 || index >= getLength(array)) {
             throw new TArrayIndexOutOfBoundsException();
         }
-        return getImpl(array, index);
+        var classInfo = ((TClass<?>) (Object) array.getClass()).getClassInfo();
+        return classInfo.getItem(array, index);
     }
 
-    public static void set(TObject array, int index, TObject value) throws TIllegalArgumentException,
+    @PluggableDependency(ArrayDependencyPlugin.class)
+    public static void set(Object array, int index, Object value) throws TIllegalArgumentException,
             TArrayIndexOutOfBoundsException {
         if (index < 0 || index >= getLength(array)) {
             throw new TArrayIndexOutOfBoundsException();
         }
-        setImpl(array, index, value);
+        var classInfo = ((TClass<?>) (Object) array.getClass()).getClassInfo();
+        classInfo.putItem(array, index, value);
     }
-
-    @GeneratedBy(ArrayNativeGenerator.class)
-    @PluggableDependency(ArrayDependencyPlugin.class)
-    @NoSideEffects
-    private static native TObject getImpl(TObject array, int index);
-
-    @GeneratedBy(ArrayNativeGenerator.class)
-    @PluggableDependency(ArrayDependencyPlugin.class)
-    @NoSideEffects
-    private static native void setImpl(TObject array, int index, TObject value);
 }

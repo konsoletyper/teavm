@@ -104,6 +104,7 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -299,6 +300,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression classLiteral(ValueType type) {
+        var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+        return new WasmCall(classInfoType.classObjectFunction(), classInfoLiteral(type));
+    }
+    
+    private WasmExpression classInfoLiteral(ValueType type) {
         if (type instanceof ValueType.Array) {
             var itemType = ((ValueType.Array) type).getItemType();
             if (!(itemType instanceof ValueType.Primitive)) {
@@ -493,7 +499,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     public void visit(NewArrayExpr expr) {
         accept(expr.getLength(), WasmType.INT32);
         var function = context.classInfoProvider().getArrayConstructor(expr.getType());
-        var call = new WasmCall(function, classLiteral(expr.getType()), result);
+        var call = new WasmCall(function, classInfoLiteral(expr.getType()), result);
         call.setLocation(expr.getLocation());
         result = call;
     }
@@ -503,7 +509,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             Supplier<List<WasmExpression>> dimensions, TextLocation location) {
         var args = new ArrayList<WasmExpression>();
         var dimensionsValue = dimensions.get();
-        args.add(classLiteral(((ValueType.Array) arrayType).getItemType()));
+        args.add(classInfoLiteral(((ValueType.Array) arrayType).getItemType()));
         args.addAll(dimensionsValue);
         var function = context.classInfoProvider().getMultiArrayConstructor(dimensionsValue.size());
         var call = new WasmCall(function, args.toArray(new WasmExpression[0]));
@@ -527,8 +533,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                 vtRef,
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET
         );
-        var classClass = context.standardClasses().classClass().getType();
-        var classRefCached = exprCache.create(classRef, classClass, expression.getLocation(), block.getBody());
+        var classInfoType = context.classInfoProvider().reflectionTypes().classInfo().structure().getReference();
+        var classRefCached = exprCache.create(classRef, classInfoType, expression.getLocation(), block.getBody());
         supertypeCall.getArguments().add(classRefCached.expr());
         supertypeCall.getArguments().add(classRefCached.expr());
         classRefCached.release();
@@ -1003,6 +1009,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public ClassHierarchy hierarchy() {
             return context.hierarchy();
+        }
+
+        @Override
+        public ListableClassReaderSource classes() {
+            return context.classes();
         }
 
         @Override

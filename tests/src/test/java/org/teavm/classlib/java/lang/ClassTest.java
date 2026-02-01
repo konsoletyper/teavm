@@ -116,7 +116,7 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThroughReflectionWithClassInstance() throws Exception {
         var instance = (Runnable) getTestClass(true).newInstance();
         instance.run();
@@ -129,7 +129,7 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThroughReflectionWithCalculatedName() throws Exception {
         Runnable instance = (Runnable) Class.forName(getClassNameToFind()).newInstance();
         instance.run();
@@ -142,7 +142,7 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThroughReflection() throws Exception {
         Runnable instance = (Runnable) Class.forName(TestObject.class.getName()).newInstance();
         instance.run();
@@ -151,7 +151,7 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThoughReflectionWithConstantName() throws Exception {
         var cls = Class.forName("org.teavm.classlib.java.lang.ClassTest$ClassReferredByConstantName");
         assertArrayEquals(new Class<?>[] { Supplier.class }, cls.getInterfaces());
@@ -166,7 +166,7 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThroughReflectionAsync() throws Exception {
         Runnable instance = TestObjectAsync.class.newInstance();
         instance.run();
@@ -208,14 +208,12 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationsExposed() {
         var annotations = A.class.getAnnotations();
         assertTrue(Stream.of(annotations).anyMatch(a -> a instanceof TestAnnot));
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationFieldsExposed() {
         AnnotWithDefaultField annot = B.class.getAnnotation(AnnotWithDefaultField.class);
         assertEquals(2, annot.x());
@@ -224,7 +222,6 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationFieldTypesSupported() {
         AnnotWithVariousFields annot = D.class.getAnnotation(AnnotWithVariousFields.class);
         assertEquals(true, annot.a());
@@ -245,14 +242,12 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationEnumFields() {
         var annot = WithEnumArrayAnnotation.class.getAnnotation(AnnotationWithEnumArray.class);
         assertArrayEquals(new EnumForAnnotation[] { EnumForAnnotation.FOO, EnumForAnnotation.BAZ }, annot.value());
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void getInterfaces() {
         assertEquals(0, SuperclassWithoutInterfaces.class.getInterfaces().length);
         assertEquals(Set.of(TestInterface1.class, TestInterface2.class),
@@ -260,7 +255,6 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void inheritedAnnotation() {
         assertTrue(A.class.isAnnotationPresent(InheritedAnnot.class));
         assertTrue(A.class.isAnnotationPresent(TestAnnot.class));
@@ -277,7 +271,6 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void isAnnotation() {
         assertTrue(Documented.class.isAnnotation());
         assertFalse(ClassTest.class.isAnnotation());

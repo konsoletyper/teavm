@@ -81,7 +81,7 @@ public class CoroutineTransformation {
             @Override
             public WasmLocal get() {
                 if (local == null) {
-                    local = new WasmLocal(WasmType.Reference.FUNC, "_teavm_fiberTmp");
+                    local = new WasmLocal(WasmType.FUNC, "_teavm_fiberTmp");
                     function.add(local);
                 }
                 return local;
