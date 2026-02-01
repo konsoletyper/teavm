@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2025 Maksim Tiushev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.interop;
+package org.teavm.classlib.java.net;
 
-public final class Platforms {
-    private Platforms() {
-    }
-
-    public static final String JAVASCRIPT = "javascript";
-    public static final String WEBASSEMBLY = "webassembly";
-    public static final String WEBASSEMBLY_BROWSER = "webassembly-browser";
-    public static final String WEBASSEMBLY_WASI = "webassembly-wasi";
-    public static final String C = "c";
-    public static final String LOW_LEVEL = "low_level";
-    public static final String WEBASSEMBLY_GC = "webassembly-gc";
+/**
+ * This is a placeholder class required only to maintain type compatibility.
+ * The actual implementation will be provided later.
+ */
+public class TNetworkInterface {
 }
