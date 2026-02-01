@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.backend.javascript.intrinsics.reflection;
 
-import org.teavm.backend.javascript.spi.Injector;
-import org.teavm.backend.javascript.spi.InjectorContext;
+import org.teavm.backend.javascript.rendering.RenderingContext;
 import org.teavm.model.MethodReference;
+import org.teavm.runtime.reflect.ClassInfo;
 
-public class ObjectListGenerator implements Injector {
-    @Override
-    public void generate(InjectorContext context, MethodReference methodRef) {
-        context.getWriter().appendFunction("$rt_wrapArray").append("(").appendClass("java.lang.Object").append(",");
-        context.writeExpr(context.getArgument(0));
-        context.getWriter().append(")");
+public class ReflectionIntrinsics {
+    private RenderingContext context;
+
+    public ReflectionIntrinsics(RenderingContext context) {
+        this.context = context;
+    }
+
+    public void apply() {
+        var classGen = new ClassInfoGenerator();
+        context.addInjector(new MethodReference(ClassInfo.class, "classObject", Class.class), classGen);
     }
 }

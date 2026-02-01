@@ -15,40 +15,24 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import org.teavm.classlib.impl.reflection.FieldReader;
-import org.teavm.classlib.impl.reflection.FieldWriter;
-import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
+import org.teavm.runtime.reflect.FieldInfo;
+import org.teavm.runtime.reflect.ModifiersInfo;
 
 public class TField extends TAccessibleObject implements TMember {
     private TClass<?> declaringClass;
-    private String name;
-    private int modifiers;
-    private int accessLevel;
-    private TClass<?> type;
+    private FieldInfo fieldInfo;
+    private TAnnotation[] declaredAnnotations;
     private TType genericType;
-    private FieldReader getter;
-    private FieldWriter setter;
-    private Object[] declaredAnnotations;
+    private boolean genericTypeInitialized;
 
-    public TField(TClass<?> declaringClass, String name, int modifiers, int accessLevel, TClass<?> type,
-            Object genericType, FieldReader getter, FieldWriter setter, Annotation[] declaredAnnotations) {
+    public TField(TClass<?> declaringClass, FieldInfo fieldInfo) {
         this.declaringClass = declaringClass;
-        this.name = name;
-        this.modifiers = modifiers;
-        this.accessLevel = accessLevel;
-        this.type = type;
-        this.genericType = genericType != null
-                ? TTypeVariableStub.resolve((TType) genericType, declaringClass)
-                : type;
-        this.getter = getter;
-        this.setter = setter;
-        this.declaredAnnotations = declaredAnnotations;
+        this.fieldInfo = fieldInfo;
     }
 
     @Override
@@ -58,28 +42,34 @@ public class TField extends TAccessibleObject implements TMember {
 
     @Override
     public String getName() {
-        return name;
+        return fieldInfo.name().getStringObject();
     }
 
     @Override
     public int getModifiers() {
-        return Flags.getModifiers(modifiers, accessLevel);
+        return fieldInfo.modifiers() & ModifiersInfo.JVM_FLAGS_MASK;
     }
 
     public boolean isEnumConstant() {
-        return (modifiers & Flags.ENUM) != 0;
+        return (fieldInfo.modifiers() & ModifiersInfo.ENUM) != 0;
     }
 
     @Override
     public boolean isSynthetic() {
-        return (modifiers & Flags.SYNTHETIC) != 0;
+        return (fieldInfo.modifiers() & ModifiersInfo.SYNTHETIC) != 0;
     }
 
     public TClass<?> getType() {
-        return type;
+        return (TClass<?>) (Object) fieldInfo.type().classObject();
     }
 
     public TType getGenericType() {
+        if (!genericTypeInitialized) {
+            genericTypeInitialized = true;
+            if (fieldInfo.genericType() != null) {
+                genericType = TGenericTypeFactory.create(declaringClass, fieldInfo.genericType());
+            }
+        }
         return genericType;
     }
 
@@ -90,7 +80,7 @@ public class TField extends TAccessibleObject implements TMember {
         if (sb.length() > 0) {
             sb.append(' ');
         }
-        sb.append(getType().getName()).append(' ').append(declaringClass.getName()).append(".").append(name);
+        sb.append(getType().getName()).append(' ').append(declaringClass.getName()).append(".").append(getName());
         return sb.toString();
     }
 
@@ -101,7 +91,7 @@ public class TField extends TAccessibleObject implements TMember {
     }
 
     public Object getWithoutCheck(Object obj) {
-        return getter.read(obj);
+        return fieldInfo.reader().read(obj);
     }
 
     public void set(Object obj, Object value) throws TIllegalArgumentException, TIllegalAccessException {
@@ -111,11 +101,11 @@ public class TField extends TAccessibleObject implements TMember {
     }
 
     public void setWithoutCheck(Object obj, Object value) {
-        setter.write(obj, value);
+        fieldInfo.writer().write(obj, value);
     }
 
     private void checkInstance(Object obj) {
-        if ((modifiers & Flags.STATIC) == 0) {
+        if ((fieldInfo.modifiers() & ModifiersInfo.STATIC) == 0) {
             if (obj == null) {
                 throw new NullPointerException();
             }
@@ -126,13 +116,13 @@ public class TField extends TAccessibleObject implements TMember {
     }
 
     public void checkGetAccess() throws TIllegalAccessException {
-        if (getter == null) {
+        if (fieldInfo.reader() == null) {
             throw new TIllegalAccessException();
         }
     }
 
     public void checkSetAccess() throws TIllegalAccessException {
-        if (setter == null) {
+        if (fieldInfo.reader() == null) {
             throw new TIllegalAccessException();
         }
     }
@@ -144,6 +134,13 @@ public class TField extends TAccessibleObject implements TMember {
 
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
-        return declaredAnnotations != null ? (TAnnotation[]) declaredAnnotations.clone() : new TAnnotation[0];
+        if (declaredAnnotations == null) {
+            var count = fieldInfo.annotationCount();
+            declaredAnnotations = new TAnnotation[count];
+            for (var i = 0; i < count; ++i) {
+                declaredAnnotations[i] = (TAnnotation) fieldInfo.annotation(i).createObject();
+            }
+        }
+        return declaredAnnotations.clone();
     }
 }

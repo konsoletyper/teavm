@@ -18,17 +18,15 @@ package org.teavm.classlib.impl.reflection.c;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
-import org.teavm.classlib.impl.reflection.FieldInfo;
-import org.teavm.classlib.impl.reflection.FieldInfoList;
-import org.teavm.classlib.impl.reflection.FieldReader;
-import org.teavm.classlib.impl.reflection.FieldWriter;
+import org.teavm.runtime.reflect.FieldInfo;
+import org.teavm.runtime.reflect.FieldReader;
+import org.teavm.runtime.reflect.FieldWriter;
 import org.teavm.model.MethodReference;
 
 public class CFieldInfoIntrinsic implements Intrinsic {
     @Override
     public boolean canHandle(MethodReference method) {
         return method.getClassName().equals(FieldInfo.class.getName())
-                || method.getClassName().equals(FieldInfoList.class.getName())
                 || method.getClassName().equals(FieldReader.class.getName())
                 || method.getClassName().equals(FieldWriter.class.getName());
     }

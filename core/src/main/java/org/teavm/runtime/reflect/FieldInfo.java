@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,33 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.runtime.reflect;
 
-import java.lang.annotation.Annotation;
-import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.runtime.StringInfo;
 
 public class FieldInfo {
-    @InjectedBy(MemberInfoGenerator.class)
-    public native final String name();
+    public native final StringInfo name();
 
-    @InjectedBy(MemberInfoGenerator.class)
     public native final int modifiers();
 
-    @InjectedBy(MemberInfoGenerator.class)
-    public native final int accessLevel();
+    public native final int annotationCount();
 
-    @InjectedBy(MemberInfoGenerator.class)
-    public native final Annotation[] annotations();
+    public native final AnnotationInfo annotation(int index);
 
-    @InjectedBy(MemberInfoGenerator.class)
-    public native final Class<?> type();
+    public native final ClassInfo type();
 
-    @InjectedBy(MemberInfoGenerator.class)
-    public native final Object genericType();
+    public native final GenericTypeInfo genericType();
 
-    @InjectedBy(MemberInfoGenerator.class)
     public native final FieldReader reader();
 
-    @InjectedBy(MemberInfoGenerator.class)
     public native final FieldWriter writer();
 }

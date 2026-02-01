@@ -15,52 +15,37 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.reflection.Flags;
-import org.teavm.classlib.impl.reflection.MethodCaller;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
-import org.teavm.classlib.java.lang.TObject;
-import org.teavm.platform.Platform;
+import org.teavm.runtime.reflect.ClassInfo;
+import org.teavm.runtime.reflect.MethodInfo;
+import org.teavm.runtime.reflect.ModifiersInfo;
 
 public class TMethod extends TExecutable implements TMember {
-    private String name;
-    private TClass<?> returnType;
     private TType genericReturnType;
-    private boolean genericReturnTypeResolved;
-    private MethodCaller caller;
 
-    public TMethod(TClass<?> declaringClass, String name, int flags, int accessLevel,
-            TClass<?> returnType, Object genericReturnType,
-            TClass<?>[] parameterTypes, Object[] genericParameterTypes,
-            MethodCaller caller, Annotation[] declaredAnnotations,
-            TTypeVariableImpl[] typeParameters) {
-        super(declaringClass, flags, accessLevel, parameterTypes, genericParameterTypes, declaredAnnotations,
-                typeParameters);
-        this.name = name;
-        this.returnType = returnType;
-        this.genericReturnType = (TType) genericReturnType;
-        this.caller = caller;
+    public TMethod(ClassInfo declaringClass, MethodInfo info) {
+        super(declaringClass, info);
     }
 
     @Override
     public String getName() {
-        return name;
+        return methodInfo.name().getStringObject();
     }
 
     public TClass<?> getReturnType() {
-        return returnType;
+        return (TClass<?>) (Object) methodInfo.returnType().classObject();
     }
 
     public TType getGenericReturnType() {
-        if (!genericReturnTypeResolved) {
-            genericReturnTypeResolved = true;
-            if (genericReturnType == null) {
-                genericReturnType = returnType;
+        if (genericReturnType == null) {
+            var reflection = methodInfo.reflection();
+            if (reflection == null || reflection.genericReturnType() == null) {
+                genericReturnType = getReturnType();
             } else {
-                genericReturnType = TTypeVariableStub.resolve(genericReturnType, this);
+                genericReturnType = TGenericTypeFactory.create(this, reflection.genericReturnType());
             }
         }
         return genericReturnType;
@@ -74,7 +59,7 @@ public class TMethod extends TExecutable implements TMember {
             sb.append(' ');
         }
         sb.append(getReturnType().getName()).append(' ').append(getDeclaringClass().getName()).append('.')
-                .append(name).append('(');
+                .append(getName()).append('(');
         TClass<?>[] parameterTypes = getParameterTypes();
         if (parameterTypes.length > 0) {
             sb.append(parameterTypes[0].getName());
@@ -89,36 +74,29 @@ public class TMethod extends TExecutable implements TMember {
 
     public Object invoke(Object obj, Object... args) throws TIllegalAccessException, TIllegalArgumentException,
             TInvocationTargetException {
+        var caller = methodInfo.caller();
         if (caller == null) {
             throw new TIllegalAccessException();
         }
 
-        if (args.length != parameterTypes.length) {
+        if (args.length != methodInfo.parameterCount()) {
             throw new TIllegalArgumentException();
         }
 
-        if ((flags & Flags.STATIC) == 0) {
-            if (!declaringClass.isInstance((TObject) obj)) {
+        if ((methodInfo.modifiers() & ModifiersInfo.STATIC) == 0) {
+            if (!declaringClass.classObject().isInstance(obj)) {
                 throw new TIllegalArgumentException();
             }
-        } else if (PlatformDetector.isJavaScript()) {
-            Platform.initClass(declaringClass.getPlatformClass());
         }
-
-        for (int i = 0; i < args.length; ++i) {
-            if (!parameterTypes[i].isPrimitive() && args[i] != null
-                    && !parameterTypes[i].isInstance((TObject) args[i])) {
-                throw new TIllegalArgumentException();
-            }
-            if (parameterTypes[i].isPrimitive() && args[i] == null) {
-                throw new TIllegalArgumentException();
-            }
+        validateArgs(args);
+        if ((methodInfo.modifiers() & ModifiersInfo.STATIC) != 0) {
+            declaringClass.initialize();
         }
 
         return caller.call(obj, args);
     }
 
     public boolean isBridge() {
-        return (flags & Flags.BRIDGE) != 0;
+        return (methodInfo.modifiers() & Flags.BRIDGE) != 0;
     }
 }

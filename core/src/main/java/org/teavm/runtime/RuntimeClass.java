@@ -65,7 +65,8 @@ public class RuntimeClass extends RuntimeObject {
     public int tag;
     public int canary;
     public RuntimeObjectPtr name;
-    public RuntimeObject nameCache;
+    public RuntimeObjectPtr simpleName;
+
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
     public RuntimeClass declaringClass;
@@ -77,10 +78,7 @@ public class RuntimeClass extends RuntimeObject {
     public RuntimeClassPointer superinterfaces;
     public Address enumValues;
     public Address layout;
-    public RuntimeObjectPtr simpleName;
-    public RuntimeObject simpleNameCache;
-    public RuntimeObject canonicalName;
-    public RuntimeObject reflectionState;
+    public RuntimeObject classObject;
 
     @Unmanaged
     public static int computeCanary(int size, int tag) {

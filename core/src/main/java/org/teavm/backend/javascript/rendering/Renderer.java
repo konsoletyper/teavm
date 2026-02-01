@@ -208,6 +208,10 @@ public class Renderer implements RenderingManager {
         }
     }
 
+    public void renderReflection() {
+
+    }
+
     public void renderCompatibilityStubs() throws RenderingException {
         renderJavaStringToString();
         renderJavaObjectToString();

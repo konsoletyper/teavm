@@ -15,31 +15,22 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import org.teavm.classlib.impl.reflection.Flags;
-import org.teavm.classlib.impl.reflection.MethodCaller;
+import org.teavm.runtime.reflect.ClassInfo;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TInstantiationException;
-import org.teavm.classlib.java.lang.TObject;
+import org.teavm.runtime.reflect.MethodInfo;
+import org.teavm.runtime.reflect.ModifiersInfo;
 
 public class TConstructor<T> extends TExecutable implements TMember {
-    private String name;
-    private MethodCaller caller;
-
-    public TConstructor(TClass<T> declaringClass, String name, int modifiers, int accessLevel,
-            TClass<?>[] parameterTypes, Object[] genericParameterTypes,
-            MethodCaller caller, Annotation[] declaredAnnotations) {
-        super(declaringClass, modifiers, accessLevel, parameterTypes, genericParameterTypes,
-                declaredAnnotations, null);
-        this.name = name;
-        this.caller = caller;
+    public TConstructor(ClassInfo declaringClass, MethodInfo methodInfo) {
+        super(declaringClass, methodInfo);
     }
 
     @Override
     public String getName() {
-        return name;
+        return declaringClass.classObject().getSimpleName();
     }
 
     @Override
@@ -49,7 +40,7 @@ public class TConstructor<T> extends TExecutable implements TMember {
         if (sb.length() > 0) {
             sb.append(' ');
         }
-        sb.append(declaringClass.getName().toString()).append('(');
+        sb.append(declaringClass.classObject().getName()).append('(');
         TClass<?>[] parameterTypes = getParameterTypes();
         for (int i = 0; i < parameterTypes.length; ++i) {
             if (i > 0) {
@@ -63,27 +54,22 @@ public class TConstructor<T> extends TExecutable implements TMember {
     @SuppressWarnings("unchecked")
     public T newInstance(Object... initargs) throws TInstantiationException, TIllegalAccessException,
             TIllegalArgumentException, TInvocationTargetException {
-        if ((flags & Flags.ABSTRACT) != 0) {
+        if ((methodInfo.modifiers() & ModifiersInfo.ABSTRACT) != 0) {
             throw new TInstantiationException();
         }
+        var caller = methodInfo.caller();
         if (caller == null) {
             throw new TIllegalAccessException();
         }
 
-        if (initargs.length != parameterTypes.length) {
+        if (initargs.length != methodInfo.parameterCount()) {
             throw new TIllegalArgumentException();
         }
-        for (int i = 0; i < initargs.length; ++i) {
-            if (!parameterTypes[i].isPrimitive() && initargs[i] != null
-                    && !parameterTypes[i].isInstance((TObject) initargs[i])) {
-                throw new TIllegalArgumentException();
-            }
-            if (parameterTypes[i].isPrimitive() && initargs[i] == null) {
-                throw new TIllegalArgumentException();
-            }
-        }
+        validateArgs(initargs);
+        declaringClass.initialize();
 
-        return (T) caller.call(null, initargs);
+        var instance = declaringClass.newInstance();
+        return (T) caller.call(instance, initargs);
     }
 
 }

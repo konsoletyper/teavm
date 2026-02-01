@@ -15,25 +15,24 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-class TGenericArrayTypeImpl extends TLazyResolvedType implements TGenericArrayType {
+import org.teavm.runtime.reflect.GenericArrayInfo;
+
+class TGenericArrayTypeImpl implements TGenericArrayType {
+    private TGenericDeclaration declaration;
+    private GenericArrayInfo info;
     private TType genericComponentType;
 
-    TGenericArrayTypeImpl(TType genericComponentType) {
-        this.genericComponentType = genericComponentType;
-    }
-
-    static TGenericArrayTypeImpl create(TType genericComponentType) {
-        return new TGenericArrayTypeImpl(genericComponentType);
+    TGenericArrayTypeImpl(TGenericDeclaration declaration, GenericArrayInfo info) {
+        this.declaration = declaration;
+        this.info = info;
     }
 
     @Override
     public TType getGenericComponentType() {
+        if (genericComponentType == null) {
+            genericComponentType = TGenericTypeFactory.create(declaration, info.getItemType());
+        }
         return genericComponentType;
-    }
-
-    @Override
-    void resolve(TGenericDeclaration declaration) {
-        genericComponentType = TTypeVariableStub.resolve(genericComponentType, declaration);
     }
 
     @Override

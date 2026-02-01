@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,31 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.reflection;
 
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.CLASS_GET_TYPE_PARAMS;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.EXECUTABLE_GET_GENERIC_PARAMETER_TYPES;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.EXECUTABLE_GET_PARAMETER_TYPES;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.EXECUTABLE_GET_TYPE_PARAMS;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.FIELD_GET_GENERIC_TYPE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.GENERIC_ARRAY_TYPE_CREATE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.GENERIC_ARRAY_TYPE_IMPL;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.METHOD_GET_GENERIC_RETURN_TYPE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.METHOD_GET_RETURN_TYPE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.PARAM_TYPE_CREATE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.PARAM_TYPE_CREATE_OWNER;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.PARAM_TYPE_IMPL;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_CREATE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_CREATE_BOUNDS;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_GET_BOUNDS;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_IMPL_TYPE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB_CREATE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB_CREATE_LEVEL;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB_RESOLVE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_IMPL;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_LOWER;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_UPPER;
+import static org.teavm.reflection.ReflectionMethods.CLASS_GET_TYPE_PARAMS;
+import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_GENERIC_PARAMETER_TYPES;
+import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_PARAMETER_TYPES;
+import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_TYPE_PARAMS;
+import static org.teavm.reflection.ReflectionMethods.FIELD_GET_GENERIC_TYPE;
+import static org.teavm.reflection.ReflectionMethods.GENERIC_ARRAY_TYPE_IMPL;
+import static org.teavm.reflection.ReflectionMethods.METHOD_GET_GENERIC_RETURN_TYPE;
+import static org.teavm.reflection.ReflectionMethods.METHOD_GET_RETURN_TYPE;
+import static org.teavm.reflection.ReflectionMethods.PARAM_TYPE_IMPL;
+import static org.teavm.reflection.ReflectionMethods.TYPE_VAR_GET_BOUNDS;
+import static org.teavm.reflection.ReflectionMethods.TYPE_VAR_IMPL_TYPE;
+import static org.teavm.reflection.ReflectionMethods.WILDCARD_TYPE_IMPL;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -54,10 +43,9 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.classlib.ReflectionContext;
 import org.teavm.classlib.ReflectionSupplier;
-import org.teavm.classlib.impl.reflection.ClassList;
-import org.teavm.classlib.impl.reflection.FieldInfo;
-import org.teavm.classlib.impl.reflection.MethodInfo;
-import org.teavm.classlib.java.lang.reflect.AnnotationGenerationHelper;
+import org.teavm.runtime.reflect.ClassInfo;
+import org.teavm.runtime.reflect.FieldInfo;
+import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyConsumer;
@@ -97,6 +85,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             Annotation[].class);
     private MethodReference getExecutableAnnotations = new MethodReference(Executable.class, "getDeclaredAnnotations",
             Annotation[].class);
+    private MethodReference getClassAnnotations = new MethodReference(Executable.class, "getDeclaredAnnotations",
+            Annotation[].class);
     private MethodReference forName = new MethodReference(Class.class, "forName", String.class, Boolean.class,
             ClassLoader.class, Class.class);
     private MethodReference classNewInstance = new MethodReference(Class.class, "newInstance", Object.class);
@@ -128,10 +118,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private AnnotationGenerationHelper annotHelper;
     private boolean withGenerics;
 
-    public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers, boolean enumsAsInts,
-            boolean needAnnotImplCtor) {
+    public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers,
+            AnnotationGenerationHelper annotHelper) {
         this.reflectionSuppliers = reflectionSuppliers;
-        annotHelper = new AnnotationGenerationHelper(enumsAsInts, needAnnotImplCtor);
+        this.annotHelper = annotHelper;
     }
 
     public boolean isVirtual(MethodReference methodRef) {
@@ -170,21 +160,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         methodParamTypes.getArrayItem().propagate(agent.getType(ValueType.object("java.lang.Class")));
         typesInReflectableSignaturesNode.connect(methodParamTypes.getArrayItem().getClassValueNode());
 
-        agent.linkMethod(new MethodReference(FieldInfo.class, "name", String.class)).getResult()
-                .propagate(agent.getType(ValueType.object("java.lang.String")));
-        agent.linkMethod(new MethodReference(FieldInfo.class, "type", Class.class)).getResult()
-                .propagate(agent.getType(ValueType.object("java.lang.Class")));
-        agent.linkMethod(new MethodReference(FieldInfo.class, "annotations", Annotation[].class)).getResult()
-                .propagate(agent.getType(ValueType.parse(Annotation[].class)));
-
-        agent.linkMethod(new MethodReference(MethodInfo.class, "name", String.class)).getResult()
-                .propagate(agent.getType(ValueType.object("java.lang.String")));
-        agent.linkMethod(new MethodReference(MethodInfo.class, "returnType", Class.class)).getResult()
-                .propagate(agent.getType(ValueType.object("java.lang.Class")));
-        agent.linkMethod(new MethodReference(MethodInfo.class, "annotations", Annotation[].class)).getResult()
-                .propagate(agent.getType(ValueType.parse(Annotation[].class)));
-        agent.linkMethod(new MethodReference(ClassList.class, "get", int.class, Class.class)).getResult()
-                .propagate(agent.getType(ValueType.object("java.lang.Class")));
+        agent.linkMethod(new MethodReference(ClassInfo.class, "classObject", Class.class))
+                .getResult().propagate(agent.getType(ValueType.parse(Class.class)));
 
         var context = new ReflectionContextImpl(agent);
         for (var reflectionSupplier : reflectionSuppliers) {
@@ -349,6 +326,14 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 annotHelper.propagateAnnotationImplementations(agent, reflectableMethod.getAnnotations().all(),
                         methodsAnnotationsConsumer);
             }
+        } else if (method.getReference().equals(getClassAnnotations)) {
+            method.getVariable(0).getClassValueNode().addConsumer(type -> {
+                if (type.getValueType() instanceof ValueType.Object) {
+                    var cls = agent.getClassSource().get(((ValueType.Object) type.getValueType()).getClassName());
+                    annotHelper.propagateAnnotationImplementations(agent, cls.getAnnotations().all(),
+                            method.getResult().getArrayItem());
+                }
+            });
         } else if (method.getReference().equals(forName) || method.getReference().equals(forNameShort)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));
             for (var className : classesFoundByName) {
@@ -387,32 +372,6 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             return;
         }
         withGenerics = true;
-
-        agent.linkMethod(TYPE_VAR_CREATE)
-                .propagate(1, agent.getType(ValueType.object("java.lang.String")))
-                .use();
-        agent.linkMethod(TYPE_VAR_CREATE_BOUNDS)
-                .propagate(1, agent.getType(ValueType.object("java.lang.String")))
-                .use();
-
-        agent.linkMethod(PARAM_TYPE_CREATE)
-                .propagate(1, agent.getType(ValueType.parse(Class.class)))
-                .use();
-        agent.linkMethod(PARAM_TYPE_CREATE_OWNER)
-                .propagate(1, agent.getType(ValueType.parse(Class.class)))
-                .use();
-
-        agent.linkMethod(WILDCARD_TYPE_UPPER).use();
-        agent.linkMethod(WILDCARD_TYPE_LOWER).use();
-
-        agent.linkMethod(GENERIC_ARRAY_TYPE_CREATE).use();
-
-        agent.linkMethod(TYPE_VAR_STUB_CREATE).use();
-        agent.linkMethod(TYPE_VAR_STUB_CREATE_LEVEL).use();
-
-        var stubResolve = agent.linkMethod(TYPE_VAR_STUB_RESOLVE);
-        propagateGenerics(agent, stubResolve.getVariable(1));
-        stubResolve.getVariable(1).propagate(agent.getType(ValueType.object(TYPE_VAR_STUB)));
 
         for (var className : agent.getReachableClasses()) {
             linkTypeParameterBounds(agent, className);

@@ -15,11 +15,10 @@
  */
 package org.teavm.classlib.impl.reflection;
 
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.EXECUTABLE_GET_GENERIC_PARAMETER_TYPES;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.FIELD_GET_GENERIC_TYPE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.METHOD_GET_GENERIC_RETURN_TYPE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_CREATE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_GET_BOUNDS;
+import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_GENERIC_PARAMETER_TYPES;
+import static org.teavm.reflection.ReflectionMethods.FIELD_GET_GENERIC_TYPE;
+import static org.teavm.reflection.ReflectionMethods.METHOD_GET_GENERIC_RETURN_TYPE;
+import static org.teavm.reflection.ReflectionMethods.TYPE_VAR_GET_BOUNDS;
 import java.util.ArrayList;
 import java.util.Set;
 import org.teavm.ast.InvocationExpr;
@@ -60,7 +59,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.transformation.gc.CoroutineTransformation;
-import org.teavm.classlib.impl.ReflectionDependencyListener;
+import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.interop.Address;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.ElementModifier;
@@ -105,7 +104,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         arrayDataType.getNonNullReference()));
                 return structNew;
             }
-            case "org.teavm.classlib.impl.reflection.FieldInfo":
+            case "org.teavm.runtime.reflect.FieldInfo":
                 switch (invocation.getMethod().getName()) {
                     case "name":
                         return fieldInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_NAME);
@@ -143,7 +142,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         break;
                 }
                 break;
-            case "org.teavm.classlib.impl.reflection.MethodInfo":
+            case "org.teavm.runtime.reflect.MethodInfo":
                 switch (invocation.getMethod().getName()) {
                     case "name":
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_NAME);
@@ -200,14 +199,14 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         break;
                 }
                 break;
-            case "org.teavm.classlib.impl.reflection.FieldReader": {
+            case "org.teavm.runtime.reflect.FieldReader": {
                 var fn = context.generate(invocation.getArguments().get(0));
                 var arg = context.generate(invocation.getArguments().get(1));
                 var objectType = context.classInfoProvider().getClassInfo("java.lang.Object").getType();
                 var type = context.functionTypes().of(objectType, objectType);
                 return new WasmCallReference(fn, type, arg);
             }
-            case "org.teavm.classlib.impl.reflection.FieldWriter": {
+            case "org.teavm.runtime.reflect.FieldWriter": {
                 var fn = context.generate(invocation.getArguments().get(0));
                 var arg = context.generate(invocation.getArguments().get(1));
                 var value = context.generate(invocation.getArguments().get(2));
@@ -215,7 +214,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 var type = context.functionTypes().of(null, objectType, objectType);
                 return new WasmCallReference(fn, type, arg, value);
             }
-            case "org.teavm.classlib.impl.reflection.MethodCaller": {
+            case "org.teavm.runtime.reflect.MethodCaller": {
                 var fn = context.generate(invocation.getArguments().get(0));
                 var instanceArg = context.generate(invocation.getArguments().get(1));
                 var paramsArg = context.generate(invocation.getArguments().get(2));
@@ -315,9 +314,9 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             var helper = new WasmGCAnnotationsHelper(context.hierarchy().getClassSource(),
                     context.classInfoProvider(), context.strings());
             var genericsHelper = new WasmGCReflectionGenericsHelper(context, initReflectionFunction);
-            if (context.dependency().getMethod(TYPE_VAR_CREATE) != null) {
+            /*if (context.dependency().getMethod(TYPE_VAR_CREATE) != null) {
                 genericsHelper.initReflectionGenericsForClasses();
-            }
+            }*/
             initReflectionFields(context, initReflectionFunction, helper, genericsHelper);
             initReflectionMethods(context, initReflectionFunction, helper, genericsHelper);
             initReflectionInstantiator(context, initReflectionFunction);
@@ -502,13 +501,13 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 }
 
                 var typeParameters = method.getTypeParameters();
-                if (typeParameters != null && typeParameters.length > 0
+                /*if (typeParameters != null && typeParameters.length > 0
                         && context.dependency().getMethod(TYPE_VAR_CREATE) != null) {
                     methodInit.getInitializers().add(genericsHelper.writeTypeParameters(typeParameters,
                             cls, method, withBounds));
                 } else {
                     methodInit.getInitializers().add(new WasmNullConstant(objectArrayType.getReference()));
-                }
+                }*/
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.runtime.reflect;
 
-import org.teavm.interop.NoSideEffects;
+public class ParameterizedTypeInfo extends GenericTypeInfo {
+    public native ClassInfo rawType();
 
-public final class ClassSupport {
-    private ClassSupport() {
-    }
+    public native int actualTypeArgumentCount();
 
-    @NoSideEffects
-    public static native Enum<?>[] getEnumConstants(Class<?> cls);
+    public native GenericTypeInfo actualTypeArgument(int index);
+
+    public native GenericTypeInfo ownerType();
 }

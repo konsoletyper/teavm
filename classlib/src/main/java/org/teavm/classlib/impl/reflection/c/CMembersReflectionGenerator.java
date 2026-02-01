@@ -20,7 +20,7 @@ import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.IncludeManager;
 import org.teavm.backend.c.generators.ReflectionGenerator;
 import org.teavm.backend.c.generators.ReflectionGeneratorContext;
-import org.teavm.classlib.impl.ReflectionDependencyListener;
+import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;

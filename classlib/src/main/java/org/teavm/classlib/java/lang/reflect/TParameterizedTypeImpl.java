@@ -17,67 +17,45 @@ package org.teavm.classlib.java.lang.reflect;
 
 import java.util.Arrays;
 import java.util.Objects;
-import org.teavm.classlib.impl.reflection.ObjectList;
-import org.teavm.classlib.java.lang.TClass;
+import org.teavm.runtime.reflect.ParameterizedTypeInfo;
 
-class TParameterizedTypeImpl extends TLazyResolvedType implements TParameterizedType {
-    private TClass<?> rawType;
-    private ObjectList actualTypeArguments;
-    private TType[] actualTypeArgumentsArray;
+class TParameterizedTypeImpl implements TParameterizedType {
+    private TGenericDeclaration declaration;
+    private ParameterizedTypeInfo info;
+    private TType[] actualTypeArguments;
+    private boolean ownerTypeInitialized;
     private TType ownerType;
 
-    TParameterizedTypeImpl(TClass<?> rawType, ObjectList actualTypeArguments, TType ownerType) {
-        this.rawType = rawType;
-        this.actualTypeArguments = actualTypeArguments;
-        this.ownerType = ownerType;
-    }
-
-    static TParameterizedTypeImpl create(TClass<?> rawType, ObjectList actualTypeArguments) {
-        return new TParameterizedTypeImpl(rawType, actualTypeArguments, null);
-    }
-
-    static TParameterizedTypeImpl create(TClass<?> rawType, ObjectList actualTypeArguments, TType ownerType) {
-        return new TParameterizedTypeImpl(rawType, actualTypeArguments, ownerType);
+    TParameterizedTypeImpl(TGenericDeclaration declaration, ParameterizedTypeInfo info) {
+        this.declaration = declaration;
+        this.info = info;
     }
 
     @Override
     public TType[] getActualTypeArguments() {
-        if (actualTypeArgumentsArray == null) {
-            if (actualTypeArguments == null) {
-                actualTypeArgumentsArray = new TType[0];
-            } else {
-                var array = actualTypeArguments.asArray();
-                actualTypeArgumentsArray = new TType[array.length];
-                System.arraycopy(array, 0, actualTypeArgumentsArray, 0, array.length);
+        if (actualTypeArguments == null) {
+            actualTypeArguments = new TType[info.actualTypeArgumentCount()];
+            for (var i = 0; i < actualTypeArguments.length; i++) {
+                actualTypeArguments[i] = TGenericTypeFactory.create(declaration, info.actualTypeArgument(i));
             }
         }
-        return actualTypeArgumentsArray.clone();
+        return actualTypeArguments.clone();
     }
 
     @Override
     public TType getRawType() {
-        return rawType;
+        return (TType) (Object) info.rawType().classObject();
     }
 
     @Override
     public TType getOwnerType() {
-        return ownerType;
-    }
-
-    @Override
-    void resolve(TGenericDeclaration declaration) {
-        if (actualTypeArguments == null) {
-            actualTypeArgumentsArray = new TType[0];
-        } else {
-            var array = actualTypeArguments.asArray();
-            actualTypeArgumentsArray = new TType[array.length];
-            for (var i = 0; i < array.length; ++i) {
-                actualTypeArgumentsArray[i] = TTypeVariableStub.resolve((TType) array[i], declaration);
+        if (!ownerTypeInitialized) {
+            ownerTypeInitialized = true;
+            if (info.ownerType() != null) {
+                ownerType = TGenericTypeFactory.create(declaration, info.ownerType());
             }
         }
-        if (ownerType != null) {
-            ownerType = TTypeVariableStub.resolve(ownerType, declaration);
-        }
+        return ownerType;
     }
 
     @Override
@@ -89,14 +67,14 @@ class TParameterizedTypeImpl extends TLazyResolvedType implements TParameterized
             return false;
         }
         var that = (TParameterizedTypeImpl) obj;
-        return rawType == that.rawType
-                && Objects.equals(ownerType, that.ownerType)
+        return getRawType() == that.getRawType()
+                && Objects.equals(getOwnerType(), that.getOwnerType())
                 && Arrays.equals(getActualTypeArguments(), that.getActualTypeArguments());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rawType, ownerType, Arrays.hashCode(getActualTypeArguments()));
+        return Objects.hash(getRawType(), ownerType, Arrays.hashCode(getActualTypeArguments()));
     }
 
     @Override
@@ -104,9 +82,9 @@ class TParameterizedTypeImpl extends TLazyResolvedType implements TParameterized
         var args = getActualTypeArguments();
         var sb = new StringBuilder();
         if (ownerType != null) {
-            sb.append(ownerType.getTypeName()).append("$").append(rawType.getSimpleName());
+            sb.append(ownerType.getTypeName()).append("$").append(info.rawType().classObject().getSimpleName());
         } else {
-            sb.append(rawType.getName());
+            sb.append(info.rawType().classObject().getName());
         }
         sb.append('<').append(args[0].getTypeName());
         for (int i = 1; i < args.length; i++) {

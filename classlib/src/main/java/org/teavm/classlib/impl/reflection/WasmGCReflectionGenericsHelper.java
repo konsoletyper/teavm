@@ -15,13 +15,6 @@
  */
 package org.teavm.classlib.impl.reflection;
 
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.GENERIC_ARRAY_TYPE_CREATE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_CREATE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_CREATE_BOUNDS;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB_CREATE;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB_CREATE_LEVEL;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_LOWER;
-import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_UPPER;
 import java.util.List;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -52,7 +45,7 @@ class WasmGCReflectionGenericsHelper {
     }
 
     void initReflectionGenericsForClasses() {
-        var withBounds = context.dependency().getMethod(ReflectionMethods.TYPE_VAR_GET_BOUNDS) != null;
+        var withBounds = context.dependency().getMethod(org.teavm.reflection.ReflectionMethods.TYPE_VAR_GET_BOUNDS) != null;
         for (var className : context.dependency().getReachableClasses()) {
             var cls = context.hierarchy().getClassSource().get(className);
             if (cls != null) {
@@ -116,12 +109,16 @@ class WasmGCReflectionGenericsHelper {
                     array.getElements().add(writeGenericType(contextClass, contextMethod, arg));
                 }
                 if (objectType.getParent() == null) {
-                    var constructor = context.functions().forStaticMethod(ReflectionMethods.PARAM_TYPE_CREATE);
-                    return new WasmCall(constructor, cls, array);
+                    //var constructor = context.functions().forStaticMethod(
+                    // org.teavm.reflection.ReflectionMethods.PARAM_TYPE_CREATE);
+                    //return new WasmCall(constructor, cls, array);
+                    return null;
                 } else {
-                    var owner = writeGenericType(contextClass, contextMethod, objectType.getParent());
-                    var constructor = context.functions().forStaticMethod(ReflectionMethods.PARAM_TYPE_CREATE_OWNER);
-                    return new WasmCall(constructor, cls, array, owner);
+                    /*var owner = writeGenericType(contextClass, contextMethod, objectType.getParent());
+                    var constructor = context.functions().forStaticMethod(
+                    org.teavm.reflection.ReflectionMethods.PARAM_TYPE_CREATE_OWNER);
+                    return new WasmCall(constructor, cls, array, owner);*/
+                    return null;
                 }
             }
         } else if (type instanceof GenericValueType.Variable) {
@@ -163,8 +160,8 @@ class WasmGCReflectionGenericsHelper {
             var nonGenericType = type.asValueType();
             if (nonGenericType == null) {
                 var arrayType = (GenericValueType.Array) type;
-                var constructor = context.functions().forStaticMethod(GENERIC_ARRAY_TYPE_CREATE);
-                return new WasmCall(constructor, writeGenericType(contextClass, contextMethod,
+                //var constructor = context.functions().forStaticMethod(GENERIC_ARRAY_TYPE_CREATE);
+                return new WasmCall(null, writeGenericType(contextClass, contextMethod,
                         arrayType.getItemType()));
             } else {
                 var typeRef = context.classInfoProvider().getClassInfo(nonGenericType);
@@ -188,17 +185,17 @@ class WasmGCReflectionGenericsHelper {
             case INVARIANT:
                 return writeGenericType(contextClass, contextMethod, arg.getValue());
             case ANY: {
-                var function = context.functions().forStaticMethod(WILDCARD_TYPE_UPPER);
+                //var function = context.functions().forStaticMethod(WILDCARD_TYPE_UPPER);
                 var typeType = context.classInfoProvider().getClassInfo("java.lang.reflect.Type");
-                return new WasmCall(function, new WasmNullConstant(typeType.getType()));
+                return new WasmCall(null, new WasmNullConstant(typeType.getType()));
             }
             case COVARIANT: {
-                var function = context.functions().forStaticMethod(WILDCARD_TYPE_UPPER);
-                return new WasmCall(function, writeGenericType(contextClass, contextMethod, arg.getValue()));
+                //var function = context.functions().forStaticMethod(WILDCARD_TYPE_UPPER);
+                return new WasmCall(null, writeGenericType(contextClass, contextMethod, arg.getValue()));
             }
             case CONTRAVARIANT: {
-                var function = context.functions().forStaticMethod(WILDCARD_TYPE_LOWER);
-                return new WasmCall(function, writeGenericType(contextClass, contextMethod, arg.getValue()));
+                //var function = context.functions().forStaticMethod(WILDCARD_TYPE_LOWER);
+                return new WasmCall(null, writeGenericType(contextClass, contextMethod, arg.getValue()));
             }
             default: {
                 throw new IllegalArgumentException("Unsupported generic type: " + arg.getKind());
@@ -208,28 +205,28 @@ class WasmGCReflectionGenericsHelper {
 
     private WasmFunction getVariableConstructor() {
         if (variableConstructor == null) {
-            variableConstructor = context.functions().forStaticMethod(TYPE_VAR_CREATE);
+            //variableConstructor = context.functions().forStaticMethod(TYPE_VAR_CREATE);
         }
         return variableConstructor;
     }
 
     private WasmFunction getVariableConstructorWithBounds() {
         if (variableConstructorWithBounds == null) {
-            variableConstructorWithBounds = context.functions().forStaticMethod(TYPE_VAR_CREATE_BOUNDS);
+            //variableConstructorWithBounds = context.functions().forStaticMethod(TYPE_VAR_CREATE_BOUNDS);
         }
         return variableConstructorWithBounds;
     }
 
     private WasmFunction getStubCreate() {
         if (stubCreate == null) {
-            stubCreate = context.functions().forStaticMethod(TYPE_VAR_STUB_CREATE);
+            //stubCreate = context.functions().forStaticMethod(TYPE_VAR_STUB_CREATE);
         }
         return stubCreate;
     }
 
     private WasmFunction getStubCreateWithLevel() {
         if (stubCreateWithLevel == null) {
-            stubCreateWithLevel = context.functions().forStaticMethod(TYPE_VAR_STUB_CREATE_LEVEL);
+            //stubCreateWithLevel = context.functions().forStaticMethod(TYPE_VAR_STUB_CREATE_LEVEL);
         }
         return stubCreateWithLevel;
     }

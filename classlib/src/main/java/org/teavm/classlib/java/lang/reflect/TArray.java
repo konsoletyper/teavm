@@ -60,11 +60,8 @@ public final class TArray extends TObject {
         if (length < 0) {
             throw new TNegativeArraySizeException();
         }
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return newInstanceImpl(componentType, length);
-        } else {
-            return newInstanceImpl(((TClass<?>) (Object) componentType).getPlatformClass(), length);
-        }
+
+        return newInstanceImpl(componentType, length);
     }
 
     private static native TObject newInstanceImpl(Class<?> componentType, int length);

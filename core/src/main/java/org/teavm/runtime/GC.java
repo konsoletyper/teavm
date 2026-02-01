@@ -308,18 +308,9 @@ public final class GC {
     }
 
     private static void markFromClass(RuntimeClass cls) {
-        if (cls.simpleNameCache != null) {
-            mark(cls.simpleNameCache);
-        }
-        if (cls.canonicalName != null) {
-            mark(cls.canonicalName);
-        }
-        if (cls.nameCache != null) {
-            mark(cls.nameCache);
-        }
-        if (cls.reflectionState != null) {
+        /*if (cls.reflectionState != null) {
             mark(cls.reflectionState);
-        }
+        }*/
     }
 
     private static void markFromStack() {
@@ -997,7 +988,7 @@ public final class GC {
         Address classPtr = Mutator.getClasses();
         for (int i = 0; i < classCount; ++i) {
             RuntimeClass cls = classPtr.getAddress().toStructure();
-            if (cls.simpleNameCache != null) {
+            /*if (cls.simpleNameCache != null) {
                 cls.simpleNameCache = updatePointer(cls.simpleNameCache.toAddress()).toStructure();
             }
             if (cls.canonicalName != null) {
@@ -1005,7 +996,7 @@ public final class GC {
             }
             if (cls.nameCache != null) {
                 cls.nameCache = updatePointer(cls.nameCache.toAddress()).toStructure();
-            }
+            }*/
             classPtr = classPtr.add(Address.sizeOf());
         }
     }

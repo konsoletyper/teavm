@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Function;
 import org.teavm.ast.ControlFlowEntry;
@@ -51,6 +52,7 @@ import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueTransformer;
 import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceDependencyListener;
 import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceGenerator;
 import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceTransformer;
+import org.teavm.backend.javascript.intrinsics.reflection.ReflectionIntrinsics;
 import org.teavm.backend.javascript.rendering.NameFrequencyEstimator;
 import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.backend.javascript.rendering.RenderingContext;
@@ -65,6 +67,7 @@ import org.teavm.backend.javascript.spi.MethodContributorContext;
 import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.cache.EmptyMethodNodeCache;
 import org.teavm.cache.MethodNodeCache;
+import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
@@ -100,6 +103,9 @@ import org.teavm.model.transformation.NullCheckFilter;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.DefaultVariableCategoryProvider;
 import org.teavm.model.util.VariableCategoryProvider;
+import org.teavm.reflection.AnnotationGenerationHelper;
+import org.teavm.reflection.ReflectionDependencyListener;
+import org.teavm.runtime.reflect.ClassInfo;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.RenderingException;
 import org.teavm.vm.TeaVM;
@@ -136,6 +142,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private List<ExportedDeclaration> exports = new ArrayList<>();
     private int maxTopLevelNames = 80_000;
 
+    private ReflectionDependencyListener reflection;
+
     @Override
     public List<ClassHolderTransformer> getTransformers() {
         return List.of(
@@ -165,6 +173,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         var refQueueGenerator = new ReferenceQueueGenerator();
         methodGenerators.put(new MethodReference(ReferenceQueue.class, "<init>", void.class), refQueueGenerator);
         methodGenerators.put(new MethodReference(ReferenceQueue.class, "poll", Reference.class), refQueueGenerator);
+
+        var reflectionSuppliers = new ArrayList<ReflectionSupplier>();
+        for (var supplier : ServiceLoader.load(ReflectionSupplier.class, controller.getClassLoader())) {
+            reflectionSuppliers.add(supplier);
+        }
+        reflection = new ReflectionDependencyListener(reflectionSuppliers, new AnnotationGenerationHelper());
     }
 
     @Override
@@ -249,11 +263,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         DependencyType stringType = dependencyAnalyzer.getClassType("java.lang.String");
 
-        dep = dependencyAnalyzer.linkMethod(new MethodReference(Class.class.getName(), "getClass",
-                ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)));
-        dep.getVariable(0).propagate(dependencyAnalyzer.getClassType("org.teavm.platform.PlatformClass"));
-        dep.getResult().propagate(dependencyAnalyzer.getClassType("java.lang.Class"));
-        dep.use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Class.class, "create", ClassInfo.class, Class.class)).use();
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", Object.class, void.class));
         dep.getVariable(0).propagate(stringType);
@@ -309,6 +319,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         });
 
         dependencyAnalyzer.addDependencyListener(new WeakReferenceDependencyListener());
+        dependencyAnalyzer.addDependencyListener(reflection);
     }
 
     public static void includeStackTraceMethods(DependencyAnalyzer dependencyAnalyzer) {
@@ -386,6 +397,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
         };
         renderingContext.setMinifying(obfuscated);
+        new ReflectionIntrinsics(renderingContext).apply();
 
         if (controller.wasCancelled()) {
             return;

@@ -13,14 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.runtime.reflect;
 
-import org.teavm.backend.javascript.spi.InjectedBy;
-
-public class ClassList {
-    @InjectedBy(ClassListGenerator.class)
-    public native int count();
-
-    @InjectedBy(ClassListGenerator.class)
-    public native Class<?> get(int index);
+public abstract class FieldReader {
+    public abstract Object read(Object instance);
 }

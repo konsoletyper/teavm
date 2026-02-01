@@ -15,40 +15,28 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
+import org.teavm.runtime.reflect.TypeVariableInfo;
+import org.teavm.runtime.reflect.TypeVariableReference;
 
 public class TTypeVariableImpl implements TTypeVariable<TGenericDeclaration> {
-    ObjectList boundsList;
+    private TGenericDeclaration declaration;
+    private TypeVariableInfo info;
     private TType[] bounds;
-    public TGenericDeclaration declaration;
-    private String name;
 
-    private TTypeVariableImpl(String name, ObjectList boundsList) {
-        this.name = name;
-        this.boundsList = boundsList;
-    }
-
-    static TTypeVariableImpl create(String name, ObjectList boundsList) {
-        return new TTypeVariableImpl(name, boundsList);
-    }
-
-    static TTypeVariableImpl create(String name) {
-        return new TTypeVariableImpl(name, null);
+    public TTypeVariableImpl(TGenericDeclaration declaration, TypeVariableInfo info) {
+        this.declaration = declaration;
+        this.info = info;
     }
 
     @Override
     public TType[] getBounds() {
         if (bounds == null) {
-            if (boundsList == null) {
-                bounds = new TType[] { (TType) (Object) Object.class };
-            } else {
-                var array = boundsList.asArray();
-                bounds = new TType[array.length];
-                for (var i = 0; i < array.length; ++i) {
-                    bounds[i] = TTypeVariableStub.resolve((TType) array[i], declaration);
-                }
+            var count = info.boundCount();
+            bounds = new TType[count];
+            for (var i = 0; i < count; ++i) {
+                bounds[i] = TGenericTypeFactory.create(declaration, info.bound(i));
             }
         }
         return bounds.clone();
@@ -61,7 +49,7 @@ public class TTypeVariableImpl implements TTypeVariable<TGenericDeclaration> {
 
     @Override
     public String getName() {
-        return name;
+        return info.name().getStringObject();
     }
 
     @Override
@@ -81,6 +69,17 @@ public class TTypeVariableImpl implements TTypeVariable<TGenericDeclaration> {
 
     @Override
     public String toString() {
-        return name;
+        return getName();
+    }
+
+    static TTypeVariable<?> resolve(TGenericDeclaration declaration, TypeVariableReference ref) {
+        if (ref.level() == 0) {
+            return declaration.getTypeParameters()[ref.index()];
+        } else {
+            var declaringClass = declaration instanceof TMember
+                    ? ((TMember) declaration).getDeclaringClass()
+                    : ((TClass<?>) declaration).getDeclaringClass();
+            return declaringClass.getTypeParameters()[ref.index()];
+        }
     }
 }

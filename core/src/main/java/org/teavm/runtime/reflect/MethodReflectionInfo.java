@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.runtime.reflect;
 
-import org.teavm.backend.javascript.spi.InjectedBy;
+public final class MethodReflectionInfo {
+    public native GenericTypeInfo genericReturnType();
 
-public class ObjectList {
-    @InjectedBy(ObjectListGenerator.class)
-    public native Object[] asArray();
+    public native int genericParameterTypeCount();
+
+    public native GenericTypeInfo genericParameterType(int index);
+
+    public native int annotationCount();
+
+    public native AnnotationInfo annotation(int index);
+
+    public native int typeParameterCount();
+
+    public native TypeVariableInfo typeParameter(int index);
 }

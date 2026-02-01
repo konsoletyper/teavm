@@ -46,9 +46,11 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
     }
 
     public static <S> TServiceLoader<S> load(TClass<S> service) {
-        return new TServiceLoader<>(PlatformDetector.isWebAssemblyGC()
+        /*return new TServiceLoader<>(PlatformDetector.isWebAssemblyGC()
                 ? doLoadServices(service)
-                : doLoadServices(service.getPlatformClass()));
+                : doLoadServices(service.getClassInfo()));*
+         */
+        return null;
     }
 
     public static <S> TServiceLoader<S> load(TClass<S> service, @SuppressWarnings("unused") TClassLoader loader) {

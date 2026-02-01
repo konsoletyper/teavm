@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.runtime.reflect;
 
-import org.teavm.backend.javascript.spi.InjectedBy;
-
-public abstract class MethodCaller {
-    @InjectedBy(MemberAccessGenerator.class)
-    public abstract Object call(Object instance, Object[] args);
+public class WildcardTypeInfo extends GenericTypeInfo {
+    public native GenericTypeInfo bound();
 }

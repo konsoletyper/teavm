@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.runtime;
 
-import org.teavm.backend.javascript.spi.InjectedBy;
-
-public abstract class FieldWriter {
-    @InjectedBy(MemberAccessGenerator.class)
-    public abstract void write(Object instance, Object value);
+public class StringInfo {
+    public native String getStringObject();
 }

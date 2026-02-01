@@ -121,10 +121,13 @@ let $rt_classWithoutFields = superclass => {
     };
 }
 
-
-let $rt_cls = (cls) => teavm_javaMethod("java.lang.Class",
-        "getClass(Lorg/teavm/platform/PlatformClass;)Ljava/lang/Class;")(cls);
-
+let $rt_cls = (cls) => {
+    if (typeof cls.classObject === 'undefined') {
+        cls.classObject = teavm_javaMethod("java.lang.Class",
+            "createClass(Lorg/teavm/runtime/reflect/ClassInfo;)Ljava/lang/Class;")(cls);
+    }
+    return cls.classObject;
+}
 
 let $rt_objcls = () => teavm_javaClass("java.lang.Object");
 

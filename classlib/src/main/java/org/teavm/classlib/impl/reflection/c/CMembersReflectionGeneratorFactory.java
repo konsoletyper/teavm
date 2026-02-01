@@ -18,7 +18,7 @@ package org.teavm.classlib.impl.reflection.c;
 import org.teavm.backend.c.generators.ReflectionGenerator;
 import org.teavm.backend.c.generators.ReflectionGeneratorFactory;
 import org.teavm.backend.c.generators.ReflectionGeneratorFactoryContext;
-import org.teavm.classlib.impl.ReflectionDependencyListener;
+import org.teavm.reflection.ReflectionDependencyListener;
 
 public class CMembersReflectionGeneratorFactory implements ReflectionGeneratorFactory {
     private ReflectionDependencyListener reflection;

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.runtime.reflect;
 
-import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.runtime.StringInfo;
 
-public final class FieldInfoList {
-    @InjectedBy(MemberInfoListGenerator.class)
-    public native int count();
+public class TypeVariableInfo {
+    public native StringInfo name();
 
-    @InjectedBy(MemberInfoListGenerator.class)
-    public native FieldInfo get(int index);
+    public native int boundCount();
+
+    public native GenericTypeInfo bound(int index);
 }

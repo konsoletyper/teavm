@@ -26,15 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.backend.javascript.spi.InjectedBy;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassFlags;
-import org.teavm.classlib.PlatformDetector;
-import org.teavm.classlib.impl.reflection.ClassSupport;
-import org.teavm.classlib.impl.reflection.FieldInfoList;
-import org.teavm.classlib.impl.reflection.Flags;
-import org.teavm.classlib.impl.reflection.MethodInfoList;
-import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TConstructor;
 import org.teavm.classlib.java.lang.reflect.TField;
@@ -45,42 +36,38 @@ import org.teavm.classlib.java.lang.reflect.TType;
 import org.teavm.classlib.java.lang.reflect.TTypeVariable;
 import org.teavm.classlib.java.lang.reflect.TTypeVariableImpl;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.interop.Address;
-import org.teavm.interop.DelegateTo;
-import org.teavm.interop.NoSideEffects;
-import org.teavm.interop.Unmanaged;
-import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformClass;
-import org.teavm.platform.PlatformObject;
-import org.teavm.platform.PlatformSequence;
-import org.teavm.runtime.RuntimeClass;
-import org.teavm.runtime.RuntimeObject;
+import org.teavm.runtime.reflect.ClassInfo;
+import org.teavm.runtime.reflect.ModifiersInfo;
 
 public final class TClass<T> extends TObject implements TGenericDeclaration, TType {
-    private static Map<String, TClass<?>> nameMap;
-    String name;
-    String simpleName;
-    String canonicalName;
-    private PlatformClass platformClass;
-    private TConstructor<T>[] declaredConstructors;
-    private TMethod[] declaredMethods;
-    private static boolean reflectionInitialized;
-    private ReflectionState reflectionState;
-
-    private TClass(PlatformClass platformClass) {
-        this.platformClass = platformClass;
-        platformClass.setJavaClass(Platform.getPlatformObject(this));
+    static class StatFlags {
+        private static final int NAME_INITIALIZED = 1;
+        private static final int SIMPLE_NAME_INITIALIZED = 1 << 1;
+        private static final int CANONICAL_NAME_INITIALIZED = 1 << 2;
     }
 
-    public static TClass<?> getClass(PlatformClass cls) {
-        if (cls == null) {
-            return null;
-        }
-        TClass<?> result = (TClass<?>) (Object) Platform.asJavaClass(cls.getJavaClass());
-        if (result == null) {
-            result = new TClass<>(cls);
-        }
-        return result;
+    private static Map<String, TClass<?>> nameMap;
+    private int flags;
+    private ClassInfo classInfo;
+    private String name;
+    private String simpleName;
+    private String canonicalName;
+    private TClass<?>[] interfaces;
+    private TAnnotation[] annotations;
+    private TAnnotation[] declaredAnnotations;
+    private Map<TClass<?>, TAnnotation> annotationsByType;
+    private TField[] declaredFields;
+    private TField[] fields;
+    private TConstructor<T>[] declaredConstructors;
+    private TMethod[] declaredMethods;
+    private TTypeVariable<?>[] typeParameters;
+
+    private TClass(ClassInfo classInfo) {
+        this.classInfo = classInfo;
+    }
+
+    static TClass<?> createClass(ClassInfo classInfo) {
+        return new TClass<>(classInfo);
     }
 
     @Override
@@ -92,310 +79,147 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         return "javaClass@" + identity();
     }
 
-    public PlatformClass getPlatformClass() {
-        return platformClass;
+    public ClassInfo getClassInfo() {
+        return classInfo;
     }
 
-    @DelegateTo("isInstanceLowLevel")
     public boolean isInstance(TObject obj) {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return obj != null && isAssignableFrom((TClass<?>) (Object) obj.getClass());
-        }
-        return Platform.isInstance(Platform.getPlatformObject(obj), platformClass);
+        return obj != null && classInfo.isSuperTypeOf(obj.getClass0().getClassInfo());
     }
 
-    @Unmanaged
-    private boolean isInstanceLowLevel(RuntimeObject obj) {
-        return obj != null && isAssignableFromLowLevel(RuntimeClass.getClass(obj));
-    }
-
-    @DelegateTo("isAssignableFromLowLevel")
     public boolean isAssignableFrom(TClass<?> obj) {
-        return Platform.isAssignable(obj.getPlatformClass(), platformClass);
-    }
-
-    @Unmanaged
-    private boolean isAssignableFromLowLevel(RuntimeClass other) {
-        var self = Address.ofObject(this).<RuntimeClass>toStructure();
-        return self.isSupertypeOf.apply(self, other);
+        return classInfo.isSuperTypeOf(obj.classInfo);
     }
 
     public String getName() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            var result = getNameImpl();
+        if ((flags & StatFlags.NAME_INITIALIZED) == 0) {
+            flags |= StatFlags.NAME_INITIALIZED;
+            var metadataName = classInfo.name();
+            var result = metadataName != null ? metadataName.getStringObject() : null;
             if (result == null) {
-                if (isArray()) {
-                    var componentType = getComponentType();
-                    String componentName = componentType.getName();
-                    if (componentName != null) {
-                        result = componentType.isArray() ? "[" + componentName : "[L" + componentName + ";";
-                        setNameImpl(result);
+                var itemType = classInfo.itemType();
+                if (itemType != null) {
+                    var itemName = itemType.classObject().getName();
+                    if (itemName != null) {
+                        result = itemType.itemType() != null ? "[" + itemName : "[L" + itemName + ";";
                     }
                 }
             }
-            return result;
-        } else if (PlatformDetector.isLowLevel()) {
-            String result = getNameCache(this);
-            if (result == null) {
-                result = Platform.getName(platformClass);
-                if (result == null) {
-                    if (isArray()) {
-                        TClass<?> componentType = getComponentType();
-                        String componentName = componentType.getName();
-                        if (componentName != null) {
-                            result = componentType.isArray() ? "[" + componentName : "[L" + componentName + ";";
-                        }
-                    }
-                }
-                setNameCache(this, result);
-            }
-            return result;
-        } else {
-            if (name == null) {
-                name = Platform.getName(platformClass);
-            }
-            return name;
+            name = result;
         }
+        return name;
     }
 
-    @PluggableDependency(ClassDependencyListener.class)
-    private native String getNameImpl();
-
-    private native void setNameImpl(String name);
-
     public String getSimpleName() {
-        String simpleName = getSimpleNameCache(this);
-        if (simpleName == null) {
-            if (isArray()) {
-                simpleName = getComponentType().getSimpleName() + "[]";
-            } else if (getEnclosingClass() != null) {
-                simpleName = PlatformDetector.isWebAssemblyGC()
-                    ? getSimpleNameCache(this)
-                    : Platform.getSimpleName(platformClass);
-                if (simpleName == null) {
-                    simpleName = "";
-                }
-            } else {
-                var name = PlatformDetector.isWebAssemblyGC()
-                        ? getName()
-                        : Platform.getName(platformClass);
-                int lastDollar = name.lastIndexOf('$');
-                if (lastDollar != -1) {
-                    name = name.substring(lastDollar + 1);
-                    if (name.charAt(0) >= '0' && name.charAt(0) <= '9') {
-                        name = "";
+        if ((flags & StatFlags.SIMPLE_NAME_INITIALIZED) != 0) {
+            flags |= StatFlags.SIMPLE_NAME_INITIALIZED;
+            var metadataName = classInfo.simpleName();
+            var result = metadataName != null ? metadataName.getStringObject() : null;
+            if (result == null) {
+                if (classInfo.itemType() != null) {
+                    result = classInfo.itemType().classObject().getSimpleName() + "[]";
+                } else if (classInfo.enclosingClass() == null) {
+                    var name = getName();
+                    int lastDollar = name.lastIndexOf('$');
+                    if (lastDollar != -1) {
+                        name = name.substring(lastDollar + 1);
+                        if (name.charAt(0) >= '0' && name.charAt(0) <= '9') {
+                            name = "";
+                        }
+                    } else {
+                        int lastDot = name.lastIndexOf('.');
+                        if (lastDot != -1) {
+                            name = name.substring(lastDot + 1);
+                        }
                     }
-                } else {
-                    int lastDot = name.lastIndexOf('.');
-                    if (lastDot != -1) {
-                        name = name.substring(lastDot + 1);
-                    }
+                    result = name;
                 }
-                simpleName = name;
             }
-            setSimpleNameCache(this, simpleName);
+            simpleName = result;
         }
         return simpleName;
     }
 
-    @DelegateTo("getSimpleNameCacheLowLevel")
-    private static String getSimpleNameCache(TClass<?> self) {
-        return self.simpleName;
-    }
-
-    @Unmanaged
-    @PluggableDependency(ClassDependencyListener.class)
-    private static RuntimeObject getSimpleNameCacheLowLevel(RuntimeClass self) {
-        return self.simpleNameCache;
-    }
-
-    @DelegateTo("setSimpleNameCacheLowLevel")
-    private static void setSimpleNameCache(TClass<?> self, String value) {
-        self.simpleName = value;
-    }
-
-    @Unmanaged
-    private static void setSimpleNameCacheLowLevel(RuntimeClass self, RuntimeObject object) {
-        self.simpleNameCache = object;
-    }
-
-    @DelegateTo("getNameCacheLowLevel")
-    private static String getNameCache(TClass<?> self) {
-        return self.name;
-    }
-
-    @Unmanaged
-    @PluggableDependency(ClassDependencyListener.class)
-    private static RuntimeObject getNameCacheLowLevel(RuntimeClass self) {
-        return self.nameCache;
-    }
-
-    @DelegateTo("setNameCacheLowLevel")
-    private static void setNameCache(TClass<?> self, String value) {
-        self.name = value;
-    }
-
-    @Unmanaged
-    private static void setNameCacheLowLevel(RuntimeClass self, RuntimeObject object) {
-        self.nameCache = object;
-    }
-
     public String getCanonicalName() {
-        String result = getCanonicalNameCache();
-        if (result == null) {
-            if (isArray()) {
-                String componentName = getComponentType().getCanonicalName();
-                if (componentName == null) {
-                    return null;
+        if ((flags & StatFlags.CANONICAL_NAME_INITIALIZED) != 0) {
+            flags |= StatFlags.CANONICAL_NAME_INITIALIZED;
+            if (classInfo.itemType() != null) {
+                String componentName = classInfo.itemType().classObject().getCanonicalName();
+                if (componentName != null) {
+                    canonicalName = componentName + "[]";
                 }
-                result = componentName + "[]";
-            } else if (getEnclosingClass() != null) {
-                if (getDeclaringClass() == null || isSynthetic()) {
-                    return null;
+            } else if (classInfo.enclosingClass() != null) {
+                if (classInfo.declaringClass() != null && !isSynthetic()) {
+                    var enclosingName = classInfo.declaringClass().classObject().getCanonicalName();
+                    if (enclosingName != null) {
+                        canonicalName = enclosingName + "." + getSimpleName();
+                    }
                 }
-                String enclosingName = getDeclaringClass().getCanonicalName();
-                if (enclosingName == null) {
-                    return null;
-                }
-                result = enclosingName + "." + getSimpleName();
             } else {
-                result = getName();
+                canonicalName = getSimpleName();
             }
-            setCanonicalNameCache(result);
         }
-        return result;
-    }
-
-    private boolean isSynthetic() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return (getWasmGCFlags() & WasmGCClassFlags.SYNTHETIC) != 0;
-        } else if (PlatformDetector.isJavaScript()) {
-            return (platformClass.getMetadata().getAccessLevel() & Flags.SYNTHETIC) != 0;
-        } else {
-            return (RuntimeClass.getClass(Address.ofObject(this).toStructure()).flags & RuntimeClass.SYNTHETIC) != 0;
-        }
-    }
-
-    @DelegateTo("getCanonicalNameCacheLowLevel")
-    private String getCanonicalNameCache() {
         return canonicalName;
     }
 
-    @Unmanaged
-    @PluggableDependency(ClassDependencyListener.class)
-    private RuntimeObject getCanonicalNameCacheLowLevel() {
-        return Address.ofObject(this).<RuntimeClass>toStructure().canonicalName;
-    }
-
-    @DelegateTo("setCanonicalNameCacheLowLevel")
-    private void setCanonicalNameCache(String value) {
-        canonicalName = value;
-    }
-
-    @Unmanaged
-    private void setCanonicalNameCacheLowLevel(RuntimeObject object) {
-        Address.ofObject(this).<RuntimeClass>toStructure().canonicalName = object;
+    private boolean isSynthetic() {
+        return (classInfo.modifiers() & ModifiersInfo.SYNTHETIC) != 0;
     }
 
     public boolean isPrimitive() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return (getWasmGCFlags() & WasmGCClassFlags.PRIMITIVE) != 0;
-        }
-        return Platform.isPrimitive(platformClass);
+        return classInfo.primitiveKind() != ClassInfo.PrimitiveKind.NOT;
     }
 
     public boolean isArray() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return getComponentType() != null;
-        }
-        return Platform.getArrayItem(platformClass) != null;
+        return classInfo.itemType() != null;
     }
 
     public boolean isEnum() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return (getWasmGCFlags() & WasmGCClassFlags.ENUM) != 0;
-        }
-        return Platform.isEnum(platformClass);
+        return (classInfo.modifiers() & ModifiersInfo.ENUM) != 0;
     }
 
     public boolean isInterface() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return (getWasmGCFlags() & WasmGCClassFlags.INTERFACE) != 0;
-        }
-        return (platformClass.getMetadata().getFlags() & Flags.INTERFACE) != 0;
+        return (classInfo.modifiers() & ModifiersInfo.INTERFACE) != 0;
     }
     
     public boolean isAnnotation() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return (getWasmGCFlags() & WasmGCClassFlags.ANNOTATION) != 0;
-        }
-        return (platformClass.getMetadata().getFlags() & Flags.ANNOTATION) != 0;
+        return (classInfo.modifiers() & ModifiersInfo.ANNOTATION) != 0;
     }
 
     public boolean isLocalClass() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return (getWasmGCFlags() & WasmGCClassFlags.SYNTHETIC) != 0 && getEnclosingClass() != null;
-        }
-        return (platformClass.getMetadata().getFlags() & Flags.SYNTHETIC) != 0 && getEnclosingClass() != null;
+        return (classInfo.modifiers() & ModifiersInfo.SYNTHETIC) != 0 && classInfo.enclosingClass() != null;
     }
 
     public boolean isMemberClass() {
         return getDeclaringClass() != null;
     }
 
-    private native int getWasmGCFlags();
-
-    @PluggableDependency(ClassGenerator.class)
     public TClass<?> getComponentType() {
-        return getClass(Platform.getArrayItem(platformClass));
+        return (TClass<?>) (Object) classInfo.itemType().classObject();
     }
 
     public TField[] getDeclaredFields() throws TSecurityException {
-        if (isPrimitive() || isArray()) {
-            return new TField[0];
-        }
-        var state = getReflectionState();
-        if (state.declaredFields == null) {
-            initReflection();
-            var infoList = getDeclaredFieldsImpl();
-            if (infoList == null) {
-                state.declaredFields = new TField[0];
+        if (declaredFields == null) {
+            var reflection = classInfo.reflection();
+            if (reflection == null) {
+                declaredFields = new TField[0];
             } else {
-                state.declaredFields = new TField[infoList.count()];
-                for (var i = 0; i < state.declaredFields.length; ++i) {
-                    var fieldInfo = infoList.get(i);
-                    state.declaredFields[i] = new TField(this, fieldInfo.name(), fieldInfo.modifiers(),
-                            fieldInfo.accessLevel(),
-                            (TClass<?>) (Object) fieldInfo.type(), fieldInfo.genericType(),
-                            fieldInfo.reader(), fieldInfo.writer(),
-                            fieldInfo.annotations());
+                var count = reflection.fieldCount();
+                declaredFields = new TField[count];
+                for (int i = 0; i < count; ++i) {
+                    declaredFields[i] = new TField(this, reflection.field(i));
                 }
             }
         }
-        return state.declaredFields.clone();
+        return declaredFields.clone();
     }
-
-    @InjectedBy(ClassGenerator.class)
-    private native FieldInfoList getDeclaredFieldsImpl();
-
-    private static void initReflection() {
-        if (!reflectionInitialized) {
-            reflectionInitialized = true;
-            createMetadata();
-        }
-    }
-
-    @GeneratedBy(ClassGenerator.class)
-    @NoSideEffects
-    private static native void createMetadata();
 
     public TField[] getFields() throws TSecurityException {
         if (isPrimitive() || isArray()) {
             return new TField[0];
         }
 
-        var state = getReflectionState();
-        if (state.fields == null) {
+        if (fields == null) {
             List<TField> fieldList = new ArrayList<>();
             TClass<?> cls = this;
 
@@ -412,9 +236,9 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                 }
             }
 
-            state.fields = fieldList.toArray(new TField[fieldList.size()]);
+            fields = fieldList.toArray(new TField[fieldList.size()]);
         }
-        return state.fields.clone();
+        return fields.clone();
     }
 
     public TField getDeclaredField(String name) throws TNoSuchFieldException {
@@ -463,41 +287,29 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         return null;
     }
 
-    @InjectedBy(ClassGenerator.class)
-    @PluggableDependency(ClassGenerator.class)
-    public native PlatformObject newEmptyInstance();
-
     @SuppressWarnings({ "raw", "unchecked" })
     public TConstructor<?>[] getDeclaredConstructors() throws TSecurityException {
-        if (isPrimitive() || isArray()) {
-            return new TConstructor<?>[0];
-        }
-
         if (declaredConstructors == null) {
-            initReflection();
-            var methodInfoList = getDeclaredMethodsImpl();
-            if (methodInfoList == null) {
+            var reflection = classInfo.reflection();
+            if (reflection == null) {
                 declaredConstructors = new TConstructor[0];
             } else {
-                declaredConstructors = new TConstructor[methodInfoList.count()];
-                int count = 0;
-                for (int i = 0; i < methodInfoList.count(); ++i) {
-                    var methodInfo = methodInfoList.get(i);
-                    if (!methodInfo.name().equals("<init>")) {
+                var total = reflection.methodCount();
+                var count = 0;
+                for (var i = 0; i < total; ++i) {
+                    if (reflection.method(i).name().getStringObject().equals("<init>")) {
+                        ++count;
+                    }
+                }
+                declaredConstructors = new TConstructor[count];
+                var j = 0;
+                for (var i = 0; i < total; ++i) {
+                    var info = reflection.method(i);
+                    if (!info.name().getStringObject().equals("<init>")) {
                         continue;
                     }
-                    var paramTypeInfoList = methodInfo.parameterTypes();
-                    var parameterTypes = new TClass<?>[paramTypeInfoList.count()];
-                    for (int j = 0; j < parameterTypes.length; ++j) {
-                        parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
-                    }
-                    var genericParameterTypes = methodInfo.genericParameterTypes();
-                    declaredConstructors[count++] = new TConstructor<>(this, methodInfo.name(),
-                            methodInfo.modifiers(), methodInfo.accessLevel(), parameterTypes,
-                            genericParameterTypes != null ? genericParameterTypes.asArray() : null,
-                            methodInfo.caller(), methodInfo.annotations());
+                    declaredConstructors[j++] = new TConstructor<>(classInfo, info);
                 }
-                declaredConstructors = Arrays.copyOf(declaredConstructors, count);
             }
         }
         return declaredConstructors.clone();
@@ -559,52 +371,31 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     }
 
     public TMethod[] getDeclaredMethods() {
-        if (isPrimitive() || isArray()) {
-            return new TMethod[0];
-        }
         if (declaredMethods == null) {
-            initReflection();
-            var methodInfoList = getDeclaredMethodsImpl();
-            if (methodInfoList == null) {
+            var reflection = classInfo.reflection();
+            if (reflection == null) {
                 declaredMethods = new TMethod[0];
             } else {
-                declaredMethods = new TMethod[methodInfoList.count()];
-                int count = 0;
-                for (int i = 0; i < methodInfoList.count(); ++i) {
-                    var methodInfo = methodInfoList.get(i);
-                    if (methodInfo.name().equals("<init>") || methodInfo.name().equals("<clinit>")) {
+                var total = reflection.methodCount();
+                var count = 0;
+                for (var i = 0; i < total; ++i) {
+                    if (!reflection.method(i).name().getStringObject().equals("<init>")) {
+                        ++count;
+                    }
+                }
+                declaredMethods = new TMethod[count];
+                var j = 0;
+                for (var i = 0; i < total; ++i) {
+                    var info = reflection.method(i);
+                    if (info.name().getStringObject().equals("<init>")) {
                         continue;
                     }
-                    var paramTypeInfoList = methodInfo.parameterTypes();
-                    var parameterTypes = new TClass<?>[paramTypeInfoList.count()];
-                    for (int j = 0; j < parameterTypes.length; ++j) {
-                        parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
-                    }
-                    var typeParamsInfo = methodInfo.typeParameters();
-                    TTypeVariableImpl[] typeParams = null;
-                    if (typeParamsInfo != null) {
-                        var array = typeParamsInfo.asArray();
-                        typeParams = new TTypeVariableImpl[array.length];
-                        System.arraycopy(array, 0, typeParams, 0, array.length);
-                    }
-                    var returnType = methodInfo.returnType();
-                    var genericParameterTypes = methodInfo.genericParameterTypes();
-                    declaredMethods[count++] = new TMethod(this, methodInfo.name(), methodInfo.modifiers(),
-                            methodInfo.accessLevel(),
-                            (TClass<?>) (Object) returnType,
-                            methodInfo.genericReturnType(),
-                            parameterTypes,
-                            genericParameterTypes != null ? genericParameterTypes.asArray() : null,
-                            methodInfo.caller(), methodInfo.annotations(), typeParams);
+                    declaredMethods[j++] = new TMethod(classInfo, info);
                 }
-                declaredMethods = Arrays.copyOf(declaredMethods, count);
             }
         }
         return declaredMethods.clone();
     }
-
-    @InjectedBy(ClassGenerator.class)
-    private native MethodInfoList getDeclaredMethodsImpl();
 
     public TMethod getDeclaredMethod(String name, TClass<?>... parameterTypes) throws TNoSuchMethodException,
             TSecurityException {
@@ -715,15 +506,7 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     }
 
     public int getModifiers() {
-        if (PlatformDetector.isJavaScript()) {
-            int flags = platformClass.getMetadata().getFlags();
-            int accessLevel = platformClass.getMetadata().getAccessLevel();
-            return Flags.getModifiers(flags, accessLevel);
-        } else if (PlatformDetector.isWebAssemblyGC()) {
-            return getWasmGCFlags() & WasmGCClassFlags.JVM_FLAGS_MASK;
-        } else {
-            return 0;
-        }
+        return classInfo.modifiers() & ModifiersInfo.JVM_FLAGS_MASK;
     }
 
     public boolean desiredAssertionStatus() {
@@ -733,46 +516,35 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     @SuppressWarnings("unchecked")
     @PluggableDependency(ClassGenerator.class)
     public TClass<? super T> getSuperclass() {
-        return (TClass<? super T>) getClass(platformClass.getMetadata().getSuperclass());
+        return classInfo.parent() != null
+                ? (TClass<? super T>) (Object) classInfo.parent().classObject()
+                : null;
     }
 
     @SuppressWarnings("unchecked")
     @PluggableDependency(ClassGenerator.class)
     public TClass<? super T>[] getInterfaces() {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            var result = getInterfacesImpl();
-            return result != null ? result.clone() : (TClass<? super T>[]) new TClass<?>[0];
-        } else {
-            PlatformSequence<PlatformClass> supertypes = platformClass.getMetadata().getSupertypes();
-
-            TClass<? super T>[] filteredSupertypes = (TClass<? super T>[]) new TClass<?>[supertypes.getLength()];
-            int j = 0;
-            for (int i = 0; i < supertypes.getLength(); ++i) {
-                if (supertypes.get(i) != platformClass.getMetadata().getSuperclass()) {
-                    filteredSupertypes[j++] = (TClass<? super T>) getClass(supertypes.get(i));
-                }
+        if (interfaces == null) {
+            interfaces = new TClass<?>[classInfo.superinterfaceCount()];
+            for (int i = 0; i < interfaces.length; ++i) {
+                interfaces[i] = (TClass<? super T>) (Object) classInfo.superinterface(i).classObject();
             }
-
-            if (filteredSupertypes.length > j) {
-                filteredSupertypes = Arrays.copyOf(filteredSupertypes, j);
-            }
-            return filteredSupertypes;
         }
+        return (TClass<? super T>[]) interfaces;
     }
-
-    private native TClass<? super T>[] getInterfacesImpl();
 
     @SuppressWarnings("unchecked")
     public T[] getEnumConstants() {
         if (!isEnum()) {
             return null;
         }
-        if (PlatformDetector.isWebAssemblyGC()) {
-            return (T[]) ClassSupport.getEnumConstants((Class<?>) (Object) this);
-        } else {
-            Platform.initClass(platformClass);
-            return (T[]) Platform.getEnumConstants(platformClass).clone();
+
+        var count = classInfo.enumConstantCount();
+        var data = classInfo.arrayType().newArrayInstance(count);
+        for (var i = 0; i < count; ++i) {
+            classInfo.putItem(data, i, classInfo.enumConstant(i));
         }
+        return (T[]) data;
     }
 
     @SuppressWarnings("unchecked")
@@ -788,41 +560,27 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     }
 
     public static TClass<?> forName(TString name) throws TClassNotFoundException {
-        if (PlatformDetector.isJavaScript()) {
-            PlatformClass cls = Platform.lookupClass(name.toString());
-            if (cls == null) {
-                throw new TClassNotFoundException();
-            }
-            return getClass(cls);
-        } else {
-            if (nameMap == null) {
-                fillNameMap();
-            }
-            var result = nameMap.get((String) (Object) name);
-            if (result == null) {
-                throw new TClassNotFoundException((String) (Object) name);
-            }
-            return result;
+        if (nameMap == null) {
+            fillNameMap();
         }
+        var result = nameMap.get((String) (Object) name);
+        if (result == null) {
+            throw new TClassNotFoundException((String) (Object) name);
+        }
+        return result;
     }
 
     private static void fillNameMap() {
         nameMap = new HashMap<>();
-        var cls = last();
-        while (cls != null) {
-            var name = cls.getNameImpl();
+        ClassInfo.rewind();
+        while (ClassInfo.hasNext()) {
+            var cls = ClassInfo.next();
+            var name = cls.name();
             if (name != null) {
-                nameMap.put(name, cls);
+                nameMap.put(name.getStringObject(), (TClass<?>) (Object) cls.classObject());
             }
-            cls = cls.previous();
         }
     }
-
-    @PluggableDependency(ClassDependencyListener.class)
-    private static native TClass<?> last();
-
-    @PluggableDependency(ClassDependencyListener.class)
-    private native TClass<?> previous();
 
     @SuppressWarnings("unused")
     public static TClass<?> forName(TString name, boolean initialize, TClassLoader loader)
@@ -830,42 +588,24 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         return forName(name);
     }
 
-    @PluggableDependency(ClassDependencyListener.class)
-    void initialize() {
-        if (PlatformDetector.isJavaScript()) {
-            Platform.initClass(platformClass);
-        } else {
-            initializeImpl();
-        }
-    }
-
-    private native void initializeImpl();
-
     @SuppressWarnings({ "unchecked", "unused" })
     public T newInstance() throws TInstantiationException, TIllegalAccessException {
-        Object instance;
-        if (PlatformDetector.isJavaScript()) {
-            instance = Platform.newInstance(platformClass);
-        } else {
-            initReflection();
-            instance = newInstanceImpl();
-        }
+        var instance = classInfo.newInstance();
         if (instance == null) {
             throw new TInstantiationException();
         }
+        classInfo.initializeNewInstance(instance);
         return (T) instance;
     }
 
-    private native Object newInstanceImpl();
-
     public TClass<?> getDeclaringClass() {
-        PlatformClass result = Platform.getDeclaringClass(getPlatformClass());
-        return result != null ? getClass(result) : null;
+        var declaringClass = classInfo.declaringClass();
+        return declaringClass != null ? (TClass<?>) (Object) declaringClass.classObject() : null;
     }
 
     public TClass<?> getEnclosingClass() {
-        PlatformClass result = Platform.getEnclosingClass(getPlatformClass());
-        return result != null ? getClass(result) : null;
+        var enclosingClass = classInfo.enclosingClass();
+        return enclosingClass != null ? (TClass<?>) (Object) enclosingClass.classObject() : null;
     }
 
     @SuppressWarnings("unchecked")
@@ -879,20 +619,19 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     @Override
     public boolean isAnnotationPresent(TClass<? extends TAnnotation> annotationClass) {
         ensureAnnotationsByType();
-        return getReflectionState().annotationsByType.containsKey(annotationClass);
+        return annotationsByType.containsKey(annotationClass);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <S extends TAnnotation> S getAnnotation(TClass<S> annotationClass) {
         ensureAnnotationsByType();
-        return (S) getReflectionState().annotationsByType.get(annotationClass);
+        return (S) annotationsByType.get(annotationClass);
     }
 
     @Override
     public TAnnotation[] getAnnotations() {
-        var state = getReflectionState();
-        if (state.annotationCache == null) {
+        if (annotations == null) {
             TClass<?> cls = this;
             var initial = true;
             var map = new LinkedHashMap<Class<?>, TAnnotation>();
@@ -905,74 +644,40 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                 cls = cls.getSuperclass();
                 initial = false;
             }
-            state.annotationCache = map.values().toArray(new TAnnotation[0]);
+            annotations = map.values().toArray(new TAnnotation[0]);
         }
-        return state.annotationCache.clone();
+        return annotations.clone();
     }
-
-    private ReflectionState getReflectionState() {
-        if (PlatformDetector.isC()) {
-            var result = getReflectionStateC();
-            if (result == null) {
-                result = new ReflectionState();
-                setReflectionStateC(result);
-            }
-            return result;
-        } else {
-            var result = reflectionState;
-            if (result == null) {
-                result = new ReflectionState();
-                reflectionState = result;
-            }
-            return reflectionState;
-        }
-    }
-
-    @PluggableDependency(ClassDependencyListener.class)
-    private native ReflectionState getReflectionStateC();
-
-    private native void setReflectionStateC(ReflectionState annotations);
 
     private static boolean isInherited(TAnnotation annot) {
-        if (PlatformDetector.isWebAssemblyGC()) {
-            var flags = ((TClass<?>) (Object) annot.annotationType()).getWasmGCFlags();
-            return (flags & WasmGCClassFlags.INHERITED_ANNOTATIONS) != 0;
-        } else if (PlatformDetector.isC()) {
-            var type = (TClass<?>) (Object) annot.annotationType();
-            var flags = Address.ofObject(type).<RuntimeClass>toStructure().flags;
-            return (flags & RuntimeClass.INHERITED_ANNOTATION) != 0;
-        } else {
-            var platformClass = ((TClass<?>) (Object) annot.annotationType()).platformClass;
-            return (platformClass.getMetadata().getFlags() & Flags.INHERITED_ANNOTATION) != 0;
-        }
+        var modifiers = ((TClass<?>) (Object) annot.annotationType()).classInfo.modifiers();
+        return (modifiers & ModifiersInfo.INHERITED_ANNOTATION) != 0;
     }
 
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
-        var state = getReflectionState();
-        if (state.declaredAnnotationsCache == null) {
-            if (PlatformDetector.isWebAssemblyGC() || PlatformDetector.isC()) {
-                state.declaredAnnotationsCache = getDeclaredAnnotationsImpl();
+        if (declaredAnnotations == null) {
+            var reflection = classInfo.reflection();
+            if (reflection == null) {
+                declaredAnnotations = new TAnnotation[0];
             } else {
-                state.declaredAnnotationsCache = (TAnnotation[]) Platform.getAnnotations(getPlatformClass());
-            }
-            if (state.declaredAnnotationsCache == null) {
-                state.declaredAnnotationsCache = new TAnnotation[0];
+                var count = reflection.annotationCount();
+                declaredAnnotations = new TAnnotation[count];
+                for (var i = 0; i < count; ++i) {
+                    declaredAnnotations[i] = (TAnnotation) reflection.annotation(i).createObject();
+                }
             }
         }
-        return state.declaredAnnotationsCache.clone();
+        return declaredAnnotations.clone();
     }
 
-    private native TAnnotation[] getDeclaredAnnotationsImpl();
-
     private void ensureAnnotationsByType() {
-        var state = getReflectionState();
-        if (state.annotationsByType != null) {
+        if (annotationsByType != null) {
             return;
         }
-        state.annotationsByType = new HashMap<>();
+        annotationsByType = new HashMap<>();
         for (TAnnotation annot : getAnnotations()) {
-            state.annotationsByType.put((TClass<?>) (Object) annot.annotationType(), annot);
+            annotationsByType.put((TClass<?>) (Object) annot.annotationType(), annot);
         }
     }
 
@@ -1003,38 +708,24 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     @SuppressWarnings("unchecked")
     @Override
     public TTypeVariable<TClass<T>>[] getTypeParameters() {
-        initReflection();
-        var paramList = getTypeParametersImpl();
-        if (paramList == null) {
-            return (TTypeVariable<TClass<T>>[]) new TTypeVariable<?>[0];
-        }
-        var array = paramList.asArray();
-        var result = new TTypeVariable[array.length];
-        System.arraycopy(array, 0, result, 0, array.length);
-        for (var param : result) {
-            var paramImpl = (TTypeVariableImpl) param;
-            if (paramImpl.declaration == null) {
-                paramImpl.declaration = this;
+        if (typeParameters == null) {
+            var reflection = classInfo.reflection();
+            if (reflection == null) {
+                typeParameters = new TTypeVariable<?>[0];
+            } else {
+                typeParameters = new TTypeVariable<?>[reflection.typeParameterCount()];
+                for (var i = 0; i < typeParameters.length; ++i) {
+                    typeParameters[i] = new TTypeVariableImpl(this, reflection.typeParameter(i));
+                }
             }
         }
-        return result;
+        return (TTypeVariable<TClass<T>>[]) typeParameters.clone();
     }
-
-    @InjectedBy(ClassGenerator.class)
-    private native ObjectList getTypeParametersImpl();
 
     @Override
     public String getTypeName() {
         return isArray()
             ? getComponentType().getTypeName() + "[]"
             : getName();
-    }
-
-    static class ReflectionState {
-        TAnnotation[] annotationCache;
-        TAnnotation[] declaredAnnotationsCache;
-        private Map<TClass<?>, TAnnotation> annotationsByType;
-        private TField[] declaredFields;
-        private TField[] fields;
     }
 }

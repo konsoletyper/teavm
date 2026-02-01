@@ -17,49 +17,42 @@ package org.teavm.classlib.java.lang.reflect;
 
 import java.util.Arrays;
 import java.util.Objects;
+import org.teavm.runtime.reflect.GenericTypeInfo;
+import org.teavm.runtime.reflect.WildcardTypeInfo;
 
-class TWildcardTypeImpl extends TLazyResolvedType implements TWildcardType {
+class TWildcardTypeImpl implements TWildcardType {
+    private TGenericDeclaration declaration;
+    private WildcardTypeInfo info;
     private TType[] upperBounds;
     private TType[] lowerBounds;
 
-    private TWildcardTypeImpl(TType[] upperBounds, TType[] lowerBounds) {
-        this.upperBounds = upperBounds;
-        this.lowerBounds = lowerBounds;
-    }
-
-    static TWildcardTypeImpl upper(TType upperBound) {
-        if (upperBound == null) {
-            upperBound = (TType) (Object) Object.class;
-        }
-        return new TWildcardTypeImpl(new TType[] { upperBound }, new TType[0]);
-    }
-
-    static TWildcardTypeImpl lower(TType lowerBound) {
-        return new TWildcardTypeImpl(new TType[] { (TType) (Object) Object.class }, new TType[] { lowerBound });
+    TWildcardTypeImpl(TGenericDeclaration declaration, WildcardTypeInfo info) {
+        this.declaration = declaration;
+        this.info = info;
     }
 
     @Override
     public TType[] getUpperBounds() {
+        if (upperBounds == null) {
+            if (info.kind() == GenericTypeInfo.Kind.UPPER_BOUND_WILDCARD) {
+                upperBounds = new TType[] { TGenericTypeFactory.create(declaration, info.bound()) };
+            } else {
+                upperBounds = new TType[] { (TType) (Object) Object.class };
+            }
+        }
         return upperBounds.clone();
     }
 
     @Override
     public TType[] getLowerBounds() {
+        if (upperBounds == null) {
+            if (info.kind() == GenericTypeInfo.Kind.LOWER_BOUND_WILDCARD) {
+                lowerBounds = new TType[] { TGenericTypeFactory.create(declaration, info.bound()) };
+            } else {
+                lowerBounds = new TType[0];
+            }
+        }
         return lowerBounds.clone();
-    }
-
-    @Override
-    void resolve(TGenericDeclaration declaration) {
-        if (upperBounds != null) {
-            for (var i = 0; i < upperBounds.length; ++i) {
-                upperBounds[i] = TTypeVariableStub.resolve(upperBounds[i], declaration);
-            }
-        }
-        if (lowerBounds != null) {
-            for (var i = 0; i < lowerBounds.length; ++i) {
-                lowerBounds[i] = TTypeVariableStub.resolve(lowerBounds[i], declaration);
-            }
-        }
     }
 
     @Override
@@ -81,13 +74,13 @@ class TWildcardTypeImpl extends TLazyResolvedType implements TWildcardType {
 
     @Override
     public String toString() {
-        if (lowerBounds.length == 0) {
-            if (upperBounds[0].equals(Object.class)) {
+        switch (info.kind()) {
+            case GenericTypeInfo.Kind.LOWER_BOUND_WILDCARD:
+                return "? extends " + getUpperBounds()[0].getTypeName();
+            case GenericTypeInfo.Kind.UPPER_BOUND_WILDCARD:
+                return "? super " + getLowerBounds()[0].getTypeName();
+            default:
                 return "?";
-            }
-            return "? extends " + upperBounds[0].getTypeName();
-        } else {
-            return "? super " + lowerBounds[0].getTypeName();
         }
     }
 }

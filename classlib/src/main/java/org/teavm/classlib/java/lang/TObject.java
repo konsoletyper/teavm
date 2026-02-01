@@ -231,9 +231,7 @@ public class TObject {
     }
 
     @Rename("getClass")
-    public final TClass<?> getClass0() {
-        return TClass.getClass(Platform.getPlatformObject(this).getPlatformClass());
-    }
+    public final native TClass<?> getClass0();
 
     @Override
     public int hashCode() {
