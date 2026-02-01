@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -26,6 +27,11 @@ public class TPropertyResourceBundle extends TResourceBundle {
     public TPropertyResourceBundle(InputStream stream) throws IOException {
         resources = new Properties();
         resources.load(stream);
+    }
+
+    public TPropertyResourceBundle(Reader reader) throws IOException {
+        resources = new Properties();
+        resources.load(reader);
     }
 
     @SuppressWarnings("unchecked")
