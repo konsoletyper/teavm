@@ -64,7 +64,6 @@ import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
-import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMTarget;
 
@@ -95,7 +94,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private List<TestRun> runsInCurrentClass = new ArrayList<>();
     private static List<TestPlatformSupport<?>> platforms = new ArrayList<>();
     private List<TestPlatformSupport<?>> participatingPlatforms = new ArrayList<>();
-    private ResourceProvider resourceProvider;
 
     static {
         classLoader = TeaVMTestRunner.class.getClassLoader();
@@ -158,9 +156,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         }
 
         List<Method> children = getFilteredChildren();
-        var description = getDescription();
 
-        notifier.fireTestStarted(description);
         isWholeClassCompilation = !testClass.isAnnotationPresent(EachTestCompiledSeparately.class);
         if (isWholeClassCompilation) {
             runWithWholeClassCompilation(children, notifier);
@@ -172,12 +168,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         writeRunsDescriptor();
         runsInCurrentClass.clear();
-
-        notifier.fireTestFinished(description);
     }
 
     private void runWithWholeClassCompilation(List<Method> children, RunNotifier notifier) {
-        var tests = compileWholeClass(children, notifier);
+        var tests = compileWholeClass(children);
         if (tests == null) {
             failAllClasses(children, notifier);
             return;
@@ -285,12 +279,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 method.getName()));
     }
 
-    private List<PlatformClassTests> compileWholeClass(List<Method> children, RunNotifier notifier) {
-        var description = getDescription();
-
+    private List<PlatformClassTests> compileWholeClass(List<Method> children) {
         var result = new ArrayList<PlatformClassTests>();
         for (var platformSupport : participatingPlatforms) {
-            var item = compileClassForPlatform(platformSupport, children, testClass, description, notifier);
+            var item = compileClassForPlatform(platformSupport, children, testClass);
             if (item == null) {
                 return null;
             }
@@ -304,7 +296,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     @SuppressWarnings("unchecked")
     private PlatformClassTests compileClassForPlatform(TestPlatformSupport<?> platform, List<Method> children,
-            Class<?> cls, Description description, RunNotifier notifier) {
+            Class<?> cls) {
         var platformClassTests = new PlatformClassTests();
         var isModule = cls.isAnnotationPresent(JsModuleTest.class);
         if (platform.isEnabled() && hasChildrenToRun(children, platform.getPlatform())) {
@@ -317,7 +309,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 var result = castPlatform.compile(wholeClass(children, platform.getPlatform(), configuration, runs),
                         "classTest", castConfiguration, path, testClass);
                 if (!result.success) {
-                    notifier.fireTestFailure(createFailure(description, result));
                     return null;
                 }
                 var group = new TestRunGroup(path, result.file.getName(), platform.getPlatform(), isModule);

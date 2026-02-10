@@ -9,7 +9,7 @@ idea = "2024.1"
 idea-scala = "2024.1.25"
 maven = "3.5.4"
 maven-tools = "3.7.1"
-kotlin = "2.2.20"
+kotlin = "2.3.10"
 scala = "3.7.3"
 jreleaser = "1.18.0"
 
@@ -75,7 +75,7 @@ version.ref = "shadow"
 [plugins]
 
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
-intellij = { id = "org.jetbrains.intellij.platform", version = "2.9.0" }
+intellij = { id = "org.jetbrains.intellij.platform", version = "2.11.0" }
 pluginPublish = { id = "com.gradle.plugin-publish", version = "1.1.0" }
 nodejs = { id = "com.github.node-gradle.node", version = "7.1.0" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

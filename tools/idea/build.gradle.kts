@@ -29,12 +29,6 @@ javaVersion {
     version = JavaVersion.VERSION_17
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
 intellijPlatform {
     pluginConfiguration {
         name = "TeaVM Integration"
