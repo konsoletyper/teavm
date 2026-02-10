@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -126,5 +127,11 @@ public class CollectionsTest {
         for (int i = 1; i <= 4; ++i) {
             assertTrue("List expected to contain " + i, list.contains(i));
         }
+    }
+    
+    @Test
+    public void emptySet() {
+        assertTrue("Collections.emptySet should produce 'true' for empty set argument",
+                Collections.emptySet().containsAll(new HashSet<>()));
     }
 }

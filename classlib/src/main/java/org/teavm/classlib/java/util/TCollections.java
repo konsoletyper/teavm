@@ -36,7 +36,7 @@ public final class TCollections extends TObject {
             return false;
         }
         @Override public boolean containsAll(TCollection<?> c) {
-            return false;
+            return c.isEmpty();
         }
     };
 
