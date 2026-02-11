@@ -171,7 +171,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private void runWithWholeClassCompilation(List<Method> children, RunNotifier notifier) {
-        var tests = compileWholeClass(children);
+        var tests = compileWholeClass(children, notifier);
         if (tests == null) {
             failAllClasses(children, notifier);
             return;
@@ -181,11 +181,11 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         for (var child : children) {
             var description = describeChild(child);
-            notifier.fireTestStarted(description);
 
             if (isIgnored(child)) {
                 notifier.fireTestIgnored(description);
             } else {
+                notifier.fireTestStarted(description);
                 var success = true;
                 if (skipJvmForClass && !child.isAnnotationPresent(SkipJVM.class)) {
                     ClassHolder classHolder = classSource.get(child.getDeclaringClass().getName());
@@ -208,9 +208,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                         }
                     }
                 }
+                notifier.fireTestFinished(description);
             }
-
-            notifier.fireTestFinished(description);
         }
 
         for (var testsForPlatform : tests) {
@@ -279,10 +278,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 method.getName()));
     }
 
-    private List<PlatformClassTests> compileWholeClass(List<Method> children) {
+    private List<PlatformClassTests> compileWholeClass(List<Method> children, RunNotifier notifier) {
         var result = new ArrayList<PlatformClassTests>();
         for (var platformSupport : participatingPlatforms) {
-            var item = compileClassForPlatform(platformSupport, children, testClass);
+            var item = compileClassForPlatform(platformSupport, children, testClass, getDescription(), notifier);
             if (item == null) {
                 return null;
             }
@@ -296,7 +295,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     @SuppressWarnings("unchecked")
     private PlatformClassTests compileClassForPlatform(TestPlatformSupport<?> platform, List<Method> children,
-            Class<?> cls) {
+            Class<?> cls, Description description, RunNotifier notifier) {
         var platformClassTests = new PlatformClassTests();
         var isModule = cls.isAnnotationPresent(JsModuleTest.class);
         if (platform.isEnabled() && hasChildrenToRun(children, platform.getPlatform())) {
@@ -309,6 +308,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 var result = castPlatform.compile(wholeClass(children, platform.getPlatform(), configuration, runs),
                         "classTest", castConfiguration, path, testClass);
                 if (!result.success) {
+                    notifier.fireTestFailure(createFailure(description, result));
                     return null;
                 }
                 var group = new TestRunGroup(path, result.file.getName(), platform.getPlatform(), isModule);
@@ -365,13 +365,12 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private void runChild(Method child, RunNotifier notifier) {
         Description description = describeChild(child);
-        notifier.fireTestStarted(description);
 
         if (isIgnored(child)) {
             notifier.fireTestIgnored(description);
-            notifier.fireTestFinished(description);
             return;
         }
+        notifier.fireTestStarted(description);
 
         boolean ran = false;
         boolean success = true;
