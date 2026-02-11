@@ -148,7 +148,7 @@ let $rt_createMultiArray = (cls, dimensions) => {
     for (let i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createArray(cls, firstDim);
     }
-    return $rt_createMultiArrayImpl(cls, arrays, dimensions, first);
+    return $rt_createMultiArrayImpl(cls, arrays, dimensions, first, 0);
 }
 let $rt_createByteMultiArray = dimensions => {
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
