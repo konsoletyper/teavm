@@ -30,7 +30,9 @@ import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSByRef;
 import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
@@ -39,6 +41,17 @@ import org.teavm.junit.TestPlatform;
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
 public class VMTest {
+    @Test
+    @OnlyPlatform(TestPlatform.JAVASCRIPT)
+    @SkipJVM
+    public void typedArrayUsed() {
+        var multiarray = new byte[1][2];
+        assertTrue(isTypedArray(multiarray[0]));
+    }
+
+    @JSBody(params = "data", script = "return data instanceof Int8Array;")
+    private static native boolean isTypedArray(@JSByRef byte[] data);
+
     @Test
     public void multiArrayCreated() {
         int[][] array = new int[2][3];

@@ -159,7 +159,7 @@ let $rt_createByteMultiArray = dimensions => {
     for (let i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createByteArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_bytecls, arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_bytecls, arrays, dimensions, 0);
 }
 let $rt_createCharMultiArray = dimensions => {
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
