@@ -800,6 +800,11 @@ async function compileModule(src, isNodeJs) {
 }
 
 function hasStringBuiltins() {
+    // Ensure Safari fallback for string builtins
+    if (/.*version\/(\d+\.\d+).*/.exec(navigator.userAgent.toLowerCase()) !== null) {
+        if (parseFloat(RegExp.$1) < 28) return null; 
+    }
+    
     if (stringBuiltinsCache === null) {
         /*
           (module
