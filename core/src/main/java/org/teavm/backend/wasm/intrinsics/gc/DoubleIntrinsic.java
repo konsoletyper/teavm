@@ -41,8 +41,6 @@ public class DoubleIntrinsic implements WasmGCIntrinsic {
                 return new WasmFloat64Constant(Double.NaN);
             case "isNaN":
                 return testNaN(context.generate(invocation.getArguments().get(0)), context);
-            case "isInfinite":
-                return testIsInfinite(context.generate(invocation.getArguments().get(0)));
             case "isFinite":
                 return testIsFinite(context.generate(invocation.getArguments().get(0)));
             case "doubleToRawLongBits": {
@@ -71,16 +69,6 @@ public class DoubleIntrinsic implements WasmGCIntrinsic {
                 cache.expr(), cache.expr()));
         cache.release();
         return block;
-    }
-
-    private WasmExpression testIsInfinite(WasmExpression expression) {
-        var conversion = new WasmConversion(WasmNumType.FLOAT64, WasmNumType.INT64, false, expression);
-        conversion.setReinterpret(true);
-
-        var result = new WasmIntBinary(WasmIntType.INT64, WasmIntBinaryOperation.AND,
-                conversion, new WasmInt64Constant(EXPONENT_BITS));
-        return new WasmIntBinary(WasmIntType.INT64, WasmIntBinaryOperation.EQ, result,
-                new WasmInt64Constant(EXPONENT_BITS));
     }
 
     private WasmExpression testIsFinite(WasmExpression expression) {

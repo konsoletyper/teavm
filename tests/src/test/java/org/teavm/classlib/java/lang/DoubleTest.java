@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -63,6 +64,15 @@ public class DoubleTest {
         assertEquals(23, Double.parseDouble("23F"), 0.1f);
         assertEquals(23, Double.parseDouble("23d"), 0.1f);
         assertEquals(23, Double.parseDouble("23D"), 0.1f);
+
+        assertEquals(Double.POSITIVE_INFINITY, Double.parseDouble("Infinity"), 1E-12);
+        assertEquals(Double.POSITIVE_INFINITY, Double.parseDouble("+Infinity"), 1E-12);
+        assertEquals(Double.NEGATIVE_INFINITY, Double.parseDouble("-Infinity"), 1E-12);
+        assertEquals(Double.NEGATIVE_INFINITY, Double.parseDouble(" -Infinity "), 1E-12);
+        assertEquals(Double.NaN, Double.parseDouble("NaN"), 1E-12);
+        assertEquals(Double.NaN, Double.parseDouble("+NaN"), 1E-12);
+        assertEquals(Double.NaN, Double.parseDouble("-NaN"), 1E-12);
+        assertEquals(Double.NaN, Double.parseDouble(" -NaN "), 1E-12);
     }
 
     @Test
@@ -101,6 +111,23 @@ public class DoubleTest {
         checkIllegalFormat(".");
         checkIllegalFormat("1e-");
         checkIllegalFormat("1e");
+
+        checkIllegalFormat("++Infinity");
+        checkIllegalFormat("--Infinity");
+        checkIllegalFormat("INFINITY");
+        checkIllegalFormat("infinity");
+        checkIllegalFormat("InfinityF");
+        checkIllegalFormat("InfinityD");
+        checkIllegalFormat("Infinityf");
+        checkIllegalFormat("Infinityd");
+        checkIllegalFormat("++NaN");
+        checkIllegalFormat("--NaN");
+        checkIllegalFormat("NAN");
+        checkIllegalFormat("nan");
+        checkIllegalFormat("NaNF");
+        checkIllegalFormat("NaND");
+        checkIllegalFormat("NaNf");
+        checkIllegalFormat("NaNd");
     }
 
     private void checkIllegalFormat(String string) {
@@ -165,5 +192,17 @@ public class DoubleTest {
         assertEquals(Double.valueOf(OTHER_NAN), Double.valueOf(OTHER_NAN));
         assertNotEquals(Double.doubleToRawLongBits(OTHER_NAN), Double.doubleToRawLongBits(Double.NaN));
         assertEquals(Double.doubleToLongBits(OTHER_NAN), Double.doubleToLongBits(Double.NaN));
+    }
+
+    @Test
+    public void testFinity() {
+        assertTrue(Double.isFinite(1d));
+        assertFalse(Double.isInfinite(1d));
+        assertFalse(Double.isFinite(Double.POSITIVE_INFINITY));
+        assertTrue(Double.isInfinite(Double.POSITIVE_INFINITY));
+        assertFalse(Double.isFinite(Double.NEGATIVE_INFINITY));
+        assertTrue(Double.isInfinite(Double.NEGATIVE_INFINITY));
+        assertFalse(Double.isFinite(Double.NaN));
+        assertFalse(Double.isInfinite(Double.NaN));
     }
 }

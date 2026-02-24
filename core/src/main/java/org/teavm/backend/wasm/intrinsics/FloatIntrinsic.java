@@ -46,11 +46,11 @@ public class FloatIntrinsic implements WasmIntrinsic {
         switch (methodReference.getName()) {
             case "getNaN":
             case "isNaN":
-            case "isInfinite":
             case "isFinite":
             case "floatToRawIntBits":
             case "intBitsToFloat":
                 return true;
+            case "isInfinite":
             default:
                 return false;
         }
@@ -63,8 +63,6 @@ public class FloatIntrinsic implements WasmIntrinsic {
                 return new WasmFloat32Constant(Float.NaN);
             case "isNaN":
                 return testNaN(manager.generate(invocation.getArguments().get(0)), manager);
-            case "isInfinite":
-                return testIsInfinite(manager.generate(invocation.getArguments().get(0)));
             case "isFinite":
                 return testIsFinite(manager.generate(invocation.getArguments().get(0)));
             case "floatToRawIntBits": {
@@ -110,16 +108,6 @@ public class FloatIntrinsic implements WasmIntrinsic {
 
         block.getBody().add(testFraction);
         return block;
-    }
-
-    private WasmExpression testIsInfinite(WasmExpression expression) {
-        var conversion = new WasmConversion(WasmNumType.FLOAT32, WasmNumType.INT32, false, expression);
-        conversion.setReinterpret(true);
-
-        var result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND,
-                conversion, new WasmInt32Constant(EXPONENT_BITS));
-        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, result,
-                new WasmInt32Constant(EXPONENT_BITS));
     }
 
     private WasmExpression testIsFinite(WasmExpression expression) {

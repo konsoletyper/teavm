@@ -108,11 +108,9 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Unmanaged
     public static native boolean isNaN(float v);
 
-    @JSBody(params = "v", script = "return !isFinite(v);")
-    @Import(module = "teavm", name = "isinf")
-    @NoSideEffects
-    @Unmanaged
-    public static native boolean isInfinite(float v);
+    public static boolean isInfinite(float v) {
+        return !isFinite(v) && !isNaN(v);
+    }
 
     @JSBody(params = "v", script = "return isFinite(v);")
     @Import(module = "teavm", name = "isfinite")
@@ -121,7 +119,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     public static native boolean isFinite(float v);
 
     public static float parseFloat(String string) throws NumberFormatException {
-        // TODO: parse infinite and different radix
+        // TODO: parse different radix
 
         if (string.isEmpty()) {
             throw new NumberFormatException();
@@ -136,6 +134,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         while (string.charAt(end - 1) <= ' ') {
             --end;
         }
+        int endForNamedFloat = end; // InfinityF/f/D/d, NaNF/f/D/d cannot be parsed
         if (string.charAt(end - 1) == 'f' || string.charAt(end - 1) == 'F'
                 || string.charAt(end - 1) == 'd' || string.charAt(end - 1) == 'D') {
             --end;
@@ -162,6 +161,16 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         if (c != '.') {
             hasOneDigit = true;
             if (c < '0' || c > '9') {
+                if (c == 'I') {
+                    if (endForNamedFloat - index == 8 && string.regionMatches(false, index, "Infinity", 0, 8)) {
+                        return negative ? NEGATIVE_INFINITY : POSITIVE_INFINITY;
+                    }
+                }
+                if (c == 'N') {
+                    if (endForNamedFloat - index == 3 && string.regionMatches(false, index, "NaN", 0, 3)) {
+                        return NaN;
+                    }
+                }
                 throw new NumberFormatException();
             }
 

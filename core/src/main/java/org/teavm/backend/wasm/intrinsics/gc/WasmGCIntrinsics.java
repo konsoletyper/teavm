@@ -153,7 +153,6 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         var intrinsic = new FloatIntrinsic();
         add(new MethodReference(Float.class, "getNaN", float.class), intrinsic);
         add(new MethodReference(Float.class, "isNaN", float.class, boolean.class), intrinsic);
-        add(new MethodReference(Float.class, "isInfinite", float.class, boolean.class), intrinsic);
         add(new MethodReference(Float.class, "isFinite", float.class, boolean.class), intrinsic);
         add(new MethodReference(Float.class, "floatToRawIntBits", float.class, int.class), intrinsic);
         add(new MethodReference(Float.class, "intBitsToFloat", int.class, float.class), intrinsic);
@@ -163,7 +162,6 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         var intrinsic = new DoubleIntrinsic();
         add(new MethodReference(Double.class, "getNaN", double.class), intrinsic);
         add(new MethodReference(Double.class, "isNaN", double.class, boolean.class), intrinsic);
-        add(new MethodReference(Double.class, "isInfinite", double.class, boolean.class), intrinsic);
         add(new MethodReference(Double.class, "isFinite", double.class, boolean.class), intrinsic);
         add(new MethodReference(Double.class, "doubleToRawLongBits", double.class, long.class), intrinsic);
         add(new MethodReference(Double.class, "longBitsToDouble", long.class, double.class), intrinsic);
