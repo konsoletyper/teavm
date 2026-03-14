@@ -22,12 +22,9 @@ import static org.junit.Assert.fail;
 import java.math.BigInteger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipPlatform(TestPlatform.WASI)
 public class BigIntegerSquareRootTest {
     /**
      * sqrt: negative value

@@ -37,7 +37,6 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
 public class FieldTest {
     @Test
     public void fieldsEnumerated() {

@@ -28,16 +28,12 @@ import org.teavm.gradle.api.TeaVMCommonConfiguration;
 import org.teavm.gradle.api.TeaVMDevServerConfiguration;
 import org.teavm.gradle.api.TeaVMExtension;
 import org.teavm.gradle.api.TeaVMJSConfiguration;
-import org.teavm.gradle.api.TeaVMWasiConfiguration;
-import org.teavm.gradle.api.TeaVMWasmConfiguration;
 import org.teavm.gradle.api.TeaVMWasmGCConfiguration;
 import org.teavm.gradle.api.WasmDebugInfoLevel;
 import org.teavm.gradle.api.WasmDebugInfoLocation;
 
 class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtension {
     private TeaVMJSConfiguration js;
-    private TeaVMWasmConfiguration wasm;
-    private TeaVMWasiConfiguration wasi;
     private TeaVMWasmGCConfiguration wasmGC;
     private TeaVMCConfiguration c;
     private TeaVMCommonConfiguration all;
@@ -45,14 +41,10 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     TeaVMExtensionImpl(Project project, ObjectFactory objectFactory) {
         super(project, objectFactory);
         js = objectFactory.newInstance(JsConfigImpl.class);
-        wasm = objectFactory.newInstance(TeaVMWasmConfiguration.class);
-        wasi = objectFactory.newInstance(TeaVMWasiConfiguration.class);
         wasmGC = objectFactory.newInstance(TeaVMWasmGCConfiguration.class);
         c = objectFactory.newInstance(TeaVMCConfiguration.class);
         all = objectFactory.newInstance(TeaVMCommonConfiguration.class);
         inherit(js, all);
-        inherit(wasm, all);
-        inherit(wasi, all);
         inherit(wasmGC, all);
         inherit(c, all);
         setupDefaults();
@@ -60,8 +52,6 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
 
     private void setupDefaults() {
         setupJsDefaults();
-        setupWasmDefaults();
-        setupWasiDefaults();
         setupWasmGCDefaults();
         setupCDefaults();
         setupAllDefaults();
@@ -89,17 +79,6 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         js.getDevServer().getProxyUrl().convention(property("js.devServer.proxy.url"));
         js.getDevServer().getProxyPath().convention(property("js.devServer.proxy.path"));
         js.getDevServer().getProcessMemory().convention(property("js.devServer.memory").map(Integer::parseInt));
-    }
-
-    private void setupWasmDefaults() {
-        wasm.getRelativePathInOutputDir().convention("wasm");
-        wasm.getMinHeapSize().convention(1);
-        wasm.getMaxHeapSize().convention(16);
-        wasm.getOptimization().convention(property("wasm.optimization").map(OptimizationLevel::valueOf)
-                .orElse(OptimizationLevel.AGGRESSIVE));
-        wasm.getTargetFileName().convention(project.provider(() -> project.getName() + ".wasm"));
-        wasm.getAddedToWebApp().convention(property("wasm.addedToWebApp").map(Boolean::parseBoolean).orElse(false));
-        wasm.getExceptionsUsed().convention(property("wasm.exceptionsUsed").map(Boolean::parseBoolean).orElse(true));
     }
 
     private void setupWasmGCDefaults() {
@@ -136,16 +115,6 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
                 .orElse(false));
     }
 
-    private void setupWasiDefaults() {
-        wasi.getRelativePathInOutputDir().convention("wasi");
-        wasi.getMinHeapSize().convention(1);
-        wasi.getMaxHeapSize().convention(16);
-        wasi.getOptimization().convention(property("wasi.optimization").map(OptimizationLevel::valueOf)
-                .orElse(OptimizationLevel.AGGRESSIVE));
-        wasi.getTargetFileName().convention(project.provider(() -> project.getName() + ".wasm"));
-        wasi.getExceptionsUsed().convention(property("wasi.exceptionsUsed").map(Boolean::parseBoolean).orElse(false));
-    }
-
     private void setupCDefaults() {
         c.getRelativePathInOutputDir().convention("c");
         c.getMinHeapSize().convention(1);
@@ -179,36 +148,6 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     @Override
     public void js(Closure<?> action) {
         action.rehydrate(getJs(), action.getOwner(), action.getThisObject()).call();
-    }
-
-    @Override
-    public TeaVMWasmConfiguration getWasm() {
-        return wasm;
-    }
-
-    @Override
-    public void wasm(Action<TeaVMWasmConfiguration> action) {
-        action.execute(getWasm());
-    }
-
-    @Override
-    public void wasm(Closure<?> action) {
-        action.rehydrate(getWasm(), action.getOwner(), action.getThisObject()).call();
-    }
-
-    @Override
-    public TeaVMWasiConfiguration getWasi() {
-        return wasi;
-    }
-
-    @Override
-    public void wasi(Action<TeaVMWasiConfiguration> action) {
-        action.execute(wasi);
-    }
-
-    @Override
-    public void wasi(Closure<?> action) {
-        action.rehydrate(getWasi(), action.getOwner(), action.getThisObject()).call();
     }
 
     @Override

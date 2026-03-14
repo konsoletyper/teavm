@@ -41,8 +41,6 @@ import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
-import org.teavm.backend.wasm.WasmRuntimeType;
-import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.backend.wasm.debug.sourcemap.SourceMapBuilder;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.cache.AlwaysStaleCacheStatus;
@@ -113,11 +111,9 @@ public class TeaVMTool {
     private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private DebugInformationBuilder debugEmitter;
     private JavaScriptTarget javaScriptTarget;
-    private WasmTarget webAssemblyTarget;
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
     private WasmDebugInfoLocation wasmDebugInfoLocation = WasmDebugInfoLocation.EXTERNAL;
     private WasmDebugInfoLevel wasmDebugInfoLevel = WasmDebugInfoLevel.DEOBFUSCATION;
-    private boolean wasmExceptionsUsed;
     private CTarget cTarget;
     private Set<File> generatedFiles = new HashSet<>();
     private int minHeapSize = 4 * (1 << 20);
@@ -306,10 +302,6 @@ public class TeaVMTool {
         this.wasmVersion = wasmVersion;
     }
 
-    public void setWasmExceptionsUsed(boolean wasmExceptionsUsed) {
-        this.wasmExceptionsUsed = wasmExceptionsUsed;
-    }
-
     public void setWasmDebugInfoLocation(WasmDebugInfoLocation wasmDebugInfoLocation) {
         this.wasmDebugInfoLocation = wasmDebugInfoLocation;
     }
@@ -370,10 +362,6 @@ public class TeaVMTool {
         switch (targetType) {
             case JAVASCRIPT:
                 return prepareJavaScriptTarget();
-            case WEBASSEMBLY:
-                return prepareWebAssemblyDefaultTarget();
-            case WEBASSEMBLY_WASI:
-                return prepareWebAssemblyWasiTarget();
             case WEBASSEMBLY_GC:
                 return prepareWebAssemblyGCTarget();
             case C:
@@ -394,31 +382,6 @@ public class TeaVMTool {
         javaScriptTarget.setModuleType(jsModuleType);
 
         return javaScriptTarget;
-    }
-
-    private WasmTarget prepareWebAssemblyTarget() {
-        webAssemblyTarget = new WasmTarget();
-        webAssemblyTarget.setDebugging(debugInformationGenerated);
-        webAssemblyTarget.setCEmitted(debugInformationGenerated);
-        webAssemblyTarget.setWastEmitted(debugInformationGenerated);
-        webAssemblyTarget.setVersion(wasmVersion);
-        webAssemblyTarget.setMinHeapSize(minHeapSize);
-        webAssemblyTarget.setMaxHeapSize(maxHeapSize);
-        webAssemblyTarget.setObfuscated(obfuscated);
-        webAssemblyTarget.setExceptionsUsed(wasmExceptionsUsed);
-        return webAssemblyTarget;
-    }
-
-    private WasmTarget prepareWebAssemblyDefaultTarget() {
-        WasmTarget target = prepareWebAssemblyTarget();
-        target.setRuntimeType(WasmRuntimeType.TEAVM);
-        return target;
-    }
-
-    private WasmTarget prepareWebAssemblyWasiTarget() {
-        WasmTarget target = prepareWebAssemblyTarget();
-        target.setRuntimeType(WasmRuntimeType.WASI);
-        return target;
     }
 
     private WasmGCTarget prepareWebAssemblyGCTarget() {
@@ -594,8 +557,6 @@ public class TeaVMTool {
             switch (targetType) {
                 case JAVASCRIPT:
                     return "classes.js";
-                case WEBASSEMBLY:
-                case WEBASSEMBLY_WASI:
                 case WEBASSEMBLY_GC:
                     return "classes.wasm";
                 case C:

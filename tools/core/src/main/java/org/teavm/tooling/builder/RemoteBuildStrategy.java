@@ -190,11 +190,6 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
-    public void setWasmExceptionsUsed(boolean wasmExceptionsUsed) {
-        request.wasmExceptionsUsed = wasmExceptionsUsed;
-    }
-
-    @Override
     public void setWasmDebugInfoLevel(WasmDebugInfoLevel wasmDebugInfoLevel) {
         request.wasmDebugInfoLevel = wasmDebugInfoLevel;
     }

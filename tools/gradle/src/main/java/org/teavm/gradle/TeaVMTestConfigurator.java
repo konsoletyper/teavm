@@ -37,11 +37,6 @@ class TeaVMTestConfigurator {
                     tests.getJs().getRunner().map(TeaVMTestConfigurator::runnerToString).get());
             test.getSystemProperties().putIfAbsent("teavm.junit.js.decodeStack",
                     tests.getJs().getDecodeStack().get());
-
-            test.getSystemProperties().putIfAbsent("teavm.junit.wasm",
-                    tests.getWasm().getEnabled().get());
-            test.getSystemProperties().putIfAbsent("teavm.junit.wasm.runner",
-                    tests.getWasm().getRunner().map(TeaVMTestConfigurator::runnerToString).get());
         });
     }
 

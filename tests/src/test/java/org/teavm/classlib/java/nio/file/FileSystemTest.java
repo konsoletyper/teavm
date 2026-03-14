@@ -41,7 +41,7 @@ public class FileSystemTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void roots() {
         var roots = FileSystems.getDefault().getRootDirectories().iterator();
         assertTrue(roots.hasNext());

@@ -60,7 +60,7 @@ public final class TeaVMRunner {
         options.addOption(Option.builder("t")
                 .argName("target")
                 .hasArg()
-                .desc("target type (javascript/js, webassembly/wasm, webassembly-wasi/wasm-wasi/wasi, C)")
+                .desc("target type (js, wasm-gc, C)")
                 .build());
         options.addOption(Option.builder("d")
                 .argName("directory")
@@ -127,10 +127,6 @@ public final class TeaVMRunner {
                 .argName("version")
                 .hasArg()
                 .desc("WebAssembly binary version (currently, only 1 is supported)")
-                .build());
-        options.addOption(Option.builder()
-                .longOpt("wasm-use-exceptions")
-                .desc("Specifies that WebAssembly exception handling instructions can be used")
                 .build());
         options.addOption(Option.builder("e")
                 .longOpt("entry-point")
@@ -217,17 +213,9 @@ public final class TeaVMRunner {
                 case "js":
                     tool.setTargetType(TeaVMTargetType.JAVASCRIPT);
                     break;
-                case "webassembly":
-                case "wasm":
-                    tool.setTargetType(TeaVMTargetType.WEBASSEMBLY);
-                    break;
+                case "wasm-gc":
                 case "webassembly-gc":
                     tool.setTargetType(TeaVMTargetType.WEBASSEMBLY_GC);
-                    break;
-                case "webassembly-wasi":
-                case "wasm-wasi":
-                case "wasi":
-                    tool.setTargetType(TeaVMTargetType.WEBASSEMBLY_WASI);
                     break;
                 case "c":
                     tool.setTargetType(TeaVMTargetType.C);
@@ -359,9 +347,6 @@ public final class TeaVMRunner {
                 System.err.print("Wrong version value");
                 printUsage();
             }
-        }
-        if (commandLine.hasOption("wasm-use-exceptions")) {
-            tool.setWasmExceptionsUsed(true);
         }
     }
 

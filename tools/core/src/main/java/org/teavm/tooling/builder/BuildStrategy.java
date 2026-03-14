@@ -83,8 +83,6 @@ public interface BuildStrategy {
 
     void setWasmVersion(WasmBinaryVersion wasmVersion);
 
-    void setWasmExceptionsUsed(boolean wasmExceptionsUsed);
-
     void setWasmDebugInfoLevel(WasmDebugInfoLevel wasmDebugInfoLevel);
 
     void setWasmDebugInfoLocation(WasmDebugInfoLocation wasmDebugInfoLocation);

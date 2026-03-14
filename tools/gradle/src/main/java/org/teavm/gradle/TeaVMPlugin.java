@@ -43,9 +43,7 @@ import org.teavm.gradle.tasks.CopyWasmGCRuntimeTask;
 import org.teavm.gradle.tasks.DisasmWebAssemblyTask;
 import org.teavm.gradle.tasks.GenerateCTask;
 import org.teavm.gradle.tasks.GenerateJavaScriptTask;
-import org.teavm.gradle.tasks.GenerateWasiTask;
 import org.teavm.gradle.tasks.GenerateWasmGCTask;
-import org.teavm.gradle.tasks.GenerateWasmTask;
 import org.teavm.gradle.tasks.JavaScriptDevServerTask;
 import org.teavm.gradle.tasks.StopJavaScriptDevServerTask;
 import org.teavm.gradle.tasks.TeaVMTask;
@@ -56,8 +54,6 @@ public class TeaVMPlugin implements Plugin<Project> {
     public static final String JS_TASK_NAME = "generateJavaScript";
     public static final String JS_DEV_SERVER_TASK_NAME = "javaScriptDevServer";
     public static final String STOP_JS_DEV_SERVER_TASK_NAME = "stopJavaScriptDevServer";
-    public static final String WASM_TASK_NAME = "generateWasm";
-    public static final String WASI_TASK_NAME = "generateWasi";
     public static final String WASM_GC_TASK_NAME = "generateWasmGC";
     public static final String BUILD_WASM_GC_TASK_NAME = "buildWasmGC";
     public static final String WASM_GC_COPY_RUNTIME_TASK_NAME = "copyWasmGCRuntime";
@@ -125,8 +121,6 @@ public class TeaVMPlugin implements Plugin<Project> {
         registerJsTask(project, compilerConfig);
         registerJsDevServerTask(project, cliConfig);
         registerStopJsDevServerTask(project);
-        registerWasmTask(project, compilerConfig);
-        registerWasiTask(project, compilerConfig);
         registerWasmGCTask(project, compilerConfig);
         registerCTask(project, compilerConfig);
     }
@@ -194,30 +188,6 @@ public class TeaVMPlugin implements Plugin<Project> {
                 result.addAll(sourceSet.getAllJava().getSourceDirectories().getFiles());
             }
         }
-    }
-
-    private void registerWasmTask(Project project, Configuration configuration) {
-        var extension = project.getExtensions().getByType(TeaVMExtension.class);
-        project.getTasks().create(WASM_TASK_NAME, GenerateWasmTask.class, task -> {
-            var wasm = extension.getWasm();
-            applyToTask(wasm, task, configuration);
-            task.getExceptionsUsed().convention(wasm.getExceptionsUsed());
-            task.getTargetFileName().convention(wasm.getTargetFileName());
-            task.getMinHeapSize().convention(wasm.getMinHeapSize());
-            task.getMaxHeapSize().convention(wasm.getMaxHeapSize());
-        });
-    }
-
-    private void registerWasiTask(Project project, Configuration configuration) {
-        var extension = project.getExtensions().getByType(TeaVMExtension.class);
-        project.getTasks().register(WASI_TASK_NAME, GenerateWasiTask.class, task -> {
-            var wasi = extension.getWasi();
-            applyToTask(wasi, task, configuration);
-            task.getExceptionsUsed().convention(wasi.getExceptionsUsed());
-            task.getTargetFileName().convention(wasi.getTargetFileName());
-            task.getMinHeapSize().convention(wasi.getMinHeapSize());
-            task.getMaxHeapSize().convention(wasi.getMaxHeapSize());
-        });
     }
 
     private void registerWasmGCTask(Project project, Configuration configuration) {
@@ -306,7 +276,6 @@ public class TeaVMPlugin implements Plugin<Project> {
         project.getTasks().withType(War.class).configureEach(task -> {
             if (task.getName().equals(WarPlugin.WAR_TASK_NAME)) {
                 var jsAddedToWebApp = extension.getJs().getAddedToWebApp().get();
-                var wasmAddedToWebApp = extension.getWasm().getAddedToWebApp().get();
                 var wasmGCAddedToWebApp = extension.getWasmGC().getAddedToWebApp().get();
                 if (jsAddedToWebApp) {
                     task.dependsOn(project.getTasks().named(JS_TASK_NAME));
@@ -316,15 +285,6 @@ public class TeaVMPlugin implements Plugin<Project> {
                         spec.into(relPath);
                         spec.from(project.files(outDir.map(dir -> new File(dir.getAsFile(), relPath.get()))));
                         spec.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
-                    }));
-                }
-                if (wasmAddedToWebApp) {
-                    task.dependsOn(project.getTasks().named(WASM_TASK_NAME));
-                    var outDir = extension.getWasm().getOutputDir();
-                    var relPath = extension.getWasm().getRelativePathInOutputDir();
-                    task.with(project.copySpec(spec -> {
-                        spec.into(relPath);
-                        spec.from(project.files(outDir.map(dir -> new File(dir.getAsFile(), relPath.get()))));
                     }));
                 }
                 if (wasmGCAddedToWebApp) {

@@ -12,8 +12,6 @@ jobs:
         platform:
         - c
         - js
-        - wasm
-        - wasi
         - wasm-gc
     steps:
     - uses: actions/checkout@v4
@@ -23,15 +21,8 @@ jobs:
         distribution: adopt
     - uses: actions/setup-node@v4
     - uses: gradle/gradle-build-action@v2
-    - if: ${{ matrix.platform == 'wasi' }}
-      uses: bytecodealliance/actions/wasmtime/setup@v1
-    - if: ${{ matrix.platform == 'wasi' }}
-      run: |
-        mkdir -p "$HOME/.wasmtime/bin/"
-        echo 'wasmtime "$@"'> "$HOME/.wasmtime/bin/wasmtime"
-        chmod +x "$HOME/.wasmtime/bin/wasmtime"
     - run: |
-        platforms=("c" "js" "wasm" "wasi" "wasm-gc")
+        platforms=("c" "js" "wasm-gc")
         args=()
         for v in "${platforms[@]}"
         do

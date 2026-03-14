@@ -17,7 +17,9 @@ package org.teavm.junit;
 
 public enum TestPlatform {
     JAVASCRIPT,
+    @Deprecated
     WEBASSEMBLY,
+    @Deprecated
     WASI,
     WEBASSEMBLY_GC,
     C

@@ -6,4 +6,4 @@ To build these samples, you should do one of:
 
 To quickly tests built war file, you can run `./gradlew :<example-name>:appRunWar` or 
 `gradlew bat :<example-name>:appRunWar`.
-Note that some examples also provide WASI and native binaries, please refer to corresponding build files.
+Note that some examples also provide native binaries, please refer to corresponding build files.

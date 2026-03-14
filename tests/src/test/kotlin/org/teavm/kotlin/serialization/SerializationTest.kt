@@ -28,8 +28,6 @@ import org.teavm.junit.TestPlatform
 @RunWith(TeaVMTestRunner::class)
 class SerializationTest {
     @Test
-    @SkipPlatform(TestPlatform.WASI, TestPlatform.WEBASSEMBLY)
-    // TODO: fix issue and un-skip
     fun serialize() {
         val json = Json.encodeToJsonElement(TestClass().apply {
             a = 23

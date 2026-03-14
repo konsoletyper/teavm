@@ -20,17 +20,15 @@ import org.gradle.api.Action;
 import org.gradle.api.model.ObjectFactory;
 import org.teavm.gradle.api.TeaVMJSTests;
 import org.teavm.gradle.api.TeaVMTests;
-import org.teavm.gradle.api.TeaVMWasmTests;
+import org.teavm.gradle.api.TeaVMWasmGCTests;
 
 class TeaVMTestsImpl implements TeaVMTests {
     private TeaVMJSTestsImpl js;
-    private TeaVMWasmTestsImpl wasm;
-    private TeaVMWasmTestsImpl wasmGC;
+    private TeaVMWasmGCTestsImpl wasmGC;
 
     TeaVMTestsImpl(ObjectFactory objectFactory) {
         js = new TeaVMJSTestsImpl(objectFactory);
-        wasm = new TeaVMWasmTestsImpl(objectFactory, "wasm");
-        wasmGC = new TeaVMWasmTestsImpl(objectFactory, "wasm-gc");
+        wasmGC = new TeaVMWasmGCTestsImpl(objectFactory, "wasm-gc");
     }
 
     @Override
@@ -49,27 +47,12 @@ class TeaVMTestsImpl implements TeaVMTests {
     }
 
     @Override
-    public TeaVMWasmTests getWasm() {
-        return wasm;
-    }
-
-    @Override
-    public void wasm(Action<TeaVMWasmTests> config) {
-        config.execute(wasm);
-    }
-
-    @Override
-    public void wasm(Closure<?> config) {
-        config.rehydrate(getWasm(), config.getOwner(), config.getThisObject()).call();
-    }
-
-    @Override
-    public TeaVMWasmTests getWasmGC() {
+    public TeaVMWasmGCTests getWasmGC() {
         return wasmGC;
     }
 
     @Override
-    public void wasmGC(Action<TeaVMWasmTests> config) {
+    public void wasmGC(Action<TeaVMWasmGCTests> config) {
         config.execute(wasmGC);
     }
 
@@ -80,7 +63,6 @@ class TeaVMTestsImpl implements TeaVMTests {
 
     void configure(TeaVMBaseExtensionImpl extension) {
         js.configure(extension);
-        wasm.configure(extension);
         wasmGC.configure(extension);
     }
 }

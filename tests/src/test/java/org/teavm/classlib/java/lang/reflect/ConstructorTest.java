@@ -34,7 +34,7 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+@SkipPlatform(TestPlatform.C)
 public class ConstructorTest {
     @Test
     public void constructorsEnumerated() {

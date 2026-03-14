@@ -22,10 +22,6 @@ final class PropertyNames {
     static final String JS_ENABLED = "teavm.junit.js";
     static final String JS_DECODE_STACK = "teavm.junit.js.decodeStack";
     static final String C_ENABLED = "teavm.junit.c";
-    static final String WASM_ENABLED = "teavm.junit.wasm";
-    static final String WASM_DISASM = "teavm.junit.wasm.disasm";
-    static final String WASI_ENABLED = "teavm.junit.wasi";
-    static final String WASI_RUNNER = "teavm.junit.wasi.runner";
     static final String WASM_GC_ENABLED = "teavm.junit.wasm-gc";
     static final String WASM_GC_RUNNER = "teavm.junit.wasm-gc.runner";
     static final String WASM_GC_DISASM = "teavm.junit.wasm-gc.disasm";

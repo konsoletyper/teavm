@@ -42,7 +42,7 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+@SkipPlatform(TestPlatform.C)
 public class MethodTest {
     @Test
     public void methodsEnumerated() {

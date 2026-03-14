@@ -32,13 +32,6 @@ teavm {
     js {
         addedToWebApp = true
     }
-    wasm {
-        addedToWebApp = true
-    }
-    wasi {
-        outputDir = layout.buildDirectory.dir("libs/wasi").get().asFile
-        relativePathInOutputDir = ""
-    }
     wasmGC {
         addedToWebApp = true
     }
@@ -50,10 +43,6 @@ teavm {
 tasks.war {
     dependsOn(configurations["war"])
     from(provider { configurations["war"].map { zipTree(it) } })
-}
-
-tasks.assemble {
-    dependsOn(tasks.generateWasi)
 }
 
 val buildNativeLinux by tasks.register<Exec>("buildNativeLinux") {

@@ -40,7 +40,6 @@ import org.teavm.junit.TestPlatform;
 @RunWith(TeaVMTestRunner.class)
 public class ByteBufferTest {
     @Test
-    @SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
     public void allocatesDirect() {
         ByteBuffer buffer = ByteBuffer.allocateDirect(100);
         assertThat(buffer.isDirect(), is(true));
@@ -57,7 +56,6 @@ public class ByteBufferTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
     public void bulkTransferDirect() {
         var buffer = ByteBuffer.allocateDirect(10);
         var bytes = new byte[] { 1, 2, 3 };
@@ -200,7 +198,6 @@ public class ByteBufferTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
     public void slicePropertiesSameWithOriginal() {
         ByteBuffer buffer = ByteBuffer.allocate(100).asReadOnlyBuffer().slice();
         assertThat(buffer.isReadOnly(), is(true));

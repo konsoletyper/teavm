@@ -109,7 +109,7 @@ public class VirtualCallTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void indirectDefaultMethod() {
         StringBuilder sb = new StringBuilder();
         for (FirstPath o : new FirstPath[] { new PathJoint(), new FirstPathOptimizationPrevention() }) {
@@ -119,7 +119,7 @@ public class VirtualCallTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void indirectDefaultMethodSubclass() {
         StringBuilder sb = new StringBuilder();
         for (FirstPath o : new FirstPath[] { new PathJointSubclass(), new FirstPathOptimizationPrevention() }) {
@@ -213,7 +213,7 @@ public class VirtualCallTest {
     }
     
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.C})
+    @SkipPlatform(TestPlatform.C)
     public void subclassOverridesConcreteInheritedMethodWithDefault() {
         var list = List.of(new SuperclassWithConcreteMethod(), new SubclassWithMethodOverriddenWithInterface());
         var sb = new StringBuilder();

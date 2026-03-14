@@ -33,7 +33,7 @@ import org.teavm.junit.TestPlatform;
 public class PathTest {
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void root() {
         var path = FileSystems.getDefault().getPath("/a", "b", "c");
         assertEquals("/", path.getRoot().toString());
@@ -44,7 +44,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void fileName() {
         var path = FileSystems.getDefault().getPath("/a", "b", "c");
         assertEquals("c", path.getFileName().toString());
@@ -54,7 +54,7 @@ public class PathTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void parent() {
         var path = FileSystems.getDefault().getPath("/a", "b", "c");
         assertEquals("/a/b", path.getParent().toString());
@@ -71,7 +71,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void nameCount() {
         var path = FileSystems.getDefault().getPath("/a", "b", "c");
         assertEquals(3, path.getNameCount());
@@ -91,7 +91,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void getName() {
         var path = FileSystems.getDefault().getPath("/a", "b", "c");
         assertEquals("a", path.getName(0).toString());
@@ -135,7 +135,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void subpath() {
         var path = FileSystems.getDefault().getPath("/a", "b", "c");
         assertEquals("a/b/c", path.subpath(0, 3).toString());
@@ -145,7 +145,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void startsWith() {
         var fs = FileSystems.getDefault();
         assertTrue(fs.getPath("/a/b/c").startsWith(fs.getPath("/a/b")));
@@ -160,7 +160,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void endsWith() {
         var fs = FileSystems.getDefault();
         assertTrue(fs.getPath("/a/b/c").endsWith(fs.getPath("b/c")));
@@ -174,7 +174,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void normalize() {
         var fs = FileSystems.getDefault();
         assertEquals("/a/b/c", fs.getPath("/a/b/c").normalize().toString());
@@ -196,7 +196,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void resolve() {
         var fs = FileSystems.getDefault();
         assertEquals("/a/b/c/d", fs.getPath("/a/b/c").resolve(fs.getPath("d")).toString());
@@ -207,7 +207,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void relativize() {
         var fs = FileSystems.getDefault();
         assertEquals("c", fs.getPath("/a/b").relativize(fs.getPath("/a/b/c")).toString());
@@ -225,7 +225,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void compareTo() {
         var fs = FileSystems.getDefault();
         assertEquals(0, fs.getPath("/a/b/c").compareTo(fs.getPath("/a/b/c")));
@@ -235,7 +235,7 @@ public class PathTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void toStringWorks() {
         var path = FileSystems.getDefault().getPath("");
         assertEquals("", path.toString());

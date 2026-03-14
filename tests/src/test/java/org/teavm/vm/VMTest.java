@@ -304,7 +304,7 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void asyncClinit() {
         assertEquals(0, initCount);
         assertEquals("foo", AsyncClinitClass.foo());
@@ -316,13 +316,13 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void asyncClinitField() {
         assertEquals("ok", AsyncClinitClass.state);
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void asyncClinitInstance() {
         AsyncClinitClass acl = new AsyncClinitClass();
         assertEquals("ok", AsyncClinitClass.state);
@@ -330,7 +330,7 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void asyncWait() {
         AsyncClinitClass acl = new AsyncClinitClass();
         acl.doWait();
@@ -339,7 +339,7 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void loopAndExceptionPhi() {
         int[] a = createArray();
         int s = 0;
@@ -358,7 +358,7 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void asyncTryCatch() {
         try {
             throwExceptionAsync();
@@ -370,7 +370,7 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void asyncExceptionHandler() {
         try {
             throw new RuntimeException("OK");
@@ -537,7 +537,6 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WASI)
     public void arrayMonitor() throws InterruptedException {
         int[] array = { 1, 2, 3 };
         synchronized (array) {

@@ -28,7 +28,7 @@ import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
+@SkipPlatform(TestPlatform.C)
 public class AtomicLongFieldUpdaterReflectionTest {
     private Class<ClassWithField> getInstanceType() {
         return ClassWithField.class;

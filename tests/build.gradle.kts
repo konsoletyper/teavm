@@ -72,19 +72,10 @@ tasks.test {
     systemProperty("teavm.junit.js.decodeStack", providers.gradleProperty("teavm.tests.decodeStack")
             .orElse("false").get())
 
-    systemProperty("teavm.junit.wasm", providers.gradleProperty("teavm.tests.wasm").orElse("true").get())
-    systemProperty("teavm.junit.wasm.runner", browser)
-    systemProperty("teavm.junit.wasm.disasm", providers.gradleProperty("teavm.tests.wasm.disasm")
-        .orElse("false").get())
-
     systemProperty("teavm.junit.wasm-gc", providers.gradleProperty("teavm.tests.wasm-gc").orElse("true").get())
     systemProperty("teavm.junit.wasm-gc.runner", browser)
     systemProperty("teavm.junit.wasm-gc.disasm", providers.gradleProperty("teavm.tests.wasm-gc.disasm")
         .orElse("false").get())
-
-    systemProperty("teavm.junit.wasi", providers.gradleProperty("teavm.tests.wasi").orElse("true").get())
-    systemProperty("teavm.junit.wasi.runner", providers.gradleProperty("teavm.tests.wasi.runner")
-            .orElse("./run-wasi.sh").get())
 
     systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("true").get())
     systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")

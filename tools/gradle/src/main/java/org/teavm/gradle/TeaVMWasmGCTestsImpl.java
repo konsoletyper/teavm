@@ -17,15 +17,15 @@ package org.teavm.gradle;
 
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
-import org.teavm.gradle.api.TeaVMWasmTests;
+import org.teavm.gradle.api.TeaVMWasmGCTests;
 import org.teavm.gradle.api.TeaVMWebTestRunner;
 
-class TeaVMWasmTestsImpl implements TeaVMWasmTests {
+class TeaVMWasmGCTestsImpl implements TeaVMWasmGCTests {
     private Property<Boolean> enabled;
     private Property<TeaVMWebTestRunner> runner;
     private String name;
 
-    TeaVMWasmTestsImpl(ObjectFactory objectFactory, String name) {
+    TeaVMWasmGCTestsImpl(ObjectFactory objectFactory, String name) {
         enabled = objectFactory.property(Boolean.class);
         runner = objectFactory.property(TeaVMWebTestRunner.class);
         this.name = name;

@@ -26,18 +26,6 @@ public interface TeaVMExtension extends TeaVMBaseExtension {
 
     void js(@DelegatesTo(TeaVMJSConfiguration.class) Closure<?> action);
 
-    TeaVMWasmConfiguration getWasm();
-
-    void wasm(Action<TeaVMWasmConfiguration> action);
-
-    void wasm(@DelegatesTo(TeaVMWasmConfiguration.class) Closure<?> action);
-
-    TeaVMWasiConfiguration getWasi();
-
-    void wasi(Action<TeaVMWasiConfiguration> action);
-
-    void wasi(@DelegatesTo(TeaVMWasiConfiguration.class) Closure<?> action);
-
     TeaVMWasmGCConfiguration getWasmGC();
 
     void wasmGC(Action<TeaVMWasmGCConfiguration> action);

@@ -26,15 +26,9 @@ public interface TeaVMTests {
 
     void js(@DelegatesTo(TeaVMJSTests.class) Closure<?> config);
 
-    TeaVMWasmTests getWasm();
+    TeaVMWasmGCTests getWasmGC();
 
-    void wasm(Action<TeaVMWasmTests> config);
+    void wasmGC(Action<TeaVMWasmGCTests> config);
 
-    void wasm(@DelegatesTo(TeaVMWasmTests.class) Closure<?> config);
-
-    TeaVMWasmTests getWasmGC();
-
-    void wasmGC(Action<TeaVMWasmTests> config);
-
-    void wasmGC(@DelegatesTo(TeaVMWasmTests.class) Closure<?> config);
+    void wasmGC(@DelegatesTo(TeaVMWasmGCTests.class) Closure<?> config);
 }

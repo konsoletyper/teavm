@@ -52,8 +52,6 @@ function deploy_teavm {
   GRADLE+=" -Pteavm.tests.optimized=true"
   GRADLE+=" -Pteavm.tests.js=true"
   GRADLE+=" -Pteavm.tests.c=true"
-  GRADLE+=" -Pteavm.tests.wasm=true"
-  GRADLE+=" -Pteavm.tests.wasi=true"
   GRADLE+=" -Pteavm.junit.js.decodeStack=false"
 
   $GRADLE build -x test || { echo 'Build failed' ; return 1; }

@@ -45,7 +45,7 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.C})
+    @SkipPlatform(TestPlatform.C)
     public void getWorks() {
         var intArray = new int[] { 23, 42 };
         var stringArray = new String[] { "asd", "qwe" };
@@ -63,7 +63,7 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void setWorks() {
         Object array = Array.newInstance(String.class, 2);
         Array.set(array, 0, "foo");
@@ -72,7 +72,7 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void setPrimitiveWorks() {
         Object array = Array.newInstance(int.class, 2);
         Array.set(array, 0, 23);
@@ -81,7 +81,7 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void getArrayTypeDependency() {
         var cls = float[].class.getComponentType();
         var array = Array.newInstance(cls, 3);

@@ -30,9 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
 import org.teavm.metaprogramming.ReflectClass;
@@ -484,7 +482,6 @@ public class MetaprogrammingTest {
     private static int counter;
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void arrayTypeSelected() {
         assertEquals(String[].class, createInstance(String.class, 1).getClass());
         assertEquals(String[][].class, createInstance(String[].class, 1).getClass());
