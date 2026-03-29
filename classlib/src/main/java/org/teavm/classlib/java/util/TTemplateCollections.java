@@ -262,9 +262,7 @@ public final class TTemplateCollections {
             int index = 0;
             outerLoop:
             for (T element : (T[]) collection.toArray()) {
-                if (element == null) {
-                    throw new NullPointerException(String.format("Element at index %s is null", index));
-                }
+                Objects.requireNonNull(element);
 
                 int indexTemp = Math.abs(element.hashCode()) % temp.length;
                 while (temp[indexTemp] != null) {
