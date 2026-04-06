@@ -271,9 +271,12 @@ class UsageGenerator {
     }
 
     private Variable getParameterVar(int index) {
+        return getParameterVar(index, model.getMethod().parameterType(index));
+    }
+
+    static Variable getParameterVar(int index, ValueType type) {
         Program program = MetaprogrammingImpl.generator.getProgram();
         Variable var = program.variableAt(index + 1);
-        ValueType type = model.getMethod().parameterType(index);
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
@@ -305,7 +308,7 @@ class UsageGenerator {
         return var;
     }
 
-    private Variable box(Variable var, Class<?> boxed, Class<?> primitive) {
+    private static Variable box(Variable var, Class<?> boxed, Class<?> primitive) {
         Program program = MetaprogrammingImpl.generator.getProgram();
         BasicBlock block = program.basicBlockAt(0);
 

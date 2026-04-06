@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming.impl;
+package org.teavm.metaprogramming;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import org.teavm.metaprogramming.reflect.ReflectMethodDescriptor;
 
-public class MetaprogrammingPlugin implements TeaVMPlugin {
-    @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetaprogrammingDependencyListener());
-        host.add(new MetaprogrammingClassTransformer());
-    }
+public interface MetaprogrammingProvider {
+    MethodGenerator provide(ReflectMethodDescriptor method);
 }

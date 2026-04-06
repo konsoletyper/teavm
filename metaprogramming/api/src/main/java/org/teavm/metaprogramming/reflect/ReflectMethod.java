@@ -15,21 +15,7 @@
  */
 package org.teavm.metaprogramming.reflect;
 
-import org.teavm.metaprogramming.ReflectClass;
-
-public interface ReflectMethod extends ReflectMember {
-    boolean isConstructor();
-
-    ReflectClass<?> getReturnType();
-
-    ReflectClass<?>[] getParameterTypes();
-
-    ReflectClass<?> getParameterType(int index);
-
-    ReflectAnnotatedElement getParameterAnnotations(int index);
-
-    int getParameterCount();
-
+public interface ReflectMethod extends ReflectMethodDescriptor {
     Object invoke(Object obj, Object... args);
 
     Object construct(Object... args);
