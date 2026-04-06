@@ -66,5 +66,5 @@ val copyRuntime by tasks.register<Copy>("copyRuntime") {
 }
 
 tasks.assemble.configure {
-    dependsOn(copyHtml, copyRuntime)
+    dependsOn(copyHtml, generateWasm, copyRuntime)
 }
