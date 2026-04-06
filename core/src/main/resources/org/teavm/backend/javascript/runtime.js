@@ -35,7 +35,7 @@ let $rt_wrapFunction2 = f => function (p1, p2) {
     return f(this, p1, p2);
 }
 let $rt_wrapFunction3 = f => function(p1, p2, p3) {
-    return f(this, p1, p2, p3, p3);
+    return f(this, p1, p2, p3);
 }
 let $rt_wrapFunction4 = f => function(p1, p2, p3, p4) {
     return f(this, p1, p2, p3, p4);
