@@ -275,6 +275,21 @@ public class ClassTest {
         assertTrue(Documented.class.isAnnotation());
         assertFalse(ClassTest.class.isAnnotation());
     }
+    
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void innerClasses() {        
+        assertArrayEquals(new Class<?>[0], InnerClass.class.getDeclaredClasses());
+        assertEquals(Set.of(ClassWithInnerClasses.A.class, ClassWithInnerClasses.B.class),
+                Set.of(ClassWithInnerClasses.class.getDeclaredClasses()));
+        assertEquals(Set.of(SubclassWithInnerClasses.C.class, SubclassWithInnerClasses.D.class),
+                Set.of(SubclassWithInnerClasses.class.getDeclaredClasses()));
+
+        assertEquals(Set.of(ClassWithInnerClasses.A.class, ClassWithInnerClasses.B.class),
+                Set.of(ClassWithInnerClasses.class.getClasses()));
+        assertEquals(Set.of(ClassWithInnerClasses.A.class, ClassWithInnerClasses.B.class,
+                SubclassWithInnerClasses.D.class), Set.of(SubclassWithInnerClasses.class.getClasses()));
+    }
 
     private static class SuperclassWithoutInterfaces {
     }
@@ -373,5 +388,21 @@ public class ClassTest {
     }
 
     static class InnerClass {
+    }
+    
+    public static class ClassWithInnerClasses {
+        public static class A {
+        }
+        
+        public class B {
+        }
+    }
+    
+    public static class SubclassWithInnerClasses extends ClassWithInnerClasses {
+        static class C {
+        }
+        
+        public static class D {
+        }
     }
 }

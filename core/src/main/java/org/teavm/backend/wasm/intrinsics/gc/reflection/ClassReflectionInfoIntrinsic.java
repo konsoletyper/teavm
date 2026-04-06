@@ -54,6 +54,12 @@ public class ClassReflectionInfoIntrinsic implements WasmGCIntrinsic {
                 var array = context.classInfoProvider().reflectionTypes().typeVariableInfo().array();
                 return collectionElement(invocation, context, array, ClassReflectionInfoStruct::typeParametersIndex);
             }
+            case "innerClassCount":
+                return collectionCount(invocation, context, ClassReflectionInfoStruct::innerClassesIndex);
+            case "innerClass": {
+                var array = context.classInfoProvider().reflectionTypes().classInfo().array();
+                return collectionElement(invocation, context, array, ClassReflectionInfoStruct::innerClassesIndex);
+            }
 
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());

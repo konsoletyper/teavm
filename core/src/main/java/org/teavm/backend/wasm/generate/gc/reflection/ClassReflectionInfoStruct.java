@@ -36,6 +36,7 @@ public class ClassReflectionInfoStruct {
     private int fieldsIndex = -1;
     private int methodsIndex = -1;
     private int typeParametersIndex = -1;
+    private int innerClassesIndex = -1;
 
     ClassReflectionInfoStruct(WasmGCNameProvider names, WasmModule module, DependencyInfo dependencies,
             ClassMetadataRequirements metadataRequirements, ReflectionTypes reflectionTypes) {
@@ -65,6 +66,11 @@ public class ClassReflectionInfoStruct {
             typeParametersIndex = fields.size();
             fields.add(new WasmField(reflectionTypes.typeVariableInfo().array(), "typeParameters"));
         }
+        if (dependencies.getMethod(new MethodReference(ClassReflectionInfo.class, "innerClassCount",
+                int.class)) != null) {
+            innerClassesIndex = fields.size();
+            fields.add(new WasmField(reflectionTypes.classInfo().array(), "innerClasses"));
+        }
     }
 
     public WasmStructure structure() {
@@ -89,6 +95,11 @@ public class ClassReflectionInfoStruct {
     public int typeParametersIndex() {
         init();
         return typeParametersIndex;
+    }
+
+    public int innerClassesIndex() {
+        init();
+        return innerClassesIndex;
     }
 
     private void init() {

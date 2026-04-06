@@ -62,6 +62,7 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     private TConstructor<T>[] declaredConstructors;
     private TMethod[] declaredMethods;
     private TTypeVariable<?>[] typeParameters;
+    private TClass<?>[] classesCache;
 
     private TClass(ClassInfo classInfo) {
         this.classInfo = classInfo;
@@ -748,5 +749,35 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         return isArray()
             ? getComponentType().getTypeName() + "[]"
             : getName();
+    }
+
+    @PluggableDependency(ClassGenerator.class)
+    public TClass<?>[] getDeclaredClasses() {
+        var reflection = classInfo.reflection();
+        if (reflection == null) {
+            return new TClass<?>[0];
+        }
+        var classes = new TClass<?>[reflection.innerClassCount()];
+        for (var i = 0; i < classes.length; ++i) {
+            classes[i] = (TClass<?>) (Object) reflection.innerClass(i).classObject();
+        }
+        return classes;
+    }
+
+    public TClass<?>[] getClasses() {
+        if (classesCache == null) {
+            TClass<?> cls = this;
+            var allClasses = new ArrayList<TClass<?>>();
+            while (cls != null) {
+                for (var innerClass : cls.getDeclaredClasses()) {
+                    if (TModifier.isPublic(innerClass.getModifiers())) {
+                        allClasses.add(innerClass);
+                    }
+                }
+                cls = cls.getSuperclass();
+            }
+            classesCache = allClasses.toArray(new TClass<?>[0]);
+        }
+        return classesCache.clone();
     }
 }

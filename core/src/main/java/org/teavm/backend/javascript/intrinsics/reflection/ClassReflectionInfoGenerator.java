@@ -21,8 +21,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -58,9 +60,10 @@ public class ClassReflectionInfoGenerator implements Injector {
     private boolean methodTypeParametersRequired;
     private boolean methodGenericReturnTypeRequired;
     private boolean methodGenericParamTypesRequired;
+    private boolean innerClassesRequired;
+    private Set<String> innerClassesAccessed = new HashSet<>();
 
-    public ClassReflectionInfoGenerator(ReflectionDependencyListener reflection,
-            DependencyInfo dependencyInfo) {
+    public ClassReflectionInfoGenerator(ReflectionDependencyListener reflection, DependencyInfo dependencyInfo) {
         this.reflection = reflection;
         this.dependencyInfo = dependencyInfo;
         fieldAnnotationsRequired = dependencyInfo.getMethod(new MethodReference(Field.class, "getDeclaredAnnotations",
@@ -75,6 +78,17 @@ public class ClassReflectionInfoGenerator implements Injector {
                 "getGenericReturnType", Type.class)) != null;
         methodGenericParamTypesRequired = dependencyInfo.getMethod(new MethodReference(Executable.class,
                 "getGenericParameterTypes", Type[].class)) != null;
+
+        var classesMethod = dependencyInfo.getMethod(new MethodReference(Class.class, "getDeclaredClasses",
+                Class[].class));
+        if (classesMethod != null) {
+            innerClassesRequired = true;
+            for (var type : classesMethod.getVariable(0).getClassValueNode().getTypes()) {
+                if (type instanceof ValueType.Object) {
+                    innerClassesAccessed.add(((ValueType.Object) type).getClassName());
+                }
+            }
+        }
     }
 
     @Override
@@ -111,6 +125,14 @@ public class ClassReflectionInfoGenerator implements Injector {
             case "typeParameter":
                 generateMetadata(context);
                 writeArrayGet(context, "typeParameters");
+                break;
+            case "innerClassCount":
+                generateMetadata(context);
+                writeArrayLength(context, "innerClasses");
+                break;
+            case "innerClass":
+                generateMetadata(context);
+                writeArrayGet(context, "innerClasses");
                 break;
         }
     }
@@ -204,17 +226,19 @@ public class ClassReflectionInfoGenerator implements Injector {
         var first = true;
         var classesWithReflectableTypeParameters = getClassesWithReflectableTypeParameters();
         for (var className : context.getClassSource().getClassNames()) {
+            var cls = context.getClassSource().get(className);
+            var innerClasses = extractInnerClasses(cls);
             if (!reflection.getClassesWithReflectableFields().contains(className)
                     && !reflection.getClassesWithReflectableMethods().contains(className)
-                    && !classesWithReflectableTypeParameters.contains(className)) {
+                    && !classesWithReflectableTypeParameters.contains(className)
+                    && innerClasses.isEmpty()) {
                 continue;
             }
-            var cls = context.getClassSource().get(className);
             if (!first) {
                 writer.append(",").ws().softNewLine();
             }
             first = false;
-            writer.appendClass(cls.getName()).append(",").ws().append("{").indent();
+            writer.appendClass(cls.getName()).append(",").ws().append("{").softNewLine().indent();
             var needsComma = false;
             var genericParams = cls.getGenericParameters();
             if (classesWithReflectableTypeParameters.contains(className) && genericParams != null
@@ -224,16 +248,24 @@ public class ClassReflectionInfoGenerator implements Injector {
             }
             if (reflection.getClassesWithReflectableFields().contains(className)) {
                 if (needsComma) {
-                    writer.append(',').ws();
+                    writer.append(',').softNewLine();
                 }
                 generateFields(context, cls);
                 needsComma = true;
             }
             if (reflection.getClassesWithReflectableMethods().contains(className)) {
                 if (needsComma) {
-                    writer.append(',').ws();
+                    writer.append(',').softNewLine();
                 }
                 generateMethods(context, cls);
+                needsComma = true;
+            }
+            if (!innerClasses.isEmpty()) {
+                if (needsComma) {
+                    writer.append(',').softNewLine();
+                }
+                writer.append("c:").ws();
+                generateInnerClasses(context, innerClasses);
             }
             writer.softNewLine().outdent().append("}");
         }
@@ -539,5 +571,27 @@ public class ClassReflectionInfoGenerator implements Injector {
                 writer.append("[5]");
                 break;
         }
+    }
+
+    private void generateInnerClasses(InjectorContext context, List<? extends String> innerClasses) {
+        var writer = context.getMetadataWriter();
+        writer.append("[").appendClass(innerClasses.get(0)).append(",").ws();
+        for (var i = 1; i < innerClasses.size(); ++i) {
+            writer.appendClass(innerClasses.get(i)).append(",").ws();
+        }
+        writer.append("]");
+    }
+
+    private List<? extends String> extractInnerClasses(ClassReader cls) {
+        if (!innerClassesRequired || !innerClassesAccessed.contains(cls.getName())) {
+            return Collections.emptyList();
+        }
+        var filtered = new ArrayList<String>();
+        for (var innerCls : cls.getInnerClasses()) {
+            if (dependencyInfo.getClass(innerCls) != null) {
+                filtered.add(innerCls);
+            }
+        }
+        return filtered;
     }
 }

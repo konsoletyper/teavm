@@ -161,6 +161,12 @@ let $rt_reflection = data => {
             }
             clsData.methods = resolvedMethods;
         }
+        if (teavm_javaMethodExists("org.teavm.runtime.reflect.ClassReflectionInfo", "innerClassCount()I")) {
+            let innerClasses = obj.c;
+            if (typeof innerClasses !== "undefined") {
+                clsData.innerClasses = innerClasses;
+            }
+        }
     }
 };
 let $rt_readTypeParameter = typeParam => {

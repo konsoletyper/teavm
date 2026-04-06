@@ -41,4 +41,9 @@ public final class ClassReflectionInfo extends ReflectionInfo {
 
     @Unmanaged
     public native TypeVariableInfo typeParameter(int index);
+
+    @Unmanaged
+    public native int innerClassCount();
+
+    public native ClassInfo innerClass(int index);
 }

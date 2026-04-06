@@ -19,9 +19,11 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
@@ -88,6 +90,8 @@ public class ReflectionMetadataGenerator {
     private WasmGCStringProvider strings;
     private ClassInitializerInfo classInitInfo;
     private WasmGCVirtualTableProvider virtualTables;
+    private boolean innerClassesRequired;
+    private Set<String> innerClassesAccessed = new HashSet<>();
 
     private WasmFunction initFunction;
 
@@ -128,6 +132,18 @@ public class ReflectionMetadataGenerator {
                 "methodCount", int.class)) != null;
         var needTypeVars = dependencies.getMethod(new MethodReference(ClassReflectionInfo.class,
                 "typeParameterCount", int.class)) != null;
+
+        var classesMethod = dependencies.getMethod(new MethodReference(Class.class, "getDeclaredClasses",
+                Class[].class));
+        if (classesMethod != null) {
+            innerClassesRequired = true;
+            for (var type : classesMethod.getVariable(0).getClassValueNode().getTypes()) {
+                if (type instanceof ValueType.Object) {
+                    innerClassesAccessed.add(((ValueType.Object) type).getClassName());
+                }
+            }
+        }
+
         for (var className : classes.getClassNames()) {
             var annotations = annotationsByClass.get(className);
             var cls = classes.get(className);
@@ -137,8 +153,10 @@ public class ReflectionMetadataGenerator {
             var methods = needMethodsMetadata && reflection.getClassesWithReflectableMethods().contains(className)
                     ? reflection.getAccessibleMethods(className)
                     : List.<MethodDescriptor>of();
+            var innerClasses = extractInnerClasses(cls);
             var typeParameters = needTypeVars  ? cls.getGenericParameters() : new GenericTypeParameter[0];
-            var metadata = generateClassMetadata(className, annotations, fields, methods, typeParameters);
+            var metadata = generateClassMetadata(className, annotations, fields, methods, typeParameters,
+                    innerClasses);
             if (metadata != null) {
                 initFunction.getBody().add(new WasmStructSet(
                         classInfoStruct.structure(),
@@ -153,9 +171,11 @@ public class ReflectionMetadataGenerator {
     private WasmExpression generateClassMetadata(String className, List<AnnotationReader> annotations,
             Collection<? extends String> reflectableFields,
             Collection<? extends MethodDescriptor> reflectableMethods,
-            GenericTypeParameter[] typeParameters) {
+            GenericTypeParameter[] typeParameters,
+            List<? extends String> innerClasses) {
         if (annotations == null && reflectableFields.isEmpty() && reflectableMethods.isEmpty()
-                && (typeParameters == null || typeParameters.length == 0)) {
+                && (typeParameters == null || typeParameters.length == 0)
+                && innerClasses.isEmpty()) {
             return null;
         }
 
@@ -174,6 +194,9 @@ public class ReflectionMetadataGenerator {
         if (classInfoStruct.typeParametersIndex() >= 0) {
             var cls = classes.get(className);
             metadata.getInitializers().add(generateTypeParameters(typeParameters, cls, null));
+        }
+        if (classInfoStruct.innerClassesIndex() >= 0) {
+            metadata.getInitializers().add(generateInnerClasses(innerClasses));
         }
 
         return metadata;
@@ -907,5 +930,29 @@ public class ReflectionMetadataGenerator {
                 throw new IllegalArgumentException("Unsupported generic type: " + arg.getKind());
             }
         }
+    }
+
+    private WasmExpression generateInnerClasses(List<? extends String> innerClasses) {
+        if (innerClasses.isEmpty()) {
+            return new WasmNullConstant(classInfoProvider.reflectionTypes().classInfo().array().getReference());
+        }
+        var array = new WasmArrayNewFixed(classInfoProvider.reflectionTypes().classInfo().array());
+        for (var innerClass : innerClasses) {
+            array.getElements().add(new WasmGetGlobal(classInfoProvider.getClassInfo(innerClass).getPointer()));
+        }
+        return array;
+    }
+
+    private List<? extends String> extractInnerClasses(ClassReader cls) {
+        if (!innerClassesRequired || !innerClassesAccessed.contains(cls.getName())) {
+            return Collections.emptyList();
+        }
+        var filtered = new ArrayList<String>();
+        for (var innerCls : cls.getInnerClasses()) {
+            if (dependencies.getClass(innerCls) != null) {
+                filtered.add(innerCls);
+            }
+        }
+        return filtered;
     }
 }

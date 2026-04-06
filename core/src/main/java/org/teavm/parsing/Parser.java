@@ -333,18 +333,16 @@ public class Parser {
 
         if (node.innerClasses != null && !node.innerClasses.isEmpty()) {
             for (InnerClassNode innerClassNode : node.innerClasses) {
-                cls.getInnerClasses().add(referenceCache.getCached(innerClassNode.name.replace('/', '.')));
                 if (node.name.equals(innerClassNode.name)) {
                     if (innerClassNode.outerName != null) {
                         cls.setDeclaringClassName(innerClassNode.outerName.replace('/', '.'));
                         cls.setOwnerName(cls.getDeclaringClassName());
                     }
                     cls.setSimpleName(innerClassNode.innerName);
-                    break;
                 }
-            }
-            for (var innerClassNode : node.innerClasses) {
-                cls.getInnerClasses().add(referenceCache.getCached(innerClassNode.name.replace('/', '.')));
+                if (node.name.equals(innerClassNode.outerName)) {
+                    cls.getInnerClasses().add(referenceCache.getCached(innerClassNode.name.replace('/', '.')));
+                }
             }
         }
 

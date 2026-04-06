@@ -40,6 +40,9 @@ public class ClassGenerator implements DependencyPlugin {
             case "getComponentType":
                 reachGetComponentType(agent, method);
                 break;
+            case "getDeclaredClasses":
+                reachGetDeclaredClasses(agent, method);
+                break;
             case "getEnumConstants":
                 reachGetEnumConstants(agent, method);
                 break;
@@ -128,6 +131,25 @@ public class ClassGenerator implements DependencyPlugin {
             for (var field : cls.getFields()) {
                 if (field.hasModifier(ElementModifier.STATIC) && field.hasModifier(ElementModifier.FINAL)) {
                     agent.linkField(field.getReference()).getValue().connect(method.getResult().getArrayItem());
+                }
+            }
+        });
+    }
+
+    private void reachGetDeclaredClasses(DependencyAgent agent, MethodDependency method) {
+        method.getResult().propagate(agent.getType(ValueType.parse(Class[].class)));
+        method.getResult().getArrayItem().propagate(agent.getType(ValueType.parse(Class.class)));
+        method.getVariable(0).getClassValueNode().addConsumer(type -> {
+            if (!(type.getValueType() instanceof ValueType.Object)) {
+                return;
+            }
+
+            var className = ((ValueType.Object) type.getValueType()).getClassName();
+            var cls = agent.getClassSource().get(className);
+            if (cls != null && cls.getParent() != null) {
+                for (var innerClasses : cls.getInnerClasses()) {
+                    method.getResult().getArrayItem().getClassValueNode()
+                            .propagate(agent.getType(ValueType.object(innerClasses)));
                 }
             }
         });
