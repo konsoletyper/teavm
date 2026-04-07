@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TArrayIndexOutOfBoundsException;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
@@ -22,6 +23,9 @@ import org.teavm.classlib.java.lang.TNegativeArraySizeException;
 import org.teavm.classlib.java.lang.TNullPointerException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.dependency.PluggableDependency;
+import org.teavm.interop.Address;
+import org.teavm.runtime.GC;
+import org.teavm.runtime.reflect.ClassInfo;
 
 public final class TArray extends TObject {
     @PluggableDependency(ArrayDependencyPlugin.class)
@@ -67,5 +71,8 @@ public final class TArray extends TObject {
         }
         var classInfo = ((TClass<?>) (Object) array.getClass()).getClassInfo();
         classInfo.putItem(array, index, value);
+        if (PlatformDetector.requiresOwnGC() && classInfo.itemType().primitiveKind() == ClassInfo.PrimitiveKind.NOT) {
+            GC.writeBarrier(Address.ofObject(array).toStructure());
+        }
     }
 }

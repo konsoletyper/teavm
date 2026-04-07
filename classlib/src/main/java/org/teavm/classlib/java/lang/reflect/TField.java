@@ -15,12 +15,17 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
+import org.teavm.interop.Address;
+import org.teavm.interop.Unmanaged;
+import org.teavm.runtime.GC;
 import org.teavm.runtime.reflect.AnnotationInfoUtil;
+import org.teavm.runtime.reflect.ClassInfo;
 import org.teavm.runtime.reflect.ClassInfoUtil;
 import org.teavm.runtime.reflect.FieldInfo;
 import org.teavm.runtime.reflect.ModifiersInfo;
@@ -108,9 +113,13 @@ public class TField extends TAccessibleObject implements TMember {
         setWithoutCheck(obj, value);
     }
 
+    @Unmanaged
     public void setWithoutCheck(Object obj, Object value) {
         if ((fieldInfo.modifiers() & ModifiersInfo.STATIC) != 0) {
             declaringClass.initialize();
+        } else if (PlatformDetector.requiresOwnGC() && fieldInfo.type().arrayDegree() == 0
+                && fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.NOT) {
+            GC.writeBarrier(Address.ofObject(obj).toStructure());
         }
         fieldInfo.write(obj, value);
     }

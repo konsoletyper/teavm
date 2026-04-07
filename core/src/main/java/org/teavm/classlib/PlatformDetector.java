@@ -51,4 +51,9 @@ public final class PlatformDetector {
     public static boolean isLowLevel() {
         return false;
     }
+
+    @PlatformMarker(Platforms.OWN_GC)
+    public static boolean requiresOwnGC() {
+        return false;
+    }
 }

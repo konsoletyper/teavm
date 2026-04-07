@@ -1134,7 +1134,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     @Override
     public String[] getPlatformTags() {
-        return new String[] { Platforms.C, Platforms.LOW_LEVEL };
+        return new String[] { Platforms.C, Platforms.LOW_LEVEL, Platforms.OWN_GC };
     }
 
     @Override
