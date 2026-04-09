@@ -30,7 +30,7 @@ let setGlobalName = function(name, value) {
     new Function("value", name + " = value;")(value);
 }
 
-function defaults(imports, userExports, options, module, stringBuiltins) {
+function defaults(imports, userExports, options, stringBuiltins) {
     let context = {
         exports: null,
         userExports: userExports,
@@ -41,7 +41,7 @@ function defaults(imports, userExports, options, module, stringBuiltins) {
     }
     dateImports(imports);
     consoleImports(imports, context);
-    coreImports(imports, context, options, module);
+    coreImports(imports, context);
     asyncImports(imports, context);
     jsoImports(imports, context, stringBuiltins);
     imports.teavmMath = Math;
@@ -140,8 +140,162 @@ function consoleImports(imports) {
     };
 }
 
-function coreImports(imports, context, options, module) {
-    let memoryOptions = options.memory || {};
+function align(address, shift) {
+    return (((address - 1) >> shift) + 1) << shift;
+}
+
+async function linkImports(imports, options, module, emscriptenModules) {
+    let memoryOptions = options.memory ?? {};
+    let memDefaults = module ? getMemoryDefaults(module) : {};
+    let memoryInstance = memoryOptions["external"];
+    let stackSize = options.stack ?? 2 * (1 << 20);
+
+    let ptr = memDefaults.dataSize ?? 0;
+    let tablePtr = 0;
+    for (const emscriptenModule of emscriptenModules) {
+        let dylinkInfo = extractDylinkInfo(emscriptenModule.wasmModule);
+        let memSize = dylinkInfo.memorySize ?? 0;
+        let memAlign = dylinkInfo.memoryAlignment ?? 1;
+        let tableSize = dylinkInfo.tableSize ?? 0;
+        let tableAlign = dylinkInfo.tableAlignment ?? 1;
+        if (memSize > 0) {
+            ptr = align(ptr, memAlign);
+            emscriptenModule.memoryOffset = ptr;
+            ptr += memSize;
+        }
+        if (tableSize > 0) {
+            tablePtr = align(tablePtr, tableAlign);
+            emscriptenModule.tableOffset = tablePtr;
+            tablePtr += tableSize;
+        }
+    }
+
+    let stackPtr = -1;
+    let stackLow = -1;
+    let stackHigh = -1;
+    if (emscriptenModules.length > 0) {
+        ptr = align(ptr, 4);
+        stackPtr = ptr;
+        stackLow = ptr;
+        ptr += stackSize;
+        ptr = align(ptr, 4);
+        stackHigh = ptr;
+    }
+
+    let maxSize = memoryOptions.maxSize;
+    ptr = align(ptr, 8);
+    let heapOffset = ptr;
+
+    if (!memoryInstance) {
+        let minSize = memDefaults.min ?? 0;
+        ptr += minSize;
+        ptr = Math.max(ptr, memoryOptions.minSize ?? 0);
+        let shared = memoryOptions.shared === true;
+        maxSize ??= ((1 << 31) - 1) | 0;
+        let memDesc = {
+            shared: shared,
+            initial: Math.max(minSize, emscriptenModules.length === 0 ? 1 : 256)
+        };
+        if (typeof maxSize === 'number') {
+            memDesc.maximum = ((maxSize - 1) >> 16) + 1;
+        }
+        memoryInstance = new WebAssembly.Memory(memDesc);
+    }
+    let tableInstance = tablePtr > 0 ? new WebAssembly.Table({ initial: tablePtr, element: "anyfunc" }) : null;
+    imports.env = {
+        memory: memoryInstance
+    };
+    imports.teavmMemory = {
+        linearMemory() {
+            return memoryInstance.buffer;
+        },
+        notifyHeapResized: memoryOptions.onResize ?? function() {},
+        heapOffset: new WebAssembly.Global({ value: "i32", mutable: false}, heapOffset),
+        maxSize: new WebAssembly.Global({ value: "i32", mutable: false}, maxSize)
+    };
+    let allocator = {
+        malloc: null,
+        free: null,
+        realloc: null,
+    };
+    await Promise.all(emscriptenModules.map(async ({ name, wasmModule, jsLoader, tableOffset, memoryOffset }) => {
+        let loadedEmscripten = await jsLoader({
+            wasmMemory: memoryInstance,
+            instantiateWasm(imports, successCallback) {
+                imports.env = {
+                    memory: memoryInstance,
+                    malloc: size => allocator.malloc(size),
+                    free: ptr => allocator.free(ptr),
+                    realloc: (ptr, newSize) => allocator.realloc(ptr, newSize),
+                    __indirect_function_table: tableInstance,
+                    __memory_base: new WebAssembly.Global({ value: "i32", mutable: false }, memoryOffset ?? 0),
+                    __table_base: new WebAssembly.Global({ value: "i32", mutable: false }, tableOffset ?? 0),
+                    __stack_pointer: new WebAssembly.Global({ value: "i32", mutable: true }, stackPtr),
+                };
+                imports["GOT.mem"] = {
+                    __stack_low: new WebAssembly.Global({ value: "i32", mutable: true }, stackLow),
+                    __stack_high: new WebAssembly.Global({ value: "i32", mutable: true }, stackHigh),
+                };
+                WebAssembly.instantiate(wasmModule, imports).then(successCallback);
+            }
+        });
+        let importObj = {};
+        for (let { name: exportName, kind: exportKind } of WebAssembly.Module.exports(wasmModule)) {
+            if (exportKind === "function") {
+                let fn = loadedEmscripten["_" + exportName];
+                if (typeof fn === "function") {
+                    importObj[exportName] = fn;
+                }
+            }
+        }
+        imports[name] = importObj;
+    }));
+    return allocator;
+}
+
+class ReaderHelper {
+    constructor(array) {
+        this.ptr = 0;
+        this.array = array;
+    }
+    readVarInt() {
+        let result = 0;
+        let shift = 0;
+        while (true) {
+            let b = this.array[this.ptr++];
+            result |= (b & 0x7F) << shift;
+            if ((b & 0x80) === 0) {
+                return result;
+            }
+            shift += 7;
+        }
+    }
+}
+
+function extractDylinkInfo(module) {
+    let sections = WebAssembly.Module.customSections(module, "dylink.0");
+    if (sections.length !== 1) {
+        return {};
+    }
+    let section = new ReaderHelper(new Int8Array(sections[0]));
+    let dylinkInfo = {};
+    while (section.ptr < section.array.length) {
+        let subsectionType = section.array[section.ptr++];
+        let nextSubsection = section.ptr + section.readVarInt();
+        switch (subsectionType) {
+            case 1:
+                dylinkInfo.memorySize = section.readVarInt();
+                dylinkInfo.memoryAlignment = section.readVarInt();
+                dylinkInfo.tableSize = section.readVarInt();
+                dylinkInfo.tableAlignment = section.readVarInt();
+                break;
+        }
+        section.ptr = nextSubsection;
+    }
+    return dylinkInfo;
+}
+
+function coreImports(imports, context) {
     let finalizationRegistry = new FinalizationRegistry(heldValue => {
         let report = context.exports["teavm.reportGarbageCollectedValue"];
         if (typeof report !== "undefined") {
@@ -170,7 +324,7 @@ function coreImports(imports, context, options, module) {
             return new WeakRef(value);
         },
         stringDeref: weakRef => weakRef.deref(),
-        takeStackTrace() {
+        takeStackTrace(exceptionClassName) {
             let stack = new Error().stack;
             let addresses = [];
             for (let line of stack.split("\n")) {
@@ -199,6 +353,24 @@ function coreImports(imports, context, options, module) {
                                 line: address
                             };
                         });
+                    } else if (exceptionClassName !== null) {
+                        if (result.length > 0 && result[0].className === "java.lang.Throwable"
+                                && result[0].method === "fillInStackTrace") {
+                            result.shift();
+                        }
+                        let foundIndex = -1;
+                        for (let i = 0; i < result.length; ++i) {
+                            if (result[i].method !== "<init>") {
+                                break;
+                            }
+                            if (result[i].className === exceptionClassName) {
+                                foundIndex = i + 1;
+                                break;
+                            }
+                        }
+                        if (foundIndex >= 0) {
+                            result.splice(0, foundIndex);
+                        }
                     }
                     return result;
                 }
@@ -206,32 +378,8 @@ function coreImports(imports, context, options, module) {
         },
         decorateException(javaException) {
             new JavaError(context, javaException);
-        },
-        linearMemory() {
-            return context.exports["teavm.memory"].buffer;
-        },
-        notifyHeapResized: memoryOptions.onResize || function() {}
-    };
-    if (module) {
-        let memDefaults = getMemoryDefaults(module);
-        let imported = memDefaults !== null ? memDefaults.imported : hasImportedMemory(module);
-        if (imported) {
-            let memoryInstance = memoryOptions["external"];
-            if (!memoryInstance) {
-                if (memDefaults === null) {
-                    memDefaults = {};
-                }
-                let minSize = memoryOptions.minSize || memDefaults.min || 0;
-                let maxSize = memoryOptions.maxSize || memDefaults.max;
-                memoryInstance = new WebAssembly.Memory({
-                    shared: memoryOptions.shared === true,
-                    initial: minSize,
-                    maximum: maxSize
-                });
-            }
-            imports.teavm.memory = memoryInstance;
         }
-    }
+    };
 }
 
 function asyncImports(imports) {
@@ -248,15 +396,10 @@ function asyncImports(imports) {
     };
 }
 
-function hasImportedMemory(module) {
-    return WebAssembly.Module.imports(module)
-        .findIndex(({module, name, kind}) => module === "teavm" && name === "memory" && kind === "memory") >= 0;
-}
-
 function getMemoryDefaults(module) {
     let sections = WebAssembly.Module.customSections(module, "teavm.memoryRequirements");
     if (sections.length !== 1) {
-        return null;
+        return {};
     }
     return JSON.parse(new TextDecoder().decode(sections[0]));
 }
@@ -399,7 +542,7 @@ function jsoImports(imports, context, stringBuiltins) {
             }
         },
         createClass(name, parent, constructor) {
-            name = sanitizeName(name || "JavaObject");
+            name = sanitizeName(name ?? "JavaObject");
             let action;
             let fn = renameConstructor(name, function (marker, javaObject) {
                 if (marker === wrapperCallMarkerSymbol) {
@@ -745,18 +888,26 @@ async function load(src, options) {
     }
 
     let isNodeJs = options.nodejs || typeof process !== "undefined";
-    let deobfuscatorOptions = options.stackDeobfuscator || {};
-    let debugInfoLocation = deobfuscatorOptions.infoLocation || "auto";
+    let emscriptenModulePaths = options.emscriptenModules ?? {};
+    let deobfuscatorOptions = options.stackDeobfuscator ?? {};
+    let debugInfoLocation = deobfuscatorOptions.infoLocation ?? "auto";
     let compilationPromise = compileModule(src, isNodeJs);
-    let [deobfuscatorFactory, module, debugInfo] = await Promise.all([
+    let [deobfuscatorFactory, module, debugInfo, emscriptenModules] = await Promise.all([
         deobfuscatorOptions.enabled ? getDeobfuscator(src, deobfuscatorOptions, isNodeJs) : Promise.resolve(null),
         compilationPromise,
-        fetchExternalDebugInfo(src, debugInfoLocation, deobfuscatorOptions, isNodeJs)
+        fetchExternalDebugInfo(src, debugInfoLocation, deobfuscatorOptions, isNodeJs),
+        loadEmscriptenModules(emscriptenModulePaths, isNodeJs)
     ]);
 
     const importObj = {};
     let userExports = {};
-    const defaultsResult = defaults(importObj, userExports, options, module, await hasStringBuiltins());
+    const defaultsResult = defaults(
+        importObj,
+        userExports,
+        options,
+        await hasStringBuiltins()
+    );
+    let allocator = await linkImports(importObj, options, module, emscriptenModules);
     if (typeof options.installImports !== "undefined") {
         options.installImports(importObj);
     }
@@ -764,6 +915,9 @@ async function load(src, options) {
         await wrapImports(module, importObj);
     }
     let instance = await WebAssembly.instantiate(module, importObj);
+    allocator.malloc = instance.exports["teavm.malloc"];
+    allocator.free = instance.exports["teavm.free"];
+    allocator.realloc = instance.exports["teavm.realloc"];
 
     defaultsResult.supplyExports(instance.exports);
     if (deobfuscatorFactory) {
@@ -831,31 +985,16 @@ async function getDeobfuscator(path, options, isNodeJs) {
     }
     try {
         const importObj = {};
-        const defaultsResult = defaults(importObj, {}, {}, null, await hasStringBuiltins());
-        const instance = await instantiateModule(options.path, path, isNodeJs, importObj);
+        const module = await compileModule(options.path ?? `${path}-deobfuscator.wasm`, isNodeJs);
+        const defaultsResult = defaults(importObj, {}, {}, await hasStringBuiltins());
+        await linkImports(importObj, options, module, []);
+        const instance = await WebAssembly.instantiate(module, importObj);
         defaultsResult.supplyExports(instance.exports);
         return instance;
     } catch (e) {
         console.warn("Could not load deobfuscator", e);
         return null;
     }
-}
-
-async function instantiateModule(optionsPath, path, isNodeJs, importObj) {
-    if (typeof optionsPath === "object") {
-        return await WebAssembly.instantiate(optionsPath, importObj, { builtins: ["js-string"] });
-    }
-    const deobfuscatorPath = optionsPath || path + "-deobfuscator.wasm";
-    let [response, close] = await openPath(deobfuscatorPath, isNodeJs);
-    const { instance } = await WebAssembly.instantiateStreaming(
-        response,
-        importObj,
-        {
-            builtins: ["js-string"]
-        }
-    );
-    close();
-    return instance;
 }
 
 async function openPath(src, isNodeJs) {
@@ -925,7 +1064,7 @@ async function fetchExternalDebugInfo(path, debugInfoLocation, options, isNodeJs
     if (typeof options.externalInfoPath === "object") {
         return options.externalInfoPath;
     }
-    let location = options.externalInfoPath || path + ".teadbg";
+    let location = options.externalInfoPath ?? path + ".teadbg";
     let buffer;
     if (!isNodeJs) {
         let response = await fetch(location);
@@ -939,4 +1078,34 @@ async function fetchExternalDebugInfo(path, debugInfoLocation, options, isNodeJs
     }
 
     return new Int8Array(buffer);
+}
+
+// emscripten parameters for TeaVM interop:
+// emcc \
+//   -s MODULARIZE \
+//   -s RELOCATABLE \
+//   -s EXPORT_ES6=1 \
+//   -s ALLOW_MEMORY_GROWTH=1 \
+//   -s EXPORTED_FUNCTIONS=<exported functions>
+//   -s STACK_OVERFLOW_CHECK=0
+//   -s MALLOC=none
+//   --no-entry
+//
+// and add _malloc,_free and _realloc to exported functions
+async function loadEmscriptenModules(emscriptenModulePaths, isNodeJs) {
+    let keysValues = Object.entries(emscriptenModulePaths);
+    return Promise.all(keysValues.map(async ([key, { pathToJs, pathToWasm }]) => {
+        let [response, close] = await openPath(pathToWasm, isNodeJs);
+        let [jsLoader, wasmModule] = await Promise.all([
+            import(pathToJs),
+            WebAssembly.compileStreaming(response)
+        ])
+        let result = {
+            name: key,
+            jsLoader: jsLoader.default,
+            wasmModule: wasmModule
+        };
+        close();
+        return result;
+    }));
 }

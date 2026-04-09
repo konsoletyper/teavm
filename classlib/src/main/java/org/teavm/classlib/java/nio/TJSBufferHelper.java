@@ -52,7 +52,7 @@ public final class TJSBufferHelper {
             registry.unregister(object);
         }
 
-        @Import(module = "teavm", name = "linearMemory")
+        @Import(module = "teavmMemory", name = "linearMemory")
         static native ArrayBuffer getLinearMemory();
     }
 

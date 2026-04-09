@@ -15,6 +15,7 @@
  */
 package org.teavm.runtime.heap;
 
+import org.teavm.interop.Address;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
@@ -33,5 +34,25 @@ class HeapRecord extends Structure {
 
     static boolean isAllocated(HeapRecord record) {
         return (record.size & ALLOCATED) != 0;
+    }
+
+    static HeapRecord next(HeapRecord record) {
+        return dataOf(record).add(HeapRecord.size(record)).toStructure();
+    }
+
+    static HeapRecord next(HeapRecord record, int size) {
+        return dataOf(record).add(size).toStructure();
+    }
+
+    static HeapRecord previous(HeapRecord record) {
+        return recordOf(record.toAddress().add(-record.previousSize));
+    }
+
+    static Address dataOf(HeapRecord record) {
+        return record.toAddress().add(Structure.sizeOf(HeapRecord.class));
+    }
+
+    static HeapRecord recordOf(Address address) {
+        return address.add(-Structure.sizeOf(HeapRecord.class)).toStructure();
     }
 }

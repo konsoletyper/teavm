@@ -30,14 +30,6 @@ teavm.js {
     mainClass = "org.teavm.samples.software3d.teavm.MainKt"
 }
 
-teavm.wasm {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.software3d.teavm.WasmWorkerKt"
-    optimization = OptimizationLevel.AGGRESSIVE
-    minHeapSize = 4
-    maxHeapSize = 32
-}
-
 kotlin {
     js {
         browser {

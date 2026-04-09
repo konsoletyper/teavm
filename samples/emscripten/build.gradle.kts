@@ -1,3 +1,5 @@
+import org.teavm.gradle.api.OptimizationLevel
+
 /*
  *  Copyright 2023 Alexey Andreev.
  *
@@ -27,5 +29,12 @@ dependencies {
 
 teavm.wasmGC {
     addedToWebApp = true
-    mainClass = "org.teavm.samples.wasmsab.Main"
+    mainClass = "org.teavm.samples.emscripten.Main"
+    optimization = OptimizationLevel.BALANCED
+    obfuscated = true
+    emscripten {
+        enabled = true
+        exportedFunctions.add("_addInBuffer")
+        compilerArgs.add("-O2")
+    }
 }

@@ -15,7 +15,11 @@
  */
 package org.teavm.gradle.api;
 
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
+import org.gradle.api.Action;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Nested;
 
 public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaVMWebConfiguration {
     Property<Boolean> getObfuscated();
@@ -40,7 +44,20 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
 
     Property<Integer> getMinDirectBuffersSize();
 
+    @Deprecated
     Property<Integer> getMaxDirectBuffersSize();
 
+    @Deprecated
     Property<Boolean> getImportedWasmMemory();
+
+    @Nested
+    TeaVMEmscriptenConfiguration getEmscripten();
+
+    default void emscripten(Action<TeaVMEmscriptenConfiguration> action) {
+        action.execute(getEmscripten());
+    }
+
+    default void emscripten(@DelegatesTo(TeaVMEmscriptenConfiguration.class) Closure<?> action) {
+        action.rehydrate(getEmscripten(), action.getOwner(), action.getThisObject()).call();
+    }
 }

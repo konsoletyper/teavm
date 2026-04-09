@@ -153,6 +153,94 @@ public class HeapTest {
         dump();
         assertEquals(32, b.diff(Heap.getStart()));
     }
+    
+    @Test
+    public void simpleExpand() {
+        var a = Heap.alloc(3);
+        dump();
+        assertEquals(8, a.diff(Heap.getStart()));
+        
+        a = Heap.realloc(a, 23);
+        assertEquals(8, a.diff(Heap.getStart()));
+        dump();
+        check();
+    }
+    
+    @Test
+    public void expandExisting() {
+        var a = Heap.alloc(3);
+        dump();
+        assertEquals(8, a.diff(Heap.getStart()));
+        
+        var b = Heap.alloc(23);
+        dump();
+        assertEquals(32, b.diff(Heap.getStart()));
+
+        var c = Heap.alloc(3);
+        dump();
+        assertEquals(64, c.diff(Heap.getStart()));
+        
+        Heap.release(b);
+        dump();
+        check();
+        
+        a = Heap.realloc(a, 23);
+        dump();
+        check();
+        assertEquals(8, a.diff(Heap.getStart()));
+    }
+
+    @Test
+    public void expandExistingFull() {
+        var a = Heap.alloc(3);
+        dump();
+        assertEquals(8, a.diff(Heap.getStart()));
+
+        var b = Heap.alloc(23);
+        dump();
+        assertEquals(32, b.diff(Heap.getStart()));
+
+        var c = Heap.alloc(3);
+        dump();
+        assertEquals(64, c.diff(Heap.getStart()));
+
+        Heap.release(b);
+        dump();
+        check();
+
+        a = Heap.realloc(a, 32);
+        dump();
+        check();
+        assertEquals(8, a.diff(Heap.getStart()));
+    }
+    
+    @Test
+    public void expandCopy() {
+        var a = Heap.alloc(3);
+        dump();
+        assertEquals(8, a.diff(Heap.getStart()));
+
+        var b = Heap.alloc(23);
+        dump();
+        assertEquals(32, b.diff(Heap.getStart()));
+        
+        a = Heap.realloc(a, 23);
+        assertEquals(64, a.diff(Heap.getStart()));
+        dump();
+        check();
+    }
+    
+    @Test
+    public void expandAndGrow() {
+        var a = Heap.alloc(3);
+        dump();
+        assertEquals(8, a.diff(Heap.getStart()));
+        
+        a = Heap.realloc(a, 2 * 1024 * 1024);
+        assertEquals(8, a.diff(Heap.getStart()));
+        dump();
+        check();
+    }
 
     // This test is not stable, so I would not add it to CI.
     // Instead, it's useful to uncomment and run it when things should be updated in Heap

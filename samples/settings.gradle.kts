@@ -36,7 +36,7 @@ pluginManagement {
         gradlePluginPortal()
     }
     plugins {
-        id("org.gretty") version "4.1.10" apply false
+        id("org.gretty") version "5.0.2" apply false
     }
 }
 
@@ -64,6 +64,7 @@ include("web-apis")
 include("software3d")
 include("module-test")
 include("wasm-sab")
+include("emscripten")
 
 gradle.allprojects {
     apply<WarPlugin>()

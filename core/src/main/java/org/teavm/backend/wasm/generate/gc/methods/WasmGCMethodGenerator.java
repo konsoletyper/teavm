@@ -212,25 +212,52 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     }
 
     private WasmFunction createStaticFunction(MethodReference methodReference) {
+        var cls = classes.get(methodReference.getClassName());
+        MethodHolder method = null;
+        if (cls != null) {
+            method = cls.getMethod(methodReference.getDescriptor());
+        }
+
         var returnType = typeMapper.mapType(methodReference.getReturnType());
         var parameterTypes = new WasmType[methodReference.parameterCount()];
+        var isImported = method.hasModifier(ElementModifier.NATIVE)
+                && method.getAnnotations().get(Import.class.getName()) != null;
         for (var i = 0; i < parameterTypes.length; ++i) {
-            parameterTypes[i] = typeMapper.mapType(methodReference.parameterType(i));
+            var type = methodReference.parameterType(i);
+            parameterTypes[i] = isImported && isBufferType(type)
+                    ? WasmType.INT32
+                    : typeMapper.mapType(type);
         }
         var function = new WasmFunction(functionTypes.of(returnType, parameterTypes));
         function.setName(names.topLevel(names.suggestForMethod(methodReference)));
         module.functions.add(function);
         function.setJavaMethod(methodReference);
 
-        var cls = classes.get(methodReference.getClassName());
-        if (cls != null) {
-            var method = cls.getMethod(methodReference.getDescriptor());
-            if (method != null && method.hasModifier(ElementModifier.STATIC)) {
-                queue.add(() -> generateMethodBody(method, function));
-            }
+        if (method != null && method.hasModifier(ElementModifier.STATIC)) {
+            var finalMethod = method;
+            queue.add(() -> generateMethodBody(finalMethod, function));
         }
 
         return function;
+    }
+
+    static boolean isBufferType(ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
+        }
+        switch (((ValueType.Object) type).getClassName()) {
+            case "java.nio.Buffer":
+            case "java.nio.ByteBuffer":
+            case "java.nio.ShortBuffer":
+            case "java.nio.CharBuffer":
+            case "java.nio.IntBuffer":
+            case "java.nio.LongBuffer":
+            case "java.nio.FloatBuffer":
+            case "java.nio.DoubleBuffer":
+                return true;
+            default:
+                return false;
+        }
     }
 
     @Override

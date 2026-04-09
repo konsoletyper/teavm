@@ -31,10 +31,13 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmNullBranch;
-import org.teavm.backend.wasm.model.expression.WasmNullCondition;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
@@ -519,7 +522,9 @@ public class ClassInfoStruct {
 
             var block = new WasmBlock(false);
             classFunction.getBody().add(block);
-            block.getBody().add(new WasmNullBranch(WasmNullCondition.NOT_NULL, new WasmGetLocal(resultLocal), block));
+            var notNullCond = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ,
+                    new WasmIsNull(new WasmGetLocal(resultLocal)));
+            block.getBody().add(new WasmBranch(notNullCond, block));
 
             var constructor = functions.forStaticMethod(new MethodReference(Class.class, "createClass",
                     ClassInfo.class, Class.class));

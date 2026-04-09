@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.teavm.backend.c.analyze.InteropDependencyListener;
 import org.teavm.backend.wasm.debug.CompositeDebugLines;
 import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.debug.ExternalDebugFile;
@@ -53,6 +54,7 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsics;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
@@ -111,7 +113,6 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private WasmDebugInfoLocation debugLocation = WasmDebugInfoLocation.EXTERNAL;
     private WasmDebugInfoLevel debugLevel = WasmDebugInfoLevel.FULL;
     private int bufferHeapMinSize = 1024 * 1024 * 2;
-    private int bufferHeapMaxSize = 1024 * 1024 * 32;
     private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
     private Map<MethodReference, WasmGCIntrinsic> customIntrinsics = new HashMap<>();
     private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
@@ -120,9 +121,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private EntryPointTransformation entryPointTransformation = new EntryPointTransformation();
     private List<WasmGCClassConsumer> classConsumers = new ArrayList<>();
     private List<Supplier<Collection<MethodReference>>> additionalMethodsOnCallSites = new ArrayList<>();
-    private boolean importedMemory;
 
     private ReflectionDependencyListener reflection;
+
+    private int dataSize;
 
     public WasmGCTarget() {
         customTypeMapperFactories.add(new WasmGCAsyncTypeMapperFactory());
@@ -160,16 +162,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         this.bufferHeapMinSize = bufferHeapMinSize;
     }
 
-    public void setBufferHeapMaxSize(int bufferHeapMaxSize) {
-        this.bufferHeapMaxSize = bufferHeapMaxSize;
-    }
-
     public void setCompactMode(boolean compactMode) {
         this.compactMode = compactMode;
-    }
-
-    public void setImportedMemory(boolean importedMemory) {
-        this.importedMemory = importedMemory;
     }
 
     @Override
@@ -228,7 +222,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     @Override
     public List<DependencyListener> getDependencyListeners() {
-        return List.of();
+        return List.of(new InteropDependencyListener());
     }
 
     @Override
@@ -302,11 +296,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
-        module.memoryExportName = "teavm.memory";
-        if (importedMemory) {
-            module.memoryImportName = "memory";
-            module.memoryImportModule = "teavm";
-        }
+        module.memoryImportName = "memory";
+        module.memoryImportModule = "env";
         controller.addVirtualMethods(reflection::isVirtual);
         addMethodsOnCallSites(reflection::getVirtualCallSites);
         var customGenerators = new WasmGCCustomGenerators(classes, controller.getServices(),
@@ -469,28 +460,34 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         };
     }
 
-    private void adjustModuleMemory(WasmModule module, WasmGCModuleGenerator moduleGenerator,
-            boolean buffersHeap) {
+    private void adjustModuleMemory(WasmModule module, WasmGCModuleGenerator moduleGenerator, boolean buffersHeap) {
         var memorySize = 0;
         for (var segment : module.getSegments()) {
             memorySize = Math.max(memorySize, segment.getOffset() + segment.getLength());
         }
-        var maxMemorySize = memorySize;
+
+        var heapOffset = new WasmGlobal("heapOffset", WasmType.INT32, null);
+        heapOffset.setImmutable(true);
+        heapOffset.setImportModule("teavmMemory");
+        heapOffset.setImportName("heapOffset");
+        module.globals.add(heapOffset);
+
+        var maxSize = new WasmGlobal("maxSize", WasmType.INT32, null);
+        maxSize.setImmutable(true);
+        maxSize.setImportModule("teavmMemory");
+        maxSize.setImportName("maxSize");
+        module.globals.add(maxSize);
+
+        dataSize = memorySize;
         if (buffersHeap) {
             memorySize = ((memorySize - 1) / 256 + 1) * 256;
-            moduleGenerator.initBuffersHeap(memorySize, bufferHeapMinSize, bufferHeapMaxSize);
-            maxMemorySize = memorySize + bufferHeapMaxSize;
+            moduleGenerator.initBuffersHeap(heapOffset, bufferHeapMinSize, maxSize);
             memorySize += bufferHeapMinSize;
-        }
-        if (maxMemorySize == 0) {
-            return;
         }
 
         var pages = (memorySize - 1) / WasmHeap.PAGE_SIZE + 1;
         module.setMinMemorySize(pages);
-
-        pages = (maxMemorySize - 1) / WasmHeap.PAGE_SIZE + 1;
-        module.setMaxMemorySize(pages);
+        module.setMaxMemorySize(32768);
     }
 
     private static boolean needsBuffersHeap(DependencyInfo dependencyInfo) {
@@ -555,9 +552,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     }
 
     private byte[] writeMemoryRequirements(WasmModule module) {
-        var data = "{\"min\":" + module.getMinMemorySize()
-                + ",\"max\":" + module.getMaxMemorySize()
-                + ",\"imported\":" + importedMemory + "}";
+        var data = "{\"min\":" + module.getMinMemorySize() + ", \"dataSize\":" + dataSize + "}";
         return data.getBytes(StandardCharsets.UTF_8);
     }
 

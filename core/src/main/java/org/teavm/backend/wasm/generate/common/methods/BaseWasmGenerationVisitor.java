@@ -907,6 +907,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 var firstArg = call.getArguments().get(0);
                 call.getArguments().set(0, mapFirstArgumentForCall(firstArg, function, expr.getMethod()));
             }
+            processCallArguments(expr, call.getArguments());
             if (callSiteId != null) {
                 callSiteId.addToLastArg(call.getArguments());
             }
@@ -930,6 +931,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 acceptWithType(argument, expr.getMethod().parameterType(i));
                 call.getArguments().add(result);
             }
+            processCallArguments(expr, call.getArguments());
             if (callSiteId != null) {
                 callSiteId.addToLastArg(call.getArguments());
             }
@@ -965,6 +967,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 acceptWithType(expr.getArguments().get(i), expr.getMethod().parameterType(i - 1));
                 arguments.add(result);
             }
+            processCallArguments(expr, arguments);
             if (callSiteId != null) {
                 callSiteId.addToLastArg(arguments);
             }
@@ -976,6 +979,9 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             }
             return block;
         }
+    }
+
+    protected void processCallArguments(InvocationExpr expr, List<WasmExpression> arguments) {
     }
 
     protected WasmExpression mapFirstArgumentForCall(WasmExpression argument, WasmFunction function,

@@ -17,6 +17,7 @@ package org.teavm.gradle;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DuplicatesStrategy;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.WarPlugin;
@@ -39,8 +41,10 @@ import org.gradle.api.tasks.bundling.War;
 import org.teavm.gradle.api.TeaVMConfiguration;
 import org.teavm.gradle.api.TeaVMExtension;
 import org.teavm.gradle.config.ArtifactCoordinates;
+import org.teavm.gradle.tasks.CopyEmscriptenStubTask;
 import org.teavm.gradle.tasks.CopyWasmGCRuntimeTask;
 import org.teavm.gradle.tasks.DisasmWebAssemblyTask;
+import org.teavm.gradle.tasks.EmscriptenTask;
 import org.teavm.gradle.tasks.GenerateCTask;
 import org.teavm.gradle.tasks.GenerateJavaScriptTask;
 import org.teavm.gradle.tasks.GenerateWasmGCTask;
@@ -58,6 +62,8 @@ public class TeaVMPlugin implements Plugin<Project> {
     public static final String BUILD_WASM_GC_TASK_NAME = "buildWasmGC";
     public static final String WASM_GC_COPY_RUNTIME_TASK_NAME = "copyWasmGCRuntime";
     public static final String WASM_GC_DISASSEMBLY_TASK_NAME = "disasmWasmGC";
+    public static final String WASM_GC_EMSCRIPTEN_STUB_TASK_NAME = "emscriptenStubWasmGC";
+    public static final String WASM_GC_EMSCRIPTEN_TASK_NAME = "emscriptenWasmGC";
     public static final String C_TASK_NAME = "generateC";
     public static final String CONFIGURATION_NAME = "teavm";
     public static final String CLASSPATH_CONFIGURATION_NAME = "teavmClasspath";
@@ -191,7 +197,16 @@ public class TeaVMPlugin implements Plugin<Project> {
     }
 
     private void registerWasmGCTask(Project project, Configuration configuration) {
+        var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
+        var emscriptenEnabled = extension.getWasmGC().getEmscripten().getEnabled();
+
+        var cppSourceSet = project.getObjects().sourceDirectorySet("emcc", "Emscripten input files");
+        sourceSets.all(sourceSet -> {
+            sourceSet.getExtensions().add("emcc", cppSourceSet);
+            cppSourceSet.srcDir("src/" + sourceSet.getName() + "/emcc");
+        });
+
         var genTask = project.getTasks().register(WASM_GC_TASK_NAME, GenerateWasmGCTask.class, task -> {
             var wasmGC = extension.getWasmGC();
             applyToTask(wasmGC, task, configuration);
@@ -204,6 +219,8 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getMaxDirectBuffersSize().convention(wasmGC.getMaxDirectBuffersSize());
             task.getImportedWasmMemory().convention(wasmGC.getImportedWasmMemory());
             task.getDebugInfoLocation().convention(wasmGC.getDebugInfoLocation());
+            task.getPreservedClasses().addAll(emscriptenEnabled
+                    .map(enabled -> enabled ? List.of("org.teavm.runtime.heap.Heap") : Collections.emptyList()));
             setupSources(task.getSourceFiles(), project);
         }).get();
 
@@ -245,9 +262,40 @@ public class TeaVMPlugin implements Plugin<Project> {
                             .flatMap(d -> d.file(fileName)));
                 });
 
+        var emscriptenExtDir = project.getLayout().getBuildDirectory().dir("generated/emscripten/stub");
+        var emscriptenStubTask = project.getTasks().register(WASM_GC_EMSCRIPTEN_STUB_TASK_NAME,
+                CopyEmscriptenStubTask.class, task -> {
+                    task.setGroup(TASK_GROUP);
+                    task.onlyIf(t -> emscriptenEnabled.getOrElse(false));
+                    task.getOutputFile().convention(emscriptenExtDir.map(x -> x.file("teavm-imports.c")));
+                });
+
+        var emscriptenTask = project.getTasks().register(WASM_GC_EMSCRIPTEN_TASK_NAME, EmscriptenTask.class, task -> {
+            task.setGroup(TASK_GROUP);
+            task.onlyIf(t -> emscriptenEnabled.getOrElse(false));
+            task.getInputFiles().from(emscriptenStubTask);
+            task.getEmscriptenDir().convention(extension.property("emscripten-location"));
+            task.getCompilerArgs().convention(extension.getWasmGC().getEmscripten().getCompilerArgs());
+            task.getExportedFunctions().convention(extension.getWasmGC().getEmscripten().getExportedFunctions());
+            task.getOutputDir().convention(extension.getWasmGC().getOutputDir()
+                    .zip(extension.getWasmGC().getRelativePathInOutputDir(),
+                            (outputDir, relativePath) -> outputDir.dir(relativePath)));
+            task.getOutputName().convention(extension.getWasmGC().getTargetFileName().map(x -> x + "-native.js"));
+            task.getInputFiles().from(project.provider(() -> {
+                var dirSet = (SourceDirectorySet) sourceSets.getByName(SOURCE_SET_NAME).getExtensions()
+                        .getByName("emcc");
+                return dirSet.getAsFileTree()
+                        .filter(f -> f.isFile())
+                        .filter(f -> f.getName().endsWith(".c") || f.getName().endsWith(".cpp")
+                                || f.getName().endsWith(".C") || f.getName().endsWith(".cc")
+                                || f.getName().endsWith(".cxx") || f.getName().endsWith(".c++"))
+                        .getFiles();
+            }));
+        });
+
         project.getTasks().register(BUILD_WASM_GC_TASK_NAME, task -> {
             task.setGroup(TASK_GROUP);
-            task.dependsOn(genTask, copyRuntimeTask, disasmTask);
+            task.dependsOn(genTask, copyRuntimeTask, disasmTask, emscriptenTask);
         });
     }
 

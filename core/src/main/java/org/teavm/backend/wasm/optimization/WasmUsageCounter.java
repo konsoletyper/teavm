@@ -64,7 +64,9 @@ public class WasmUsageCounter extends WasmDefaultExpressionVisitor implements Wa
             addUsage(function.getType());
         }
         for (var global : module.globals) {
-            global.getInitialValue().acceptVisitor(this);
+            if (global.getInitialValue() != null) {
+                global.getInitialValue().acceptVisitor(this);
+            }
             addUsage(global.getType());
         }
     }

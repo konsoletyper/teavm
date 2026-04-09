@@ -176,9 +176,14 @@ public class WasmBinaryRenderer {
             section.writeAsciiString(moduleName);
             section.writeAsciiString(module.memoryImportName);
             section.writeByte(EXTERNAL_KIND_MEMORY);
-            section.writeByte(3);
-            section.writeLEB(module.getMinMemorySize());
-            section.writeLEB(module.getMaxMemorySize());
+            if (module.getMaxMemorySize() == 0) {
+                section.writeByte(0);
+                section.writeLEB(module.getMinMemorySize());
+            } else {
+                section.writeByte(1);
+                section.writeLEB(module.getMinMemorySize());
+                section.writeLEB(module.getMaxMemorySize());
+            }
         }
         for (WasmFunction function : functions) {
             int signatureIndex = module.types.indexOf(function.getType());
@@ -241,9 +246,14 @@ public class WasmBinaryRenderer {
         WasmBinaryWriter section = new WasmBinaryWriter();
 
         section.writeByte(1);
-        section.writeByte(1);
-        section.writeLEB(module.getMinMemorySize());
-        section.writeLEB(module.getMaxMemorySize());
+        if (module.getMaxMemorySize() == 0) {
+            section.writeByte(0);
+            section.writeLEB(module.getMinMemorySize());
+        } else {
+            section.writeByte(1);
+            section.writeLEB(module.getMinMemorySize());
+            section.writeLEB(module.getMaxMemorySize());
+        }
 
         writeSection(SECTION_MEMORY, "memory", section.getData());
     }

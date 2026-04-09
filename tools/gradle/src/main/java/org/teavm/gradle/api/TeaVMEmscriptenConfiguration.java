@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,19 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.gradle.api;
 
-plugins {
-    java
-    war
-    id("org.teavm")
-}
+import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.Property;
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-    compileOnly("jakarta.servlet:jakarta.servlet-api:6.0.0")
-}
+public interface TeaVMEmscriptenConfiguration {
+    Property<Boolean> getEnabled();
 
-teavm.wasmGC {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.wasmsab.Main"
+    ListProperty<String> getCompilerArgs();
+
+    ListProperty<String> getExportedFunctions();
 }

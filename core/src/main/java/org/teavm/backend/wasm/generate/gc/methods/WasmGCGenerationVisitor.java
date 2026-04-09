@@ -29,6 +29,7 @@ import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.ast.InvocationType;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
@@ -101,6 +102,8 @@ import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.interop.Address;
+import org.teavm.interop.Import;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
@@ -759,7 +762,30 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                 return resultExpr;
             }
         }
+
         return super.invocation(expr, resultConsumer, willDrop);
+    }
+
+    @Override
+    protected void processCallArguments(InvocationExpr expr, List<WasmExpression> arguments) {
+        if (expr.getType() == InvocationType.STATIC) {
+            var cls = context.classes().get(expr.getMethod().getClassName());
+            if (cls != null) {
+                var method = cls.getMethod(expr.getMethod().getDescriptor());
+                if (method != null && method.hasModifier(ElementModifier.NATIVE)
+                        && method.getAnnotations().get(Import.class.getName()) != null) {
+                    for (var i = 0; i < method.parameterCount(); ++i) {
+                        if (WasmGCMethodGenerator.isBufferType(method.parameterType(i))) {
+                            var unwrapMethod = new MethodReference("java.nio.NativeBufferUtil",
+                                    "getAddress", ValueType.object("java.nio.Buffer"),
+                                    ValueType.object(Address.class.getName()));
+                            var unwrapFunction = context.functions().forStaticMethod(unwrapMethod);
+                            arguments.set(i, new WasmCall(unwrapFunction, arguments.get(i)));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override

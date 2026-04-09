@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,19 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.samples.emscripten;
 
-plugins {
-    java
-    war
-    id("org.teavm")
-}
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import org.teavm.interop.Import;
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-    compileOnly("jakarta.servlet:jakarta.servlet-api:6.0.0")
-}
+public class Main {
+    public static void main(String[] args) {
+        var buffer = ByteBuffer.allocateDirect(32).asIntBuffer();
+        buffer.put(0, 23);
+        buffer.put(1, 42);
+        cppAdd(buffer);
+        System.out.println(buffer.get(2));
+    }
 
-teavm.wasmGC {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.wasmsab.Main"
+    @Import(module = "native", name = "addInBuffer")
+    private static native void cppAdd(IntBuffer buffer);
 }

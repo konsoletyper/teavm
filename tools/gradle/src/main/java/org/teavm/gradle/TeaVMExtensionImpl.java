@@ -16,6 +16,8 @@
 package org.teavm.gradle;
 
 import groovy.lang.Closure;
+import java.util.Collections;
+import java.util.List;
 import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -113,6 +115,11 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasmGC.getImportedWasmMemory().convention(property("wasm-gc.importedMemory")
                 .map(Boolean::parseBoolean)
                 .orElse(false));
+        wasmGC.getEmscripten().getEnabled().convention(false);
+        wasmGC.getEmscripten().getCompilerArgs().convention(property("wasm-gc.emscripten.compilerArgs")
+                .map(c -> List.of(c.split(" ")))
+                .orElse(Collections.emptyList()));
+        wasmGC.getEmscripten().getExportedFunctions().convention(Collections.emptyList());
     }
 
     private void setupCDefaults() {

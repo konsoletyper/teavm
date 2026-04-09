@@ -35,6 +35,6 @@ final class WasmBufferUtil {
     }
 
 
-    @Import(module = "teavm", name = "linearMemory")
+    @Import(module = "teavmMemory", name = "linearMemory")
     static native ArrayBuffer getLinearMemory();
 }

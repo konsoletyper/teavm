@@ -16,6 +16,7 @@
 package org.teavm.runtime.heap;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.Export;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
@@ -71,9 +72,9 @@ public final class Heap {
         root = null;
     }
 
+    @Export(name = "teavm.malloc")
     public static Address alloc(int bytes) {
-        bytes = (Integer.divideUnsigned(bytes - 1, Address.sizeOf()) + 1) * Address.sizeOf();
-        bytes = Math.max(bytes, Structure.sizeOf(HeapNode.class) - Structure.sizeOf(HeapRecord.class));
+        bytes = alignSize(bytes);
         var result = tryAlloc(bytes);
         if (result == null) {
             var last = lastRecord();
@@ -85,7 +86,107 @@ public final class Heap {
         return result;
     }
 
-    private static boolean tryExtend(int bytes, HeapNode last) {
+    @Export(name = "teavm.realloc")
+    public static Address realloc(Address address, int newSize) {
+        newSize = alignSize(newSize);
+
+        var record = HeapRecord.recordOf(address);
+        var oldSize = HeapRecord.size(record);
+        if (oldSize == newSize) {
+            return address;
+        }
+
+        if (newSize < oldSize) {
+            shrink(record, oldSize, newSize);
+            return address;
+        } else {
+            return expand(record, oldSize, newSize);
+        }
+    }
+
+    private static int alignSize(int bytes) {
+        bytes = (Integer.divideUnsigned(bytes - 1, Address.sizeOf()) + 1) * Address.sizeOf();
+        bytes = Math.max(bytes, Structure.sizeOf(HeapNode.class) - Structure.sizeOf(HeapRecord.class));
+        return bytes;
+    }
+
+    private static void shrink(HeapRecord record, int oldSize, int newSize) {
+        var oldNextRecord = HeapRecord.next(record);
+        if (oldNextRecord.toAddress() == end || HeapRecord.isAllocated(oldNextRecord)) {
+            if (oldSize - newSize < Structure.sizeOf(HeapNode.class) - Structure.sizeOf(HeapRecord.class)) {
+                return;
+            }
+        }
+        record.size = newSize;
+        var newNextRecord = HeapRecord.next(record);
+        newNextRecord.previousSize = newSize;
+        if (oldNextRecord.toAddress() == end) {
+            newNextRecord.size = oldNextRecord.size;
+        } else if (HeapRecord.isAllocated(oldNextRecord)) {
+            oldNextRecord.previousSize = newSize - oldSize - Structure.sizeOf(HeapRecord.class);
+            newNextRecord.size = oldNextRecord.size;
+        } else {
+            var nextNextRecord = HeapRecord.next(oldNextRecord);
+            delete((HeapNode) oldNextRecord);
+            newNextRecord.size = newSize - oldSize + HeapRecord.size(oldNextRecord);
+            nextNextRecord.previousSize = newNextRecord.size;
+        }
+        insert((HeapNode) newNextRecord);
+    }
+
+    private static Address expand(HeapRecord record, int oldSize, int newSize) {
+        var nextRecord = HeapRecord.next(record);
+        if (nextRecord.toAddress() == end) {
+            if (!tryExtend(newSize - oldSize, record)) {
+                return null;
+            }
+        } else if (!HeapRecord.isAllocated(nextRecord)) {
+            var nextNextRecord = HeapRecord.next(nextRecord);
+            if (nextNextRecord.toAddress() == end) {
+                if (!tryExtend(newSize - oldSize, nextRecord)) {
+                    return null;
+                }
+            }
+        }
+
+        if (!HeapRecord.isAllocated(nextRecord)
+                && HeapRecord.size(nextRecord) + Structure.sizeOf(HeapRecord.class) >= newSize - oldSize) {
+            expandInPlace(record, oldSize, newSize, nextRecord);
+            return HeapRecord.dataOf(record);
+        } else {
+            var newRegion = alloc(newSize);
+            var oldAddress = HeapRecord.dataOf(record);
+            Address.moveMemoryBlock(oldAddress, newRegion, oldSize);
+            release(oldAddress);
+            return newRegion;
+        }
+    }
+
+    private static void expandInPlace(HeapRecord record, int oldSize, int newSize, HeapRecord nextRecord) {
+        var oldNextRecordSize = HeapRecord.size(nextRecord);
+        var nextNextRecord = HeapRecord.next(nextRecord);
+        var newNextRecord = HeapRecord.next(record, newSize);
+        if (nextNextRecord.toAddress().isLessThan(newNextRecord.toAddress().add(Structure.sizeOf(HeapNode.class)))) {
+            newSize = (int) nextNextRecord.toAddress().diff(HeapRecord.dataOf(record));
+            newNextRecord = nextNextRecord;
+        }
+        delete((HeapNode) nextRecord);
+        record.size = newSize | HeapNode.ALLOCATED;
+        if (nextNextRecord.toAddress() == newNextRecord.toAddress()) {
+            if (newNextRecord.toAddress().isLessThan(end)) {
+                newNextRecord.previousSize = newSize;
+            }
+        } else {
+            newNextRecord.previousSize = newSize;
+            newNextRecord.size = oldNextRecordSize - (newSize - oldSize);
+            if (nextNextRecord.toAddress().isLessThan(end)) {
+                nextNextRecord.previousSize = newNextRecord.size;
+            }
+            insert((HeapNode) newNextRecord);
+        }
+    }
+
+    private static boolean tryExtend(int bytes, HeapRecord last) {
         if (currentSize + bytes > maxSize) {
             return false;
         }
@@ -95,9 +196,9 @@ public final class Heap {
         }
         currentSize += grownBytes;
         if (!HeapRecord.isAllocated(last)) {
-            delete(last);
+            delete((HeapNode) last);
             last.size += grownBytes;
-            insert(last);
+            insert((HeapNode) last);
         } else {
             var newEmpty = (HeapNode) end.toStructure();
             newEmpty.size = grownBytes - Structure.sizeOf(HeapRecord.class);
@@ -110,16 +211,15 @@ public final class Heap {
         return grownBytes >= bytes;
     }
 
-    @Import(name = "notifyHeapResized")
+    @Import(module = "teavmMemory", name = "notifyHeapResized")
     private static native void notifyHeapResized();
 
     private static HeapNode lastRecord() {
         HeapRecord record = start.toStructure();
         HeapRecord result = null;
         while (record.toAddress() != end) {
-            var size = HeapRecord.size(record);
             result = record;
-            record = record.toAddress().add(Structure.sizeOf(HeapRecord.class) + size).toStructure();
+            record = HeapRecord.next(record);
         }
         return (HeapNode) result;
     }
@@ -133,16 +233,19 @@ public final class Heap {
         if (free == null) {
             return null;
         }
+        return allocFromFreeRecord(free, bytes);
+    }
+
+    private static Address allocFromFreeRecord(HeapNode free, int bytes) {
         delete(free);
         var currentSize = HeapNode.size(free);
         if (currentSize - bytes >= Structure.sizeOf(HeapNode.class) + Structure.sizeOf(HeapRecord.class)) {
-            HeapNode nextFree = free.toAddress().add(Structure.sizeOf(HeapRecord.class) + bytes).toStructure();
+            var nextFree = (HeapNode) HeapRecord.next(free, bytes);
             nextFree.size = currentSize - bytes - Structure.sizeOf(HeapRecord.class);
             nextFree.previousSize = bytes;
             insert(nextFree);
             free.size = bytes | HeapNode.ALLOCATED;
-            HeapNode nextNext = nextFree.toAddress().add(Structure.sizeOf(HeapRecord.class) + nextFree.size)
-                    .toStructure();
+            var nextNext = (HeapNode) HeapRecord.next(nextFree);
             if (nextNext.toAddress().isLessThan(end)) {
                 nextNext.previousSize -= bytes + Structure.sizeOf(HeapRecord.class);
             }
@@ -153,13 +256,12 @@ public final class Heap {
         return free.toAddress().add(Structure.sizeOf(HeapRecord.class));
     }
 
+    @Export(name = "teavm.free")
     public static void release(Address address) {
-        HeapRecord record = address.add(-Structure.sizeOf(HeapRecord.class)).toStructure();
+        var record = HeapRecord.recordOf(address);
         var size = HeapRecord.size(record);
         if (start.isLessThan(record.toAddress())) {
-            HeapRecord previousRecord = record.toAddress()
-                    .add(-record.previousSize - Structure.sizeOf(HeapRecord.class))
-                    .toStructure();
+            var previousRecord = HeapRecord.previous(record);
             if (!HeapRecord.isAllocated(previousRecord)) {
                 size += previousRecord.size + Structure.sizeOf(HeapRecord.class);
                 delete((HeapNode) previousRecord);
@@ -167,7 +269,7 @@ public final class Heap {
             }
         }
 
-        HeapRecord nextRecord = record.toAddress().add(Structure.sizeOf(HeapRecord.class) + size).toStructure();
+        var nextRecord = HeapRecord.next(record, size);
         if (nextRecord.toAddress().isLessThan(end) && !HeapRecord.isAllocated(nextRecord)) {
             var bytes = nextRecord.size + Structure.sizeOf(HeapRecord.class);
             size += bytes;
@@ -177,7 +279,7 @@ public final class Heap {
         record.size = size;
         insert((HeapNode) record);
 
-        HeapRecord next = record.toAddress().add(size + Structure.sizeOf(HeapRecord.class)).toStructure();
+        var next = HeapRecord.next(record);
         if (next.toAddress().isLessThan(end)) {
             next.previousSize = size;
         }

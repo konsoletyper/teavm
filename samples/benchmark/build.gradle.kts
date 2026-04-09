@@ -46,10 +46,6 @@ teavm {
         mainClass = "org.teavm.samples.benchmark.teavm.BenchmarkStarter"
         debugInformation = true
     }
-    wasm {
-        addedToWebApp = true
-        mainClass = "org.teavm.samples.benchmark.teavm.WasmBenchmarkStarter"
-    }
     c {
         mainClass = "org.teavm.samples.benchmark.teavm.Gtk3BenchmarkStarter"
         relativePathInOutputDir = ""

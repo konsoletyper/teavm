@@ -17,8 +17,13 @@ package org.teavm.backend.wasm;
 
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmIntBinary;
+import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
@@ -38,11 +43,12 @@ public class WasmGCModuleGenerator {
         createInitializer();
     }
 
-    public void initBuffersHeap(int offset, int minSize, int maxSize) {
+    public void initBuffersHeap(WasmGlobal offset, int minSize, WasmGlobal heapLimit) {
         var target = declarationsGenerator.functions().forStaticMethod(new MethodReference(Heap.class,
                 "init", Address.class, int.class, int.class, void.class));
-        var call = new WasmCall(target, new WasmInt32Constant(offset), new WasmInt32Constant(minSize),
-                new WasmInt32Constant(maxSize));
+        var maxSize = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
+                new WasmGetGlobal(heapLimit), new WasmGetGlobal(offset));
+        var call = new WasmCall(target, new WasmGetGlobal(offset), new WasmInt32Constant(minSize), maxSize);
         initializer.getBody().add(call);
     }
 

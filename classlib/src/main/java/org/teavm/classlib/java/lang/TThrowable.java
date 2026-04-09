@@ -27,6 +27,7 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.impl.JSWrapper;
 import org.teavm.runtime.ExceptionHandling;
 
@@ -117,7 +118,7 @@ public class TThrowable extends RuntimeException {
         if (PlatformDetector.isLowLevel()) {
             stackTrace = (TStackTraceElement[]) (Object) ExceptionHandling.fillStackTrace();
         } else if (PlatformDetector.isWebAssemblyGC()) {
-            lazyStackTrace = takeWasmGCStack();
+            lazyStackTrace = takeWasmGCStack(JSString.valueOf(getClass().getName()));
             decorateException(this);
         }
         return this;
@@ -156,7 +157,7 @@ public class TThrowable extends RuntimeException {
     }
 
     @Import(name = "takeStackTrace")
-    private native LazyStackSupplier takeWasmGCStack();
+    private static native LazyStackSupplier takeWasmGCStack(JSObject exceptionClassName);
 
     @Rename("getMessage")
     public String getMessage0() {

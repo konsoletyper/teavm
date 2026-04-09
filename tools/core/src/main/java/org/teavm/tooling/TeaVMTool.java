@@ -392,8 +392,6 @@ public class TeaVMTool {
         target.setDebugInfoLevel(debugInformationGenerated ? WasmDebugInfoLevel.FULL : wasmDebugInfoLevel);
         target.setDebugInfoLocation(wasmDebugInfoLocation);
         target.setBufferHeapMinSize(minDirectBuffersSize);
-        target.setBufferHeapMaxSize(maxDirectBuffersSize);
-        target.setImportedMemory(importedWasmMemory);
         if (sourceMapsFileGenerated) {
             wasmSourceMapWriter = new SourceMapBuilder();
             target.setSourceMapBuilder(wasmSourceMapWriter);

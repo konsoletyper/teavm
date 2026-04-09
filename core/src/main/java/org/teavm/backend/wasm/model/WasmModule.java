@@ -40,7 +40,7 @@ public class WasmModule {
     public final WasmCollection<WasmGlobal> globals = new WasmCollection<>();
     public final WasmCollection<WasmCompositeType> types = new WasmCollection<>();
     public final WasmCollection<WasmTag> tags = new WasmCollection<>();
-    public String memoryExportName = "memory";
+    public String memoryExportName;
     public String memoryImportName;
     public String memoryImportModule;
 
@@ -128,7 +128,9 @@ public class WasmModule {
             if (!visited.add(global)) {
                 return;
             }
-            global.getInitialValue().acceptVisitor(this);
+            if (global.getInitialValue() != null) {
+                global.getInitialValue().acceptVisitor(this);
+            }
             sorted.add(global);
         }
 
