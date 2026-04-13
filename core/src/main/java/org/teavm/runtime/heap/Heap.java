@@ -226,12 +226,12 @@ public final class Heap {
 
     private static Address tryAlloc(int bytes) {
         if (root == null) {
-            return null;
+            return Address.fromInt(0);
         }
 
         var free = findFree(root, bytes);
         if (free == null) {
-            return null;
+            return Address.fromInt(0);
         }
         return allocFromFreeRecord(free, bytes);
     }

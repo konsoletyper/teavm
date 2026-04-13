@@ -79,9 +79,11 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Address;
 import org.teavm.interop.Async;
+import org.teavm.interop.Export;
 import org.teavm.interop.Platforms;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -361,6 +363,16 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         if (buffersHeap) {
             declarationsGenerator.functions().forStaticMethod(new MethodReference(Heap.class, "init",
                     Address.class, int.class, int.class, void.class));
+        }
+        for (var clsName : classes.getClassNames()) {
+            var cls = classes.get(clsName);
+            for (var method : cls.getMethods()) {
+                if (method.hasModifier(ElementModifier.STATIC)
+                        && method.getProgram() != null
+                        && method.getAnnotations().get(Export.class.getName()) != null) {
+                    declarationsGenerator.functions().forStaticMethod(method.getReference());
+                }
+            }
         }
         moduleGenerator.generate();
         customGenerators.contributeToModule(module);

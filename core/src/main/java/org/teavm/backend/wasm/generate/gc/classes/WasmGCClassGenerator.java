@@ -527,6 +527,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private void initRegularClass(WasmGCClassInfo classInfo, WasmGCVirtualTable virtualTable, String name) {
+        if (classInfo.isHeapStructure()) {
+            return;
+        }
         var cls = classSource.get(name);
 
         if (classInitializerInfo.isDynamicInitializer(name)) {

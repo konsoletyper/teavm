@@ -65,6 +65,7 @@ import org.teavm.backend.wasm.transformation.gc.CoroutineTransformation;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
+import org.teavm.interop.Export;
 import org.teavm.interop.Import;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
@@ -233,9 +234,15 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         module.functions.add(function);
         function.setJavaMethod(methodReference);
 
-        if (method != null && method.hasModifier(ElementModifier.STATIC)) {
-            var finalMethod = method;
-            queue.add(() -> generateMethodBody(finalMethod, function));
+        if (method != null) {
+            if (method.hasModifier(ElementModifier.STATIC)) {
+                var finalMethod = method;
+                queue.add(() -> generateMethodBody(finalMethod, function));
+            }
+            var exportAnnot = method.getAnnotations().get(Export.class.getName());
+            if (exportAnnot != null) {
+                function.setExportName(exportAnnot.getValue("name").getString());
+            }
         }
 
         return function;
@@ -286,6 +293,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var method = cls.getMethod(methodReference.getDescriptor());
             if (method != null && !method.hasModifier(ElementModifier.STATIC)) {
                 queue.add(() -> generateMethodBody(method, function));
+            }
+            var exportAnnot = method.getAnnotations().get(Export.class.getName());
+            if (exportAnnot != null) {
+                function.setExportName(exportAnnot.getValue("name").getString());
             }
         }
 
