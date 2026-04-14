@@ -317,7 +317,41 @@ public class ArrayListTest {
             // expected
         }
     }
-    
+
+    @Test
+    public void iterInvalidRemove() {
+        var list = new ArrayList<>(List.of("a", "b"));
+        try {
+            list.listIterator().remove();
+            fail("No exception thrown for initial state");
+        } catch (IllegalStateException e) {
+            // expected
+        }
+
+        var iter = list.listIterator();
+        iter.next();
+        iter.remove();
+        try {
+            iter.remove();
+            fail("No exception thrown for subsequent remove without advancing");
+        } catch (IllegalStateException e) {
+            // expected
+        }
+        
+        list = new ArrayList<>(List.of("a", "b"));
+        iter = list.listIterator(1);
+        iter.previous();
+        try {
+            iter.previous();
+            fail("No exception thrown");
+        } catch (NoSuchElementException e) {
+            // expected
+        }
+        
+        iter.remove();
+        assertEquals(List.of("b"), list);
+    }
+
     @Test
     public void sequenceCollectionMethodsOnEmpty() {
         var empty = new ArrayList<>();
