@@ -16,8 +16,9 @@
 
 package org.teavm.samples.software3d.teavm
 
-enum class WorkerType {
-    JS,
-    WEBASSEMBLY,
-    KOTLIN_JS
+import org.teavm.jso.JSExport
+
+@JSExport
+fun initWorker() {
+    worker(false)
 }

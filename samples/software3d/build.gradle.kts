@@ -1,5 +1,5 @@
-import org.teavm.gradle.api.OptimizationLevel
-import org.teavm.gradle.tasks.TeaVMTask
+import org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /*
  *  Copyright 2023 Alexey Andreev.
@@ -18,40 +18,30 @@ import org.teavm.gradle.tasks.TeaVMTask
  */
 
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.jvm)
     war
     id("org.teavm")
+}
+teavm {
+    js {
+        addedToWebApp = true
+        obfuscated = false
+        mainClass = "org.teavm.samples.software3d.teavm.MainKt"
+    }
+    wasmGC {
+        addedToWebApp = true
+        mainClass = "org.teavm.samples.software3d.teavm.WasmWorkerKt"
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 kotlin.jvmToolchain(21)
 
-teavm.js {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.software3d.teavm.MainKt"
-}
-
-kotlin {
-    js {
-        browser {
-
-        }
-        binaries.executable()
-    }
-    jvm()
-    sourceSets.jvmMain.dependencies {
-        implementation(teavm.libs.jsoApis)
-    }
-}
-
-tasks.withType<TeaVMTask> {
-    classpath.from(kotlin.jvm().compilations["main"].output.classesDirs)
-    classpath.from(kotlin.jvm().compilations["main"].runtimeDependencyFiles)
-}
-
-tasks.war {
-    dependsOn(tasks.named("jsBrowserDistribution"))
-    with(copySpec {
-        from(kotlin.js().binaries.executable().map { it.distribution.outputDirectory })
-        into("kjs")
-    })
+tasks.withType<KotlinJvmCompile>().configureEach {
+    jvmTargetValidationMode.set(JvmTargetValidationMode.WARNING)
 }

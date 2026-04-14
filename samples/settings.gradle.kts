@@ -46,7 +46,7 @@ buildscript {
         mavenCentral()
         gradlePluginPortal()
     }
-    dependencies.classpath("org.gretty:org.gretty.gradle.plugin:4.1.10")
+    dependencies.classpath("org.gretty:org.gretty.gradle.plugin:5.0.2")
 }
 
 rootProject.name = "teavmSamples"

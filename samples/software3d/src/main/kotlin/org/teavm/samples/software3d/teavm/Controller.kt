@@ -52,23 +52,34 @@ class Controller(
         val scriptName = when (workerType) {
             WorkerType.JS -> "js-worker.js"
             WorkerType.WEBASSEMBLY -> "wasm-worker.js"
-            WorkerType.KOTLIN_JS -> "kjs/software3d.js"
         }
+        var remainingWorkers = tasks
         workers = (0 until tasks).map { index ->
             Worker(scriptName).apply {
-                postMessage(JSObjects.createWithoutProto<JSMapLike<JSObject>>().apply {
-                    set("type", JSString.valueOf("init"))
-                    set("width", JSNumber.valueOf(width))
-                    set("height", JSNumber.valueOf(height))
-                    set("step", JSNumber.valueOf(tasks))
-                    set("offset", JSNumber.valueOf(index))
-                })
                 onMessage { event ->
-                    if (index < workers.size && workers[index] == event.target) {
-                        val data = event.data as JSMapLike<*>
-                        val buffer = data["data"] as ArrayBuffer
-                        onRenderComplete(index, buffer)
-                        performanceMeasureByWorker[index].reportFrame((data["time"] as JSNumber).intValue().toLong())
+                    val data = event.data as JSMapLike<*>
+                    val type = (data["type"] as JSString).stringValue()
+                    when (type) {
+                        "ready" -> {
+                            postMessage(JSObjects.createWithoutProto<JSMapLike<JSObject>>().apply {
+                                set("type", JSString.valueOf("init"))
+                                set("width", JSNumber.valueOf(width))
+                                set("height", JSNumber.valueOf(height))
+                                set("step", JSNumber.valueOf(tasks))
+                                set("offset", JSNumber.valueOf(index))
+                            })
+                            if (--remainingWorkers == 0) {
+                                renderFrame()
+                            }
+                        }
+                        "frame" -> {
+                            if (index < workers.size && workers[index] == event.target) {
+                                val buffer = data["data"] as ArrayBuffer
+                                onRenderComplete(index, buffer)
+                                performanceMeasureByWorker[index].reportFrame(
+                                    (data["time"] as JSNumber).intValue().toLong())
+                            }
+                        }
                     }
                 }
             }
@@ -76,7 +87,6 @@ class Controller(
         performanceMeasureByWorker = (0 until tasks).map { index ->
             PerformanceMeasure(100000) { onPerformance(index, it) }
         }
-        renderFrame()
     }
 
     private fun stopRendering() {

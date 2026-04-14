@@ -27,7 +27,7 @@ private const val SCENE_HEIGHT = 768
 
 fun main(args: Array<out String>) {
     if (args.size == 1 && args[0] == "worker") {
-        worker()
+        worker(true)
     } else {
         runController()
     }
@@ -81,7 +81,6 @@ fun runController() {
     workerSelector.addEventListener("change") {
         val newValue = when (workerSelector.value) {
             "webassembly" -> WorkerType.WEBASSEMBLY
-            "kjs" -> WorkerType.KOTLIN_JS
             else -> WorkerType.JS
         }
         if (workerType != newValue) {

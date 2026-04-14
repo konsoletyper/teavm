@@ -19,13 +19,14 @@ package org.teavm.samples.software3d.teavm
 import org.teavm.jso.JSObject
 import org.teavm.jso.browser.Window
 import org.teavm.jso.core.*
+import org.teavm.jso.typedarrays.Int32Array
 import org.teavm.samples.software3d.geometry.Matrix
 import org.teavm.samples.software3d.rasterization.Raster
 import org.teavm.samples.software3d.rendering.Renderer
 import org.teavm.samples.software3d.scenes.geometry
 
-fun worker() {
-    val worker = RenderWorker()
+fun worker(flipBuffer: Boolean) {
+    val worker = RenderWorker(flipBuffer)
     Window.worker().onMessage {
         val dataJson = it.data as JSMapLike<*>
         when ((dataJson["type"] as JSString).stringValue()) {
@@ -34,9 +35,12 @@ fun worker() {
             "stop" -> Window.worker().close()
         }
     }
+    Window.worker().postMessage(JSObjects.createWithoutProto<JSMapLike<JSObject>>().apply {
+        set("type", JSString.valueOf("ready"))
+    })
 }
 
-class RenderWorker {
+class RenderWorker(private val flipBuffer: Boolean) {
     private lateinit var raster: Raster
     private lateinit var renderer: Renderer
     private lateinit var updater: (Double) -> Unit
@@ -44,6 +48,7 @@ class RenderWorker {
     private var height: Int = 0
 
     fun init(params: JSMapLike<*>) {
+        println("Worker initialized")
         val (scene, updaterF) = geometry()
         width = (params["width"] as JSNumber).intValue()
         height = (params["height"] as JSNumber).intValue()
@@ -59,13 +64,15 @@ class RenderWorker {
     }
 
     fun renderFrame(params: JSMapLike<*>) {
+        println("Rendering frame")
         val time = (params["time"] as JSNumber).doubleValue()
         val perfStart = System.nanoTime()
         updater(time)
         renderer.render()
         val perfEnd = System.nanoTime()
-        val buffer = extractBuffer(raster.flip())
+        val buffer = Int32Array.copyFromJavaArray(if (flipBuffer) raster.flip() else raster.color).buffer
         Window.worker().postMessage(JSObjects.createWithoutProto<JSMapLike<JSObject>>().apply {
+            set("type", JSString.valueOf("frame"))
             set("data", buffer)
             set("time", JSNumber.valueOf((perfEnd - perfStart).toInt()))
         }, JSArray.of(buffer))

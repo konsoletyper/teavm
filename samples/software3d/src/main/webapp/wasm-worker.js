@@ -14,54 +14,12 @@
  *  limitations under the License.
  */
 
-importScripts("wasm/software3d.wasm-runtime.js");
-
-let instance = null;
-let pendingInstanceFunctions = [];
-
-addEventListener("message", e => {
-    let data = e.data
-    switch (data.type) {
-        case "init":
-            pendingInstanceFunctions.push(() => {
-                instance.exports.initWorker(data.width, data.height, data.step, data.offset)
-            });
-            runPendingFunctions();
-            break;
-        case "frame":
-            pendingInstanceFunctions.push(() => {
-                instance.exports.renderFrame(data.time);
-            });
-            runPendingFunctions();
-            break;
-        case "stop":
-            self.close();
-            break;
-    }
-});
-
-TeaVM.wasm.load("wasm/software3d.wasm", {
-    installImports(o, controller) {
-        o.renderer = {
-            result(data, size, time) {
-                let buffer = controller.instance.exports.memory.buffer.slice(data, data + size);
-                self.postMessage({ data: buffer, time: time });
-            }
-        }
-    },
-}).then(teavm => {
-    teavm.main([]);
-    instance = teavm.instance;
-    runPendingFunctions();
-});
+importScripts("wasm-gc/software3d.wasm-runtime.js");
 
 
-function runPendingFunctions() {
-    if (instance === null) {
-        return;
-    }
-    for (let f of pendingInstanceFunctions) {
-        f();
-    }
-    pendingInstanceFunctions = [];
+async function loadModule() {
+    let teavm = await TeaVM.wasmGC.load("wasm-gc/software3d.wasm");
+    teavm.exports.initWorker();
 }
+
+loadModule();

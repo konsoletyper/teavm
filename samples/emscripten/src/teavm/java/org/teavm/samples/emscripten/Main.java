@@ -19,7 +19,10 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import org.teavm.interop.Import;
 
-public class Main {
+public final class Main {
+    private Main() {
+    }
+
     public static void main(String[] args) {
         var buffer = ByteBuffer.allocateDirect(32).asIntBuffer();
         buffer.put(0, 23);

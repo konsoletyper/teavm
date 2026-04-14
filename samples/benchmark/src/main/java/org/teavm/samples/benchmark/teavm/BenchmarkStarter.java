@@ -36,7 +36,7 @@ public final class BenchmarkStarter {
     private static HTMLCanvasElement canvas = (HTMLCanvasElement) document.getElementById("benchmark-canvas");
     private static HTMLElement resultTableBody = document.getElementById("result-table-body");
     private static HTMLInputElement displayAnimationCheckbox =
-            document.getElementById("display-animation-checkbox").cast();
+            (HTMLInputElement) document.getElementById("display-animation-checkbox");
     private static HTMLElement averageTime = document.getElementById("average-time");
     private static Scene scene = new Scene();
     private static int currentSecond;

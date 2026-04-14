@@ -29,6 +29,9 @@ import org.teavm.jso.typedarrays.Atomics;
 import org.teavm.jso.typedarrays.Int32Array;
 
 public class Main {
+    private Main() {
+    }
+
     private static final IntBuffer buffer = ByteBuffer.allocateDirect(8).order(ByteOrder.nativeOrder()).asIntBuffer();
     private static final Int32Array jsBuffer = Int32Array.fromJavaBuffer(buffer);
     private static int lastSentValue;

@@ -16,9 +16,7 @@
 
 package org.teavm.samples.software3d.teavm
 
-import org.teavm.jso.JSBody
-import org.teavm.jso.JSByRef
-import org.teavm.jso.typedarrays.ArrayBuffer
-
-@JSBody(params = ["data"], script = "return data.buffer;")
-external fun extractBuffer(@JSByRef data: IntArray): ArrayBuffer
+enum class WorkerType {
+    JS,
+    WEBASSEMBLY
+}
