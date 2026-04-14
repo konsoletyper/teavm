@@ -19,7 +19,6 @@ import java.lang.reflect.Array;
 import java.util.ServiceLoader;
 import org.teavm.backend.c.TeaVMCHost;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
-import org.teavm.backend.wasm.TeaVMWasmHost;
 import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.classlib.impl.currency.CountriesGenerator;
 import org.teavm.classlib.impl.currency.CurrenciesGenerator;
@@ -87,11 +86,6 @@ public class JCLPlugin implements TeaVMPlugin {
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
                 cHost.addGenerator(new ServiceLoaderCSupport());
-            }
-
-            var wasmHost = host.getExtension(TeaVMWasmHost.class);
-            if (wasmHost != null) {
-                wasmHost.add(new ServiceLoaderWasmSupport());
             }
 
             var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
@@ -167,11 +161,6 @@ public class JCLPlugin implements TeaVMPlugin {
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
                 cHost.addIntrinsic(context -> new DateTimeZoneProviderIntrinsic(context.getProperties()));
-            }
-
-            TeaVMWasmHost wasmHost = host.getExtension(TeaVMWasmHost.class);
-            if (wasmHost != null) {
-                wasmHost.add(context -> new DateTimeZoneProviderIntrinsic(context.getProperties()));
             }
         }
 

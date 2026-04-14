@@ -18,7 +18,6 @@ package org.teavm.junit;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmGCTarget;
-import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMTarget;
@@ -78,41 +77,6 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         @Override
         public void apply(JavaScriptTarget target) {
             target.setObfuscated(true);
-        }
-    };
-
-    TeaVMTestConfiguration<WasmTarget> WASM_DEFAULT = new TeaVMTestConfiguration<>() {
-        @Override
-        public String getSuffix() {
-            return "";
-        }
-
-        @Override
-        public void apply(TeaVM vm) {
-            vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
-        }
-
-        @Override
-        public void apply(WasmTarget target) {
-            target.setWastEmitted(true);
-            target.setCEmitted(true);
-            target.setDebugging(true);
-        }
-    };
-
-    TeaVMTestConfiguration<WasmTarget> WASM_OPTIMIZED = new TeaVMTestConfiguration<>() {
-        @Override
-        public String getSuffix() {
-            return "optimized";
-        }
-
-        @Override
-        public void apply(TeaVM vm) {
-            vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL);
-        }
-
-        @Override
-        public void apply(WasmTarget target) {
         }
     };
 

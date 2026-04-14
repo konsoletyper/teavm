@@ -22,12 +22,8 @@ import org.teavm.backend.c.TeaVMCHost;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
-import org.teavm.backend.wasm.TeaVMWasmHost;
 import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
-import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.interop.Async;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.ClassReader;
@@ -84,11 +80,6 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
         }
 
         if (!isBootstrap()) {
-            var wasmHost = host.getExtension(TeaVMWasmHost.class);
-            if (wasmHost != null) {
-                installWasm(host, wasmHost);
-            }
-
             var cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
                 installC(host, cHost);
@@ -107,29 +98,6 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
         }
 
         host.registerService(MetadataRegistration.class, this);
-    }
-
-    private void installWasm(TeaVMHost host, TeaVMWasmHost wasmHost) {
-        host.add(metadataTransformer);
-        host.add(new StringAmplifierTransformer());
-        host.add(new ResourceLowLevelTransformer());
-        metadataGeneratorConsumers.add((constructor, method, generator) -> {
-            wasmHost.add(ctx -> new MetadataIntrinsic(ctx.getClassSource(), ctx.getClassLoader(),
-                    ctx.getServices(), ctx.getProperties(), constructor, method, generator));
-        });
-        wasmHost.add(ctx -> new ResourceReadIntrinsic(ctx.getClassSource()));
-
-        wasmHost.add(ctx -> new WasmIntrinsic() {
-            @Override
-            public boolean isApplicable(MethodReference methodReference) {
-                return methodReference.getClassName().equals(StringAmplifier.class.getName());
-            }
-
-            @Override
-            public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
-                return manager.generate(invocation.getArguments().get(0));
-            }
-        });
     }
 
     private void installC(TeaVMHost host, TeaVMCHost cHost) {

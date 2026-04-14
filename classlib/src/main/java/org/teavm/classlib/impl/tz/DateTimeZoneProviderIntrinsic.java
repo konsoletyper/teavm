@@ -19,13 +19,9 @@ import java.util.Properties;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
-import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.model.MethodReference;
 
-public class DateTimeZoneProviderIntrinsic implements Intrinsic, WasmIntrinsic {
+public class DateTimeZoneProviderIntrinsic implements Intrinsic {
     private Properties properties;
 
     public DateTimeZoneProviderIntrinsic(Properties properties) {
@@ -47,19 +43,6 @@ public class DateTimeZoneProviderIntrinsic implements Intrinsic, WasmIntrinsic {
         }
     }
 
-    @Override
-    public boolean isApplicable(MethodReference methodReference) {
-        if (!methodReference.getClassName().equals(DateTimeZoneProvider.class.getName())) {
-            return false;
-        }
-
-        switch (methodReference.getName()) {
-            case "timeZoneDetectionEnabled":
-                return true;
-            default:
-                return false;
-        }
-    }
 
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
@@ -73,18 +56,6 @@ public class DateTimeZoneProviderIntrinsic implements Intrinsic, WasmIntrinsic {
                 context.includes().includePath("time.h");
                 context.writer().print("teavm_timeZoneOffset()");
                 break;
-        }
-    }
-
-    @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
-        switch (invocation.getMethod().getName()) {
-            case "timeZoneDetectionEnabled": {
-                boolean enabled = properties.getProperty("java.util.TimeZone.autodetect", "false").equals("true");
-                return new WasmInt32Constant(enabled ? 1 : 0);
-            }
-            default:
-                throw new AssertionError();
         }
     }
 }

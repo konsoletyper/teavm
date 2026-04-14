@@ -22,6 +22,8 @@ import org.teavm.model.ValueType;
 import org.teavm.model.util.VariableType;
 
 public final class WasmGeneratorUtil {
+    public static final int PAGE_SIZE = 1 << 16;
+
     private WasmGeneratorUtil() {
     }
 
@@ -74,5 +76,32 @@ public final class WasmGeneratorUtil {
             default:
                 return WasmType.INT32;
         }
+    }
+
+    public static int getNativeTypeSize(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    return 1;
+                case SHORT:
+                case CHARACTER:
+                    return 2;
+                case INTEGER:
+                case FLOAT:
+                    return 4;
+                case LONG:
+                case DOUBLE:
+                    return 8;
+            }
+        }
+        return 4;
+    }
+
+    public static int align(int base, int alignment) {
+        if (base == 0) {
+            return 0;
+        }
+        return ((base - 1) / alignment + 1) * alignment;
     }
 }

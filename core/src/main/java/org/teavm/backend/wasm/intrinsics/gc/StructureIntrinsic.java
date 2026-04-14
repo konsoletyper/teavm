@@ -17,7 +17,7 @@ package org.teavm.backend.wasm.intrinsics.gc;
 
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.generate.WasmClassGenerator;
+import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
@@ -43,7 +43,7 @@ public class StructureIntrinsic implements WasmGCIntrinsic {
                 var className = ((ValueType.Object) type).getClassName();
                 int size = context.classInfoProvider().getHeapSize(className);
                 int alignment = context.classInfoProvider().getHeapAlignment(className);
-                size = WasmClassGenerator.align(size, alignment);
+                size = WasmGeneratorUtil.align(size, alignment);
 
                 offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL, offset,
                         new WasmInt32Constant(size));

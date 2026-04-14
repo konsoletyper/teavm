@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
-import org.teavm.backend.wasm.generate.WasmClassGenerator;
+import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
@@ -74,7 +74,7 @@ public class AddressIntrinsic implements WasmGCIntrinsic {
                     var className = ((ValueType.Object) type).getClassName();
                     int size = context.classInfoProvider().getHeapSize(className);
                     int alignment = context.classInfoProvider().getHeapAlignment(className);
-                    size = WasmClassGenerator.align(size, alignment);
+                    size = WasmGeneratorUtil.align(size, alignment);
 
                     offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL, offset,
                             new WasmInt32Constant(size));
@@ -184,9 +184,5 @@ public class AddressIntrinsic implements WasmGCIntrinsic {
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());
         }
-    }
-
-    private static int getAlignment(ValueType type) {
-        return WasmClassGenerator.getTypeSize(type);
     }
 }

@@ -16,7 +16,7 @@
 package org.teavm.backend.wasm.intrinsics.gc;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.WasmHeap;
+import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
@@ -39,14 +39,14 @@ public class HeapIntrinsic implements WasmGCIntrinsic {
         WasmExpression pages = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
                 bytes, new WasmInt32Constant(1));
         pages = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.DIV_UNSIGNED,
-                pages, new WasmInt32Constant(WasmHeap.PAGE_SIZE));
+                pages, new WasmInt32Constant(WasmGeneratorUtil.PAGE_SIZE));
         pages = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
                 pages, new WasmInt32Constant(1));
         block.getBody().add(new WasmSetLocal(pagesVar, pages));
         var grow = new WasmMemoryGrow(new WasmGetLocal(pagesVar));
         block.getBody().add(new WasmDrop(grow));
         block.getBody().add(new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL,
-                new WasmGetLocal(pagesVar), new WasmInt32Constant(WasmHeap.PAGE_SIZE)));
+                new WasmGetLocal(pagesVar), new WasmInt32Constant(WasmGeneratorUtil.PAGE_SIZE)));
         context.tempVars().release(pagesVar);
         return block;
     }

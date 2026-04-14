@@ -149,63 +149,7 @@ public final class WasmRuntime {
     }
 
     @Unmanaged
-    public static void printString(String s) {
-        WasmSupport.printString(s);
-    }
-
-    @Unmanaged
-    public static void printInt(int i) {
-        WasmSupport.printInt(i);
-    }
-
-    @Unmanaged
-    public static void printOutOfMemory() {
-        WasmSupport.printOutOfMemory();
-    }
-
-    @Unmanaged
-    public static void fillZero(Address address, int count) {
-        fill(address, (byte) 0, count);
-    }
-
-    @Unmanaged
     public static void fill(Address address, byte value, int count) {
-    }
-
-    @Unmanaged
-    public static Address allocStack(int size) {
-        Address stack = WasmHeap.stack;
-        Address result = stack.add(4);
-        stack = result.add((size << 2) + 4);
-        stack.putInt(size);
-        WasmHeap.stack = stack;
-        return result;
-    }
-
-    @Unmanaged
-    public static Address getStackTop() {
-        return WasmHeap.stack != WasmHeap.stackAddress ? WasmHeap.stack : null;
-    }
-
-    @Unmanaged
-    public static Address getNextStackFrame(Address stackFrame) {
-        int size = stackFrame.getInt() + 2;
-        Address result = stackFrame.add(-size * 4);
-        if (result == WasmHeap.stackAddress) {
-            result = null;
-        }
-        return result;
-    }
-
-    @Unmanaged
-    public static int getStackRootCount(Address stackFrame) {
-        return stackFrame.getInt();
-    }
-
-    @Unmanaged
-    public static Address getStackRootPointer(Address stackFrame) {
-        int size = stackFrame.getInt();
-        return stackFrame.add(-size * 4);
     }
 
     @Unmanaged

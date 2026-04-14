@@ -40,6 +40,7 @@ import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.backend.wasm.gc.WasmGCClassConsumer;
 import org.teavm.backend.wasm.gc.WasmGCClassConsumerContext;
 import org.teavm.backend.wasm.gc.WasmGCDependencies;
+import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
@@ -497,7 +498,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             memorySize += bufferHeapMinSize;
         }
 
-        var pages = (memorySize - 1) / WasmHeap.PAGE_SIZE + 1;
+        var pages = (memorySize - 1) / WasmGeneratorUtil.PAGE_SIZE + 1;
         module.setMinMemorySize(pages);
         module.setMaxMemorySize(32768);
     }

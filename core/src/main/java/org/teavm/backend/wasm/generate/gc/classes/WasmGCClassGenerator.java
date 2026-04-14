@@ -35,7 +35,7 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTable;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableEntry;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
-import org.teavm.backend.wasm.generate.WasmClassGenerator;
+import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.reflection.ReflectionTypes;
@@ -1335,11 +1335,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 if (field.hasModifier(ElementModifier.STATIC)) {
                     continue;
                 }
-                var size = WasmClassGenerator.getTypeSize(field.getType());
+                var size = WasmGeneratorUtil.getNativeTypeSize(field.getType());
                 if (offset == 0) {
                     alignment = size;
                 }
-                offset = WasmClassGenerator.align(offset, size);
+                offset = WasmGeneratorUtil.align(offset, size);
                 offsets.put(field.getName(), offset);
                 offset += size;
             }
@@ -1922,4 +1922,5 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 value
         );
     }
+
 }
