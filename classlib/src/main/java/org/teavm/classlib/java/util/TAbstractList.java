@@ -60,7 +60,7 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
                 removeIndex = -1;
             }
             private void checkConcurrentModification() {
-                if (modCount < TAbstractList.this.modCount) {
+                if (modCount != TAbstractList.this.modCount) {
                     throw new TConcurrentModificationException();
                 }
             }
@@ -255,7 +255,7 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
             j = -1;
         }
         private void checkConcurrentModification() {
-            if (lastModCount < modCount) {
+            if (lastModCount != modCount) {
                 throw new TConcurrentModificationException();
             }
         }

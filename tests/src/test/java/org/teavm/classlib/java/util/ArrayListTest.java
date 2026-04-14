@@ -289,7 +289,35 @@ public class ArrayListTest {
         lit.add("x");
         assertEquals(List.of("d", "x", "a"), list);
     }
-
+    
+    @Test
+    public void concurrentModificationOverflow() {
+        var list = new ArrayList<>(List.of("a", "b"));
+        var iter = list.iterator();
+        var listIter = list.listIterator();
+        iter.next();
+        listIter.next();
+        
+        var count = 1 + (1 << 30);
+        for (var i = 0; i < count; ++i) {
+            list.add("c");
+            list.removeLast();
+        }
+        
+        try {
+            iter.next();
+            fail("Expected concurrent modification");
+        } catch (ConcurrentModificationException e) {
+            // expected
+        }
+        try {
+            listIter.next();
+            fail("Expected concurrent modification");
+        } catch (ConcurrentModificationException e) {
+            // expected
+        }
+    }
+    
     @Test
     public void sequenceCollectionMethodsOnEmpty() {
         var empty = new ArrayList<>();
