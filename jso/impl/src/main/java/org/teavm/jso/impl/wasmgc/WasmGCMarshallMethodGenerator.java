@@ -15,8 +15,8 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
-import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorContext;
+import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
+import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;

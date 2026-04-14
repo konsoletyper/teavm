@@ -16,10 +16,10 @@
 package org.teavm.jso.impl.wasmgc;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
-import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;

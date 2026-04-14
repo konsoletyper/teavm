@@ -15,7 +15,7 @@
  */
 package org.teavm.vm;
 
-import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
+import org.teavm.backend.wasm.TeaVMWasmGCHost;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;

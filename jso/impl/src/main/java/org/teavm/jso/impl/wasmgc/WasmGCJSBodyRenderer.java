@@ -15,9 +15,9 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactoryContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactory;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactoryContext;
 import org.teavm.jso.impl.JSBodyRepository;
 import org.teavm.model.MethodReference;
 

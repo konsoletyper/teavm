@@ -15,10 +15,10 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapper;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactoryContext;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.generate.classes.WasmGCCustomTypeMapper;
+import org.teavm.backend.wasm.generate.classes.WasmGCCustomTypeMapperFactory;
+import org.teavm.backend.wasm.generate.classes.WasmGCCustomTypeMapperFactoryContext;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.jso.impl.JSTypeHelper;
 import org.teavm.model.ValueType;

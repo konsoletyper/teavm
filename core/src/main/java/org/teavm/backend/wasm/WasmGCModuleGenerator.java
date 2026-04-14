@@ -15,7 +15,7 @@
  */
 package org.teavm.backend.wasm;
 
-import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
+import org.teavm.backend.wasm.generate.WasmGCDeclarationsGenerator;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.expression.WasmCall;

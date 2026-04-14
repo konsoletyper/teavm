@@ -19,7 +19,7 @@ import java.lang.reflect.Array;
 import java.util.ServiceLoader;
 import org.teavm.backend.c.TeaVMCHost;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
-import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
+import org.teavm.backend.wasm.TeaVMWasmGCHost;
 import org.teavm.classlib.impl.currency.CountriesGenerator;
 import org.teavm.classlib.impl.currency.CurrenciesGenerator;
 import org.teavm.classlib.impl.currency.CurrencyHelper;

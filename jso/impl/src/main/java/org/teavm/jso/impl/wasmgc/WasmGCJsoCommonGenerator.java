@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.teavm.backend.javascript.rendering.AstWriter;
-import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
+import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;

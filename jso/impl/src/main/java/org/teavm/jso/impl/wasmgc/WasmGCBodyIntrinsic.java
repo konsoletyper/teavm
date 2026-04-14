@@ -16,8 +16,8 @@
 package org.teavm.jso.impl.wasmgc;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmDrop;

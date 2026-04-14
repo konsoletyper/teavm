@@ -15,9 +15,9 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
-import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorFactory;
-import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorFactoryContext;
+import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
+import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactory;
+import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactoryContext;
 import org.teavm.jso.impl.JSMethods;
 import org.teavm.model.MethodReference;
 

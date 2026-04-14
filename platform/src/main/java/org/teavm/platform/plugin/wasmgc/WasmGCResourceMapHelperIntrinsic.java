@@ -16,8 +16,8 @@
 package org.teavm.platform.plugin.wasmgc;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;

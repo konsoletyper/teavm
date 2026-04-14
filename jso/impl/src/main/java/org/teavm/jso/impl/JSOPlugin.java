@@ -21,7 +21,7 @@ import static org.teavm.jso.impl.JSMethods.JS_WRAPPER;
 import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
 import static org.teavm.jso.impl.JSMethods.OBJECT;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
-import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
+import org.teavm.backend.wasm.TeaVMWasmGCHost;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.jso.impl.wasmgc.WasmGCJso;
 import org.teavm.model.MethodReference;

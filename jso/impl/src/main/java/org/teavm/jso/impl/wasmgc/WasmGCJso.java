@@ -28,7 +28,7 @@ import static org.teavm.jso.impl.JSMethods.THROW_CCE_IF_FALSE;
 import static org.teavm.jso.impl.JSMethods.WASM_GC_JS_RUNTIME_CLASS;
 import static org.teavm.jso.impl.JSMethods.WRAP;
 import static org.teavm.jso.impl.JSMethods.WRAP_STRING;
-import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
+import org.teavm.backend.wasm.TeaVMWasmGCHost;
 import org.teavm.jso.impl.JSBodyRepository;
 import org.teavm.jso.impl.JSClassObjectToExpose;
 import org.teavm.model.MethodReference;
