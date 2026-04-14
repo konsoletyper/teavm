@@ -25,22 +25,24 @@
 void teavm_initFiber() {
 
     #if TEAVM_UNIX
-        setlocale (LC_ALL, "");
+        #ifndef __EMSCRIPTEN__
+            setlocale (LC_ALL, "");
 
-        struct sigaction sigact;
-        sigact.sa_flags = 0;
-        sigact.sa_handler = NULL;
-        sigaction(SIGRTMIN, &sigact, NULL);
+            struct sigaction sigact;
+            sigact.sa_flags = 0;
+            sigact.sa_handler = NULL;
+            sigaction(SIGRTMIN, &sigact, NULL);
 
-        sigset_t signals;
-        sigemptyset(&signals);
-        sigaddset(&signals, SIGRTMIN);
-        sigprocmask(SIG_BLOCK, &signals, NULL);
+            sigset_t signals;
+            sigemptyset(&signals);
+            sigaddset(&signals, SIGRTMIN);
+            sigprocmask(SIG_BLOCK, &signals, NULL);
 
-        struct sigevent sev;
-        sev.sigev_notify = SIGEV_SIGNAL;
-        sev.sigev_signo = SIGRTMIN;
-        timer_create(CLOCK_REALTIME, &sev, &teavm_queueTimer);
+            struct sigevent sev;
+            sev.sigev_notify = SIGEV_SIGNAL;
+            sev.sigev_signo = SIGRTMIN;
+            timer_create(CLOCK_REALTIME, &sev, &teavm_queueTimer);
+        #endif
     #endif
 
     #if TEAVM_WINDOWS
@@ -66,24 +68,33 @@ void teavm_initFiber() {
 
 
 #if TEAVM_UNIX
-    void teavm_waitFor(int64_t timeout) {
-        struct itimerspec its = {0};
-        its.it_value.tv_sec = timeout / 1000;
-        its.it_value.tv_nsec = (timeout % 1000) * 1000000L;
-        timer_settime(teavm_queueTimer, 0, &its, NULL);
+    #ifdef __EMSCRIPTEN__
+        void teavm_waitFor(int64_t timeout) {
+            abort();
+        }
+        void teavm_interrupt() {
+            abort();
+        }
+    #else
+        void teavm_waitFor(int64_t timeout) {
+            struct itimerspec its = {0};
+            its.it_value.tv_sec = timeout / 1000;
+            its.it_value.tv_nsec = (timeout % 1000) * 1000000L;
+            timer_settime(teavm_queueTimer, 0, &its, NULL);
 
-        sigset_t signals;
-        sigemptyset(&signals);
-        sigaddset(&signals, SIGRTMIN);
-        siginfo_t actualSignal;
-        sigwaitinfo(&signals, &actualSignal);
-    }
+            sigset_t signals;
+            sigemptyset(&signals);
+            sigaddset(&signals, SIGRTMIN);
+            siginfo_t actualSignal;
+            sigwaitinfo(&signals, &actualSignal);
+        }
 
-    void teavm_interrupt() {
-        struct itimerspec its = {0};
-        timer_settime(teavm_queueTimer, 0, &its, NULL);
-        raise(SIGRTMIN);
-    }
+        void teavm_interrupt() {
+            struct itimerspec its = {0};
+            timer_settime(teavm_queueTimer, 0, &its, NULL);
+            raise(SIGRTMIN);
+        }
+    #endif
 #endif
 
 #if TEAVM_WINDOWS

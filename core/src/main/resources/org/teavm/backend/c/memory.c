@@ -35,7 +35,19 @@ int64_t teavm_gc_minAvailableBytes;
 int64_t teavm_gc_maxAvailableBytes;
 static int64_t teavm_gc_pageSize;
 
-#if TEAVM_UNIX
+#if defined(__EMSCRIPTEN__)
+    static void* teavm_virtualAlloc(int64_t size) {
+        return malloc(size);
+    }
+    static void teavm_virtualCommit(void* address, int64_t size) {
+    }
+    static void teavm_virtualUncommit(void* address, int64_t size) {
+        mprotect(address, size, PROT_NONE);
+    }
+    static int64_t teavm_pageSize() {
+        return 1 << 16;
+    }
+#elif TEAVM_UNIX
     static void* teavm_virtualAlloc(int64_t size) {
         return mmap(NULL, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
     }
