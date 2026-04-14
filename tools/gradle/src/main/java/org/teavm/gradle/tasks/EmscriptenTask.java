@@ -27,7 +27,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.process.ExecOperations;
 
@@ -35,10 +34,10 @@ public abstract class EmscriptenTask extends DefaultTask {
     @InputFiles
     public abstract ConfigurableFileCollection getInputFiles();
 
-    @OutputDirectory
+    @Internal
     public abstract DirectoryProperty getOutputDir();
 
-    @Input
+    @Internal
     public abstract Property<String> getOutputName();
 
     @Internal
@@ -52,6 +51,10 @@ public abstract class EmscriptenTask extends DefaultTask {
 
     @Inject
     protected abstract ExecOperations getExecOperations();
+
+    public EmscriptenTask() {
+        getOutputs().file(getOutputDir().map(dir -> dir.file(getOutputName().get())));
+    }
 
     @TaskAction
     public void compile() {

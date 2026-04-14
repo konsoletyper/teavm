@@ -55,13 +55,7 @@ public abstract class DisasmWebAssemblyTask extends DefaultTask {
                 ? new DisassemblyHTMLWriter(writer)
                 : new DisassemblyTextWriter(writer);
         disassemblyWriter.setWithAddress(true);
-        if (html) {
-            disassemblyWriter.write("<html><body><pre>").eol();
-        }
         var disassembler = new Disassembler(disassemblyWriter);
         disassembler.disassemble(bytes);
-        if (html) {
-            disassemblyWriter.write("</pre></body></html>").eol();
-        }
     }
 }
