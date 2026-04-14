@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
@@ -323,5 +324,19 @@ public class LinkedListTest {
         LinkedList<String> ll = new LinkedList<>(Arrays.asList("a", "b", "c", "d"));
         ll.addAll(2, new LinkedList<>(ll));
         assertArrayEquals(new String[] {"a", "b", "a", "b", "c", "d", "c", "d"}, ll.toArray());
+    }
+    
+    @Test
+    public void cloneSupported() {
+        var ll = new LinkedList<>(Arrays.asList("a", "b", "c", "d"));
+        @SuppressWarnings("unchecked") 
+        var clone = (LinkedList<String>) ll.clone();
+        assertEquals(ll, clone);
+        assertEquals(4, clone.size());
+        assertNotSame(ll, clone);
+        
+        ll.removeFirst();
+        assertEquals(4, clone.size());
+        assertEquals(Arrays.asList("a", "b", "c", "d"), clone);
     }
 }

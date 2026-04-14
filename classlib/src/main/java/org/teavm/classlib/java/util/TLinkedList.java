@@ -18,10 +18,11 @@ package org.teavm.classlib.java.util;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 import org.teavm.classlib.java.util.stream.TStream;
 
-public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque<E> {
+public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque<E>, TCloneable {
     static class Entry<E> {
         E item;
         Entry<E> next;
@@ -451,6 +452,24 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
             version = modCount;
             currentEntry = null;
         }
+    }
+
+    @Override
+    public Object clone() {
+        var result = new TLinkedList<>();
+        result.size = size;
+        for (var entry = firstEntry; entry != null; entry = entry.next) {
+            var entryCopy = new Entry<>();
+            entryCopy.item = entry.item;
+            entryCopy.previous = result.lastEntry;
+            if (result.lastEntry != null) {
+                result.lastEntry.next = entryCopy;
+            } else {
+                result.firstEntry = entryCopy;
+            }
+            result.lastEntry = entryCopy;
+        }
+        return result;
     }
 
     private static class ReversedLinkedList<E> extends TLinkedList<E> {
