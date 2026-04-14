@@ -21,6 +21,8 @@ public final class Platforms {
 
     public static final String JAVASCRIPT = "javascript";
     public static final String WEBASSEMBLY = "webassembly";
+    public static final String WEBASSEMBLY_BROWSER = "webassembly-browser";
+    public static final String WEBASSEMBLY_WASI = "webassembly-wasi";
     public static final String C = "c";
     public static final String LOW_LEVEL = "low_level";
     public static final String OWN_GC = "own_gc";

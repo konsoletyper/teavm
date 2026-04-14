@@ -120,6 +120,7 @@ import org.teavm.backend.wasm.transformation.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
 import org.teavm.backend.wasm.transformation.WasiFileSystemProviderTransformer;
+import org.teavm.backend.wasm.transformation.WasiSocketProviderTransformer;
 import org.teavm.backend.wasm.transformation.WasiSupportClassTransformer;
 import org.teavm.backend.wasm.transformation.WasmExceptionHandlingTransform;
 import org.teavm.common.ServiceRepository;
@@ -248,6 +249,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         if (runtimeType == WasmRuntimeType.WASI) {
             transformers.add(new WasiSupportClassTransformer());
             transformers.add(new WasiFileSystemProviderTransformer());
+            transformers.add(new WasiSocketProviderTransformer());
         }
         if (exceptionsUsed) {
             transformers.add(new WasmExceptionHandlingTransform());
@@ -1091,7 +1093,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     @Override
     public String[] getPlatformTags() {
-        return new String[] { Platforms.WEBASSEMBLY, Platforms.LOW_LEVEL };
+        return new String[] {
+                Platforms.WEBASSEMBLY,
+                runtimeType == WasmRuntimeType.TEAVM ? Platforms.WEBASSEMBLY_BROWSER : Platforms.WEBASSEMBLY_WASI,
+                Platforms.LOW_LEVEL
+        };
     }
 
     @Override
