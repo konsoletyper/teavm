@@ -47,6 +47,7 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCatch;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
@@ -437,7 +438,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         }
 
         Supplier<WasmExpression> obj = method.hasModifier(ElementModifier.STATIC)
-                ? () -> new WasmGetGlobal(context.classInfoProvider().getClassInfo(method.getOwnerName()).getPointer())
+                ? () -> generateClassLiteral(method.getOwnerName())
                 : () -> new WasmGetLocal(function.getLocalVariables().get(0));
         visitor.monitorEnter(obj.get(), null, target);
 
@@ -465,6 +466,12 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         visitor.setReturnBlock(returnBlock);
 
         return tryCatch.getBody();
+    }
+
+    private WasmExpression generateClassLiteral(String className) {
+        var arg = context.classInfoProvider().getClassInfo(className).getPointer();
+        var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+        return new WasmCall(classInfoType.classObjectFunction(), new WasmGetGlobal(arg));
     }
 
     private void eliminateMultipleNullConstantUsages(Program program) {
