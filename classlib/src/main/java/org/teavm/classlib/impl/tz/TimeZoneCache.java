@@ -23,16 +23,17 @@ import org.teavm.classlib.impl.CharFlow;
 
 public class TimeZoneCache {
     public void write(OutputStream output, Collection<StorableDateTimeZone> timeZones) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
-        StringBuilder sb = new StringBuilder();
-        for (StorableDateTimeZone timeZone : timeZones) {
-            writer.append(timeZone.getID()).append(' ');
-            timeZone.write(sb);
-            writer.append(sb);
-            sb.setLength(0);
-            writer.append('\n');
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
+            for (StorableDateTimeZone timeZone : timeZones) {
+                writer.append(timeZone.getID()).append(' ');
+                timeZone.write(sb);
+                writer.append(sb);
+                sb.setLength(0);
+                writer.append('\n');
+            }
+            writer.flush();
         }
-        writer.flush();
     }
 
     public Map<String, StorableDateTimeZone> read(InputStream input) throws IOException {
