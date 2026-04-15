@@ -55,6 +55,7 @@ public class TSecureRandom extends TRandom {
     public void reseed() {
     }
 
+    @Override
     protected int next(int bits) {
         int numBytes = (bits + 7) / 8;
         byte[] bytes = new byte[numBytes];

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -32,7 +33,6 @@ import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipPlatform(TestPlatform.WASI)
 public class RandomTest {
     @Test
     public void testDoubles() {
@@ -186,5 +186,35 @@ public class RandomTest {
             }
         }
         assertTrue(Math.abs(positive - negative) < 100);
+    }
+
+    @Test
+    public void intsWithSeed() {
+        var rand = new Random(1);
+        var array = new int[10];
+        for (var i = 0; i < 10; ++i) {
+            array[i] = rand.nextInt();
+        }
+        assertArrayEquals(new int[] { -1155869325, 431529176, 1761283695, 1749940626, 892128508, 155629808,
+                1429008869, -1465154083, -138487339, -1242363800 }, array);
+    }
+
+    @Test
+    public void longsWithSeed() {
+        var rand = new Random(1);
+        var array = new long[10];
+        for (var i = 0; i < 10; ++i) {
+            array[i] = rand.nextLong();
+        }
+        assertArrayEquals(new long[] { -4964420948893066024L, 7564655870752979346L, 3831662765844904176L,
+                6137546356583794141L, -594798593157429144L, 112842269129291794L, -669528114487223426L,
+                -1109287713991315740L, -974081879987450628L, -1160629452687687109L }, array);
+    }
+
+    @Test
+    public void doublesWithSeed() {
+        var rand = new Random(1);
+        assertEquals(0.7308781907032909, rand.nextDouble(), 1e-5);
+        assertEquals(0.41008081149220166, rand.nextDouble(), 1e-5);
     }
 }

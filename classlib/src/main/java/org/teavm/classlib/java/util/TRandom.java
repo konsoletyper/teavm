@@ -27,41 +27,45 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
     /** Whether storedGuassian value is valid */
     private boolean haveStoredGaussian;
 
+    // Could be improved more efficiently for JS backend
+    private long seed;
+
     public TRandom() {
+        this((long) (Math.random() * ((1L << 48)) - 1));
     }
 
     public TRandom(@SuppressWarnings("unused") long seed) {
+        setSeed(seed);
     }
 
     public void setSeed(@SuppressWarnings("unused") long seed) {
+        this.seed = (seed ^ 0x5DEECE66DL) & ((1L << 48) - 1);
     }
 
     @Override
     public int nextInt() {
-        return (int) (0x1.0p+32 * nextDouble() + Integer.MIN_VALUE);
+        return next(32);
     }
 
-    @Override
-    public int nextInt(int n) {
-        if (n <= 0) {
-            throw new IllegalArgumentException();
-        }
-        return (int) (nextDouble() * n);
+    protected int next(int bits) {
+        var newSeed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+        seed = newSeed;
+        return (int) (newSeed >> (48 - bits));
     }
 
     @Override
     public long nextLong() {
-        return ((long) nextInt() << 32) | (nextInt() & 0xFFFFFFFFL);
+        return ((long) nextInt() << 32) + nextInt();
     }
 
     @Override
     public float nextFloat() {
-        return (float) nextDouble();
+        return next(24) * 0x1p-24f;
     }
 
     @Override
     public double nextDouble() {
-        return Math.random();
+        return (((long) next(26) << 27) + next(27)) * 0x1p-53;
     }
 
     /**
