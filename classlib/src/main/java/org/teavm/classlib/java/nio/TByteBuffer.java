@@ -49,12 +49,6 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             result.limit = capacity;
             return result;
         }
-        if (PlatformDetector.isWebAssembly()) {
-            var array = new byte[capacity];
-            var result = new TByteBufferNative(null, array, 0, array, Address.ofData(array), array.length, false);
-            result.limit = capacity;
-            return result;
-        }
         if (PlatformDetector.isWebAssemblyGC()) {
             var addr = Heap.alloc(capacity);
             if (addr == null) {
@@ -80,7 +74,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             result.limit = capacity;
             return result;
         }
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             var array = new byte[capacity];
             var result = new TByteBufferNative(null, array, 0, array, Address.ofData(array), array.length, false);
             result.limit = capacity;
@@ -98,7 +92,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             result.limit = offset + length;
             return result;
         }
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             var result = new TByteBufferNative(null, array, 0, array, Address.ofData(array), array.length, false);
             result.position = offset;
             result.limit = offset + length;

@@ -33,7 +33,7 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
             var array = new short[capacity];
             return new TShortBufferOverTypedArray(0, capacity, false, Int16Array.fromJavaArray(array), array);
         }
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             var array = new short[capacity];
             return new TShortBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
                     capacity, false);
@@ -48,7 +48,7 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
             result.limit = offset + length;
             return result;
         }
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             var result = new TShortBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;

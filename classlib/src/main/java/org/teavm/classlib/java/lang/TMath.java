@@ -16,8 +16,6 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.backend.wasm.WasmRuntime;
-import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
@@ -109,11 +107,7 @@ public final class TMath extends TObject {
     public static native double floor(double a);
 
     public static double pow(double x, double y) {
-        if (PlatformDetector.isWebAssembly()) {
-            return WasmSupport.pow(x, y);
-        } else {
-            return powImpl(x, y);
-        }
+        return powImpl(x, y);
     }
 
     @GeneratedBy(MathNativeGenerator.class)
@@ -355,8 +349,6 @@ public final class TMath extends TObject {
     public static double random() {
         if (PlatformDetector.isC()) {
             return randomC();
-        } else if (PlatformDetector.isWebAssembly()) {
-            return WasmSupport.random();
         } else if (PlatformDetector.isWebAssemblyGC()) {
             return randomWasmGC();
         } else {
@@ -398,8 +390,6 @@ public final class TMath extends TObject {
     public static double min(double a, double b) {
         if (PlatformDetector.isJavaScript()) {
             return minImpl(a, b);
-        } else if (PlatformDetector.isWebAssembly()) {
-            return WasmRuntime.min(a, b);
         }
         if (a != a) {
             return a;
@@ -419,8 +409,6 @@ public final class TMath extends TObject {
     public static double max(double a, double b) {
         if (PlatformDetector.isJavaScript()) {
             return maxImpl(a, b);
-        } else if (PlatformDetector.isWebAssembly()) {
-            return WasmRuntime.max(a, b);
         }
         if (a != a) {
             return a;
@@ -440,8 +428,6 @@ public final class TMath extends TObject {
     public static float min(float a, float b) {
         if (PlatformDetector.isJavaScript()) {
             return minImpl(a, b);
-        } else if (PlatformDetector.isWebAssembly()) {
-            return WasmRuntime.min(a, b);
         }
         if (a != a) {
             return a;
@@ -461,8 +447,6 @@ public final class TMath extends TObject {
     public static float max(float a, float b) {
         if (PlatformDetector.isJavaScript()) {
             return maxImpl(a, b);
-        } else if (PlatformDetector.isWebAssembly()) {
-            return WasmRuntime.max(a, b);
         }
         if (a != a) {
             return a;

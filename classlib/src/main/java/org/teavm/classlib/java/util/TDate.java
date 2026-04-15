@@ -78,7 +78,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native long initDateLowLevel(int year, int month, int date, int hrs, int min, int sec);
 
     @Import(name = "create", module = "teavmDate")
@@ -109,7 +108,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native long initUtcDateLowLevel(int year, int month, int date, int hrs, int min, int sec);
 
     @Import(name = "createFromUTC", module = "teavmDate")
@@ -132,7 +130,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native long parseLowLevel(String s);
 
     @Deprecated
@@ -152,7 +149,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int getYearLowLevel(long date);
 
     @Deprecated
@@ -176,7 +172,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native long setYearLowLevel(long date, int year);
 
     @Deprecated
@@ -193,7 +188,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int getMonthLowLevel(long date);
 
     @Import(name = "getMonth", module = "teavmDate")
@@ -217,7 +211,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native long setMonthLowLevel(long date, int month);
 
     @Import(name = "setMonth", module = "teavmDate")
@@ -237,7 +230,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int getDateLowLevel(long date);
 
     @Import(name = "getDate", module = "teavmDate")
@@ -261,7 +253,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int setDateLowLevel(long target, int date);
 
     @Import(name = "setDate", module = "teavmDate")
@@ -276,7 +267,6 @@ public class TDate implements TComparable<TDate> {
     }
 
     @Import(name = "teavm_date_getDay")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     @Unmanaged
     public static native int getDayLowLevel(long date);
 
@@ -292,7 +282,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int getHoursLowLevel(long date);
 
     @Deprecated
@@ -310,7 +299,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int setHoursLowLevel(long date, int hours);
 
     @Deprecated
@@ -325,7 +313,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int getMinutesLowLevel(long date);
 
     @Deprecated
@@ -343,7 +330,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int setMinutesLowLevel(long date, int minutes);
 
     @Deprecated
@@ -358,7 +344,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int getSecondsLowLevel(long date);
 
     @Deprecated
@@ -376,7 +361,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @Unmanaged
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     private static native int setSecondsLowLevel(long date, int seconds);
 
     public long getTime() {
@@ -419,8 +403,6 @@ public class TDate implements TComparable<TDate> {
     public String toString() {
         if (PlatformDetector.isC()) {
             return toStringC(value);
-        } else if (PlatformDetector.isWebAssembly()) {
-            return toStringWebAssembly(value);
         } else if (PlatformDetector.isWebAssemblyGC()) {
             return JS.unwrapString(toStringWebAssemblyGC(value));
         } else {
@@ -432,9 +414,6 @@ public class TDate implements TComparable<TDate> {
     @NoSideEffects
     @RuntimeInclude("date.h")
     private static native String toStringC(long date);
-
-    @Import(module = "teavm", name = "dateToString")
-    private static native String toStringWebAssembly(double date);
 
     @Import(module = "teavmDate", name = "dateToString")
     private static native JSObject toStringWebAssemblyGC(double date);

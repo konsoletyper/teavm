@@ -27,11 +27,6 @@ public final class PlatformDetector {
         return false;
     }
 
-    @PlatformMarker(Platforms.WEBASSEMBLY)
-    public static boolean isWebAssembly() {
-        return false;
-    }
-
     @PlatformMarker(Platforms.WEBASSEMBLY_GC)
     public static boolean isWebAssemblyGC() {
         return false;

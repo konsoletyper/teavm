@@ -17,9 +17,7 @@ package org.teavm.classlib.impl.console;
 
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
-import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
-import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
@@ -34,8 +32,6 @@ public final class Console {
                 byte b = data[i + off];
                 writeC(b & 0xFF);
             }
-        } else if (PlatformDetector.isWebAssembly()) {
-            WasmSupport.putCharsStderr(Address.ofData(data).add(off), len);
         } else if (PlatformDetector.isWebAssemblyGC()) {
             for (var i = 0; i < len; ++i) {
                 WasmGCSupport.putCharStderr((char) data[off + i]);
@@ -54,8 +50,6 @@ public final class Console {
                 byte b = data[i + off];
                 writeC(b & 0xFF);
             }
-        } else if (PlatformDetector.isWebAssembly()) {
-            WasmSupport.putCharsStdout(Address.ofData(data).add(off), len);
         } else if (PlatformDetector.isWebAssemblyGC()) {
             for (var i = 0; i < len; ++i) {
                 WasmGCSupport.putCharStdout((char) data[off + i]);

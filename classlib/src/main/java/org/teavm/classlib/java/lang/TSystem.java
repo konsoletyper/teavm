@@ -22,7 +22,6 @@ import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.backend.c.runtime.Memory;
 import org.teavm.backend.c.runtime.fs.CFileSystem;
 import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.console.JSStderrPrintStream;
 import org.teavm.classlib.impl.console.JSStdoutPrintStream;
@@ -164,11 +163,7 @@ public final class TSystem extends TObject {
     public static native long currentTimeMillis();
 
     private static long currentTimeMillisLowLevel() {
-        if (PlatformDetector.isWebAssembly()) {
-            return WasmSupport.currentTimeMillis();
-        } else {
-            return currentTimeMillisC();
-        }
+        return currentTimeMillisC();
     }
 
     @Import(name = "teavm_currentTimeMillis")
@@ -284,17 +279,12 @@ public final class TSystem extends TObject {
     }
 
     public static long nanoTime() {
-        if (PlatformDetector.isWebAssembly()) {
-            return (long) (nanoTimeWasm() * 1000000);
-        } else if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isLowLevel()) {
             return nanoTimeLowLevel();
         } else {
             return (long) (Performance.now() * 1000000);
         }
     }
-
-    @Import(module = "teavm", name = "nanoTime")
-    private static native double nanoTimeWasm();
 
     @Import(name = "teavm_currentTimeNano")
     @RuntimeInclude("time.h")

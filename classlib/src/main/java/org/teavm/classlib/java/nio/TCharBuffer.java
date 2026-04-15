@@ -41,7 +41,7 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
             var array = new char[capacity];
             return new TCharBufferOverTypedArray(0, capacity, false, Uint16Array.fromJavaArray(array), array);
         }
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             var array = new char[capacity];
             return new TCharBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
                     capacity, false);
@@ -59,7 +59,7 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
             result.limit = offset + length;
             return result;
         }
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             var result = new TCharBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;

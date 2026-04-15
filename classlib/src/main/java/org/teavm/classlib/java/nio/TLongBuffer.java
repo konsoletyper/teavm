@@ -33,7 +33,7 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
             var array = new long[capacity];
             return new TLongBufferOverTypedArray(0, capacity, false, BigInt64Array.fromJavaArray(array), array);
         }
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             var array = new long[capacity];
             return new TLongBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
                     capacity, false);
@@ -49,7 +49,7 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
             result.limit = offset + length;
             return result;
         }
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             var result = new TLongBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;

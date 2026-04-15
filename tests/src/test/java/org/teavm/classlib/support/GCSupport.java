@@ -34,7 +34,7 @@ public final class GCSupport {
     }
 
     public static void tryToTriggerGC(Reference<?> ref) {
-        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isC()) {
             System.gc();
             return;
         }
