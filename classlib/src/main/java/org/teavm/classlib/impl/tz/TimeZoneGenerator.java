@@ -32,7 +32,7 @@ import org.teavm.platform.metadata.builders.ResourceMapBuilder;
 import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class TimeZoneGenerator implements MetadataGenerator {
-    public static final String TIMEZONE_DB_VERSION = "2025b";
+    public static final String TIMEZONE_DB_VERSION = "2026a";
     public static final String TIMEZONE_DB_PATH = "org/teavm/classlib/impl/tz/tzdata" + TIMEZONE_DB_VERSION + ".zip";
 
     public static void compile(ZoneInfoCompiler compiler, ClassLoader classLoader) {
