@@ -28,6 +28,34 @@ public class TThreadLocalRandom extends TRandom {
     }
 
     @Override
+    public int nextInt() {
+        return (int) (0x1.0p+32 * nextDouble() + Integer.MIN_VALUE);
+    }
+
+    @Override
+    public int nextInt(int n) {
+        if (n <= 0) {
+            throw new IllegalArgumentException();
+        }
+        return (int) (nextDouble() * n);
+    }
+
+    @Override
+    public long nextLong() {
+        return ((long) nextInt() << 32) | (nextInt() & 0xFFFFFFFFL);
+    }
+
+    @Override
+    public float nextFloat() {
+        return (float) nextDouble();
+    }
+
+    @Override
+    public double nextDouble() {
+        return Math.random();
+    }
+
+    @Override
     public void setSeed(long seed) {
         throw new UnsupportedOperationException();
     }
