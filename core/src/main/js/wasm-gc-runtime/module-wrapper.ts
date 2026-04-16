@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,9 +14,4 @@
  *  limitations under the License.
  */
 
-var TeaVM = TeaVM || {};
-TeaVM.wasmGC = TeaVM.wasmGC || (() => {
-    include();
-    return { load, defaults, wrapImport };
-})();
-
+export { load, defaults, wrapImport } from "./runtime";

@@ -1,8 +1,13 @@
 {
   "scripts": {
-    "uglify": "uglifyjs"
+    "uglify": "uglifyjs",
+    "esbuild": "esbuild",
+    "typecheck": "tsc"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
+    "esbuild": "0.28.0",
+    "typescript": "6.0.2",
     "uglify-js": "3.19.3"
   }
 }

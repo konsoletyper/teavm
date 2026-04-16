@@ -48,26 +48,27 @@ dependencies {
 val jsOutputDir = layout.buildDirectory.dir("generated/js")
 val jsOutputPackageDir = jsOutputDir.map { it.dir("org/teavm/backend/wasm") }
 val jsInputDir = layout.projectDirectory.dir("src/main/js/wasm-gc-runtime")
-val jsInput = jsInputDir.file("runtime.js")
 
-fun registerRuntimeTasks(taskName: String, wrapperType: String, outputName: String, module: Boolean) {
-    val generateTask by tasks.register<DefaultTask>("generate${taskName}Runtime") {
+fun registerRuntimeTasks(taskName: String, wrapperName: String, outputName: String, esFormat: String, module: Boolean) {
+    val generateTask by tasks.register<NpmTask>("generate${taskName}Runtime") {
         dependsOn(tasks.npmInstall)
-        val wrapperFile = jsInputDir.file(wrapperType)
-        val runtimeFile = jsInput
+        val wrapperFile = jsInputDir.file("$wrapperName.ts")
         val outputFile = jsOutputPackageDir.map { it.file("$outputName.js") }
-        inputs.files(wrapperFile, runtimeFile)
+        inputs.dir(jsInputDir)
         outputs.file(outputFile)
-        doLast {
-            val wrapper = wrapperFile.asFile.readText()
-            var runtime = runtimeFile.asFile.readText()
-            val startText = "// !BEGINNING!\n"
-            val startIndex = runtime.indexOf(startText)
-            if (startIndex >= 0) {
-                runtime = runtime.substring(startIndex + startText.length)
-            }
-            outputFile.get().asFile.writeText(wrapper.replace("include();", runtime))
-        }
+        npmCommand.addAll("run", "esbuild")
+        args.addAll(provider {
+            listOf(
+                "--",
+                wrapperFile.asFile.absolutePath,
+                "--bundle",
+                "--platform=neutral",
+                "--format=$esFormat",
+                "--target=es2022",
+                "--external:node:*",
+                "--outfile=${outputFile.get().asFile.absolutePath}"
+            )
+        })
     }
 
     val optimizeTask = tasks.register<NpmTask>("optimize${taskName}Runtime") {
@@ -95,8 +96,8 @@ fun registerRuntimeTasks(taskName: String, wrapperType: String, outputName: Stri
     }
 }
 
-registerRuntimeTasks("Simple", "simple-wrapper.js", "wasm-gc-runtime", module = false)
-registerRuntimeTasks("Module", "module-wrapper.js", "wasm-gc-module-runtime", module = true)
+registerRuntimeTasks("Simple", "simple-wrapper", "wasm-gc-runtime", "iife", module = false)
+registerRuntimeTasks("Module", "module-wrapper", "wasm-gc-module-runtime", "esm", module = true)
 
 teavmPublish {
     artifactId = "teavm-core"

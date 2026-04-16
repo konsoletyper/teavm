@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,5 +14,9 @@
  *  limitations under the License.
  */
 
-include();
-export { load, defaults, wrapImport };
+import { load, defaults, wrapImport } from "./runtime";
+
+const teavmGlobal = globalThis as any;
+const ns = teavmGlobal["TeaVM"] || {};
+teavmGlobal["TeaVM"] = ns;
+ns["wasmGC"] = ns["wasmGC"] || { load, defaults, wrapImport };
