@@ -60,6 +60,11 @@ Also, setting `teavm.tests.optimized` to true will compile each test twice: once
 ALWAYS pass all of these properties to Gradle, since user may override their value in local Gradle config.
 
 
+# Checking code style
+
+This project uses checkstyle, rules avaiable here: `config/checkstyle/checkstyle.xml`. You must ensure that the code conforms to these rules by running `checkstyleMain` Gradle task.
+
+
 # Documentation
 
 We keep documentation in a separate repository. We expect that user clones it into `../teavm-site` directory.
