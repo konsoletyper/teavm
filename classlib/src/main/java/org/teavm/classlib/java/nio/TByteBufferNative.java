@@ -551,10 +551,16 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
     }
 
     void copy(byte[] from, int fromOffset, Address to, int count) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            throw new UnsupportedOperationException();
+        }
         copy(Address.ofData(from).add(fromOffset), to, count);
     }
 
     void copy(Address from, byte[] to, int toOffset, int count) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            throw new UnsupportedOperationException();
+        }
         copy(from, Address.ofData(to).add(toOffset), count);
     }
 

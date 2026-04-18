@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.nio.file.TAddressBasedBuffer;
 import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.ArrayBufferView;
@@ -67,7 +68,7 @@ class TShortBufferNative extends TShortBufferImpl implements TArrayBufferViewPro
 
     @Override
     int getArrayOffset() {
-        if (array == null) {
+        if (PlatformDetector.isWebAssemblyGC() || array == null) {
             throw new UnsupportedOperationException();
         }
         return (int) (address.diff(Address.ofData(array)) / 2);
@@ -175,10 +176,16 @@ class TShortBufferNative extends TShortBufferImpl implements TArrayBufferViewPro
     }
 
     void copy(short[] from, int fromOffset, Address to, int count) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            throw new UnsupportedOperationException();
+        }
         TByteBufferNative.copy(Address.ofData(from).add(fromOffset * 2), to, count * 2);
     }
 
     void copy(Address from, short[] to, int toOffset, int count) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            throw new UnsupportedOperationException();
+        }
         TByteBufferNative.copy(from, Address.ofData(to).add(toOffset * 2), count * 2);
     }
 }
