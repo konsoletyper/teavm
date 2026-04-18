@@ -455,25 +455,20 @@ public class WasmBinaryRenderer {
             }
         }
 
-        var visitor = new WasmBinaryRenderingVisitor(code, module, dwarfGenerator,
-                function.getJavaMethod() != null ? debugLines : null, offset + sectionOffset);
+        var functionBody = new org.teavm.backend.wasm.model.instruction.WasmInstructionList();
+        var converter = new WasmExpressionToInstructionConverter(functionBody);
         for (var part : function.getBody()) {
-            visitor.preprocess(part);
+            converter.convert(part);
         }
-        visitor.setPositionToEmit(code.getPosition());
-        for (var i = 0; i < function.getBody().size(); ++i) {
-            var part = function.getBody().get(i);
-            if (i == function.getBody().size() - 1) {
-                visitor.pushLocation(part);
-            }
-            part.acceptVisitor(visitor);
-        }
+        var instructionRenderer = new WasmBinaryInstructionRenderingVisitor(code, module);
+        instructionRenderer.render(functionBody);
 
         code.writeByte(0x0B);
-        if (!function.getBody().isEmpty()) {
-            visitor.popLocation();
+
+        if (debugLines != null && function.getJavaMethod() != null) {
+            debugLines.advance(code.getPosition() + offset + sectionOffset);
+            debugLines.end();
         }
-        visitor.endLocation();
 
         if (dwarfSubprogram != null) {
             dwarfSubprogram.endOffset = code.getPosition() + offset;
