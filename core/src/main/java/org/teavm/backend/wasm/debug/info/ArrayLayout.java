@@ -16,7 +16,7 @@
 package org.teavm.backend.wasm.debug.info;
 
 public interface ArrayLayout extends TypeLayout {
-    TypeLayout elementType();
+    FieldType elementType();
 
     @Override
     default TypeLayoutKind kind() {

@@ -33,37 +33,24 @@ public class DebugClassLayoutBuilder extends DebugSectionBuilder implements Debu
     }
 
     @Override
-    public void startClass(String name, int parent, int address, int size) {
+    public void startClass(String name, int parent, int globalIndex, int size) {
         blob.writeByte(parent >= 0 ? DebugConstants.CLASS_CLASS : DebugConstants.CLASS_ROOT);
         blob.writeLEB(classes.classPtr(name));
         if (parent >= 0) {
             blob.writeSLEB(currentIndex - parent);
         }
-        writeAddress(address);
+        writeAddress(globalIndex);
         blob.writeLEB(size);
         lastFieldOffset = 0;
-        phase = ClassPhase.STATIC_FIELDS;
+        phase = ClassPhase.INSTANCE_FIELDS;
     }
 
     @Override
-    public void instanceField(String name, int offset, FieldType type) {
-        if (phase == ClassPhase.STATIC_FIELDS) {
-            blob.writeByte(DebugConstants.FIELD_END_SEQUENCE);
-            lastFieldOffset = 0;
-            phase = ClassPhase.INSTANCE_FIELDS;
-        }
+    public void instanceField(String name, int index, FieldType type) {
         writeFieldType(type);
         blob.writeLEB(strings.stringPtr(name));
-        blob.writeSLEB(offset - lastFieldOffset);
-        lastFieldOffset = offset;
-    }
-
-    @Override
-    public void staticField(String name, int offset, FieldType type) {
-        writeFieldType(type);
-        blob.writeLEB(strings.stringPtr(name));
-        blob.writeSLEB(offset - lastFieldOffset);
-        lastFieldOffset = offset;
+        blob.writeSLEB(index - lastFieldOffset);
+        lastFieldOffset = index;
     }
 
     private void writeFieldType(FieldType type) {
@@ -106,67 +93,17 @@ public class DebugClassLayoutBuilder extends DebugSectionBuilder implements Debu
 
     @Override
     public void endClass() {
-        if (phase == ClassPhase.STATIC_FIELDS) {
+        if (phase == ClassPhase.INSTANCE_FIELDS) {
             blob.writeByte(DebugConstants.FIELD_END);
         }
-        if (phase == ClassPhase.INSTANCE_FIELDS) {
-            blob.writeByte(DebugConstants.FIELD_END_SEQUENCE);
-        }
         ++currentIndex;
     }
 
     @Override
-    public void writeInterface(String name, int address) {
-        blob.writeByte(DebugConstants.CLASS_INTERFACE);
-        blob.writeLEB(classes.classPtr(name));
-        writeAddress(address);
-        ++currentIndex;
-    }
-
-    @Override
-    public void writePrimitive(PrimitiveType type, int address) {
-        switch (type) {
-            case BOOLEAN:
-                blob.writeLEB(DebugConstants.CLASS_BOOLEAN);
-                break;
-            case BYTE:
-                blob.writeLEB(DebugConstants.CLASS_BYTE);
-                break;
-            case SHORT:
-                blob.writeLEB(DebugConstants.CLASS_SHORT);
-                break;
-            case CHARACTER:
-                blob.writeLEB(DebugConstants.CLASS_CHAR);
-                break;
-            case INTEGER:
-                blob.writeLEB(DebugConstants.CLASS_INT);
-                break;
-            case LONG:
-                blob.writeLEB(DebugConstants.CLASS_LONG);
-                break;
-            case FLOAT:
-                blob.writeLEB(DebugConstants.CLASS_FLOAT);
-                break;
-            case DOUBLE:
-                blob.writeLEB(DebugConstants.CLASS_DOUBLE);
-                break;
-        }
-        writeAddress(address);
-        ++currentIndex;
-    }
-
-    @Override
-    public void writeArray(int itemType, int address) {
+    public void writeArray(FieldType itemType, int globalIndex) {
         blob.writeByte(DebugConstants.CLASS_ARRAY);
-        blob.writeSLEB(currentIndex - itemType);
-        writeAddress(address);
-        ++currentIndex;
-    }
-
-    @Override
-    public void writeUnknown(int address) {
-        blob.writeByte(DebugConstants.CLASS_UNKNOWN);
-        writeAddress(address);
+        writeFieldType(itemType);
+        writeAddress(globalIndex);
         ++currentIndex;
     }
 
@@ -177,7 +114,6 @@ public class DebugClassLayoutBuilder extends DebugSectionBuilder implements Debu
 
     private enum ClassPhase {
         NO_CLASS,
-        STATIC_FIELDS,
         INSTANCE_FIELDS
     }
 }

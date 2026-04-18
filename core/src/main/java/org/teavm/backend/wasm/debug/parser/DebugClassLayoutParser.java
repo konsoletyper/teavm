@@ -267,7 +267,7 @@ public class DebugClassLayoutParser extends DebugSectionParser {
         }
 
         @Override
-        public int address() {
+        public int globalIndex() {
             return address;
         }
     }
@@ -323,7 +323,7 @@ public class DebugClassLayoutParser extends DebugSectionParser {
         }
 
         @Override
-        public int address() {
+        public int index() {
             return address;
         }
 

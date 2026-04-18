@@ -23,13 +23,4 @@ public interface ClassLayout extends TypeLayout {
     ClassLayout superclass();
 
     Collection<? extends FieldInfo> instanceFields();
-
-    Collection<? extends FieldInfo> staticFields();
-
-    int size();
-
-    @Override
-    default TypeLayoutKind kind() {
-        return TypeLayoutKind.CLASS;
-    }
 }

@@ -19,19 +19,11 @@ import org.teavm.backend.wasm.debug.info.FieldType;
 import org.teavm.model.PrimitiveType;
 
 public interface DebugClassLayout {
-    void startClass(String name, int parent, int address, int size);
+    void startClass(String name, int parent, int globalIndex, int size);
 
-    void instanceField(String name, int offset, FieldType type);
-
-    void staticField(String name, int offset, FieldType type);
+    void instanceField(String name, int index, FieldType type);
 
     void endClass();
 
-    void writeInterface(String name, int address);
-
-    void writePrimitive(PrimitiveType type, int address);
-
-    void writeArray(int itemType, int address);
-
-    void writeUnknown(int address);
+    void writeArray(FieldType itemType, int globalIndex);
 }

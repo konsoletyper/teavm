@@ -28,20 +28,9 @@ public final class DebugConstants {
 
     public static final int CLASS_ROOT = 0;
     public static final int CLASS_CLASS = 1;
-    public static final int CLASS_INTERFACE = 2;
-    public static final int CLASS_ARRAY = 3;
-    public static final int CLASS_BOOLEAN = 4;
-    public static final int CLASS_BYTE = 5;
-    public static final int CLASS_SHORT = 6;
-    public static final int CLASS_CHAR = 7;
-    public static final int CLASS_INT = 8;
-    public static final int CLASS_LONG = 9;
-    public static final int CLASS_FLOAT = 10;
-    public static final int CLASS_DOUBLE = 11;
-    public static final int CLASS_UNKNOWN = 12;
+    public static final int CLASS_ARRAY = 2;
 
     public static final int FIELD_END = 0;
-    public static final int FIELD_END_SEQUENCE = 1;
     public static final int FIELD_BOOLEAN = 2;
     public static final int FIELD_BYTE = 3;
     public static final int FIELD_SHORT = 4;

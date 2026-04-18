@@ -169,7 +169,7 @@ class WasmValueImpl extends Value {
     private Promise<String> decodeString(ClassLayout cls, int address) {
         for (var field : cls.instanceFields()) {
             if (field.name().equals("characters") && field.type() == FieldType.OBJECT) {
-                return callFrame.getMemory(address + field.address(), 4).thenAsync(data -> {
+                return callFrame.getMemory(address + field.index(), 4).thenAsync(data -> {
                     var charsAddress = readInt(data, 0);
                     return decodeChars(charsAddress);
                 });
@@ -343,21 +343,21 @@ class WasmValueImpl extends Value {
                     switch (field.type()) {
                         case BOOLEAN:
                         case BYTE:
-                            longValue = data[field.address()];
+                            longValue = data[field.index()];
                             break;
                         case SHORT:
                         case CHAR:
-                            longValue = readShort(data, field.address());
+                            longValue = readShort(data, field.index());
                             break;
                         case INT:
                         case FLOAT:
                         case ADDRESS:
                         case OBJECT:
-                            longValue = readInt(data, field.address());
+                            longValue = readInt(data, field.index());
                             break;
                         case LONG:
                         case DOUBLE:
-                            longValue = readLong(data, field.address());
+                            longValue = readLong(data, field.index());
                             break;
                         default:
                             longValue = 0;
@@ -461,7 +461,7 @@ class WasmValueImpl extends Value {
 
     private void addCommonProperties(Map<String, Variable> properties, TypeLayout cls) {
         properties.put(CLASS_PROP, new Variable(CLASS_PROP, new WasmValueImpl(debugger, debugInfo,
-                FieldType.OBJECT, callFrame, cls.address())));
+                FieldType.OBJECT, callFrame, cls.globalIndex())));
         properties.put(ADDRESS_PROP, new Variable(ADDRESS_PROP, new WasmValueImpl(debugger, debugInfo,
                 FieldType.ADDRESS, callFrame, longValue)));
     }
