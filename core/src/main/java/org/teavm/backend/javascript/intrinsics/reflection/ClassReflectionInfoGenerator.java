@@ -246,18 +246,20 @@ public class ClassReflectionInfoGenerator implements Injector {
                 generateTypeParameters(context, cls, null, cls.getGenericParameters());
                 needsComma = true;
             }
-            if (reflection.getClassesWithReflectableFields().contains(className)) {
+            var reflectableFields = resolveReflectableFields(cls);
+            if (!reflectableFields.isEmpty()) {
                 if (needsComma) {
                     writer.append(',').softNewLine();
                 }
-                generateFields(context, cls);
+                generateFields(context, cls, reflectableFields);
                 needsComma = true;
             }
-            if (reflection.getClassesWithReflectableMethods().contains(className)) {
+            var reflectableMethods = resolveReflectableMethods(cls);
+            if (!reflectableMethods.isEmpty()) {
                 if (needsComma) {
                     writer.append(',').softNewLine();
                 }
-                generateMethods(context, cls);
+                generateMethods(context, cls, reflectableMethods);
                 needsComma = true;
             }
             if (!innerClasses.isEmpty()) {
@@ -270,6 +272,40 @@ public class ClassReflectionInfoGenerator implements Injector {
             writer.softNewLine().outdent().append("}");
         }
         writer.outdent().append("]);").newLine();
+    }
+
+    private List<FieldReader> resolveReflectableFields(ClassReader cls) {
+        if (!reflection.getClassesWithReflectableFields().contains(cls.getName())) {
+            return Collections.emptyList();
+        }
+        var accessibleFields = reflection.getAccessibleFields(cls.getName());
+        if (accessibleFields == null || accessibleFields.isEmpty()) {
+            return Collections.emptyList();
+        }
+        var resolvedFields = new ArrayList<FieldReader>();
+        for (var field : cls.getFields()) {
+            if (accessibleFields.contains(field.getName())) {
+                resolvedFields.add(field);
+            }
+        }
+        return resolvedFields;
+    }
+
+    private List<MethodReader> resolveReflectableMethods(ClassReader cls) {
+        if (!reflection.getClassesWithReflectableMethods().contains(cls.getName())) {
+            return Collections.emptyList();
+        }
+        var accessibleMethods = reflection.getAccessibleMethods(cls.getName());
+        if (accessibleMethods == null || accessibleMethods.isEmpty()) {
+            return Collections.emptyList();
+        }
+        var resolvedMethods = new ArrayList<MethodReader>();
+        for (var method : cls.getMethods()) {
+            if (accessibleMethods.contains(method.getDescriptor())) {
+                resolvedMethods.add(method);
+            }
+        }
+        return resolvedMethods;
     }
 
     private Set<String> getClassesWithReflectableTypeParameters() {
@@ -315,17 +351,16 @@ public class ClassReflectionInfoGenerator implements Injector {
         writer.softNewLine().outdent().append("]");
     }
 
-    private void generateFields(InjectorContext context, ClassReader cls) {
+    private void generateFields(InjectorContext context, ClassReader cls, List<FieldReader> fields) {
         var writer = context.getMetadataWriter();
         writer.append("f:").ws().append('[').indent();
         var first = true;
-        for (var fieldName : reflection.getAccessibleFields(cls.getName())) {
+        for (var field : fields) {
             if (!first) {
                 writer.append(",");
             }
             writer.softNewLine();
             first = false;
-            var field = cls.getField(fieldName);
             writer.append('[');
             writer.append('"').append(RenderingUtil.escapeString(field.getName())).append("\",").ws();
             writer.append(ElementModifier.asModifiersInfo(field.readModifiers(), field.getLevel())).append(",").ws();
@@ -388,17 +423,16 @@ public class ClassReflectionInfoGenerator implements Injector {
         }
     }
 
-    private void generateMethods(InjectorContext context, ClassReader cls) {
+    private void generateMethods(InjectorContext context, ClassReader cls, List<MethodReader> methods) {
         var writer = context.getMetadataWriter();
         writer.append("m:").ws().append('[').indent();
         var first = true;
-        for (var methodDesc : reflection.getAccessibleMethods(cls.getName())) {
+        for (var method : methods) {
             if (!first) {
                 writer.append(",");
             }
             writer.softNewLine();
             first = false;
-            var method = cls.getMethod(methodDesc);
             writer.append('[');
             writer.append('"').append(RenderingUtil.escapeString(method.getName())).append("\",").ws();
             writer.append(ElementModifier.asModifiersInfo(method.readModifiers(), method.getLevel())).append(",").ws();
@@ -424,7 +458,8 @@ public class ClassReflectionInfoGenerator implements Injector {
                     writer.append("0");
                 }
             } else {
-                writer.append("o").sameLineWs().append("=>").ws().append("o.").appendVirtualMethod(methodDesc);
+                writer.append("o").sameLineWs().append("=>").ws().append("o.")
+                        .appendVirtualMethod(method.getDescriptor());
             }
 
             var annotations = methodAnnotationsRequired
