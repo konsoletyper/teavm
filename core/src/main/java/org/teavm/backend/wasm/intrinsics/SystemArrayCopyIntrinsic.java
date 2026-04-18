@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmStructure;
@@ -228,13 +229,14 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
 
         block.getBody().add(new WasmReturn());
 
-        function.getBody().add(block);
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(block);
 
         var aioobeFunction = context.functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "aiiobe",
                 ArrayIndexOutOfBoundsException.class));
         var throwExpr = new WasmThrow(context.exceptionTag());
         throwExpr.getArguments().add(new WasmCall(aioobeFunction));
-        function.getBody().add(throwExpr);
+        converter.convert(throwExpr);
         return function;
     }
 

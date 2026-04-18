@@ -17,6 +17,7 @@ package org.teavm.jso.impl.wasmgc;
 
 import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
@@ -52,6 +53,7 @@ class WasmGCMarshallMethodGenerator implements WasmGCCustomGenerator {
         if (context.isCompactMode()) {
             thisRef = new WasmCast(thisRef, (WasmType.Reference) thisType);
         }
-        function.getBody().add(new WasmCall(wrapperFunction, thisRef, new WasmGetGlobal(jsClassGlobal)));
+        new WasmExpressionToInstructionConverter(function.getBody()).convert(
+                new WasmCall(wrapperFunction, thisRef, new WasmGetGlobal(jsClassGlobal)));
     }
 }

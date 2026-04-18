@@ -82,6 +82,10 @@ public abstract class WasmType {
         public boolean isNullable() {
             return nullable;
         }
+
+        public abstract Reference asNullable();
+
+        public abstract Reference asNonNull();
     }
 
     public static final class CompositeReference extends Reference {
@@ -91,6 +95,16 @@ public abstract class WasmType {
             super(nullable);
             this.composite = composite;
         }
+
+        @Override
+        public Reference asNonNull() {
+            return composite.getNonNullReference();
+        }
+
+        @Override
+        public Reference asNullable() {
+            return composite.getReference();
+        }
     }
 
     public static final class SpecialReference extends Reference {
@@ -99,6 +113,16 @@ public abstract class WasmType {
         private SpecialReference(SpecialReferenceKind kind, boolean nullable) {
             super(nullable);
             this.kind = kind;
+        }
+
+        @Override
+        public Reference asNonNull() {
+            return kind.nonNullType;
+        }
+
+        @Override
+        public Reference asNullable() {
+            return kind.type;
         }
     }
 

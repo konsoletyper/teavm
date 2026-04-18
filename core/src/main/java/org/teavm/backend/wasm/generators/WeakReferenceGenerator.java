@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generators;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
@@ -75,7 +76,8 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         if (context.isCompactMode()) {
             thisRef = new WasmCast(thisRef, weakRefStruct.getReference());
         }
-        function.getBody().add(new WasmStructSet(weakRefStruct, thisRef,
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(new WasmStructSet(weakRefStruct, thisRef,
                 WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET, weakRef));
     }
 
@@ -97,7 +99,8 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         block.getBody().add(br);
         block.getBody().add(new WasmReturn(new WasmNullConstant(objectType)));
 
-        function.getBody().add(new WasmCall(createDerefFunction(context), block));
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(new WasmCall(createDerefFunction(context), block));
     }
 
     private void generateClear(WasmGCCustomGeneratorContext context, WasmFunction function) {
@@ -110,7 +113,8 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         if (context.isCompactMode()) {
             thisRef = new WasmCast(thisRef, weakRefStruct.getReference());
         }
-        function.getBody().add(new WasmStructSet(weakRefStruct, thisRef,
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(new WasmStructSet(weakRefStruct, thisRef,
                 WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET, new WasmNullConstant(WasmType.EXTERN)));
     }
 

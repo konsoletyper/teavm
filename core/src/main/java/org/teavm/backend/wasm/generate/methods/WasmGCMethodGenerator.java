@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generate.methods;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +42,7 @@ import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -57,7 +59,7 @@ import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
-import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.backend.wasm.model.instruction.WasmUnreachableInstruction;
 import org.teavm.backend.wasm.transformation.CoroutineTransformation;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
 import org.teavm.backend.wasm.types.PreciseValueType;
@@ -321,7 +323,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             diagnostics.error(new CallLocation(method.getReference()),
                     "Failed generating method body due to internal exception: " + buffer);
             function.getBody().clear();
-            function.getBody().add(new WasmUnreachable());
+            function.getBody().add(new WasmUnreachableInstruction());
         }
     }
 
@@ -417,12 +419,13 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         }
 
         addInitializerErase(method, function);
-        var visitor = new WasmGCGenerationVisitor(getGenerationContext(), method.getReference(),
+        var visitor = new WasmGCInstructionGenerationVisitor(getGenerationContext(), method.getReference(),
                 function, firstVar, isSuspend, typeInference, asyncSplitMethods);
-        visitor.setCompactMode(methodCompact);
-        var target = function.getBody();
-        target = wrapSynchronizedMethod(method, visitor, function, target);
-        visitor.generate(ast.getBody(), target);
+        //visitor.setCompactMode(methodCompact);
+        var target = new ArrayList<WasmExpression>();
+        //target = wrapSynchronizedMethod(method, visitor, function, target);
+        visitor.generate(ast.getBody(), function.getBody());
+        //new WasmExpressionToInstructionConverter(function.getBody()).convertAll(target);
         if (isSuspend) {
             if (coroutineTransformation == null) {
                 coroutineTransformation = new CoroutineTransformation(functionTypes, this, classInfoProvider);
@@ -573,9 +576,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var classInfo = classInfoProvider.getClassInfo(method.getOwnerName());
             var erase = new WasmSetGlobal(classInfo.getInitializerPointer(),
                     new WasmFunctionReference(getDummyInitializer()));
-            function.getBody().add(erase);
+            var converter = new WasmExpressionToInstructionConverter(function.getBody());
+            converter.convert(erase);
             if (classInfoStruct.initializerIndex() >= 0) {
-                function.getBody().add(new WasmStructSet(
+                converter.convert(new WasmStructSet(
                         classInfoStruct.structure(),
                         new WasmGetGlobal(classInfo.getPointer()),
                         classInfoStruct.initializerIndex(),

@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generators;
 
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
@@ -48,6 +49,7 @@ public class EventQueueGenerator implements WasmGCCustomGenerator {
 
         var call = new WasmCall(runtimeFn, new WasmGetLocal(eventVar), new WasmFunctionReference(callerFn),
                 new WasmGetLocal(timeVar));
-        function.getBody().add(call);
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(call);
     }
 }

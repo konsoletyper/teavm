@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate.reflection;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -22,6 +23,7 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmField;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
@@ -33,15 +35,16 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIsNull;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.instruction.WasmNullConstantInstruction;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -483,8 +486,8 @@ public class ClassInfoStruct {
 
     public WasmGlobal firstClassGlobal() {
         if (firstClassGlobal == null) {
-            firstClassGlobal = new WasmGlobal(names.topLevel("teavm@firstClass"), structure.getReference(),
-                    new WasmNullConstant(structure.getReference()));
+            firstClassGlobal = new WasmGlobal(names.topLevel("teavm@firstClass"), structure.getReference());
+            firstClassGlobal.getInitialValue().add(new WasmNullConstantInstruction(structure.getReference()));
             module.globals.add(firstClassGlobal);
         }
         return firstClassGlobal;
@@ -492,8 +495,8 @@ public class ClassInfoStruct {
 
     public WasmGlobal currentClassGlobal() {
         if (currentClassGlobal == null) {
-            currentClassGlobal = new WasmGlobal(names.topLevel("teavm@currentClass"), structure.getReference(),
-                    new WasmNullConstant(structure.getReference()));
+            currentClassGlobal = new WasmGlobal(names.topLevel("teavm@currentClass"), structure.getReference());
+            currentClassGlobal.getInitialValue().add(new WasmNullConstantInstruction(structure.getReference()));
             module.globals.add(currentClassGlobal);
         }
         return currentClassGlobal;
@@ -517,11 +520,12 @@ public class ClassInfoStruct {
             classFunction.add(resultLocal);
 
             structure.init();
+            var body = new ArrayList<WasmExpression>();
             var candidateValue = new WasmStructGet(structure, new WasmGetLocal(classInfoLocal), classObjectIndex);
-            classFunction.getBody().add(new WasmSetLocal(resultLocal, candidateValue));
+            body.add(new WasmSetLocal(resultLocal, candidateValue));
 
             var block = new WasmBlock(false);
-            classFunction.getBody().add(block);
+            body.add(block);
             var notNullCond = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ,
                     new WasmIsNull(new WasmGetLocal(resultLocal)));
             block.getBody().add(new WasmBranch(notNullCond, block));
@@ -533,7 +537,9 @@ public class ClassInfoStruct {
             block.getBody().add(new WasmStructSet(structure, new WasmGetLocal(classInfoLocal), classObjectIndex,
                     new WasmGetLocal(resultLocal)));
 
-            classFunction.getBody().add(new WasmGetLocal(resultLocal));
+            body.add(new WasmGetLocal(resultLocal));
+
+            new WasmExpressionToInstructionConverter(classFunction.getBody()).convertAll(body);
         }
         return classFunction;
     }

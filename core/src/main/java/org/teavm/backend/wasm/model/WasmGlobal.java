@@ -16,21 +16,20 @@
 package org.teavm.backend.wasm.model;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 
 public class WasmGlobal extends WasmEntity {
     private String name;
     private WasmType type;
-    private WasmExpression initialValue;
+    private WasmInstructionList initialValue = new WasmInstructionList();
     private boolean immutable;
     private String exportName;
     private String importName;
     private String importModule;
 
-    public WasmGlobal(String name, WasmType type, WasmExpression initialValue) {
+    public WasmGlobal(String name, WasmType type) {
         this.name = name;
         this.type = Objects.requireNonNull(type);
-        this.initialValue = initialValue;
     }
 
     public String getName() {
@@ -45,12 +44,8 @@ public class WasmGlobal extends WasmEntity {
         this.type = Objects.requireNonNull(type);
     }
 
-    public WasmExpression getInitialValue() {
+    public WasmInstructionList getInitialValue() {
         return initialValue;
-    }
-
-    public void setInitialValue(WasmExpression initialValue) {
-        this.initialValue = initialValue;
     }
 
     public boolean isImmutable() {

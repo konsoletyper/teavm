@@ -118,6 +118,9 @@ public class CodeParser extends BaseSectionParser {
             case 0x21:
                 codeListener.local(LocalOpcode.SET, readLEB());
                 break;
+            case 0x22:
+                codeListener.local(LocalOpcode.TEE, readLEB());
+                break;
 
             case 0x23:
                 codeListener.getGlobal(readLEB());

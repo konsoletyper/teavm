@@ -16,14 +16,9 @@
 package org.teavm.backend.wasm.model.expression;
 
 import java.util.List;
-import org.teavm.backend.wasm.model.WasmFunction;
 
 public class WasmBaseReplacingExpressionVisitor implements WasmExpressionVisitor {
     private WasmExpression replacement;
-
-    public void replace(WasmFunction function) {
-        replaceExpressions(function.getBody());
-    }
 
     protected void replaceCurrent(WasmExpression expression) {
         this.replacement = expression;

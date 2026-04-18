@@ -218,6 +218,9 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
             case SET:
                 writer.write("local.set");
                 break;
+            case TEE:
+                writer.write("local.tee");
+                break;
         }
         writer.write(" ");
         writeLocalRef(currentFunctionId, index);

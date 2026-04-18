@@ -21,6 +21,7 @@ import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.generate.reflection.ClassInfoStruct;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
@@ -78,24 +79,24 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
             }
             case "isSuperTypeOf": {
                 var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var other = context.generate(invocation.getArguments().get(1));
+                var receiver = context.generate(invocation.getArguments().get(1));
+                var other = context.generate(invocation.getArguments().get(0));
                 return callVirtual(context, classInfoType.supertypeFunctionType(),
-                        classInfoType.supertypeFunctionIndex(), receiver, other);
+                        classInfoType.supertypeFunctionIndex(), 1, receiver, other);
             }
             case "newArrayInstance": {
                 var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
                 var receiver = context.generate(invocation.getArguments().get(0));
                 var size = context.generate(invocation.getArguments().get(1));
                 return callVirtual(context, classInfoType.newArrayFunctionType(),
-                        classInfoType.newArrayFunctionIndex(), receiver, size);
+                        classInfoType.newArrayFunctionIndex(), 0, receiver, size);
             }
             case "arrayLength": {
                 var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
                 var receiver = context.generate(invocation.getArguments().get(0));
                 var array = context.generate(invocation.getArguments().get(1));
                 return callVirtual(context, classInfoType.arrayLengthFunctionType(), classInfoType.arrayLengthIndex(),
-                        receiver, array);
+                        0, receiver, array);
             }
             case "getItem": {
                 var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
@@ -103,7 +104,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 var array = context.generate(invocation.getArguments().get(1));
                 var index = context.generate(invocation.getArguments().get(2));
                 return callVirtual(context, classInfoType.getItemFunctionType(), classInfoType.getItemIndex(),
-                        receiver, array, index);
+                        0, receiver, array, index);
             }
             case "putItem": {
                 var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
@@ -112,7 +113,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 var index = context.generate(invocation.getArguments().get(2));
                 var value = context.generate(invocation.getArguments().get(3));
                 return callVirtual(context, classInfoType.putItemFunctionType(), classInfoType.putItemIndex(),
-                        receiver, array, index, value);
+                        0, receiver, array, index, value);
             }
             case "initialize": {
                 var initializer = fieldAccess(invocation, context, ClassInfoStruct::initializerIndex);
@@ -174,7 +175,10 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                         context.classInfoProvider(), context.functions(), context.typeMapper(),
                         context.strings(), context.classInitInfo(), context.virtualTables());
                 metadataGen.generate();
-                context.addToInitializer(fn -> fn.getBody().add(new WasmCall(metadataGen.initFunction())));
+                context.addToInitializer(fn -> {
+                    var converter = new WasmExpressionToInstructionConverter(fn.getBody());
+                    converter.convert(new WasmCall(metadataGen.initFunction()));
+                });
                 return fieldAccess(invocation, context, ClassInfoStruct::reflectionInfoIndex);
             }
             case "rewind": {
@@ -246,17 +250,17 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
     }
 
     private WasmExpression callVirtual(WasmGCIntrinsicContext context, WasmFunctionType fnType, int index,
-            WasmExpression... args) {
+            int receiverArgIndex, WasmExpression... args) {
         var block = new WasmBlock(false);
         var ret = fnType.getSingleReturnType();
         if (ret != null) {
             block.setType(ret.asBlock());
         }
         var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
-        var receiver = context.exprCache().create(args[0], classInfoType.structure().getReference(), null,
-                block.getBody());
-        args[0] = receiver.expr();
-        var fnRef = new WasmStructGet(classInfoType.structure(), args[0], index);
+        var receiver = context.exprCache().create(args[receiverArgIndex], classInfoType.structure().getReference(),
+                null, block.getBody());
+        args[receiverArgIndex] = receiver.expr();
+        var fnRef = new WasmStructGet(classInfoType.structure(), args[receiverArgIndex], index);
         block.getBody().add(new WasmCallReference(fnRef, fnType, args));
         receiver.release();
         return block;

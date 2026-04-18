@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generators;
 
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
@@ -39,6 +40,7 @@ public class StringGenerator implements WasmGCCustomGenerator {
         if (context.isCompactMode()) {
             instance = new WasmCast(instance, (WasmType.Reference) stringType);
         }
-        function.getBody().add(new WasmCall(worker, instance));
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(new WasmCall(worker, instance));
     }
 }

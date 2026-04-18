@@ -275,12 +275,12 @@ public class WasmBinaryRenderer {
         }
 
         var section = new WasmBinaryWriter();
-        var visitor = new WasmBinaryRenderingVisitor(section, module, null, null, 0);
+        var visitor = new WasmBinaryInstructionRenderingVisitor(section, module, null, null, 0);
         section.writeLEB(globals.size());
         for (var global : globals) {
             section.writeType(global.getType(), module);
             section.writeByte(global.isImmutable() ? 0 : 1);
-            global.getInitialValue().acceptVisitor(visitor);
+            visitor.render(global.getInitialValue());
             section.writeByte(0x0b);
         }
 
@@ -463,25 +463,16 @@ public class WasmBinaryRenderer {
             }
         }
 
-        var visitor = new WasmBinaryRenderingVisitor(code, module, dwarfGenerator,
-                function.getJavaMethod() != null ? debugLines : null, offset + sectionOffset);
-        for (var part : function.getBody()) {
-            visitor.preprocess(part);
-        }
-        visitor.setPositionToEmit(code.getPosition());
-        for (var i = 0; i < function.getBody().size(); ++i) {
-            var part = function.getBody().get(i);
-            if (i == function.getBody().size() - 1) {
-                visitor.pushLocation(part);
-            }
-            part.acceptVisitor(visitor);
-        }
+        var instructionRenderer = new WasmBinaryInstructionRenderingVisitor(code, module,
+                function.getJavaMethod() != null ? debugLines : null, dwarfGenerator, offset + sectionOffset);
+        instructionRenderer.render(function.getBody());
 
         code.writeByte(0x0B);
-        if (!function.getBody().isEmpty()) {
-            visitor.popLocation();
+
+        if (debugLines != null && function.getJavaMethod() != null) {
+            debugLines.advance(code.getPosition() + offset + sectionOffset);
+            debugLines.end();
         }
-        visitor.endLocation();
 
         if (dwarfSubprogram != null) {
             dwarfSubprogram.endOffset = code.getPosition() + offset;

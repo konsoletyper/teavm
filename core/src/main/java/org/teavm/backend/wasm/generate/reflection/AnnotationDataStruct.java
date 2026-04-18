@@ -22,6 +22,7 @@ import java.util.Map;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmField;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -29,6 +30,7 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
@@ -114,8 +116,9 @@ public class AnnotationDataStruct {
             fn.add(param);
             fn.add(result);
 
-            fn.getBody().add(new WasmSetLocal(result, new WasmStructNewDefault(wasmDataType.getStructure())));
-            fn.getBody().add(new WasmStructSet(
+            var body = new ArrayList<WasmExpression>();
+            body.add(new WasmSetLocal(result, new WasmStructNewDefault(wasmDataType.getStructure())));
+            body.add(new WasmStructSet(
                     wasmDataType.getStructure(),
                     new WasmGetLocal(result),
                     WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
@@ -126,8 +129,11 @@ public class AnnotationDataStruct {
                     ValueType.VOID);
             var ctor = functions.forInstanceMethod(ctorRef);
             var castParam = new WasmCast(new WasmGetLocal(param), structure.getReference());
-            fn.getBody().add(new WasmCall(ctor, new WasmGetLocal(result), castParam));
-            fn.getBody().add(new WasmGetLocal(result));
+            body.add(new WasmCall(ctor, new WasmGetLocal(result), castParam));
+            body.add(new WasmGetLocal(result));
+
+            new WasmExpressionToInstructionConverter(fn.getBody()).convertAll(body);
+
             module.functions.add(fn);
             constructor = fn;
         }

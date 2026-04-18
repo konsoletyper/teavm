@@ -24,6 +24,7 @@ import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactory;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactoryContext;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -39,11 +40,12 @@ import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.instruction.WasmFunctionReferenceInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmSetGlobalInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -80,12 +82,16 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             function.add(classLocal);
 
             var initializerGlobalName = context.names().topLevel("teavm@initializeServicesRef");
-            var global = new WasmGlobal(initializerGlobalName, initializer.getType().getReference(),
-                    new WasmFunctionReference(initializer));
+            var global = new WasmGlobal(initializerGlobalName, initializer.getType().getReference());
+            global.getInitialValue().add(new WasmFunctionReferenceInstruction(initializer));
             context.module().globals.add(global);
-            initializer.getBody().add(0, new WasmSetGlobal(global, new WasmFunctionReference(emptyInitializer)));
 
-            function.getBody().add(new WasmCallReference(new WasmGetGlobal(global), initializer.getType()));
+            var ref = new WasmFunctionReferenceInstruction(emptyInitializer);
+            initializer.getBody().addFirst(ref);
+            ref.insertNext(new WasmSetGlobalInstruction(global));
+
+            var converter = new WasmExpressionToInstructionConverter(function.getBody());
+            converter.convert(new WasmCallReference(new WasmGetGlobal(global), initializer.getType()));
 
             var block = new WasmBlock(false);
             var servicesFunctionRef = new WasmStructGet(classInfoStruct.structure(), new WasmGetLocal(classLocal),
@@ -93,9 +99,9 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             var nullCheckedRef = new WasmNullBranch(WasmNullCondition.NULL, servicesFunctionRef, block);
             var getServices = new WasmCallReference(nullCheckedRef, servicesFunctionType);
             block.getBody().add(new WasmReturn(getServices));
-            function.getBody().add(block);
+            converter.convert(block);
 
-            function.getBody().add(new WasmNullConstant(arrayType));
+            converter.convert(new WasmNullConstant(arrayType));
         }
 
         private WasmFunction generateInitializer(WasmGCCustomGeneratorContext context) {
@@ -115,7 +121,8 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
                 var classInfo = context.classInfoProvider().getClassInfo(serviceType);
                 var classRef = new WasmGetGlobal(classInfo.getPointer());
                 var providerRef = new WasmFunctionReference(providerFunction);
-                function.getBody().add(new WasmStructSet(classInfoStruct.structure(), classRef, fieldIndex,
+                var converter = new WasmExpressionToInstructionConverter(function.getBody());
+                converter.convert(new WasmStructSet(classInfoStruct.structure(), classRef, fieldIndex,
                         providerRef));
             }
 
@@ -131,7 +138,8 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             function.setReferenced(true);
             context.module().functions.add(function);
             var util = new WasmGCGenerationUtil(context.classInfoProvider());
-            function.getBody().add(util.allocateArrayWithElements(ValueType.parse(Object.class), () -> {
+            var converter = new WasmExpressionToInstructionConverter(function.getBody());
+            converter.convert(util.allocateArrayWithElements(ValueType.parse(Object.class), () -> {
                 var items = new ArrayList<WasmExpression>();
                 for (var implementationName : implementations) {
                     items.add(instantiateService(context, function, implementationName));

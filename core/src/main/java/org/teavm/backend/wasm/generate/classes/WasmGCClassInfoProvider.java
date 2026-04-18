@@ -19,6 +19,7 @@ import org.teavm.backend.wasm.generate.reflection.ReflectionTypes;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
+import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ValueType;
 
@@ -57,6 +58,8 @@ public interface WasmGCClassInfoProvider {
     int getThrowableNativeOffset();
 
     WasmArray getObjectArrayType();
+
+    WasmArray getPrimitiveArrayType(WasmStorageType type);
 
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));

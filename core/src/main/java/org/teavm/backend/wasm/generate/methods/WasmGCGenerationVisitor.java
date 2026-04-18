@@ -538,7 +538,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         var classInfoType = context.classInfoProvider().reflectionTypes().classInfo().structure().getReference();
         var classRefCached = exprCache.create(classRef, classInfoType, expression.getLocation(), block.getBody());
         supertypeCall.getArguments().add(classRefCached.expr());
-        supertypeCall.getArguments().add(classRefCached.expr());
+        supertypeCall.getArguments().add(classInfoLiteral(type));
         classRefCached.release();
         block.getBody().add(supertypeCall);
         return block;
@@ -994,7 +994,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
     }
 
-    private WasmGCIntrinsicContext intrinsicContext = new WasmGCIntrinsicContext() {
+    WasmGCIntrinsicContext intrinsicContext = new WasmGCIntrinsicContext() {
         @Override
         public WasmExpression generate(Expr expr) {
             accept(expr);

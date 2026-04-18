@@ -51,6 +51,7 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsics;
 import org.teavm.backend.wasm.model.WasmCustomSection;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -401,7 +402,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var getParam = new WasmLocal(throwableType.getReference(), "javaException");
         getFunction.add(getParam);
         var getField = new WasmStructGet(throwableType, new WasmGetLocal(getParam), nativeExceptionField);
-        getFunction.getBody().add(getField);
+        var converter = new WasmExpressionToInstructionConverter(getFunction.getBody());
+        converter.convert(getField);
         declarationsGenerator.module.functions.add(getFunction);
 
         var setFunction = new WasmFunction(declarationsGenerator.functionTypes.of(null, throwableType.getReference(),
@@ -414,7 +416,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         setFunction.add(setValue);
         var setField = new WasmStructSet(throwableType, new WasmGetLocal(setParam),
                 nativeExceptionField, new WasmGetLocal(setValue));
-        setFunction.getBody().add(setField);
+        converter = new WasmExpressionToInstructionConverter(setFunction.getBody());
+        converter.convert(setField);
         declarationsGenerator.module.functions.add(setFunction);
     }
 
@@ -481,13 +484,13 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             memorySize = Math.max(memorySize, segment.getOffset() + segment.getLength());
         }
 
-        var heapOffset = new WasmGlobal("heapOffset", WasmType.INT32, null);
+        var heapOffset = new WasmGlobal("heapOffset", WasmType.INT32);
         heapOffset.setImmutable(true);
         heapOffset.setImportModule("teavmMemory");
         heapOffset.setImportName("heapOffset");
         module.globals.add(heapOffset);
 
-        var maxSize = new WasmGlobal("maxSize", WasmType.INT32, null);
+        var maxSize = new WasmGlobal("maxSize", WasmType.INT32);
         maxSize.setImmutable(true);
         maxSize.setImportModule("teavmMemory");
         maxSize.setImportName("maxSize");

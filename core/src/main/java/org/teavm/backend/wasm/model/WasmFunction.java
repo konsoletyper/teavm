@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.model.MethodReference;
 
 public class WasmFunction extends WasmEntity {
@@ -31,7 +31,7 @@ public class WasmFunction extends WasmEntity {
     private WasmFunctionType type;
     private List<WasmLocal> localVariables = new ArrayList<>();
     private List<WasmLocal> readonlyLocalVariables = Collections.unmodifiableList(localVariables);
-    private List<WasmExpression> body = new ArrayList<>();
+    private WasmInstructionList body = new WasmInstructionList();
     private MethodReference javaMethod;
 
     public WasmFunction(WasmFunctionType type) {
@@ -98,7 +98,7 @@ public class WasmFunction extends WasmEntity {
         return readonlyLocalVariables;
     }
 
-    public List<WasmExpression> getBody() {
+    public WasmInstructionList getBody() {
         return body;
     }
 

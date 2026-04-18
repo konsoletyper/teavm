@@ -18,7 +18,7 @@ package org.teavm.backend.wasm.generators;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.backend.wasm.model.instruction.WasmUnreachableInstruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -30,6 +30,6 @@ public class SystemDoArrayCopyGenerator implements WasmGCCustomGenerator {
         function.add(new WasmLocal(context.typeMapper().mapType(ValueType.object("java.lang.Object"))));
         function.add(new WasmLocal(WasmType.INT32));
         function.add(new WasmLocal(WasmType.INT32));
-        function.getBody().add(new WasmUnreachable());
+        function.getBody().add(new WasmUnreachableInstruction());
     }
 }

@@ -22,8 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
+import org.teavm.backend.wasm.model.instruction.WasmDefaultInstructionVisitor;
+import org.teavm.backend.wasm.model.instruction.WasmGetGlobalInstruction;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 
@@ -115,7 +115,7 @@ public class WasmModule {
         }
     }
 
-    private static class GlobalSorting extends WasmDefaultExpressionVisitor {
+    private static class GlobalSorting extends WasmDefaultInstructionVisitor {
         List<WasmGlobal> sorted = new ArrayList<>();
         private Set<WasmGlobal> visited = new HashSet<>();
 
@@ -129,16 +129,13 @@ public class WasmModule {
             if (!visited.add(global)) {
                 return;
             }
-            if (global.getInitialValue() != null) {
-                global.getInitialValue().acceptVisitor(this);
-            }
+            visitMany(global.getInitialValue());
             sorted.add(global);
         }
 
         @Override
-        public void visit(WasmGetGlobal expression) {
-            super.visit(expression);
-            add(expression.getGlobal());
+        public void visit(WasmGetGlobalInstruction instruction) {
+            add(instruction.getGlobal());
         }
     }
 

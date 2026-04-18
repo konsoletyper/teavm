@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm;
 
 import org.teavm.backend.wasm.generate.WasmGCDeclarationsGenerator;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.expression.WasmCall;
@@ -49,7 +50,8 @@ public class WasmGCModuleGenerator {
         var maxSize = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
                 new WasmGetGlobal(heapLimit), new WasmGetGlobal(offset));
         var call = new WasmCall(target, new WasmGetGlobal(offset), new WasmInt32Constant(minSize), maxSize);
-        initializer.getBody().add(call);
+        var converter = new WasmExpressionToInstructionConverter(initializer.getBody());
+        call.acceptVisitor(converter);
     }
 
     public WasmFunction generateReportGarbageCollectedStringFunction() {

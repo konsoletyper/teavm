@@ -108,28 +108,30 @@ public abstract class BaseDisassemblyListener  {
                     switch (refType.kind) {
                         case ANY:
                             writer.write("any");
-                            return;
+                            break;
                         case EQ:
                             writer.write("eq");
-                            return;
+                            break;
                         case FUNC:
                             writer.write("func");
-                            return;
+                            break;
                         case ARRAY:
                             writer.write("array");
-                            return;
+                            break;
                         case EXTERN:
                             writer.write("extern");
-                            return;
+                            break;
                         case STRUCT:
                             writer.write("struct");
-                            return;
+                            break;
                         case I31:
                             writer.write("i31");
-                            return;
+                            break;
                         default:
                             throw new IllegalArgumentException();
                     }
+                    writer.write(")");
+                    return;
                 }
             } else if (type instanceof WasmHollowType.CompositeReference) {
                 var refType = (WasmHollowType.CompositeReference) type;

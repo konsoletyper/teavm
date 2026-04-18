@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate.classes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
@@ -22,6 +23,7 @@ import java.util.function.Function;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -86,7 +88,8 @@ class WasmGCNewArrayFunctionGenerator {
                 function.add(sizeLocal);
                 var targetVar = new WasmLocal(classInfo.getType(), "result");
                 function.add(targetVar);
-                function.getBody().add(allocateArray(itemType, sizeLocal));
+                var converter = new WasmExpressionToInstructionConverter(function.getBody());
+                converter.convert(allocateArray(itemType, sizeLocal));
             });
             return function;
         } else {
@@ -150,7 +153,8 @@ class WasmGCNewArrayFunctionGenerator {
             structNew.getInitializers().add(arrayVt);
             structNew.getInitializers().add(new WasmNullConstant(WasmType.EQ));
             structNew.getInitializers().add(new WasmArrayNewDefault(wasmArray, new WasmGetLocal(sizeLocal)));
-            function.getBody().add(structNew);
+            var converter = new WasmExpressionToInstructionConverter(function.getBody());
+            converter.convert(structNew);
         });
         return function;
     }
@@ -194,15 +198,16 @@ class WasmGCNewArrayFunctionGenerator {
             function.add(resultVar);
 
             var allocFunction = getNewObjectArrayFunction();
-            function.getBody().add(new WasmSetLocal(resultVar, new WasmCall(allocFunction,
+            var body = new ArrayList<WasmExpression>();
+            body.add(new WasmSetLocal(resultVar, new WasmCall(allocFunction,
                     new WasmGetLocal(itemTypeLocal), new WasmGetLocal(dimensionLocals[0]))));
-            function.getBody().add(new WasmSetLocal(dataLocal, new WasmStructGet(arrayClass.getStructure(),
+            body.add(new WasmSetLocal(dataLocal, new WasmStructGet(arrayClass.getStructure(),
                     new WasmGetLocal(resultVar), WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)));
-            function.getBody().add(new WasmSetLocal(nextItemTypeLocal, new WasmStructGet(classInfoType.structure(),
+            body.add(new WasmSetLocal(nextItemTypeLocal, new WasmStructGet(classInfoType.structure(),
                     new WasmGetLocal(itemTypeLocal), classInfoType.itemTypeIndex())));
 
             var zeroGuard = new WasmBlock(false);
-            function.getBody().add(zeroGuard);
+            body.add(zeroGuard);
             zeroGuard.getBody().add(new WasmBranch(new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ,
                     new WasmGetLocal(dimensionLocals[0])), zeroGuard));
 
@@ -237,9 +242,11 @@ class WasmGCNewArrayFunctionGenerator {
                     new WasmGetLocal(indexLocal), new WasmGetLocal(dimensionLocals[0]));
             loop.getBody().add(new WasmBranch(continueCondition, loop));
 
-            function.getBody().add(new WasmGetLocal(resultVar));
+            body.add(new WasmGetLocal(resultVar));
+
+            var converter = new WasmExpressionToInstructionConverter(function.getBody());
+            converter.convertAll(body);
         });
         return function;
     }
-
 }

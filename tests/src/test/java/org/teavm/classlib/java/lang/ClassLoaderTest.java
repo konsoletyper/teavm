@@ -32,7 +32,7 @@ import org.teavm.junit.TestPlatform;
 @EachTestCompiledSeparately
 public class ClassLoaderTest {
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void loadsResources() {
         assertEquals("q", loadResource("1"));
         assertEquals("qw", loadResource("2"));
@@ -46,7 +46,7 @@ public class ClassLoaderTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void returnsNullForNonExistentResource() {
         var input = ClassLoader.getSystemClassLoader().getResourceAsStream("non-existent-resource.txt");
         assertNull(input);

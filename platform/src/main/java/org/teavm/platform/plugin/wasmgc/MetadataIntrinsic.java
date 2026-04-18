@@ -27,6 +27,7 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
@@ -84,7 +85,8 @@ class MetadataIntrinsic implements WasmGCIntrinsic {
             var type = context.typeMapper().mapType(method.getReturnType());
             var name = context.names().topLevel(context.names().suggestForMethod(method));
             var initialValue = generateMetadata(context, metadata, type);
-            global = new WasmGlobal(name, type, initialValue);
+            global = new WasmGlobal(name, type);
+            new WasmExpressionToInstructionConverter(global.getInitialValue()).convert(initialValue);
             context.module().globals.add(global);
         }
         return global;

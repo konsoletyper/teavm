@@ -33,6 +33,7 @@ import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.methods.WasmGCVirtualCallGenerator;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -158,7 +159,8 @@ public class ReflectionMetadataGenerator {
             var metadata = generateClassMetadata(className, annotations, fields, methods, typeParameters,
                     innerClasses);
             if (metadata != null) {
-                initFunction.getBody().add(new WasmStructSet(
+                var converter = new WasmExpressionToInstructionConverter(initFunction.getBody());
+                converter.convert(new WasmStructSet(
                         classInfoStruct.structure(),
                         new WasmGetGlobal(classInfoProvider.getClassInfo(className).getPointer()),
                         classInfoStruct.reflectionInfoIndex(),
@@ -599,7 +601,8 @@ public class ReflectionMetadataGenerator {
             result = structGet;
         }
 
-        function.getBody().add(boxIfNecessary(result, field.getType()));
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(boxIfNecessary(result, field.getType()));
 
         return function;
     }
@@ -619,15 +622,16 @@ public class ReflectionMetadataGenerator {
 
         var value = unboxIfNecessary(new WasmGetLocal(valueVar), field.getType());
         var classInfo = classInfoProvider.getClassInfo(field.getOwnerName());
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
         if (field.hasModifier(ElementModifier.STATIC)) {
             initClass(classInfo, field.getOwnerName(), function);
             var global = classInfoProvider.getStaticFieldLocation(field.getReference());
-            function.getBody().add(new WasmSetGlobal(global, value));
+            converter.convert(new WasmSetGlobal(global, value));
         } else {
             var castInstance = new WasmCast(new WasmGetLocal(thisVar), classInfo.getType());
             var structSet = new WasmStructSet(classInfo.getStructure(), castInstance,
                     classInfoProvider.getFieldIndex(field.getReference()), value);
-            function.getBody().add(structSet);
+            converter.convert(structSet);
         }
 
         return function;
@@ -654,7 +658,8 @@ public class ReflectionMetadataGenerator {
         function.add(argsDataVar);
         WasmLocal instanceVar = null;
 
-        function.getBody().add(new WasmSetLocal(argsDataVar, new WasmStructGet(objectArrayClass.getStructure(),
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(new WasmSetLocal(argsDataVar, new WasmStructGet(objectArrayClass.getStructure(),
                 new WasmGetLocal(argsVar), dataField.getIndex())));
 
         var classInfo = classInfoProvider.getClassInfo(method.getOwnerName());
@@ -689,9 +694,9 @@ public class ReflectionMetadataGenerator {
         } else {
             call = new WasmCall(callee, args.toArray(new WasmExpression[0]));
         }
-        function.getBody().add(boxIfNecessary(call, method.getResultType()));
+        converter.convert(boxIfNecessary(call, method.getResultType()));
         if (method.getResultType() == ValueType.VOID) {
-            function.getBody().add(new WasmNullConstant(objectClass.getType()));
+            converter.convert(new WasmNullConstant(objectClass.getType()));
         }
 
         return function;
@@ -702,7 +707,8 @@ public class ReflectionMetadataGenerator {
                 && classInfo.getInitializerPointer() != null) {
             var initRef = new WasmGetGlobal(classInfo.getInitializerPointer());
             var initType = functionTypes.of(null);
-            function.getBody().add(new WasmCallReference(initRef, initType));
+            var converter = new WasmExpressionToInstructionConverter(function.getBody());
+            converter.convert(new WasmCallReference(initRef, initType));
         }
     }
 

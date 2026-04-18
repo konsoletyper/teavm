@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generators;
 
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -29,24 +30,26 @@ import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
+import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
 import org.teavm.model.MethodReference;
 
 public class WasmGCStringPoolGenerator implements WasmGCCustomGenerator {
     @Override
     public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
         var module = context.module();
-        var pointer = new WasmGlobal(context.names().topLevel("teavm@stringPoolPointer"), WasmType.INT32,
-                new WasmInt32Constant(0));
+        var pointer = new WasmGlobal(context.names().topLevel("teavm@stringPoolPointer"), WasmType.INT32);
+        pointer.getInitialValue().add(new WasmInt32ConstantInstruction(0));
         module.globals.add(pointer);
 
         var resultLocal = new WasmLocal(WasmType.INT32);
         function.add(resultLocal);
 
-        function.getBody().add(new WasmSetLocal(resultLocal, new WasmLoadInt32(1, new WasmGetGlobal(pointer),
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(new WasmSetLocal(resultLocal, new WasmLoadInt32(1, new WasmGetGlobal(pointer),
                 WasmInt32Subtype.UINT8)));
         var increment = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
                 new WasmGetGlobal(pointer), new WasmInt32Constant(1));
-        function.getBody().add(new WasmSetGlobal(pointer, increment));
-        function.getBody().add(new WasmGetLocal(resultLocal));
+        converter.convert(new WasmSetGlobal(pointer, increment));
+        converter.convert(new WasmGetLocal(resultLocal));
     }
 }

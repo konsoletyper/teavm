@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
@@ -36,6 +37,7 @@ import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
 import org.teavm.backend.wasm.runtime.WasmGCResources;
 import org.teavm.classlib.ResourceSupplier;
 import org.teavm.classlib.ResourceSupplierContext;
@@ -65,7 +67,8 @@ public class WasmGCResourcesGenerator implements WasmGCCustomGenerator {
         }
         segment.setData(resources.toByteArray());
         module.getSegments().add(segment);
-        baseGlobal.setInitialValue(new WasmInt32Constant(segment.getOffset()));
+        baseGlobal.getInitialValue().clear();
+        baseGlobal.getInitialValue().add(new WasmInt32ConstantInstruction(segment.getOffset()));
     }
 
     @Override
@@ -98,14 +101,15 @@ public class WasmGCResourcesGenerator implements WasmGCCustomGenerator {
         }
 
         baseGlobal = new WasmGlobal(context.names().topLevel("teavm@resourcesBaseAddress"),
-                WasmType.INT32, new WasmInt32Constant(0));
+                WasmType.INT32);
         context.module().globals.add(baseGlobal);
 
         var genUtil = new WasmGCGenerationUtil(context.classInfoProvider());
         var constructor = context.functions().forStaticMethod(new MethodReference(WasmGCResources.class,
                 "create", String.class, int.class, int.class, WasmGCResources.Resource.class));
 
-        function.getBody().add(genUtil.allocateArrayWithElements(
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(genUtil.allocateArrayWithElements(
                 ValueType.parse(WasmGCResources.Resource.class),
                 () -> {
                     var items = new ArrayList<WasmExpression>();

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.function.Function;
 import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
@@ -52,7 +53,7 @@ public class WasmAsyncTestGenerator extends AbstractDependencyListener implement
             var param = new WasmLocal(WasmType.INT32, "n");
             function.add(param);
             var generator = new Generator(context, param);
-            function.getBody().add(generator.generate());
+            new WasmExpressionToInstructionConverter(function.getBody()).convert(generator.generate());
         }
     }
 

@@ -24,6 +24,7 @@ import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -44,8 +45,8 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
-import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.instruction.WasmStructNewDefaultInstruction;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
@@ -88,10 +89,11 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         if (initNextStringFunction == null) {
             return;
         }
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
         if (hasIntern()) {
             var internInit = functionProvider.forStaticMethod(new MethodReference(StringInternPool.class, "<clinit>",
                     void.class));
-            function.getBody().add(new WasmCall(internInit));
+            converter.convert(new WasmCall(internInit));
         }
         var stringIterator = stringMap.values().iterator();
         while (stringIterator.hasNext()) {
@@ -102,7 +104,7 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
                 array.getElements().add(new WasmGetGlobal(stringIterator.next().global));
                 ++elementCount;
             }
-            function.getBody().add(new WasmCall(initStringsFunction, array));
+            converter.convert(new WasmCall(initStringsFunction, array));
         }
     }
 
@@ -119,8 +121,9 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
             var globalName = names.topLevel("teavm@string<" + stringMap.size() + ">"
                     + WasmGCNameProvider.sanitize(brief));
             var globalType = standardClasses.stringClass().getStructure().getNonNullReference();
-            var global = new WasmGlobal(globalName, globalType,
-                    new WasmStructNewDefault(standardClasses.stringClass().getStructure()));
+            var global = new WasmGlobal(globalName, globalType);
+            global.getInitialValue().add(new WasmStructNewDefaultInstruction(
+                    standardClasses.stringClass().getStructure()));
             global.setImmutable(true);
             module.globals.add(global);
             return new WasmGCStringConstant(stringMap.size(), global);
@@ -159,11 +162,11 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         function.add(lengthLocal);
 
         var length = new WasmArrayLength(new WasmGetLocal(stringsLocal));
-        function.getBody().add(new WasmSetLocal(lengthLocal, length));
-        function.getBody().add(new WasmSetLocal(indexLocal, new WasmInt32Constant(0)));
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(new WasmSetLocal(lengthLocal, length));
+        converter.convert(new WasmSetLocal(indexLocal, new WasmInt32Constant(0)));
 
         var loop = new WasmBlock(true);
-        function.getBody().add(loop);
         var get = new WasmArrayGet(stringsArray, new WasmGetLocal(stringsLocal), new WasmGetLocal(indexLocal));
         loop.getBody().add(new WasmCall(initNextStringFunction, get));
         var next = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, new WasmGetLocal(indexLocal),
@@ -172,6 +175,7 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         var compare = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_UNSIGNED,
                 new WasmGetLocal(indexLocal), new WasmGetLocal(lengthLocal));
         loop.getBody().add(new WasmBranch(compare, loop));
+        converter.convert(loop);
 
         initStringsFunction = function;
     }
@@ -187,15 +191,16 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         function.add(stringLocal);
 
         var value = new WasmCall(nextCharArrayFunction);
-        function.getBody().add(new WasmStructSet(stringTypeInfo.getStructure(),
+        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        converter.convert(new WasmStructSet(stringTypeInfo.getStructure(),
                 new WasmGetLocal(stringLocal), WasmGCClassInfoProvider.CUSTOM_FIELD_OFFSETS, value));
-        function.getBody().add(new WasmStructSet(stringTypeInfo.getStructure(), new WasmGetLocal(stringLocal),
+        converter.convert(new WasmStructSet(stringTypeInfo.getStructure(), new WasmGetLocal(stringLocal),
                 WasmGCClassInfoProvider.VT_FIELD_OFFSET,
                 new WasmGetGlobal(stringTypeInfo.getVirtualTablePointer())));
         if (hasIntern()) {
             var queryFunction = functionProvider.forStaticMethod(new MethodReference(StringInternPool.class,
                     "query", String.class, String.class));
-            function.getBody().add(new WasmDrop(new WasmCall(queryFunction, new WasmGetLocal(stringLocal))));
+            converter.convert(new WasmDrop(new WasmCall(queryFunction, new WasmGetLocal(stringLocal))));
             functionProvider.forStaticMethod(new MethodReference(StringInternPool.class, "<clinit>",
                     void.class));
         }
