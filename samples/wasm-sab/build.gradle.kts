@@ -27,5 +27,6 @@ dependencies {
 
 teavm.wasmGC {
     addedToWebApp = true
+    sharedBuffer = true
     mainClass = "org.teavm.samples.wasmsab.Main"
 }

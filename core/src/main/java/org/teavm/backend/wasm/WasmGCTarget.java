@@ -113,6 +113,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private WasmDebugInfoLocation debugLocation = WasmDebugInfoLocation.EXTERNAL;
     private WasmDebugInfoLevel debugLevel = WasmDebugInfoLevel.FULL;
     private int bufferHeapMinSize = 1024 * 1024 * 2;
+    private boolean sharedBuffer;
     private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
     private Map<MethodReference, WasmGCIntrinsic> customIntrinsics = new HashMap<>();
     private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
@@ -160,6 +161,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     public void setBufferHeapMinSize(int bufferHeapMinSize) {
         this.bufferHeapMinSize = bufferHeapMinSize;
+    }
+
+    public void setSharedBuffer(boolean sharedBuffer) {
+        this.sharedBuffer = sharedBuffer;
     }
 
     public void setCompactMode(boolean compactMode) {
@@ -498,6 +503,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var pages = (memorySize - 1) / WasmGeneratorUtil.PAGE_SIZE + 1;
         module.setMinMemorySize(pages);
         module.setMaxMemorySize(32768);
+        module.sharedMemory = sharedBuffer;
     }
 
     private static boolean needsBuffersHeap(DependencyInfo dependencyInfo) {
@@ -562,7 +568,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     }
 
     private byte[] writeMemoryRequirements(WasmModule module) {
-        var data = "{\"min\":" + module.getMinMemorySize() + ", \"dataSize\":" + dataSize + "}";
+        var data = "{\"min\":" + module.getMinMemorySize() + ", \"dataSize\":" + dataSize
+                + ", \"shared\": " + sharedBuffer + "}";
         return data.getBytes(StandardCharsets.UTF_8);
     }
 

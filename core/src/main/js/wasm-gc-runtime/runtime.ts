@@ -102,6 +102,7 @@ interface Allocator {
 interface MemoryDefaults {
     dataSize?: number;
     min?: number;
+    shared?: boolean;
 }
 
 // --- Implementation ---
@@ -296,12 +297,14 @@ async function linkImports(
         const minSize = memDefaults.min ?? 0;
         ptr += minSize;
         ptr = Math.max(ptr, memoryOptions.minSize ?? 0);
-        const shared = memoryOptions.shared === true;
+        const shared = memoryOptions.shared ?? memDefaults.shared ?? false;
         maxSize ??= (((1 << 31) - 1) | 0);
+        const initialPages = Math.max(minSize, emscriptenModules.length === 0 ? 1 : 256);
+        const maxPages = shared ? initialPages : ((maxSize - 1) >> 16) + 1;
         memoryInstance = new WebAssembly.Memory({
             shared,
-            initial: Math.max(minSize, emscriptenModules.length === 0 ? 1 : 256),
-            maximum: ((maxSize - 1) >> 16) + 1
+            initial: initialPages,
+            maximum: maxPages
         });
     }
     const tableInstance = tablePtr > 0

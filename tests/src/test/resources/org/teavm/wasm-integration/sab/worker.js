@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,15 +14,14 @@
  *  limitations under the License.
  */
 
-importScripts("wasm-gc/wasm-sab.wasm-runtime.js");
+import { load } from '/resources/org/teavm/backend/wasm/wasm-gc-module-runtime.js';
 
-async function launch() {
-    let teavm = await TeaVM.wasmGC.load("wasm-gc/wasm-sab.wasm", {
-        stackDeobfuscator: {
-            enabled: true
-        }
-    });
-    teavm.exports.main([]);
-}
-
-launch();
+let teavm = await load("/tests/sab/test.wasm", {
+    stackDeobfuscator: {
+        enabled: true
+    },
+    memory: {
+        shared: true
+    }
+});
+teavm.exports.test();

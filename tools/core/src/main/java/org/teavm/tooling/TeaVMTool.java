@@ -119,8 +119,7 @@ public class TeaVMTool {
     private int minHeapSize = 4 * (1 << 20);
     private int maxHeapSize = 128 * (1 << 20);
     private int minDirectBuffersSize = 2 * (1 << 20);
-    private int maxDirectBuffersSize = 32 * (1 << 20);
-    private boolean importedWasmMemory;
+    private boolean sharedBuffer;
     private ReferenceCache referenceCache;
     private boolean heapDump;
     private boolean shortFileNames;
@@ -274,12 +273,8 @@ public class TeaVMTool {
         this.minDirectBuffersSize = minDirectBuffersSize;
     }
 
-    public void setMaxDirectBuffersSize(int maxDirectBuffersSize) {
-        this.maxDirectBuffersSize = maxDirectBuffersSize;
-    }
-
-    public void setImportedWasmMemory(boolean importedWasmMemory) {
-        this.importedWasmMemory = importedWasmMemory;
+    public void setSharedBuffer(boolean sharedBuffer) {
+        this.sharedBuffer = sharedBuffer;
     }
 
     public ClassLoader getClassLoader() {
@@ -392,6 +387,7 @@ public class TeaVMTool {
         target.setDebugInfoLevel(debugInformationGenerated ? WasmDebugInfoLevel.FULL : wasmDebugInfoLevel);
         target.setDebugInfoLocation(wasmDebugInfoLocation);
         target.setBufferHeapMinSize(minDirectBuffersSize);
+        target.setSharedBuffer(sharedBuffer);
         if (sourceMapsFileGenerated) {
             wasmSourceMapWriter = new SourceMapBuilder();
             target.setSourceMapBuilder(wasmSourceMapWriter);

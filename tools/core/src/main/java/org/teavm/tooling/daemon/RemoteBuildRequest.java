@@ -56,8 +56,7 @@ public class RemoteBuildRequest implements Serializable {
     public int minHeapSize;
     public int maxHeapSize;
     public int minDirectBuffersSize;
-    public int maxDirectBuffersSize;
-    public boolean importedWasmMemory;
+    public boolean sharedBuffer;
     public boolean heapDump;
     public boolean shortFileNames;
     public boolean assertionsRemoved;

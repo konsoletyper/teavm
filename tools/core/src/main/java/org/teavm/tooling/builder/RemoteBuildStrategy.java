@@ -215,13 +215,8 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
-    public void setMaxDirectBuffersSize(int maxDirectBuffersSize) {
-        request.maxDirectBuffersSize = maxDirectBuffersSize;
-    }
-
-    @Override
-    public void setImportedWasmMemory(boolean value) {
-        request.importedWasmMemory = value;
+    public void setSharedBuffer(boolean sharedBuffer) {
+        request.sharedBuffer = sharedBuffer;
     }
 
     @Override

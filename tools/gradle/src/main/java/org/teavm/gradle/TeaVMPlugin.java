@@ -216,8 +216,7 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getSourceMap().convention(wasmGC.getSourceMap());
             task.getSourceFilePolicy().convention(wasmGC.getSourceFilePolicy());
             task.getMinDirectBuffersSize().convention(wasmGC.getMinDirectBuffersSize());
-            task.getMaxDirectBuffersSize().convention(wasmGC.getMaxDirectBuffersSize());
-            task.getImportedWasmMemory().convention(wasmGC.getImportedWasmMemory());
+            task.getSharedBuffer().convention(wasmGC.getSharedBuffer());
             task.getDebugInfoLocation().convention(wasmGC.getDebugInfoLocation());
             task.getPreservedClasses().addAll(emscriptenEnabled
                     .map(enabled -> enabled ? List.of("org.teavm.runtime.heap.Heap") : Collections.emptyList()));

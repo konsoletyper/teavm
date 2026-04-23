@@ -115,6 +115,9 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasmGC.getImportedWasmMemory().convention(property("wasm-gc.importedMemory")
                 .map(Boolean::parseBoolean)
                 .orElse(false));
+        wasmGC.getSharedBuffer().convention(property("wasm-gc.sharedBuffer")
+                .map(Boolean::parseBoolean)
+                .orElse(false));
         wasmGC.getEmscripten().getEnabled().convention(false);
         wasmGC.getEmscripten().getCompilerArgs().convention(property("wasm-gc.emscripten.compilerArgs")
                 .map(c -> List.of(c.split(" ")))

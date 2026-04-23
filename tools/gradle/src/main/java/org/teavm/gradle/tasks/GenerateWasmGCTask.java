@@ -35,8 +35,7 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
         getSourceMap().convention(false);
         getSourceFilePolicy().convention(SourceFilePolicy.LINK_LOCAL_FILES);
         getMinDirectBuffersSize().convention(2);
-        getMaxDirectBuffersSize().convention(32);
-        getImportedWasmMemory().convention(false);
+        getSharedBuffer().convention(false);
     }
 
     @Input
@@ -65,10 +64,7 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
     public abstract Property<Integer> getMinDirectBuffersSize();
 
     @Input
-    public abstract Property<Integer> getMaxDirectBuffersSize();
-
-    @Input
-    public abstract Property<Boolean> getImportedWasmMemory();
+    public abstract Property<Boolean> getSharedBuffer();
 
     @Override
     protected void setupBuilder(BuildStrategy builder) {
@@ -77,8 +73,7 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
         builder.setDebugInformationGenerated(getDebugInformation().get());
         builder.setSourceMapsFileGenerated(getSourceMap().get());
         builder.setMinDirectBuffersSize(getMinDirectBuffersSize().get() * 1024 * 1024);
-        builder.setMaxDirectBuffersSize(getMaxDirectBuffersSize().get() * 1024 * 1024);
-        builder.setImportedWasmMemory(getImportedWasmMemory().get());
+        builder.setSharedBuffer(getSharedBuffer().get());
         switch (getDebugInfoLevel().get()) {
             case FULL:
                 builder.setWasmDebugInfoLevel(org.teavm.backend.wasm.WasmDebugInfoLevel.FULL);

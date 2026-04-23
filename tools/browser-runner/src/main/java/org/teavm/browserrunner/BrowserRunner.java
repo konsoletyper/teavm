@@ -280,6 +280,8 @@ public class BrowserRunner {
                             if (content != null) {
                                 resp.setStatus(HttpServletResponse.SC_OK);
                                 resp.setContentType("text/html");
+                                resp.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+                                resp.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
                                 resp.getOutputStream().write(content.getBytes(StandardCharsets.UTF_8));
                                 resp.getOutputStream().flush();
                                 return;
@@ -293,6 +295,8 @@ public class BrowserRunner {
                             if (content != null) {
                                 resp.setStatus(HttpServletResponse.SC_OK);
                                 resp.setContentType("application/javascript");
+                                resp.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+                                resp.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
                                 resp.getOutputStream().write(content.getBytes(StandardCharsets.UTF_8));
                                 resp.getOutputStream().flush();
                                 return;
@@ -310,6 +314,8 @@ public class BrowserRunner {
                             } else if (file.getName().endsWith(".wasm")) {
                                 resp.setContentType("application/wasm");
                             }
+                            resp.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+                            resp.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
                             try (var input = new FileInputStream(file)) {
                                 input.transferTo(resp.getOutputStream());
                             }
@@ -325,6 +331,8 @@ public class BrowserRunner {
                                     resp.setContentType("application/javascript");
                                 }
                                 resp.setStatus(HttpServletResponse.SC_OK);
+                                resp.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+                                resp.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
                                 input.transferTo(resp.getOutputStream());
                             } else {
                                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

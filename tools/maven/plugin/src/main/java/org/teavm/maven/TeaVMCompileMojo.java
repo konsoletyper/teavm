@@ -158,10 +158,15 @@ public class TeaVMCompileMojo extends AbstractMojo {
     private int minDirectBuffersSize;
 
     @Parameter(property = "teavm.maxDirectBuffersSize", defaultValue = "32")
+    @Deprecated
     private int maxDirectBuffersSize;
 
     @Parameter(property = "teavm.importedWasmMemory", defaultValue = "false")
+    @Deprecated
     private boolean importedWasmMemory;
+
+    @Parameter(property = "teavm.sharedBuffer", defaultValue = "false")
+    public boolean sharedBuffer;
 
     @Parameter(property = "teavm.outOfProcess", defaultValue = "false")
     private boolean outOfProcess;
@@ -207,10 +212,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setMinHeapSize(minHeapSize * 1024 * 1024);
             builder.setMaxHeapSize(maxHeapSize * 1024 * 1024);
             builder.setMinDirectBuffersSize(minDirectBuffersSize * 1024 * 1024);
-            builder.setMaxDirectBuffersSize(maxDirectBuffersSize * 1024 * 1024);
+            builder.setSharedBuffer(sharedBuffer);
             builder.setShortFileNames(shortFileNames);
             builder.setAssertionsRemoved(assertionsRemoved);
-            builder.setImportedWasmMemory(importedWasmMemory);
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occurred", e);
         }

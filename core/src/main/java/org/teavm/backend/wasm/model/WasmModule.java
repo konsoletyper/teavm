@@ -43,6 +43,7 @@ public class WasmModule {
     public String memoryExportName;
     public String memoryImportName;
     public String memoryImportModule;
+    public boolean sharedMemory;
 
     public void add(WasmCustomSection customSection) {
         if (customSections.containsKey(customSection.getName())) {

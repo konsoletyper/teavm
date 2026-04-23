@@ -50,6 +50,8 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
     @Deprecated
     Property<Boolean> getImportedWasmMemory();
 
+    Property<Boolean> getSharedBuffer();
+
     @Nested
     TeaVMEmscriptenConfiguration getEmscripten();
 
