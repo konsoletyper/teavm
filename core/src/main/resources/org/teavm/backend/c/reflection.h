@@ -89,6 +89,7 @@ typedef struct {
     TeaVM_ClassPtr data[];
 } TeaVM_ClassArray;
 
+#if TEAVM_CLASS_REFLECTION_FIELDS_USED || TEAVM_CLASS_REFLECTION_ANNOTATIONS_USED
 typedef struct {
     #if TEAVM_CLASS_REFLECTION_FIELDS_USED
         TeaVM_FieldInfoList* fields;
@@ -97,6 +98,7 @@ typedef struct {
         TeaVM_AnnotationInfoList* annotations;
     #endif
 } TeaVM_ClassReflection;
+#endif
 
 extern void* teavm_reflection_readField(void* obj, TeaVM_FieldInfo* field);
 extern void teavm_reflection_writeField(void* obj, TeaVM_FieldInfo* field, void* value);
