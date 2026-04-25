@@ -134,7 +134,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                         classInfoType.structure().getReference(), null, block.getBody());
 
                 var initBlock = new WasmBlock(false);
-                block.getBody().add(initBlock);
+                initBlock.setType(classInfoType.enumConstantsType().getReference().asBlock());
 
                 var array = new WasmStructGet(classInfoType.structure(), cachedReceiver.expr(),
                         classInfoType.enumConstantsIndex());
@@ -145,10 +145,11 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 var call = new WasmCallReference(fnRef, fnType);
                 initBlock.getBody().add(new WasmStructSet(classInfoType.structure(),
                         cachedReceiver.expr(), classInfoType.enumConstantsIndex(), call));
+                initBlock.getBody().add(new WasmStructGet(classInfoType.structure(), cachedReceiver.expr(),
+                        classInfoType.enumConstantsIndex()));
 
-                array = new WasmStructGet(classInfoType.structure(), cachedReceiver.expr(),
-                        classInfoType.enumConstantsIndex());
-                block.getBody().add(new WasmArrayLength(array));
+                block.getBody().add(new WasmArrayLength(initBlock));
+                cachedReceiver.release();
                 return block;
             }
             case "enumConstant": {
