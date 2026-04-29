@@ -18,10 +18,7 @@ package org.teavm.classlib.impl.unicode;
 import static org.junit.Assert.assertArrayEquals;
 import java.util.Arrays;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
 
-@RunWith(TeaVMTestRunner.class)
 public class UnicodeHelperTest {
     @Test
     public void longRunsRoundTrip() {
