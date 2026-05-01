@@ -37,12 +37,16 @@ jobs:
         args+=("-Pteavm.localNodeJS=true")
         args+=("-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m")
         echo "${args[@]}"
+        export TEAVM_TEST_BROWSER_LOG=1
         ./gradlew "${args[@]}" --stacktrace test
     - uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: "test-reports-${{ matrix.platform }}"
-        path: "tests/build/reports/tests/test"
+        path: |
+          tests/build/reports/tests/test
+          tests/build/teavm-tests/browser-stderr-*.txt
+          tests/build/teavm-tests/browser-stdout-*.txt
   checkstyle:
     runs-on: ubuntu-latest
     timeout-minutes: 15

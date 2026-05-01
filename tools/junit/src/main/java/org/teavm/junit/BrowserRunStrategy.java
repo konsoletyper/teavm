@@ -24,13 +24,14 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.teavm.browserrunner.BrowserRunDescriptor;
+import org.teavm.browserrunner.BrowserRunParams;
 import org.teavm.browserrunner.BrowserRunner;
 
 class BrowserRunStrategy implements TestRunStrategy {
     private File baseDir;
     private BrowserRunner runner;
 
-    BrowserRunStrategy(File baseDir, String type, Function<String, Process> browserRunner) {
+    BrowserRunStrategy(File baseDir, String type, Function<BrowserRunParams, Process> browserRunner) {
         this.baseDir = baseDir;
         runner = new BrowserRunner(baseDir, type, browserRunner,
                 Boolean.parseBoolean(System.getProperty(JS_DECODE_STACK, "true")));

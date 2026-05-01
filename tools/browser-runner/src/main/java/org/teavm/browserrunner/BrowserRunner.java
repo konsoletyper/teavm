@@ -18,11 +18,14 @@ package org.teavm.browserrunner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -54,10 +57,12 @@ import org.eclipse.jetty.websocket.api.WebSocketPolicy;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
 public class BrowserRunner {
+    private static final boolean logBrowserOutput = System.getenv().getOrDefault("TEAVM_TEST_BROWSER_LOG", "0")
+            .equals("1");
     private boolean decodeStack;
     private final File baseDir;
     private final String type;
-    private final Function<String, Process> browserRunner;
+    private final Function<BrowserRunParams, Process> browserRunner;
     private Process browserProcess;
     private Server server;
     private int port;
@@ -66,14 +71,15 @@ public class BrowserRunner {
     private ConcurrentMap<Integer, CallbackWrapper> awaitingRuns = new ConcurrentHashMap<>();
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    public BrowserRunner(File baseDir, String type, Function<String, Process> browserRunner, boolean decodeStack) {
+    public BrowserRunner(File baseDir, String type, Function<BrowserRunParams, Process> browserRunner,
+            boolean decodeStack) {
         this.baseDir = baseDir;
         this.type = type;
         this.browserRunner = browserRunner;
         this.decodeStack = decodeStack;
     }
 
-    public static Function<String, Process> pickBrowser(String name) {
+    public static Function<BrowserRunParams, Process> pickBrowser(String name) {
         switch (name) {
             case "browser":
                 return BrowserRunner::customBrowser;
@@ -90,7 +96,31 @@ public class BrowserRunner {
 
     public void start() {
         runServer();
-        browserProcess = browserRunner.apply("http://localhost:" + port + "/index.html");
+        var pid = ProcessHandle.current().pid();
+        browserProcess = browserRunner.apply(
+                new BrowserRunParams() {
+                    @Override
+                    public String url() {
+                        return "http://localhost:" + port + "/index.html";
+                    }
+
+                    @Override
+                    public File stderrFile() {
+                        if (logBrowserOutput) {
+                            return new File(baseDir, "browser-stderr-" + pid + ".txt");
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public File stdoutFile() {
+                        if (logBrowserOutput) {
+                            return new File(baseDir, "browser-stdout-" + pid + ".txt");
+                        }
+                        return null;
+                    }
+                }
+        );
     }
 
     public void stop() {
@@ -431,18 +461,23 @@ public class BrowserRunner {
         }
     }
 
-    public static Process customBrowser(String url) {
-        System.out.println("Open link to run tests: " + url + "?logging=true");
+    public static Process customBrowser(BrowserRunParams runParams) {
+        System.out.println("Open link to run tests: " + runParams.url() + "?logging=true");
         return null;
     }
 
-    public static Process chromeBrowser(String url) {
-        return browserTemplate("chrome", url, (profile, params) -> {
+    public static Process chromeBrowser(BrowserRunParams runParams) {
+        return browserTemplate("chrome", runParams, (profile, params) -> {
             addChromeCommand(params);
+            if (logBrowserOutput) {
+                params.addAll(List.of(
+                        "--enable-logging=stderr",
+                        "--log-level=0"
+                ));
+            }
             params.addAll(Arrays.asList(
                     "--headless",
                     "--disable-gpu",
-                    "--remote-debugging-port=9222",
                     "--no-first-run",
                     "--js-flags=--expose-gc",
                     "--user-data-dir=" + profile
@@ -450,8 +485,8 @@ public class BrowserRunner {
         });
     }
 
-    public static Process firefoxBrowser(String url) {
-        return browserTemplate("firefox", url, (profile, params) -> {
+    public static Process firefoxBrowser(BrowserRunParams runParams) {
+        return browserTemplate("firefox", runParams, (profile, params) -> {
             addFirefoxCommand(params);
             params.addAll(Arrays.asList(
                     "--headless",
@@ -495,7 +530,8 @@ public class BrowserRunner {
         return System.getProperty("os.name").toLowerCase().startsWith("mac");
     }
 
-    private static Process browserTemplate(String name, String url, BiConsumer<String, List<String>> paramsBuilder) {
+    private static Process browserTemplate(String name, BrowserRunParams runParams,
+            BiConsumer<String, List<String>> paramsBuilder) {
         File temp;
         try {
             temp = File.createTempFile("teavm", "teavm");
@@ -505,11 +541,11 @@ public class BrowserRunner {
             System.out.println("Running " + name + " with user data dir: " + temp.getAbsolutePath());
             List<String> params = new ArrayList<>();
             paramsBuilder.accept(temp.getAbsolutePath(), params);
-            params.add(url);
+            params.add(runParams.url());
             ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[0]));
             Process process = pb.start();
-            logStream(process.getInputStream(), name + " stdout");
-            logStream(process.getErrorStream(), name + " stderr");
+            logStream(process.getInputStream(), runParams.stdoutFile(), "browser stdout");
+            logStream(process.getErrorStream(), runParams.stderrFile(), "browser stderr");
             new Thread(() -> {
                 try {
                     System.out.println(name + " process terminated with code: " + process.waitFor());
@@ -523,18 +559,35 @@ public class BrowserRunner {
         }
     }
 
-    private static void logStream(InputStream stream, String name) {
+    private static void logStream(InputStream stream, File file, String prefix) {
         new Thread(() -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-                while (true) {
-                    String line = reader.readLine();
-                    if (line == null) {
-                        break;
+            if (file == null) {
+                try (var reader = new BufferedReader(new InputStreamReader(stream))) {
+                    while (true) {
+                        String line = reader.readLine();
+                        if (line == null) {
+                            break;
+                        }
+                        System.out.println(prefix + ": " + line);
                     }
-                    System.out.println(name + ": " + line);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+            } else {
+                file.getParentFile().mkdirs();
+                try (var reader = new BufferedReader(new InputStreamReader(stream));
+                        var writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)))) {
+                    while (true) {
+                        String line = reader.readLine();
+                        if (line == null) {
+                            break;
+                        }
+                        writer.append(line);
+                        writer.newLine();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
     }
