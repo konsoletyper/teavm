@@ -85,6 +85,8 @@ public final class UnicodeSupport {
         IntegerArray titleCaseMapping = new IntegerArray(256);
         IntegerArray upperCaseMapping = new IntegerArray(256);
         IntegerArray lowerCaseMapping = new IntegerArray(256);
+        int rangeStart = -1;
+        byte rangeClass = 0;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resourceProvider
                 .getResource("org/teavm/classlib/impl/unicode/UnicodeData.txt").open(), StandardCharsets.UTF_8))) {
             while (true) {
@@ -97,6 +99,24 @@ public final class UnicodeSupport {
                 }
                 String[] fields = splitLine(line);
                 int charCode = parseHex(fields[0]);
+                Byte charClass = classMap.get(fields[2]);
+                String name = fields[1];
+                if (name.endsWith(", First>")) {
+                    rangeStart = charCode;
+                    rangeClass = charClass != null ? charClass.byteValue() : 0;
+                    continue;
+                }
+                if (name.endsWith(", Last>") && rangeStart >= 0) {
+                    while (classes.size() < rangeStart) {
+                        classes.add(0);
+                    }
+                    for (int codePoint = rangeStart; codePoint <= charCode; ++codePoint) {
+                        classes.add(rangeClass);
+                    }
+                    rangeStart = -1;
+                    rangeClass = 0;
+                    continue;
+                }
                 while (classes.size() < charCode) {
                     classes.add(0);
                 }
@@ -105,7 +125,6 @@ public final class UnicodeSupport {
                     digitValues.add(charCode);
                     digitValues.add(digit);
                 }
-                Byte charClass = classMap.get(fields[2]);
                 classes.add(charClass != null ? charClass.intValue() : 0);
 
                 int upperCaseCode = !fields[12].isEmpty() ? parseHex(fields[12]) : charCode;

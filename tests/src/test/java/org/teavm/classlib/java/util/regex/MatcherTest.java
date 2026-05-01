@@ -614,6 +614,10 @@ public class MatcherTest {
 
         // assertTrue(Pattern.matches("[\\p{L}&&[^\\p{Lu}&&[^K]]]", "K"));
         assertFalse(Pattern.matches("[\\p{L}&&[^\\p{Lu}&&[^G]]]", "K"));
+
+        assertTrue(Pattern.matches("\\p{L}+", "\u767A"));
+        assertTrue(Pattern.matches("\\p{L}+", "\u6F22"));
+        assertTrue(Pattern.matches("\\p{L}+", "\u3042\u30A2\u4E00\u767A\u6F22"));
     }
 
     @Test

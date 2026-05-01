@@ -172,7 +172,7 @@ public final class UnicodeHelper {
             byte b = bytes[i];
             if (i < bytes.length - 1 && b == bytes[i + 1]) {
                 int count = 0;
-                while (count < 16384 && bytes[i + count] == b) {
+                while (count < 16384 && i + count < bytes.length && bytes[i + count] == b) {
                     ++count;
                 }
                 i += count;
@@ -219,13 +219,16 @@ public final class UnicodeHelper {
                 count = 1;
             }
             if (b != 0 || count < 128) {
-                if (index + count >= buffer.length) {
-                    ranges[rangeIndex++] = new Range(codePoint, codePoint + index, Arrays.copyOf(buffer, index));
-                    codePoint += index + count;
-                    index = 0;
-                }
-                while (count-- > 0) {
-                    buffer[index++] = b;
+                while (count > 0) {
+                    if (index == buffer.length) {
+                        ranges[rangeIndex++] = new Range(codePoint, codePoint + index, Arrays.copyOf(buffer, index));
+                        codePoint += index;
+                        index = 0;
+                    }
+                    int chunk = Math.min(count, buffer.length - index);
+                    Arrays.fill(buffer, index, index + chunk, b);
+                    index += chunk;
+                    count -= chunk;
                 }
             } else {
                 if (index > 0) {
@@ -234,6 +237,9 @@ public final class UnicodeHelper {
                 codePoint += index + count;
                 index = 0;
             }
+        }
+        if (index > 0) {
+            ranges[rangeIndex++] = new Range(codePoint, codePoint + index, Arrays.copyOf(buffer, index));
         }
         return Arrays.copyOf(ranges, rangeIndex);
     }

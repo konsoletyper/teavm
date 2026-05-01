@@ -42,6 +42,22 @@ public class CharacterTest {
     }
 
     @Test
+    public void unicodeDataRangesRecognized() {
+        assertEquals(Character.OTHER_LETTER, Character.getType(0x3400));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0x4DBF));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0x4E00));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0x767A));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0x6F22));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0x9FFF));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0xAC00));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0xD7A3));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0x20000));
+        assertEquals(Character.OTHER_LETTER, Character.getType(0x2A6DF));
+        assertEquals(Character.PRIVATE_USE, Character.getType(0xF0000));
+        assertEquals(Character.PRIVATE_USE, Character.getType(0x10FFFD));
+    }
+
+    @Test
     public void lowerCase() {
         assertEquals('1', Character.toLowerCase('1'));
         assertEquals('a', Character.toLowerCase('a'));
