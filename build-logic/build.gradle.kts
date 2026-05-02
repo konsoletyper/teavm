@@ -41,6 +41,10 @@ gradlePlugin {
             id = "teavm-publish"
             implementationClass = "org.teavm.buildutil.PublishTeaVMPlugin"
         }
+        create("teavm-release") {
+            id = "teavm-release"
+            implementationClass = "org.teavm.buildutil.ReleaseTeaVMPlugin"
+        }
         create("dependency-relocation") {
             id = "dependency-relocation"
             implementationClass = "org.teavm.buildutil.DependencyRelocationPlugin"

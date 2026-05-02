@@ -16,6 +16,7 @@
 
 plugins {
     idea
+    `teavm-release`
 }
 
 group = "org.teavm"
