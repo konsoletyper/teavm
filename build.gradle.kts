@@ -22,3 +22,9 @@ plugins {
 group = "org.teavm"
 
 idea.module.excludeDirs.add(File(rootDir, "build-dir"))
+
+tasks.register("clean") {
+    doLast {
+        project.layout.buildDirectory.get().asFile.deleteRecursively()
+    }
+}
