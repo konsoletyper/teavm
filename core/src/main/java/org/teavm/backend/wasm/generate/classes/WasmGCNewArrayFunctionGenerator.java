@@ -15,39 +15,20 @@
  */
 package org.teavm.backend.wasm.generate.classes;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
-import java.util.function.Function;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmArray;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
-import org.teavm.backend.wasm.model.expression.WasmArraySet;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmBranch;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
-import org.teavm.backend.wasm.model.expression.WasmSetLocal;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.model.ValueType;
 
 class WasmGCNewArrayFunctionGenerator {
@@ -88,28 +69,23 @@ class WasmGCNewArrayFunctionGenerator {
                 function.add(sizeLocal);
                 var targetVar = new WasmLocal(classInfo.getType(), "result");
                 function.add(targetVar);
-                var converter = new WasmExpressionToInstructionConverter(function.getBody());
-                converter.convert(allocateArray(itemType, sizeLocal));
+
+                var wasmArrayType = (WasmType.CompositeReference) classInfo.getStructure().getFields()
+                        .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
+                        .getUnpackedType();
+                var wasmArray = (WasmArray) wasmArrayType.composite;
+
+                function.getBody().builder()
+                        .getGlobal(classInfo.getVirtualTablePointer())
+                        .nullConst(WasmType.EQ)
+                        .getLocal(sizeLocal)
+                        .arrayNewDefault(wasmArray)
+                        .structNew(classInfo.getStructure());
             });
             return function;
         } else {
             return getNewObjectArrayFunction();
         }
-    }
-
-    private WasmExpression allocateArray(ValueType itemType, WasmLocal sizeLocal) {
-        var classInfo = classInfoProvider.getClassInfo(ValueType.arrayOf(itemType));
-
-        var wasmArrayType = (WasmType.CompositeReference) classInfo.getStructure().getFields()
-                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
-                .getUnpackedType();
-        var wasmArray = (WasmArray) wasmArrayType.composite;
-
-        var structNew = new WasmStructNew(classInfo.getStructure());
-        structNew.getInitializers().add(new WasmGetGlobal(classInfo.getVirtualTablePointer()));
-        structNew.getInitializers().add(new WasmNullConstant(WasmType.EQ));
-        structNew.getInitializers().add(new WasmArrayNewDefault(wasmArray, new WasmGetLocal(sizeLocal)));
-        return structNew;
     }
 
     WasmFunction getNewObjectArrayFunction() {
@@ -146,15 +122,14 @@ class WasmGCNewArrayFunctionGenerator {
                     .getUnpackedType();
             var wasmArray = (WasmArray) wasmArrayType.composite;
 
-            var arrayCls = new WasmCall(classInfoProvider.getGetArrayClassFunction(), new WasmGetLocal(clsLocal));
-            var arrayVt = new WasmStructGet(classInfoType.structure(), arrayCls, classInfoType.vtableIndex());
-
-            var structNew = new WasmStructNew(classInfo.getStructure());
-            structNew.getInitializers().add(arrayVt);
-            structNew.getInitializers().add(new WasmNullConstant(WasmType.EQ));
-            structNew.getInitializers().add(new WasmArrayNewDefault(wasmArray, new WasmGetLocal(sizeLocal)));
-            var converter = new WasmExpressionToInstructionConverter(function.getBody());
-            converter.convert(structNew);
+            function.getBody().builder()
+                    .getLocal(clsLocal)
+                    .call(classInfoProvider.getGetArrayClassFunction())
+                    .structGet(classInfoType.structure(), classInfoType.vtableIndex())
+                    .nullConst(WasmType.EQ)
+                    .getLocal(sizeLocal)
+                    .arrayNewDefault(wasmArray)
+                    .structNew(classInfo.getStructure());
         });
         return function;
     }
@@ -198,54 +173,59 @@ class WasmGCNewArrayFunctionGenerator {
             function.add(resultVar);
 
             var allocFunction = getNewObjectArrayFunction();
-            var body = new ArrayList<WasmExpression>();
-            body.add(new WasmSetLocal(resultVar, new WasmCall(allocFunction,
-                    new WasmGetLocal(itemTypeLocal), new WasmGetLocal(dimensionLocals[0]))));
-            body.add(new WasmSetLocal(dataLocal, new WasmStructGet(arrayClass.getStructure(),
-                    new WasmGetLocal(resultVar), WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)));
-            body.add(new WasmSetLocal(nextItemTypeLocal, new WasmStructGet(classInfoType.structure(),
-                    new WasmGetLocal(itemTypeLocal), classInfoType.itemTypeIndex())));
+            var body = function.getBody().builder();
+            body
+                    .getLocal(itemTypeLocal)
+                    .getLocal(dimensionLocals[0])
+                    .call(allocFunction)
+                    .teeLocal(resultVar);
+            body
+                    .structGet(arrayClass.getStructure(), WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
+                    .setLocal(dataLocal);
+            body.getLocal(itemTypeLocal)
+                    .structGet(classInfoType.structure(), classInfoType.itemTypeIndex())
+                    .setLocal(nextItemTypeLocal);
 
-            var zeroGuard = new WasmBlock(false);
-            body.add(zeroGuard);
-            zeroGuard.getBody().add(new WasmBranch(new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ,
-                    new WasmGetLocal(dimensionLocals[0])), zeroGuard));
+            var guardBody = body.block();
+            guardBody.getLocal(dimensionLocals[0])
+                    .intUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ)
+                    .branch(guardBody);
 
-            Function<WasmExpression[], WasmExpression> nextArrayConstructor;
+            WasmLocal createNextArrayLocal = null;
+            WasmFunctionType nextFunctionType = null;
+            WasmFunction nextFunction = null;
             if (depth == 2) {
-                var nextFunctionType = functionTypes.of(objectClass.getType(),
+                nextFunctionType = functionTypes.of(objectClass.getType(),
                         classInfoType.structure().getReference(), WasmType.INT32);
-                var createNextArrayLocal = new WasmLocal(nextFunctionType.getReference(), "createNextArray");
+                createNextArrayLocal = new WasmLocal(nextFunctionType.getReference(), "createNextArray");
                 function.add(createNextArrayLocal);
-                zeroGuard.getBody().add(new WasmSetLocal(createNextArrayLocal, new WasmStructGet(
-                        classInfoType.structure(), new WasmGetLocal(nextItemTypeLocal),
-                        classInfoType.newArrayFunctionIndex())));
-                nextArrayConstructor = args -> new WasmCallReference(new WasmGetLocal(createNextArrayLocal),
-                        nextFunctionType, args);
+                guardBody.getLocal(nextItemTypeLocal)
+                        .structGet(classInfoType.structure(), classInfoType.newArrayFunctionIndex())
+                        .setLocal(createNextArrayLocal);
             } else {
-                var nextFunction = classInfoProvider.getMultiArrayConstructor(depth - 1);
-                nextArrayConstructor = args -> new WasmCall(nextFunction, args);
+                nextFunction = classInfoProvider.getMultiArrayConstructor(depth - 1);
             }
-            var loop = new WasmBlock(true);
-            zeroGuard.getBody().add(loop);
-            var args = new WasmExpression[depth];
-            args[0] = new WasmGetLocal(nextItemTypeLocal);
-            for (var i = 1; i < args.length; ++i) {
-                args[i] = new WasmGetLocal(dimensionLocals[i]);
+
+            var loopBody = guardBody.loop();
+            loopBody.getLocal(dataLocal).getLocal(indexLocal);
+            loopBody.getLocal(nextItemTypeLocal);
+            for (var i = 1; i < depth; ++i) {
+                loopBody.getLocal(dimensionLocals[i]);
             }
-            loop.getBody().add(new WasmArraySet(dataArray, new WasmGetLocal(dataLocal), new WasmGetLocal(indexLocal),
-                    nextArrayConstructor.apply(args)));
-            var incrementIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    new WasmGetLocal(indexLocal), new WasmInt32Constant(1));
-            loop.getBody().add(new WasmSetLocal(indexLocal, incrementIndex));
-            var continueCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_UNSIGNED,
-                    new WasmGetLocal(indexLocal), new WasmGetLocal(dimensionLocals[0]));
-            loop.getBody().add(new WasmBranch(continueCondition, loop));
+            if (depth == 2) {
+                loopBody.getLocal(createNextArrayLocal).callReference(nextFunctionType);
+            } else {
+                loopBody.call(nextFunction);
+            }
+            loopBody.arraySet(dataArray);
+            loopBody.getLocal(indexLocal).i32Const(1)
+                    .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD)
+                    .teeLocal(indexLocal);
+            loopBody.getLocal(dimensionLocals[0])
+                    .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_UNSIGNED)
+                    .branch(loopBody);
 
-            body.add(new WasmGetLocal(resultVar));
-
-            var converter = new WasmExpressionToInstructionConverter(function.getBody());
-            converter.convertAll(body);
+            body.getLocal(resultVar);
         });
         return function;
     }

@@ -51,16 +51,12 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsics;
 import org.teavm.backend.wasm.model.WasmCustomSection;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.optimization.WasmUsageCounter;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
@@ -401,9 +397,9 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         getFunction.setExportName("teavm.getJsException");
         var getParam = new WasmLocal(throwableType.getReference(), "javaException");
         getFunction.add(getParam);
-        var getField = new WasmStructGet(throwableType, new WasmGetLocal(getParam), nativeExceptionField);
-        var converter = new WasmExpressionToInstructionConverter(getFunction.getBody());
-        converter.convert(getField);
+        getFunction.getBody().builder()
+                .getLocal(getParam)
+                .structGet(throwableType, nativeExceptionField);
         declarationsGenerator.module.functions.add(getFunction);
 
         var setFunction = new WasmFunction(declarationsGenerator.functionTypes.of(null, throwableType.getReference(),
@@ -414,10 +410,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var setValue = new WasmLocal(WasmType.EXTERN, "jsException");
         setFunction.add(setParam);
         setFunction.add(setValue);
-        var setField = new WasmStructSet(throwableType, new WasmGetLocal(setParam),
-                nativeExceptionField, new WasmGetLocal(setValue));
-        converter = new WasmExpressionToInstructionConverter(setFunction.getBody());
-        converter.convert(setField);
+        setFunction.getBody().builder()
+                .getLocal(setParam)
+                .getLocal(setValue)
+                .structSet(throwableType, nativeExceptionField);
         declarationsGenerator.module.functions.add(setFunction);
     }
 

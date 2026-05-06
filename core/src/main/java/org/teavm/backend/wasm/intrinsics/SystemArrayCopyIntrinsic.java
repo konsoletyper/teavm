@@ -18,26 +18,18 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
-import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -202,41 +194,35 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         function.add(sourceArrayIndexLocal);
         function.add(countLocal);
 
-        var block = new WasmBlock(false);
-        var targetIndexLessThanZero = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
-                new WasmGetLocal(targetArrayIndexLocal), new WasmInt32Constant(0));
-        block.getBody().add(new WasmBranch(targetIndexLessThanZero, block));
-        var sourceIndexLessThanZero = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
-                new WasmGetLocal(sourceArrayIndexLocal), new WasmInt32Constant(0));
-        block.getBody().add(new WasmBranch(sourceIndexLessThanZero, block));
-        var countPositive = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
-                new WasmGetLocal(countLocal), new WasmInt32Constant(0));
-        block.getBody().add(new WasmBranch(countPositive, block));
+        var body = function.getBody().builder();
+        var blockBody = body.block();
 
-        var targetSize = new WasmArrayLength(new WasmGetLocal(targetArrayLocal));
-        var targetIndexLimit = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
-                targetSize, new WasmGetLocal(countLocal));
-        var targetIndexGreaterThanSize = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
-                new WasmGetLocal(targetArrayIndexLocal), targetIndexLimit);
-        block.getBody().add(new WasmBranch(targetIndexGreaterThanSize, block));
+        blockBody.getLocal(targetArrayIndexLocal).i32Const(0)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED)
+                .branch(blockBody);
+        blockBody.getLocal(sourceArrayIndexLocal).i32Const(0)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED)
+                .branch(blockBody);
+        blockBody.getLocal(countLocal).i32Const(0)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED)
+                .branch(blockBody);
 
-        var sourceSize = new WasmArrayLength(new WasmGetLocal(sourceArrayLocal));
-        var sourceIndexLimit = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
-                sourceSize, new WasmGetLocal(countLocal));
-        var sourceIndexGreaterThanSize = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
-                new WasmGetLocal(sourceArrayIndexLocal), sourceIndexLimit);
-        block.getBody().add(new WasmBranch(sourceIndexGreaterThanSize, block));
+        blockBody.getLocal(targetArrayIndexLocal)
+                .getLocal(targetArrayLocal).arrayLength()
+                .getLocal(countLocal).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED)
+                .branch(blockBody);
+        blockBody.getLocal(sourceArrayIndexLocal)
+                .getLocal(sourceArrayLocal).arrayLength()
+                .getLocal(countLocal).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED)
+                .branch(blockBody);
 
-        block.getBody().add(new WasmReturn());
-
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
-        converter.convert(block);
+        blockBody.return_();
 
         var aioobeFunction = context.functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "aiiobe",
                 ArrayIndexOutOfBoundsException.class));
-        var throwExpr = new WasmThrow(context.exceptionTag());
-        throwExpr.getArguments().add(new WasmCall(aioobeFunction));
-        converter.convert(throwExpr);
+        body.call(aioobeFunction).throw_(context.exceptionTag());
         return function;
     }
 

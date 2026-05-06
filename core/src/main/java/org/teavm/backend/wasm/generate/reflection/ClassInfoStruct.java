@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.generate.reflection;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -23,7 +22,6 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmField;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
@@ -32,18 +30,6 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmBranch;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnary;
-import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIsNull;
-import org.teavm.backend.wasm.model.expression.WasmSetLocal;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.instruction.WasmNullConstantInstruction;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.MethodReference;
@@ -520,26 +506,31 @@ public class ClassInfoStruct {
             classFunction.add(resultLocal);
 
             structure.init();
-            var body = new ArrayList<WasmExpression>();
-            var candidateValue = new WasmStructGet(structure, new WasmGetLocal(classInfoLocal), classObjectIndex);
-            body.add(new WasmSetLocal(resultLocal, candidateValue));
+            var body = classFunction.getBody().builder();
+            body
+                    .getLocal(classInfoLocal)
+                    .structGet(structure, classObjectIndex)
+                    .setLocal(resultLocal);
 
-            var block = new WasmBlock(false);
-            body.add(block);
-            var notNullCond = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ,
-                    new WasmIsNull(new WasmGetLocal(resultLocal)));
-            block.getBody().add(new WasmBranch(notNullCond, block));
+            var block = body.block();
+            block
+                    .getLocal(resultLocal)
+                    .isNull()
+                    .negate()
+                    .branch(block);
 
             var constructor = functions.forStaticMethod(new MethodReference(Class.class, "createClass",
                     ClassInfo.class, Class.class));
-            var createdClass = new WasmCall(constructor, new WasmGetLocal(classInfoLocal));
-            block.getBody().add(new WasmSetLocal(resultLocal, createdClass));
-            block.getBody().add(new WasmStructSet(structure, new WasmGetLocal(classInfoLocal), classObjectIndex,
-                    new WasmGetLocal(resultLocal)));
+            block
+                    .getLocal(classInfoLocal)
+                    .call(constructor)
+                    .setLocal(resultLocal);
+            block
+                    .getLocal(classInfoLocal)
+                    .getLocal(resultLocal)
+                    .structSet(structure, classObjectIndex);
 
-            body.add(new WasmGetLocal(resultLocal));
-
-            new WasmExpressionToInstructionConverter(classFunction.getBody()).convertAll(body);
+            body.getLocal(resultLocal);
         }
         return classFunction;
     }

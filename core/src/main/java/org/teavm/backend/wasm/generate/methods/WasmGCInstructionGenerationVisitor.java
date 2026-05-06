@@ -889,36 +889,13 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         }
         builder.pushLocation(expr.getLocation());
 
-        var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
-        var classInfo = context.classInfoProvider().getClassInfo(ValueType.arrayOf(expr.getType()));
-
-        int depth = 1;
-        var itemType = expr.getType();
-        while (itemType instanceof ValueType.Array) {
-            itemType = ((ValueType.Array) itemType).getItemType();
-        }
-        builder.getGlobal(context.classInfoProvider().getClassInfo(itemType).getPointer());
-        for (var i = 0; i < depth; ++i) {
-            builder.call(context.classInfoProvider().getGetArrayClassFunction());
-        }
-        builder.structGet(classInfoType.structure(), classInfoType.vtableIndex());
-
-        builder.nullConst(WasmType.EQ);
-
-        var wasmArrayType = (WasmType.CompositeReference) context.typeMapper().mapType(
-                ValueType.arrayOf(expr.getType()));
-        var wasmArrayStruct = (WasmStructure) wasmArrayType.composite;
-        var wasmArrayDataType = (WasmType.CompositeReference) wasmArrayStruct.getFields()
-                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
-        var wasmArray = (WasmArray) wasmArrayDataType.composite;
-
-        var elementType = wasmArray.getElementType().asUnpackedType();
-        for (var item : expr.getData()) {
-            accept(item, builder, elementType);
-        }
-        builder
-                .arrayNewFixed(wasmArray, expr.getData().size())
-                .structNew(classInfo.getStructure());
+        WasmGCGenerationUtil.allocateArray(context.classInfoProvider(), expr.getType(), builder, (wasmArray, b) -> {
+            var elementType = wasmArray.getElementType().asUnpackedType();
+            for (var item : expr.getData()) {
+                accept(item, builder, elementType);
+            }
+            b.arrayNewFixed(wasmArray, expr.getData().size());
+        });
 
         builder.popLocation();
     }

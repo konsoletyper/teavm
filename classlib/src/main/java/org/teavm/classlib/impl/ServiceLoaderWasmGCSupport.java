@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.impl;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ServiceLoader;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
@@ -24,27 +23,13 @@ import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactory;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactoryContext;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmSetLocal;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
-import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.instruction.WasmFunctionReferenceInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmSetGlobalInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -90,18 +75,15 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             initializer.getBody().addFirst(ref);
             ref.insertNext(new WasmSetGlobalInstruction(global));
 
-            var converter = new WasmExpressionToInstructionConverter(function.getBody());
-            converter.convert(new WasmCallReference(new WasmGetGlobal(global), initializer.getType()));
+            var body = function.getBody().builder();
+            body.getGlobal(global).callReference(initializer.getType());
 
-            var block = new WasmBlock(false);
-            var servicesFunctionRef = new WasmStructGet(classInfoStruct.structure(), new WasmGetLocal(classLocal),
-                    classInfoStruct.servicesIndex());
-            var nullCheckedRef = new WasmNullBranch(WasmNullCondition.NULL, servicesFunctionRef, block);
-            var getServices = new WasmCallReference(nullCheckedRef, servicesFunctionType);
-            block.getBody().add(new WasmReturn(getServices));
-            converter.convert(block);
+            var blockBody = body.block();
+            blockBody.getLocal(classLocal).structGet(classInfoStruct.structure(), classInfoStruct.servicesIndex())
+                    .nullBranch(WasmNullCondition.NULL, blockBody);
+            blockBody.callReference(servicesFunctionType).return_();
 
-            converter.convert(new WasmNullConstant(arrayType));
+            body.nullConst(arrayType);
         }
 
         private WasmFunction generateInitializer(WasmGCCustomGeneratorContext context) {
@@ -114,16 +96,15 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
 
             var serviceTypes = information.serviceTypes();
             var fieldIndex = classInfoStruct.servicesIndex();
+            var body = function.getBody().builder();
 
             for (var serviceType : serviceTypes) {
                 var implementations = information.serviceImplementations(serviceType);
                 var providerFunction = generateServiceProvider(context, serviceType, implementations);
                 var classInfo = context.classInfoProvider().getClassInfo(serviceType);
-                var classRef = new WasmGetGlobal(classInfo.getPointer());
-                var providerRef = new WasmFunctionReference(providerFunction);
-                var converter = new WasmExpressionToInstructionConverter(function.getBody());
-                converter.convert(new WasmStructSet(classInfoStruct.structure(), classRef, fieldIndex,
-                        providerRef));
+                body.getGlobal(classInfo.getPointer())
+                        .funcRef(providerFunction)
+                        .structSet(classInfoStruct.structure(), fieldIndex);
             }
 
             return function;
@@ -137,41 +118,33 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             function.setName(context.names().topLevel(context.names().suggestForClass(interfaceName) + "@services"));
             function.setReferenced(true);
             context.module().functions.add(function);
-            var util = new WasmGCGenerationUtil(context.classInfoProvider());
-            var converter = new WasmExpressionToInstructionConverter(function.getBody());
-            converter.convert(util.allocateArrayWithElements(ValueType.parse(Object.class), () -> {
-                var items = new ArrayList<WasmExpression>();
-                for (var implementationName : implementations) {
-                    items.add(instantiateService(context, function, implementationName));
-                }
-                return items;
-            }));
+            var body = function.getBody().builder();
+            WasmGCGenerationUtil.allocateArray(context.classInfoProvider(), ValueType.parse(Object.class), body,
+                    (wasmArray, b) -> {
+                        for (var implementationName : implementations) {
+                            instantiateService(context, function, implementationName, b);
+                        }
+                        b.arrayNewFixed(wasmArray, implementations.size());
+                    });
 
             return function;
         }
 
-        private WasmExpression instantiateService(WasmGCCustomGeneratorContext context,
-                WasmFunction function, String implementationName) {
+        private void instantiateService(WasmGCCustomGeneratorContext context,
+                WasmFunction function, String implementationName, WasmInstructionBuilder builder) {
             var implementationInfo = context.classInfoProvider().getClassInfo(implementationName);
-            var block = new WasmBlock(false);
-            block.setType(context.typeMapper().mapType(ValueType.parse(Object.class)).asBlock());
             var tmpVar = new WasmLocal(implementationInfo.getType());
             function.add(tmpVar);
-            var structNew = new WasmSetLocal(tmpVar, new WasmStructNewDefault(
-                    implementationInfo.getStructure()));
-            block.getBody().add(structNew);
 
-            var initClassField = new WasmStructSet(implementationInfo.getStructure(), new WasmGetLocal(tmpVar),
-                    WasmGCClassInfoProvider.VT_FIELD_OFFSET,
-                    new WasmGetGlobal(implementationInfo.getVirtualTablePointer()));
-            block.getBody().add(initClassField);
+            builder.structNewDefault(implementationInfo.getStructure()).setLocal(tmpVar);
+            builder.getLocal(tmpVar).getGlobal(implementationInfo.getVirtualTablePointer())
+                    .structSet(implementationInfo.getStructure(), WasmGCClassInfoProvider.VT_FIELD_OFFSET);
 
             var constructor = context.functions().forInstanceMethod(
                     new MethodReference(implementationName, INIT_METHOD));
-            block.getBody().add(new WasmCall(constructor, new WasmGetLocal(tmpVar)));
-            block.getBody().add(new WasmGetLocal(tmpVar));
+            builder.getLocal(tmpVar).call(constructor);
 
-            return block;
+            builder.getLocal(tmpVar);
         }
 
         private WasmFunction generateEmptyInitializer(WasmGCCustomGeneratorContext context) {

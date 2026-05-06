@@ -18,22 +18,14 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.reflect.GenericTypeInfo;
 
@@ -83,36 +75,30 @@ public class GenericTypeInfoIntrinsic implements WasmGCIntrinsic {
 
             var param = new WasmLocal(WasmType.STRUCT, "this");
             kindFunction.add(param);
-            var converter = new WasmExpressionToInstructionConverter(kindFunction.getBody());
+            var body = kindFunction.getBody().builder();
 
-            var check = new WasmConditional(new WasmTest(new WasmGetLocal(param),
-                    reflectionTypes.parameterizedTypeInfo().structure().getReference()));
-            check.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(
-                    GenericTypeInfo.Kind.PARAMETERIZED_TYPE)));
-            converter.convert(check);
+            body.getLocal(param).test(reflectionTypes.parameterizedTypeInfo().structure().getReference());
+            body.conditional().getThenBlock().builder()
+                    .i32Const(GenericTypeInfo.Kind.PARAMETERIZED_TYPE).return_();
 
-            check = new WasmConditional(new WasmTest(new WasmGetLocal(param),
-                    reflectionTypes.typeVariableReference().structure().getReference()));
-            check.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(
-                    GenericTypeInfo.Kind.TYPE_VARIABLE)));
-            converter.convert(check);
+            body.getLocal(param).test(reflectionTypes.typeVariableReference().structure().getReference());
+            body.conditional().getThenBlock().builder()
+                    .i32Const(GenericTypeInfo.Kind.TYPE_VARIABLE).return_();
 
-            check = new WasmConditional(new WasmTest(new WasmGetLocal(param),
-                    reflectionTypes.genericArrayInfo().structure().getReference()));
-            check.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(
-                    GenericTypeInfo.Kind.GENERIC_ARRAY)));
-            converter.convert(check);
+            body.getLocal(param).test(reflectionTypes.genericArrayInfo().structure().getReference());
+            body.conditional().getThenBlock().builder()
+                    .i32Const(GenericTypeInfo.Kind.GENERIC_ARRAY).return_();
 
             var wildcardStruct = reflectionTypes.wildcardTypeInfo().structure();
-            check = new WasmConditional(new WasmTest(new WasmGetLocal(param), wildcardStruct.getReference()));
-            var wildcard = new WasmCast(new WasmGetLocal(param), wildcardStruct.getReference());
-            var kind = new WasmStructGet(wildcardStruct, wildcard, reflectionTypes.wildcardTypeInfo().kindIndex());
-            var resultingKind = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    kind, new WasmInt32Constant(GenericTypeInfo.Kind.UPPER_BOUND_WILDCARD));
-            check.getThenBlock().getBody().add(new WasmReturn(resultingKind));
-            converter.convert(check);
+            body.getLocal(param).test(wildcardStruct.getReference());
+            body.conditional().getThenBlock().builder()
+                    .getLocal(param).cast(wildcardStruct.getReference())
+                    .structGet(wildcardStruct, reflectionTypes.wildcardTypeInfo().kindIndex())
+                    .i32Const(GenericTypeInfo.Kind.UPPER_BOUND_WILDCARD)
+                    .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD)
+                    .return_();
 
-            converter.convert(new WasmInt32Constant(GenericTypeInfo.Kind.RAW_TYPE));
+            body.i32Const(GenericTypeInfo.Kind.RAW_TYPE);
 
             context.module().functions.add(kindFunction);
         }
