@@ -73,7 +73,6 @@ import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmStorageType;
@@ -132,6 +131,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
     private IdentifiedStatement currentBreakTarget;
     private IdentifiedStatement currentContinueTarget;
     private int blockLevel;
+    private WasmGCVirtualCallGenerator vcallGen;
 
     private WasmGCGenerationVisitor compatIntrinsicVisitor;
 
@@ -150,6 +150,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
 
         compatIntrinsicVisitor = new WasmGCGenerationVisitor(context, currentMethod, function, firstVariable, async,
                 types, asyncSplitMethods);
+        vcallGen = new WasmGCVirtualCallGenerator(context.virtualTables(), context.classInfoProvider());
     }
 
     public void setReturnBlock(WasmInstructionList returnBlock) {
@@ -889,36 +890,13 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         }
         builder.pushLocation(expr.getLocation());
 
-        var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
-        var classInfo = context.classInfoProvider().getClassInfo(ValueType.arrayOf(expr.getType()));
-
-        int depth = 1;
-        var itemType = expr.getType();
-        while (itemType instanceof ValueType.Array) {
-            itemType = ((ValueType.Array) itemType).getItemType();
-        }
-        builder.getGlobal(context.classInfoProvider().getClassInfo(itemType).getPointer());
-        for (var i = 0; i < depth; ++i) {
-            builder.call(context.classInfoProvider().getGetArrayClassFunction());
-        }
-        builder.structGet(classInfoType.structure(), classInfoType.vtableIndex());
-
-        builder.nullConst(WasmType.EQ);
-
-        var wasmArrayType = (WasmType.CompositeReference) context.typeMapper().mapType(
-                ValueType.arrayOf(expr.getType()));
-        var wasmArrayStruct = (WasmStructure) wasmArrayType.composite;
-        var wasmArrayDataType = (WasmType.CompositeReference) wasmArrayStruct.getFields()
-                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
-        var wasmArray = (WasmArray) wasmArrayDataType.composite;
-
-        var elementType = wasmArray.getElementType().asUnpackedType();
-        for (var item : expr.getData()) {
-            accept(item, builder, elementType);
-        }
-        builder
-                .arrayNewFixed(wasmArray, expr.getData().size())
-                .structNew(classInfo.getStructure());
+        WasmGCGenerationUtil.allocateArray(context.classInfoProvider(), expr.getType(), builder, (wasmArray, b) -> {
+            var elementType = wasmArray.getElementType().asUnpackedType();
+            for (var item : expr.getData()) {
+                accept(item, builder, elementType);
+            }
+            b.arrayNewFixed(wasmArray, expr.getData().size());
+        });
 
         builder.popLocation();
     }
@@ -1820,54 +1798,17 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
 
     private void virtualCall(InvocationExpr expr) {
         var instanceType = ValueType.object(expr.getMethod().getClassName());
-        var instanceWasmType = context.typeMapper().mapType(instanceType);
+        var instanceWasmType = (WasmType.CompositeReference) context.typeMapper().mapType(instanceType);
         accept(expr.getArguments().get(0), builder, instanceWasmType);
 
-        var vtable = context.virtualTables().lookup(expr.getMethod().getClassName());
-        if (vtable == null) {
-            builder.unreachable();
-            return;
-        }
-
-        var entry = vtable.entry(expr.getMethod().getDescriptor());
-        var nonInterfaceAncestor = vtable.closestNonInterfaceAncestor();
-        if (entry == null || nonInterfaceAncestor == null) {
-            builder.unreachable();
-            return;
-        }
-
-        var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
-        var index = WasmGCClassInfoProvider.VIRTUAL_METHOD_OFFSET + entry.getIndex();
-        var instanceClassInfo = context.classInfoProvider().getClassInfo(vtable.getClassName());
-        var vtableStruct = instanceClassInfo.getVirtualTableStructure();
-        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).getUnpackedType();
-
-        if (instanceWasmType instanceof WasmType.CompositeReference) {
-            var actualStruct = (WasmStructure) ((WasmType.CompositeReference) instanceWasmType).composite;
-            var nonInterfaceClassInfo = context.classInfoProvider().getClassInfo(nonInterfaceAncestor.getClassName());
-            var expectedStruct = nonInterfaceClassInfo.getStructure();
-            if (actualStruct != expectedStruct && actualStruct.isSupertypeOf(expectedStruct)) {
-                builder.cast(expectedStruct);
-                instanceWasmType = expectedStruct.getReference();
-            }
-        }
-
-        forceType(instanceWasmType);
-        var instanceValue = valueCache.create(instanceWasmType, builder);
-
-        for (int i = 1; i < expr.getArguments().size(); ++i) {
-            var paramType = context.typeMapper().mapType(expr.getMethod().parameterType(i - 1));
-            accept(expr.getArguments().get(i), builder, paramType);
-        }
-
-        builder
-                .append(instanceValue)
-                .structGet(objectClass.getStructure(), WasmGCClassInfoProvider.VT_FIELD_OFFSET)
-                .cast(vtableStruct.getNonNullReference())
-                .structGet(vtableStruct, index)
-                .callReference((WasmFunctionType) functionTypeRef.composite, isAsyncSplit(expr.getMethod()));
-
-        instanceValue.release();
+        vcallGen.generate(
+                builder, expr.getMethod(), isAsyncSplit(expr.getMethod()), valueCache, instanceWasmType,
+                b -> {
+                for (int i = 1; i < expr.getArguments().size(); ++i) {
+                    var paramType = context.typeMapper().mapType(expr.getMethod().parameterType(i - 1));
+                    accept(expr.getArguments().get(i), builder, paramType);
+                }
+        });
     }
     
     protected boolean isAsyncSplit(MethodReference methodRef) {

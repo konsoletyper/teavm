@@ -15,21 +15,12 @@
  */
 package org.teavm.backend.wasm.generators;
 
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
-import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
-import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
 import org.teavm.model.MethodReference;
 
@@ -41,15 +32,15 @@ public class WasmGCStringPoolGenerator implements WasmGCCustomGenerator {
         pointer.getInitialValue().add(new WasmInt32ConstantInstruction(0));
         module.globals.add(pointer);
 
-        var resultLocal = new WasmLocal(WasmType.INT32);
-        function.add(resultLocal);
+        var body = function.getBody().builder();
 
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
-        converter.convert(new WasmSetLocal(resultLocal, new WasmLoadInt32(1, new WasmGetGlobal(pointer),
-                WasmInt32Subtype.UINT8)));
-        var increment = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                new WasmGetGlobal(pointer), new WasmInt32Constant(1));
-        converter.convert(new WasmSetGlobal(pointer, increment));
-        converter.convert(new WasmGetLocal(resultLocal));
+        body
+                .getGlobal(pointer)
+                .loadI32(1, 0, WasmInt32Subtype.UINT8);
+        body
+                .getGlobal(pointer)
+                .i32Const(1)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD)
+                .setGlobal(pointer);
     }
 }

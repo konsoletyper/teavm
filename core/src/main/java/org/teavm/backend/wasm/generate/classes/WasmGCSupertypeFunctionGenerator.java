@@ -15,33 +15,19 @@
  */
 package org.teavm.backend.wasm.generate.classes;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmConditional;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIsNull;
-import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmSetLocal;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
@@ -100,9 +86,10 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
             } else {
                 assert !(type instanceof ValueType.Array);
                 var expected = classGenerator.getClassInfo(type).pointer;
-                var condition = new WasmReferencesEqual(new WasmGetLocal(subtypeVar), new WasmGetGlobal(expected));
-                var converter = new WasmExpressionToInstructionConverter(function.getBody());
-                converter.convert(condition);
+                function.getBody().builder()
+                        .getLocal(subtypeVar)
+                        .getGlobal(expected)
+                        .refEqual();
             }
         });
 
@@ -115,53 +102,38 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
             function.getBody().add(new WasmInt32ConstantInstruction(0));
             return;
         }
-        var body = new ArrayList<WasmExpression>();
 
-
+        var classInfoStruct = classGenerator.reflectionTypes().classInfo().structure();
         int tagOffset = classGenerator.reflectionTypes().classInfo().tagIndex();
-
         var tagVar = new WasmLocal(WasmType.INT32, "tag");
         function.add(tagVar);
-        var tagExpression = getClassField(new WasmGetLocal(subtypeVar), tagOffset);
-        body.add(new WasmSetLocal(tagVar, tagExpression));
 
         ranges.sort(Comparator.comparingInt(range -> range.lower));
-
         int lower = ranges.get(0).lower;
         int upper = ranges.get(ranges.size() - 1).upper;
 
-        var lowerCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
-                new WasmGetLocal(tagVar), new WasmInt32Constant(lower));
-        var testLower = new WasmConditional(lowerCondition);
-        testLower.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(0)));
-        body.add(testLower);
+        var body = function.getBody().builder();
+        body.getLocal(subtypeVar).structGet(classInfoStruct, tagOffset).teeLocal(tagVar);
 
-        var upperCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GE_SIGNED,
-                new WasmGetLocal(tagVar), new WasmInt32Constant(upper));
-        var testUpper = new WasmConditional(upperCondition);
-        testUpper.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(0)));
-        body.add(testUpper);
+        body.i32Const(lower).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED);
+        body.conditional().getThenBlock().builder().i32Const(0).return_();
+
+        body.getLocal(tagVar).i32Const(upper).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.GE_SIGNED);
+        body.conditional().getThenBlock().builder().i32Const(0).return_();
 
         for (int i = 1; i < ranges.size(); ++i) {
             int lowerHole = ranges.get(i - 1).upper;
             int upperHole = ranges.get(i).lower;
 
-            lowerCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GE_SIGNED,
-                    new WasmGetLocal(tagVar), new WasmInt32Constant(lowerHole));
-            testLower = new WasmConditional(lowerCondition);
-            body.add(testLower);
-
-            upperCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
-                    new WasmGetLocal(tagVar), new WasmInt32Constant(upperHole));
-            testUpper = new WasmConditional(upperCondition);
-            testUpper.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(0)));
-
-            testLower.getThenBlock().getBody().add(testUpper);
+            body.getLocal(tagVar).i32Const(lowerHole)
+                    .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.GE_SIGNED);
+            var condHoleThen = body.conditional().getThenBlock().builder();
+            condHoleThen.getLocal(tagVar).i32Const(upperHole)
+                    .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED);
+            condHoleThen.conditional().getThenBlock().builder().i32Const(0).return_();
         }
 
-        body.add(new WasmInt32Constant(1));
-
-        new WasmExpressionToInstructionConverter(function.getBody()).convertAll(body);
+        body.i32Const(1);
     }
 
     WasmFunction getIsArraySupertypeFunction() {
@@ -181,24 +153,22 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         function.add(subtypeVar);
 
         int itemOffset = classInfoType.itemTypeIndex();
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
+        var body = function.getBody().builder();
 
-        converter.convert(new WasmSetLocal(subtypeVar, getClassField(new WasmGetLocal(subtypeVar), itemOffset)));
+        body.getLocal(subtypeVar).structGet(classInfoType.structure(), itemOffset).setLocal(subtypeVar);
+        body.getLocal(thisVar).structGet(classInfoType.structure(), itemOffset).setLocal(thisVar);
 
-        var itemTest = new WasmConditional(new WasmIsNull(new WasmGetLocal(subtypeVar)));
-        itemTest.setType(WasmType.INT32.asBlock());
-        itemTest.getThenBlock().getBody().add(new WasmInt32Constant(0));
+        body.getLocal(subtypeVar).isNull();
+        var itemTest = body.conditional(WasmType.INT32);
+        itemTest.getThenBlock().builder().i32Const(0);
 
-        converter.convert(new WasmSetLocal(thisVar, getClassField(new WasmGetLocal(thisVar), itemOffset)));
-        var functionType = functionTypes.of(WasmType.INT32, classInfoType.structure().getReference(),
+        var funcType = functionTypes.of(WasmType.INT32, classInfoType.structure().getReference(),
                 classInfoType.structure().getReference());
-        var functionRef = new WasmStructGet(classInfoType.structure(), new WasmGetLocal(thisVar),
-                classInfoType.supertypeFunctionIndex());
-        var delegateToItem = new WasmCallReference(functionRef, functionType, new WasmGetLocal(thisVar),
-                new WasmGetLocal(subtypeVar));
-        itemTest.getElseBlock().getBody().add(delegateToItem);
+        var elseBody = itemTest.getElseBlock().builder();
+        elseBody.getLocal(thisVar).getLocal(subtypeVar)
+                .getLocal(thisVar).structGet(classInfoType.structure(), classInfoType.supertypeFunctionIndex())
+                .callReference(funcType);
 
-        converter.convert(itemTest);
         return function;
     }
 
@@ -209,13 +179,5 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
             functionType = functionTypes.of(WasmType.INT32, classInfoStruct, classInfoStruct);
         }
         return functionType;
-    }
-
-    private WasmExpression getClassField(WasmExpression instance, int fieldIndex) {
-        return new WasmStructGet(
-                classGenerator.reflectionTypes().classInfo().structure(),
-                instance,
-                fieldIndex
-        );
     }
 }

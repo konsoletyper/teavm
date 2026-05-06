@@ -24,17 +24,11 @@ import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
@@ -104,25 +98,26 @@ public class WasmGCResourcesGenerator implements WasmGCCustomGenerator {
                 WasmType.INT32);
         context.module().globals.add(baseGlobal);
 
-        var genUtil = new WasmGCGenerationUtil(context.classInfoProvider());
         var constructor = context.functions().forStaticMethod(new MethodReference(WasmGCResources.class,
                 "create", String.class, int.class, int.class, WasmGCResources.Resource.class));
 
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
-        converter.convert(genUtil.allocateArrayWithElements(
+        var body = function.getBody().builder();
+        WasmGCGenerationUtil.allocateArray(
+                context.classInfoProvider(),
                 ValueType.parse(WasmGCResources.Resource.class),
-                () -> {
-                    var items = new ArrayList<WasmExpression>();
+                body,
+                (array, b) -> {
                     for (var descriptor : descriptors) {
                         var name = context.strings().getStringConstant(descriptor.name);
-                        var offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                                new WasmGetGlobal(baseGlobal), new WasmInt32Constant(descriptor.address));
-                        var end = new WasmInt32Constant(descriptor.end - descriptor.address);
-                        items.add(new WasmCall(constructor, new WasmGetGlobal(name.global), offset, end));
+                        b.getGlobal(name.global);
+                        b.getGlobal(baseGlobal).i32Const(descriptor.address)
+                                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD);
+                        b.i32Const(descriptor.end - descriptor.address);
+                        b.call(constructor);
                     }
-                    return items;
+                    b.arrayNewFixed(array, descriptors.size());
                 }
-        ));
+        );
     }
 
     private static class ResourceDescriptor {

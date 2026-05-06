@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.generate.methods;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
@@ -34,6 +35,7 @@ import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
 
 public class WasmGCGenerationUtil {
@@ -75,6 +77,31 @@ public class WasmGCGenerationUtil {
         structNew.getInitializers().add(new WasmNullConstant(WasmType.EQ));
         structNew.getInitializers().add(data.apply(wasmArray));
         return structNew;
+    }
+
+    public static void allocateArray(WasmGCClassInfoProvider classInfoProvider, ValueType itemType,
+            WasmInstructionBuilder builder, BiConsumer<WasmArray, WasmInstructionBuilder> data) {
+        var classInfoType = classInfoProvider.reflectionTypes().classInfo();
+        var classInfo = classInfoProvider.getClassInfo(ValueType.arrayOf(itemType));
+
+        var wasmArrayType = (WasmType.CompositeReference) classInfo.getStructure().getFields()
+                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
+                .getUnpackedType();
+        var wasmArray = (WasmArray) wasmArrayType.composite;
+
+        int depth = 1;
+        while (itemType instanceof ValueType.Array) {
+            itemType = ((ValueType.Array) itemType).getItemType();
+        }
+        builder.getGlobal(classInfoProvider.getClassInfo(itemType).getPointer());
+        for (var i = 0; i < depth; ++i) {
+            builder.call(classInfoProvider.getGetArrayClassFunction());
+        }
+        builder.structGet(classInfoType.structure(), classInfoType.vtableIndex());
+
+        builder.nullConst(WasmType.EQ);
+        data.accept(wasmArray, builder);
+        builder.structNew(classInfo.getStructure());
     }
 
     public static WasmExpression getOrIfNull(WasmType type, WasmExpression base,

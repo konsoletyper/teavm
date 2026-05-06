@@ -18,21 +18,10 @@ package org.teavm.backend.wasm.generators;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -66,19 +55,20 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         function.add(queueLocal);
 
         var weakRefConstructor = getCreateWeakReferenceFunction(context);
-        WasmExpression thisRef = new WasmGetLocal(thisLocal);
+        var body = function.getBody().builder();
+        body.getLocal(thisLocal);
         if (context.isCompactMode()) {
-            thisRef = new WasmCast(thisRef, weakRefStruct.getReference());
+            body.cast(weakRefStruct.getReference());
         }
-        var weakRef = new WasmCall(weakRefConstructor, new WasmGetLocal(valueLocal), thisRef,
-                new WasmGetLocal(queueLocal));
-        thisRef = new WasmGetLocal(thisLocal);
+
+        body.getLocal(valueLocal);
+        body.getLocal(thisLocal);
         if (context.isCompactMode()) {
-            thisRef = new WasmCast(thisRef, weakRefStruct.getReference());
+            body.cast(weakRefStruct.getReference());
         }
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
-        converter.convert(new WasmStructSet(weakRefStruct, thisRef,
-                WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET, weakRef));
+        body.getLocal(queueLocal);
+        body.call(weakRefConstructor);
+        body.structSet(weakRefStruct, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET);
     }
 
     private void generateDeref(WasmGCCustomGeneratorContext context, WasmFunction function) {
@@ -88,19 +78,18 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         var thisLocal = new WasmLocal(thisType, "this");
         function.add(thisLocal);
 
-        var block = new WasmBlock(false);
-        block.setType(WasmType.EXTERN.asBlock());
-        WasmExpression thisRef = new WasmGetLocal(thisLocal);
+        var body = function.getBody().builder();
+        var block = body.block(WasmType.EXTERN);
+        block.getLocal(thisLocal);
         if (context.isCompactMode()) {
-            thisRef = new WasmCast(thisRef, weakRefStruct.getReference());
+            block.cast(weakRefStruct.getReference());
         }
-        var weakRef = new WasmStructGet(weakRefStruct, thisRef, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET);
-        var br = new WasmNullBranch(WasmNullCondition.NOT_NULL, weakRef, block);
-        block.getBody().add(br);
-        block.getBody().add(new WasmReturn(new WasmNullConstant(objectType)));
-
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
-        converter.convert(new WasmCall(createDerefFunction(context), block));
+        block
+                .structGet(weakRefStruct, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET)
+                .nullBranch(WasmNullCondition.NOT_NULL, block)
+                .nullConst(objectType)
+                .return_();
+        body.call(createDerefFunction(context));
     }
 
     private void generateClear(WasmGCCustomGeneratorContext context, WasmFunction function) {
@@ -109,13 +98,14 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         var thisLocal = new WasmLocal(thisType, "this");
         function.add(thisLocal);
 
-        WasmExpression thisRef = new WasmGetLocal(thisLocal);
+        var body = function.getBody().builder();
+        body.getLocal(thisLocal);
         if (context.isCompactMode()) {
-            thisRef = new WasmCast(thisRef, weakRefStruct.getReference());
+            body.cast(weakRefStruct.getReference());
         }
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
-        converter.convert(new WasmStructSet(weakRefStruct, thisRef,
-                WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET, new WasmNullConstant(WasmType.EXTERN)));
+        body
+                .nullConst(WasmType.EXTERN)
+                .structSet(weakRefStruct, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET);
     }
 
     private WasmFunction getCreateWeakReferenceFunction(WasmGCCustomGeneratorContext context) {

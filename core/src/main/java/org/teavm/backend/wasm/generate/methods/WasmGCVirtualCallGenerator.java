@@ -16,6 +16,8 @@
 package org.teavm.backend.wasm.generate.methods;
 
 import java.util.List;
+import java.util.function.Consumer;
+import org.teavm.backend.wasm.generate.ValueCache;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -27,6 +29,7 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 import org.teavm.model.MethodReference;
 
@@ -78,5 +81,50 @@ public class WasmGCVirtualCallGenerator {
         invoke.getArguments().add(instanceRef);
         invoke.getArguments().addAll(arguments);
         return invoke;
+    }
+
+    public void generate(WasmInstructionBuilder builder, MethodReference method, boolean suspending,
+            ValueCache valueCache, WasmType.CompositeReference instanceType,
+            Consumer<WasmInstructionBuilder> argsBuilder) {
+        var vtable = virtualTables.lookup(method.getClassName());
+        if (vtable == null) {
+            builder.unreachable();
+            return;
+        }
+
+        var entry = vtable.entry(method.getDescriptor());
+        var nonInterfaceAncestor = vtable.closestNonInterfaceAncestor();
+        if (entry == null || nonInterfaceAncestor == null) {
+            builder.unreachable();
+            return;
+        }
+
+        var instance = valueCache.create(instanceType, builder);
+
+        var objectClass = classInfoProvider.getClassInfo("java.lang.Object");
+
+        var index = WasmGCClassInfoProvider.VIRTUAL_METHOD_OFFSET + entry.getIndex();
+        var expectedInstanceClassInfo = classInfoProvider.getClassInfo(vtable.getClassName());
+        var expectedInstanceClassStruct = classInfoProvider.getClassInfo(
+                nonInterfaceAncestor.getClassName()).getStructure();
+        var vtableStruct = expectedInstanceClassInfo.getVirtualTableStructure();
+        var instanceStruct = (WasmStructure) instanceType.composite;
+
+        if (!expectedInstanceClassStruct.isSupertypeOf(instanceStruct)) {
+            builder.cast(expectedInstanceClassStruct.getNonNullReference());
+        }
+
+        argsBuilder.accept(builder);
+
+        builder
+                .append(instance)
+                .structGet(objectClass.getStructure(), WasmGCClassInfoProvider.VT_FIELD_OFFSET)
+                .cast(vtableStruct.getNonNullReference())
+                .structGet(vtableStruct, index);
+
+        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).getUnpackedType();
+        builder.callReference((WasmFunctionType) functionTypeRef.composite, suspending);
+
+        instance.release();
     }
 }

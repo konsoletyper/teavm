@@ -21,7 +21,6 @@ import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.generate.reflection.ClassInfoStruct;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
@@ -176,8 +175,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                         context.strings(), context.classInitInfo(), context.virtualTables());
                 metadataGen.generate();
                 context.addToInitializer(fn -> {
-                    var converter = new WasmExpressionToInstructionConverter(fn.getBody());
-                    converter.convert(new WasmCall(metadataGen.initFunction()));
+                    fn.getBody().builder().call(metadataGen.initFunction());
                 });
                 return fieldAccess(invocation, context, ClassInfoStruct::reflectionInfoIndex);
             }

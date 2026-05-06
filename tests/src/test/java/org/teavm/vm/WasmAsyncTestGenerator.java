@@ -15,25 +15,15 @@
  */
 package org.teavm.vm;
 
-import java.util.List;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmBranch;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmDrop;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmPop;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
@@ -53,7 +43,7 @@ public class WasmAsyncTestGenerator extends AbstractDependencyListener implement
             var param = new WasmLocal(WasmType.INT32, "n");
             function.add(param);
             var generator = new Generator(context, param);
-            new WasmExpressionToInstructionConverter(function.getBody()).convert(generator.generate());
+            generator.generate(function.getBody().builder());
         }
     }
 
@@ -66,71 +56,49 @@ public class WasmAsyncTestGenerator extends AbstractDependencyListener implement
             this.param = param;
         }
 
-        WasmExpression generate() {
-            return sum(
-                    cst(1),
-                    block(b1 -> List.of(
-                            callSum(
-                                    cst(10),
-                                    block(b2 -> List.of(
-                                            callSum(
-                                                    cst(100),
-                                                    block(b3 -> List.of(
-                                                            cst(1000),
-                                                            breakIf(b1, isEqual(cst(1), param())),
-                                                            drop(),
-                                                            cst(2000),
-                                                            breakIf(b2, isEqual(cst(2), param())),
-                                                            drop(),
-                                                            cst(3000),
-                                                            breakIf(b3, isEqual(cst(3), param())),
-                                                            drop(),
-                                                            cst(4000)
-                                                    ))
-                                            )
-                                    ))
-                            )
-                    ))
-            );
+        void generate(WasmInstructionBuilder builder) {
+            builder.i32Const(1);
+            block(builder, b1 -> {
+                b1.i32Const(10);
+                block(b1, b2 -> {
+                    b2.i32Const(100);
+                    block(b2, b3 -> {
+                        b3
+                                .i32Const(1000)
+                                .i32Const(1)
+                                .getLocal(param)
+                                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ)
+                                .branch(b1)
+                                .drop()
+                                .i32Const(2000)
+                                .i32Const(2)
+                                .getLocal(param)
+                                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ)
+                                .branch(b2)
+                                .drop()
+                                .i32Const(3000)
+                                .i32Const(3)
+                                .getLocal(param)
+                                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ)
+                                .branch(b3)
+                                .drop()
+                                .i32Const(4000);
+                    });
+                    b2.call(sumFn(), true);
+                });
+                b1.call(sumFn(), true);
+            });
+            builder.intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD);
         }
-
-        private WasmExpression callSum(WasmExpression a, WasmExpression b) {
-            var fn = context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class,
+        
+        private void block(WasmInstructionBuilder builder, Consumer<WasmInstructionBuilder> body) {
+            var block = builder.block(WasmType.INT32);
+            body.accept(block);
+        }
+        
+        private WasmFunction sumFn() {
+            return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class,
                     int.class, int.class));
-            var result = new WasmCall(fn, a, b);
-            result.setSuspensionPoint(true);
-            return result;
-        }
-
-        private WasmExpression sum(WasmExpression a, WasmExpression b) {
-            return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, a, b);
-        }
-
-        private WasmExpression block(Function<WasmBlock, List<WasmExpression>> body) {
-            var block = new WasmBlock(false);
-            block.setType(WasmType.INT32.asBlock());
-            block.getBody().addAll(body.apply(block));
-            return block;
-        }
-
-        private WasmExpression breakIf(WasmBlock target, WasmExpression cond) {
-            return new WasmBranch(cond, target);
-        }
-
-        private WasmExpression drop() {
-            return new WasmDrop(new WasmPop(WasmType.INT32));
-        }
-
-        private WasmExpression param() {
-            return new WasmGetLocal(param);
-        }
-
-        private WasmExpression isEqual(WasmExpression a, WasmExpression b) {
-            return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, a, b);
-        }
-
-        private WasmExpression cst(int value) {
-            return new WasmInt32Constant(value);
         }
     }
 }

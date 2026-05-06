@@ -17,15 +17,9 @@ package org.teavm.jso.impl.wasmgc;
 
 import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -49,11 +43,12 @@ class WasmGCMarshallMethodGenerator implements WasmGCCustomGenerator {
 
         var jsClassGlobal = commonGen.getDefinedClass(jsoContext, method.getClassName());
         var wrapperFunction = commonGen.javaObjectToJSFunction(jsoContext);
-        WasmExpression thisRef = new WasmGetLocal(thisLocal);
+        var body = function.getBody().builder();
+        body.getLocal(thisLocal);
         if (context.isCompactMode()) {
-            thisRef = new WasmCast(thisRef, (WasmType.Reference) thisType);
+            body.cast((WasmType.Reference) thisType);
         }
-        new WasmExpressionToInstructionConverter(function.getBody()).convert(
-                new WasmCall(wrapperFunction, thisRef, new WasmGetGlobal(jsClassGlobal)));
+        body.getGlobal(jsClassGlobal);
+        body.call(wrapperFunction);
     }
 }

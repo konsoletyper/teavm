@@ -469,15 +469,19 @@ public class WasmInstructionBuilder {
         return list.getLast() != null && list.getLast().isTerminating();
     }
 
-    public WasmInstructionBuilder transferFrom(WasmInstructionBuilder src) {
+    public WasmInstructionBuilder transferFrom(WasmInstructionList src) {
         if (isTerminating()) {
             return this;
         }
-        for (var insn : src.list) {
+        for (var insn : src) {
             insn.acceptVisitor(typeInference);
         }
-        list.transferFrom(src.list);
+        list.transferFrom(src);
         return this;
+    }
+
+    public WasmInstructionBuilder transferFrom(WasmInstructionBuilder src) {
+        return transferFrom(src.list);
     }
 
     public WasmInstructionBuilder negate() {

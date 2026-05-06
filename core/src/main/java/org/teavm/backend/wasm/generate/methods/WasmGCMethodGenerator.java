@@ -39,16 +39,11 @@ import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.instruction.WasmCatchClause;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
@@ -568,17 +563,15 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                 && method.parameterCount() == 0 && classInitInfo.isDynamicInitializer(method.getOwnerName())) {
             var classInfoStruct = classInfoProvider.reflectionTypes().classInfo();
             var classInfo = classInfoProvider.getClassInfo(method.getOwnerName());
-            var erase = new WasmSetGlobal(classInfo.getInitializerPointer(),
-                    new WasmFunctionReference(getDummyInitializer()));
-            var converter = new WasmExpressionToInstructionConverter(function.getBody());
-            converter.convert(erase);
+            var body = function.getBody().builder();
+            body
+                    .funcRef(getDummyInitializer())
+                    .setGlobal(classInfo.getInitializerPointer());
             if (classInfoStruct.initializerIndex() >= 0) {
-                converter.convert(new WasmStructSet(
-                        classInfoStruct.structure(),
-                        new WasmGetGlobal(classInfo.getPointer()),
-                        classInfoStruct.initializerIndex(),
-                        new WasmFunctionReference(getDummyInitializer())
-                ));
+                body
+                        .getGlobal(classInfo.getPointer())
+                        .funcRef(getDummyInitializer())
+                        .structSet(classInfoStruct.structure(), classInfoStruct.initializerIndex());
             }
         }
     }

@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.TemporaryVariablePool;
+import org.teavm.backend.wasm.generate.ValueCache;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfo;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
@@ -33,31 +35,13 @@ import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.methods.WasmGCVirtualCallGenerator;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmArray;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmArrayGet;
-import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
-import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
-import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
-import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmStructNew;
-import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.AccessLevel;
@@ -159,18 +143,16 @@ public class ReflectionMetadataGenerator {
             var metadata = generateClassMetadata(className, annotations, fields, methods, typeParameters,
                     innerClasses);
             if (metadata != null) {
-                var converter = new WasmExpressionToInstructionConverter(initFunction.getBody());
-                converter.convert(new WasmStructSet(
-                        classInfoStruct.structure(),
-                        new WasmGetGlobal(classInfoProvider.getClassInfo(className).getPointer()),
-                        classInfoStruct.reflectionInfoIndex(),
-                        metadata
-                ));
+                var builder = initFunction.getBody().builder();
+                builder
+                        .getGlobal(classInfoProvider.getClassInfo(className).getPointer())
+                        .transferFrom(metadata.builder())
+                        .structSet(classInfoStruct.structure(), classInfoStruct.reflectionInfoIndex());
             }
         }
     }
 
-    private WasmExpression generateClassMetadata(String className, List<AnnotationReader> annotations,
+    private WasmInstructionList generateClassMetadata(String className, List<AnnotationReader> annotations,
             Collection<? extends String> reflectableFields,
             Collection<? extends MethodDescriptor> reflectableMethods,
             GenericTypeParameter[] typeParameters,
@@ -181,40 +163,42 @@ public class ReflectionMetadataGenerator {
             return null;
         }
 
+        var builder = new WasmInstructionList().builder();
         var classInfoStruct = classInfoProvider.reflectionTypes().classReflectionInfo();
-        var metadata = new WasmStructNew(classInfoStruct.structure());
 
         if (classInfoStruct.annotationsIndex() >= 0) {
-            metadata.getInitializers().add(generateAnnotations(annotations));
+            generateAnnotations(builder, annotations);
         }
         if (classInfoStruct.fieldsIndex() >= 0) {
-            metadata.getInitializers().add(generateFields(className, reflectableFields));
+            generateFields(builder, className, reflectableFields);
         }
         if (classInfoStruct.methodsIndex() >= 0) {
-            metadata.getInitializers().add(generateMethods(className, reflectableMethods));
+            generateMethods(builder, className, reflectableMethods);
         }
         if (classInfoStruct.typeParametersIndex() >= 0) {
             var cls = classes.get(className);
-            metadata.getInitializers().add(generateTypeParameters(typeParameters, cls, null));
+            generateTypeParameters(builder, typeParameters, cls, null);
         }
         if (classInfoStruct.innerClassesIndex() >= 0) {
-            metadata.getInitializers().add(generateInnerClasses(innerClasses));
+            generateInnerClasses(builder, innerClasses);
         }
+        builder.structNew(classInfoStruct.structure());
 
-        return metadata;
+        return builder.list;
     }
 
-    private WasmExpression generateFields(String className, Collection<? extends String> fields) {
+    private void generateFields(WasmInstructionBuilder builder, String className,
+            Collection<? extends String> fields) {
         var fieldInfoStruct = classInfoProvider.reflectionTypes().fieldInfo();
         if (fields.isEmpty()) {
-            return new WasmNullConstant(fieldInfoStruct.array().getReference());
+            builder.nullConst(fieldInfoStruct.array().getReference());
+            return;
         }
 
         var cls = classes.get(className);
         var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
 
-        var array = new WasmArrayNewFixed(fieldInfoStruct.array());
-
+        var count = 0;
         for (var field : cls.getFields()) {
             if (!fields.contains(field.getName())) {
                 continue;
@@ -225,93 +209,88 @@ public class ReflectionMetadataGenerator {
                 }
             }
 
-            var fieldInit = new WasmStructNew(fieldInfoStruct.structure());
-            array.getElements().add(fieldInit);
-
             if (fieldInfoStruct.nameIndex() >= 0) {
                 var nameStr = strings.getStringConstant(field.getName());
-                fieldInit.getInitializers().add(new WasmGetGlobal(nameStr.global));
+                builder.getGlobal(nameStr.global);
             }
 
             if (fieldInfoStruct.modifiersIndex() >= 0) {
                 var modifiers = ElementModifier.asModifiersInfo(field.readModifiers(), field.getLevel());
-                fieldInit.getInitializers().add(new WasmInt32Constant(modifiers));
+                builder.i32Const(modifiers);
             }
 
             if (fieldInfoStruct.typeIndex() >= 0) {
-                fieldInit.getInitializers().add(generateDerivedClass(field.getType()));
+                generateDerivedClass(builder, field.getType());
             }
 
             if (fieldInfoStruct.readerIndex() >= 0) {
                 if (reflection.isRead(field.getReference())) {
                     var getter = generateGetter(field);
-                    fieldInit.getInitializers().add(new WasmFunctionReference(getter));
+                    builder.funcRef(getter);
                 } else {
                     var readerType = classInfoProvider.reflectionTypes().fieldInfo().readerType();
-                    fieldInit.getInitializers().add(new WasmNullConstant(readerType.getReference()));
+                    builder.nullConst(readerType.getReference());
                 }
             }
             if (fieldInfoStruct.writerIndex() >= 0) {
                 if (reflection.isWritten(field.getReference())) {
                     var setter = generateSetter(field);
-                    fieldInit.getInitializers().add(new WasmFunctionReference(setter));
+                    builder.funcRef(setter);
                 } else {
                     var writerType = classInfoProvider.reflectionTypes().fieldInfo().writerType();
-                    fieldInit.getInitializers().add(new WasmNullConstant(writerType.getReference()));
+                    builder.nullConst(writerType.getReference());
                 }
             }
             if (fieldInfoStruct.reflectionIndex() >= 0) {
-                fieldInit.getInitializers().add(generateFieldReflection(field));
+                generateFieldReflection(builder, field);
             }
+
+            builder.structNew(fieldInfoStruct.structure());
+            ++count;
         }
 
-        return array;
+        builder.arrayNewFixed(fieldInfoStruct.array(), count);
     }
 
-    private WasmExpression generateFieldReflection(FieldReader field) {
+    private void generateFieldReflection(WasmInstructionBuilder builder, FieldReader field) {
         var fieldReflectionStruct = classInfoProvider.reflectionTypes().fieldReflectionInfo();
         var annotations = fieldReflectionStruct.annotationsIndex() >= 0
                 ? AnnotationGenerationHelper.collectRuntimeAnnotations(classes, field.getAnnotations().all())
                 : List.<AnnotationReader>of();
         var genericType = fieldReflectionStruct.genericTypeIndex() >= 0 ? field.getGenericType() : null;
         if (annotations.isEmpty() && genericType == null) {
-            return new WasmNullConstant(fieldReflectionStruct.structure().getReference());
+            builder.nullConst(fieldReflectionStruct.structure().getReference());
+            return;
         }
 
-        var result = new WasmStructNew(fieldReflectionStruct.structure());
         if (fieldReflectionStruct.annotationsIndex() >= 0) {
-            result.getInitializers().add(generateAnnotations(annotations));
+            generateAnnotations(builder, annotations);
         }
         if (fieldReflectionStruct.genericTypeIndex() >= 0) {
             var cls = classes.get(field.getOwnerName());
-            result.getInitializers().add(generateGenericType(cls, null, genericType));
+            generateGenericType(builder, cls, null, genericType);
         }
 
-        return result;
+        builder.structNew(fieldReflectionStruct.structure());
     }
 
-    private WasmExpression generateMethods(String className, Collection<? extends MethodDescriptor> methods) {
+    private void generateMethods(WasmInstructionBuilder builder, String className,
+            Collection<? extends MethodDescriptor> methods) {
         var methodInfoStruct = classInfoProvider.reflectionTypes().methodInfo();
         if (methods.isEmpty()) {
-            return new WasmNullConstant(methodInfoStruct.array().getReference());
+            builder.nullConst(methodInfoStruct.array().getReference());
+            return;
         }
 
         var cls = classes.get(className);
         if (cls == null || cls.getMethods().isEmpty()) {
-            return new WasmNullConstant(methodInfoStruct.array().getReference());
+            builder.nullConst(methodInfoStruct.array().getReference());
+            return;
         }
 
         var callerType = methodInfoStruct.callerType();
-        /*
-        var objectClass = classInfoProvider.getClassInfo("java.lang.Object");
-        var objectArrayClass = classInfoProvider.getClassInfo(ValueType.parse(Object[].class));
-        var objectArrayType = classInfoProvider.getObjectArrayType();
-        var withBounds = context.dependency().getMethod(TYPE_VAR_GET_BOUNDS) != null;
-        var withGenericReturn = context.dependency().getMethod(METHOD_GET_GENERIC_RETURN_TYPE) != null;
-        var withGenericParams = context.dependency().getMethod(EXECUTABLE_GET_GENERIC_PARAMETER_TYPES) != null;
-         */
 
-        var result = new WasmArrayNewFixed(methodInfoStruct.array());
+        var count = 0;
         var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
 
         for (var method : cls.getMethods()) {
@@ -323,56 +302,55 @@ public class ReflectionMetadataGenerator {
             if (method.getName().equals("<clinit>")) {
                 continue;
             }
-            var methodInit = new WasmStructNew(methodInfoStruct.structure());
-            result.getElements().add(methodInit);
 
             if (methodInfoStruct.nameIndex() >= 0) {
                 var nameStr = strings.getStringConstant(method.getName());
-                methodInit.getInitializers().add(new WasmGetGlobal(nameStr.global));
+                builder.getGlobal(nameStr.global);
             }
 
             if (methodInfoStruct.modifiersIndex() >= 0) {
                 var modifiers = ElementModifier.asModifiersInfo(method.readModifiers(), method.getLevel());
-                methodInit.getInitializers().add(new WasmInt32Constant(modifiers));
+                builder.i32Const(modifiers);
             }
 
             if (methodInfoStruct.returnTypeIndex() >= 0) {
-                methodInit.getInitializers().add(generateDerivedClass(method.getResultType()));
+                generateDerivedClass(builder, method.getResultType());
             }
 
             if (methodInfoStruct.parameterTypesIndex() >= 0) {
                 var paramTypes = method.getParameterTypes();
                 var derivedClassInfoStruct = classInfoProvider.reflectionTypes().derivedClassInfo();
                 if (paramTypes.length == 0) {
-                    methodInit.getInitializers().add(new WasmNullConstant(
-                            derivedClassInfoStruct.array().getReference()));
+                    builder.nullConst(derivedClassInfoStruct.array().getReference());
                 } else {
-                    var parametersArray = new WasmArrayNewFixed(derivedClassInfoStruct.array());
                     for (var param : paramTypes) {
-                        parametersArray.getElements().add(generateDerivedClass(param));
+                        generateDerivedClass(builder, param);
                     }
-                    methodInit.getInitializers().add(parametersArray);
+                    builder.arrayNewFixed(derivedClassInfoStruct.array(), paramTypes.length);
                 }
             }
 
             if (methodInfoStruct.callerIndex() >= 0) {
                 if (reflection.isCalled(method.getReference())) {
                     var caller = generateCaller(method);
-                    methodInit.getInitializers().add(new WasmFunctionReference(caller));
+                    builder.funcRef(caller);
                 } else {
-                    methodInit.getInitializers().add(new WasmNullConstant(callerType.getReference()));
+                    builder.nullConst(callerType.getReference());
                 }
             }
 
             if (methodInfoStruct.reflectionIndex() >= 0) {
-                methodInit.getInitializers().add(generateMethodReflection(method));
+                generateMethodReflection(builder, method);
             }
+
+            builder.structNew(methodInfoStruct.structure());
+            ++count;
         }
 
-        return result;
+        builder.arrayNewFixed(methodInfoStruct.array(), count);
     }
 
-    private WasmExpression generateMethodReflection(MethodReader method) {
+    private void generateMethodReflection(WasmInstructionBuilder builder, MethodReader method) {
         var reflectionTypes = classInfoProvider.reflectionTypes();
         var methodReflectionStruct = reflectionTypes.methodReflectionInfo();
         var annotations = methodReflectionStruct.annotationsIndex() >= 0
@@ -390,116 +368,122 @@ public class ReflectionMetadataGenerator {
         if (annotations.isEmpty() && genericReturnType == null
                 && (genericParameterTypes == null || genericParameterTypes.length == 0)
                 && (typeParameters == null || typeParameters.length == 0)) {
-            return new WasmNullConstant(methodReflectionStruct.structure().getReference());
+            builder.nullConst(methodReflectionStruct.structure().getReference());
+            return;
         }
 
-        var result = new WasmStructNew(methodReflectionStruct.structure());
         var cls = classes.get(method.getOwnerName());
 
         if (methodReflectionStruct.genericReturnTypeIndex() >= 0) {
             if (genericReturnType != null) {
-                result.getInitializers().add(generateGenericType(cls, method, genericReturnType));
+                generateGenericType(builder, cls, method, genericReturnType);
             } else {
-                result.getInitializers().add(new WasmNullConstant(WasmType.STRUCT));
+                builder.nullConst(WasmType.STRUCT);
             }
         }
 
         if (methodReflectionStruct.genericParameterTypesIndex() >= 0) {
             if (genericParameterTypes != null && genericParameterTypes.length > 0) {
-                var array = new WasmArrayNewFixed(reflectionTypes.genericTypeArray());
                 for (var i = 0; i < genericParameterTypes.length; ++i) {
                     var paramType = genericParameterTypes[i];
                     if (paramType.canBeRepresentedAsRaw() && paramType.asValueType()
                             .equals(method.parameterType(i))) {
-                        array.getElements().add(new WasmNullConstant(WasmType.STRUCT));
+                        builder.nullConst(WasmType.STRUCT);
                     } else {
-                        array.getElements().add(generateGenericType(cls, method, paramType));
+                        generateGenericType(builder, cls, method, paramType);
                     }
                 }
-                result.getInitializers().add(array);
+                builder.arrayNewFixed(reflectionTypes.genericTypeArray(), genericParameterTypes.length);
             } else {
-                result.getInitializers().add(new WasmNullConstant(reflectionTypes.genericTypeArray().getReference()));
+                builder.nullConst(reflectionTypes.genericTypeArray().getReference());
             }
         }
 
         if (methodReflectionStruct.annotationsIndex() >= 0) {
-            result.getInitializers().add(generateAnnotations(annotations));
+            generateAnnotations(builder, annotations);
         }
 
         if (methodReflectionStruct.typeParametersIndex() >= 0) {
             if (typeParameters == null || typeParameters.length == 0) {
-                result.getInitializers().add(new WasmNullConstant(reflectionTypes.typeVariableInfo()
-                        .array().getReference()));
+                builder.nullConst(reflectionTypes.typeVariableInfo().array().getReference());
             } else {
-                result.getInitializers().add(generateTypeParameters(typeParameters, cls, method));
+                generateTypeParameters(builder, typeParameters, cls, method);
             }
         }
 
-        return result;
+        builder.structNew(methodReflectionStruct.structure());
     }
 
-    private WasmExpression generateAnnotations(List<AnnotationReader> annotations) {
+    private void generateAnnotations(WasmInstructionBuilder builder, List<AnnotationReader> annotations) {
         var annotationInfoStruct = classInfoProvider.reflectionTypes().annotationInfo();
 
         if (annotations == null || annotations.isEmpty()) {
-            return new WasmNullConstant(annotationInfoStruct.array().getReference());
+            builder.nullConst(annotationInfoStruct.array().getReference());
+            return;
         }
-
-        var annotationsExpr = new WasmArrayNewFixed(annotationInfoStruct.array());
 
         for (var annotation : annotations) {
-            var elem = new WasmStructNew(annotationInfoStruct.structure());
-            elem.getInitializers().add(generateAnnotation(annotation));
+            generateAnnotation(builder, annotation);
             var dataStruct = classInfoProvider.reflectionTypes().annotationData(annotation.getType());
             dataStruct.constructor().setReferenced(true);
-            elem.getInitializers().add(new WasmFunctionReference(dataStruct.constructor()));
-            annotationsExpr.getElements().add(elem);
+            builder.funcRef(dataStruct.constructor());
+            builder.structNew(annotationInfoStruct.structure());
         }
-
-        return annotationsExpr;
+        builder.arrayNewFixed(annotationInfoStruct.array(), annotations.size());
     }
 
-    private WasmExpression generateAnnotation(AnnotationReader annotation) {
+    private void generateAnnotation(WasmInstructionBuilder builder, AnnotationReader annotation) {
         var struct = classInfoProvider.reflectionTypes().annotationData(annotation.getType());
-        var result = new WasmStructNew(struct.structure());
         for (var field : struct.fields()) {
             var value = annotation.getValue(field.name);
             if (value == null) {
                 value = field.defaultValue;
             }
-            result.getInitializers().add(generateAnnotationValue(value, field.type));
+            generateAnnotationValue(builder, value, field.type);
         }
-        return result;
+        builder.structNew(struct.structure());
     }
 
-    private WasmExpression generateAnnotationValue(AnnotationValue value, ValueType type) {
+    private void generateAnnotationValue(WasmInstructionBuilder builder, AnnotationValue value, ValueType type) {
         switch (value.getType()) {
             case AnnotationValue.BOOLEAN:
-                return new WasmInt32Constant(value.getBoolean() ? 1 : 0);
+                builder.i32Const(value.getBoolean() ? 1 : 0);
+                return;
             case AnnotationValue.BYTE:
-                return new WasmInt32Constant(value.getByte());
+                builder.i32Const(value.getByte());
+                return;
             case AnnotationValue.SHORT:
-                return new WasmInt32Constant(value.getShort());
+                builder.i32Const(value.getShort());
+                return;
             case AnnotationValue.CHAR:
-                return new WasmInt32Constant(value.getChar());
+                builder.i32Const(value.getChar());
+                return;
             case AnnotationValue.INT:
-                return new WasmInt32Constant(value.getInt());
+                builder.i32Const(value.getInt());
+                return;
             case AnnotationValue.LONG:
-                return new WasmInt64Constant(value.getLong());
+                builder.i64Const(value.getLong());
+                return;
             case AnnotationValue.FLOAT:
-                return new WasmFloat32Constant(value.getFloat());
+                builder.f32Const(value.getFloat());
+                return;
             case AnnotationValue.DOUBLE:
-                return new WasmFloat64Constant(value.getDouble());
+                builder.f64Const(value.getDouble());
+                return;
             case AnnotationValue.STRING:
-                return new WasmGetGlobal(strings.getStringConstant(value.getString()).global);
+                builder.getGlobal(strings.getStringConstant(value.getString()).global);
+                return;
             case AnnotationValue.CLASS:
-                return generateDerivedClass(value.getJavaClass());
+                generateDerivedClass(builder, value.getJavaClass());
+                return;
             case AnnotationValue.ANNOTATION:
-                return generateAnnotation(value.getAnnotation());
+                generateAnnotation(builder, value.getAnnotation());
+                return;
             case AnnotationValue.ENUM: {
                 var enumClass = classes.get(value.getEnumValue().getClassName());
                 if (enumClass == null) {
-                    return new WasmInt32Constant(-1);
+                    builder.i32Const(-1);
+                    return;
                 }
                 var index = 0;
                 for (var field : enumClass.getFields()) {
@@ -510,16 +494,18 @@ public class ReflectionMetadataGenerator {
                         ++index;
                     }
                 }
-                return new WasmInt32Constant(index);
+                builder.i32Const(index);
+                return;
             }
             case AnnotationValue.LIST: {
                 var itemType = ((ValueType.Array) type).getItemType();
                 var wasmItemType = classInfoProvider.reflectionTypes().typeForAnnotation(itemType, true);
-                var result = new WasmArrayNewFixed(classInfoProvider.reflectionTypes().arrayTypeOf(wasmItemType));
                 for (var item : value.getList()) {
-                    result.getElements().add(generateAnnotationValue(item, itemType));
+                    generateAnnotationValue(builder, item, itemType);
                 }
-                return result;
+                builder.arrayNewFixed(classInfoProvider.reflectionTypes().arrayTypeOf(wasmItemType),
+                        value.getList().size());
+                return;
             }
             default:
                 throw new IllegalStateException();
@@ -551,16 +537,16 @@ public class ReflectionMetadataGenerator {
         return result;
     }
 
-    private WasmExpression generateDerivedClass(ValueType type) {
+    private void generateDerivedClass(WasmInstructionBuilder builder, ValueType type) {
         var degree = 0;
         while (type instanceof ValueType.Array) {
             type = ((ValueType.Array) type).getItemType();
             ++degree;
         }
-        var result = new WasmStructNew(classInfoProvider.reflectionTypes().derivedClassInfo().structure());
-        result.getInitializers().add(new WasmGetGlobal(classInfoProvider.getClassInfo(type).getPointer()));
-        result.getInitializers().add(new WasmInt32Constant(degree));
-        return result;
+        builder
+                .getGlobal(classInfoProvider.getClassInfo(type).getPointer())
+                .i32Const(degree)
+                .structNew(classInfoProvider.reflectionTypes().derivedClassInfo().structure());
     }
 
     private WasmFunction generateGetter(FieldReader field) {
@@ -574,35 +560,35 @@ public class ReflectionMetadataGenerator {
         var thisVar = new WasmLocal(objectClass.getType(), "this");
         function.add(thisVar);
 
-        WasmExpression result;
+        var body = function.getBody().builder();
+
         var classInfo = classInfoProvider.getClassInfo(field.getOwnerName());
         if (field.hasModifier(ElementModifier.STATIC)) {
             initClass(classInfo, field.getOwnerName(), function);
             var global = classInfoProvider.getStaticFieldLocation(field.getReference());
-            result = new WasmGetGlobal(global);
+            body.getGlobal(global);
         } else {
-            var castInstance = new WasmCast(new WasmGetLocal(thisVar), classInfo.getType());
-            var structGet = new WasmStructGet(classInfo.getStructure(), castInstance,
-                    classInfoProvider.getFieldIndex(field.getReference()));
+            body.getLocal(thisVar).cast(classInfo.getType());
+            WasmSignedType signedType = null;
             if (field.getType() instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive) field.getType()).getKind()) {
                     case BYTE:
                     case SHORT:
-                        structGet.setSignedType(WasmSignedType.SIGNED);
+                        signedType = WasmSignedType.SIGNED;
                         break;
                     case BOOLEAN:
                     case CHARACTER:
-                        structGet.setSignedType(WasmSignedType.UNSIGNED);
+                        signedType = WasmSignedType.UNSIGNED;
                         break;
                     default:
                         break;
                 }
             }
-            result = structGet;
+            body.structGet(classInfo.getStructure(), classInfoProvider.getFieldIndex(field.getReference()),
+                    signedType);
         }
 
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
-        converter.convert(boxIfNecessary(result, field.getType()));
+        boxIfNecessary(body, field.getType());
 
         return function;
     }
@@ -620,18 +606,21 @@ public class ReflectionMetadataGenerator {
         var valueVar = new WasmLocal(objectClass.getType(), "value");
         function.add(valueVar);
 
-        var value = unboxIfNecessary(new WasmGetLocal(valueVar), field.getType());
+        var body = function.getBody().builder();
+
+        var value = new WasmInstructionList().builder();
+        value.getLocal(valueVar);
+        unboxIfNecessary(value, field.getType());
         var classInfo = classInfoProvider.getClassInfo(field.getOwnerName());
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
         if (field.hasModifier(ElementModifier.STATIC)) {
             initClass(classInfo, field.getOwnerName(), function);
             var global = classInfoProvider.getStaticFieldLocation(field.getReference());
-            converter.convert(new WasmSetGlobal(global, value));
+            body.transferFrom(value).setGlobal(global);
         } else {
-            var castInstance = new WasmCast(new WasmGetLocal(thisVar), classInfo.getType());
-            var structSet = new WasmStructSet(classInfo.getStructure(), castInstance,
-                    classInfoProvider.getFieldIndex(field.getReference()), value);
-            converter.convert(structSet);
+            body
+                    .getLocal(thisVar).cast(classInfo.getType())
+                    .transferFrom(value)
+                    .structSet(classInfo.getStructure(), classInfoProvider.getFieldIndex(field.getReference()));
         }
 
         return function;
@@ -656,14 +645,16 @@ public class ReflectionMetadataGenerator {
         function.add(argsVar);
         var argsDataVar = new WasmLocal(dataField.getUnpackedType(), "argsData");
         function.add(argsDataVar);
-        WasmLocal instanceVar = null;
 
-        var converter = new WasmExpressionToInstructionConverter(function.getBody());
-        converter.convert(new WasmSetLocal(argsDataVar, new WasmStructGet(objectArrayClass.getStructure(),
-                new WasmGetLocal(argsVar), dataField.getIndex())));
+        var body = function.getBody().builder();
+        body
+                .getLocal(argsVar)
+                .structGet(objectArrayClass.getStructure(), dataField.getIndex())
+                .setLocal(argsDataVar);
+
+        var args = new WasmInstructionList().builder();
 
         var classInfo = classInfoProvider.getClassInfo(method.getOwnerName());
-        var args = new ArrayList<WasmExpression>();
         WasmFunction callee = null;
         var virtual = false;
         if (method.hasModifier(ElementModifier.STATIC)) {
@@ -672,10 +663,8 @@ public class ReflectionMetadataGenerator {
         } else {
             virtual = !method.hasModifier(ElementModifier.FINAL) && method.getLevel() != AccessLevel.PRIVATE
                     && !method.getName().equals("<init>");
-
+            body.getLocal(thisVar).cast(classInfo.getType());
             if (!virtual) {
-                var castInstance = new WasmCast(new WasmGetLocal(thisVar), classInfo.getType());
-                args.add(castInstance);
                 callee = functions.forInstanceMethod(method.getReference());
             }
         }
@@ -683,20 +672,23 @@ public class ReflectionMetadataGenerator {
         var dataType = (WasmType.CompositeReference) dataField.getUnpackedType();
         var dataArray = (WasmArray) dataType.composite;
         for (var i = 0; i < method.parameterCount(); ++i) {
-            var rawArg = new WasmArrayGet(dataArray, new WasmGetLocal(argsDataVar), new WasmInt32Constant(i));
-            args.add(unboxIfNecessary(rawArg, method.parameterType(i)));
+            args.getLocal(argsDataVar).i32Const(i).arrayGet(dataArray);
+            unboxIfNecessary(args, method.parameterType(i));
         }
 
-        WasmExpression call;
         if (virtual) {
             var callGen = new WasmGCVirtualCallGenerator(virtualTables, classInfoProvider);
-            call = callGen.generate(method.getReference(), false, thisVar, args);
+            var tempVars = new TemporaryVariablePool(function);
+            var valueCache = new ValueCache(tempVars);
+            callGen.generate(body, method.getReference(), false, valueCache, classInfo.getStructure().getReference(),
+                    b -> b.transferFrom(args));
         } else {
-            call = new WasmCall(callee, args.toArray(new WasmExpression[0]));
+            body.transferFrom(args).call(callee);
         }
-        converter.convert(boxIfNecessary(call, method.getResultType()));
         if (method.getResultType() == ValueType.VOID) {
-            converter.convert(new WasmNullConstant(objectClass.getType()));
+            body.nullConst(objectClass.getType());
+        } else {
+            boxIfNecessary(body, method.getResultType());
         }
 
         return function;
@@ -705,148 +697,156 @@ public class ReflectionMetadataGenerator {
     private void initClass(WasmGCClassInfo classInfo, String className, WasmFunction function) {
         if (classInitInfo.isDynamicInitializer(className)
                 && classInfo.getInitializerPointer() != null) {
-            var initRef = new WasmGetGlobal(classInfo.getInitializerPointer());
             var initType = functionTypes.of(null);
-            var converter = new WasmExpressionToInstructionConverter(function.getBody());
-            converter.convert(new WasmCallReference(initRef, initType));
+            function.getBody().builder()
+                    .getGlobal(classInfo.getInitializerPointer())
+                    .callReference(initType);
         }
     }
 
-    private WasmExpression boxIfNecessary(WasmExpression expr, ValueType type) {
+    private void boxIfNecessary(WasmInstructionBuilder builder, ValueType type) {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
-                    return box(Boolean.class, type, expr);
+                    box(builder, Boolean.class, type);
+                    break;
                 case BYTE:
-                    return box(Byte.class, type, expr);
+                    box(builder, Byte.class, type);
+                    break;
                 case SHORT:
-                    return box(Short.class, type, expr);
+                    box(builder, Short.class, type);
+                    break;
                 case CHARACTER:
-                    return box(Character.class, type, expr);
+                    box(builder, Character.class, type);
+                    break;
                 case INTEGER:
-                    return box(Integer.class, type, expr);
+                    box(builder, Integer.class, type);
+                    break;
                 case LONG:
-                    return box(Long.class, type, expr);
+                    box(builder, Long.class, type);
+                    break;
                 case FLOAT:
-                    return box(Float.class, type, expr);
+                    box(builder, Float.class, type);
+                    break;
                 case DOUBLE:
-                    return box(Double.class, type, expr);
+                    box(builder, Double.class, type);
+                    break;
             }
         }
-        return expr;
     }
 
-    private WasmExpression box(Class<?> wrapperType, ValueType sourceType, WasmExpression expr) {
+    private void box(WasmInstructionBuilder builder, Class<?> wrapperType, ValueType sourceType) {
         var method = new MethodReference(wrapperType.getName(), "valueOf", sourceType,
                 ValueType.object(wrapperType.getName()));
-        var function = functions.forStaticMethod(method);
-        return new WasmCall(function, expr);
+        builder.call(functions.forStaticMethod(method));
     }
 
-    private WasmExpression unboxIfNecessary(WasmExpression expr, ValueType type) {
+    private void unboxIfNecessary(WasmInstructionBuilder builder, ValueType type) {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
-                    return unbox(boolean.class, Boolean.class, expr);
+                    unbox(builder, boolean.class, Boolean.class);
+                    return;
                 case BYTE:
-                    return unbox(byte.class, Byte.class, expr);
+                    unbox(builder, byte.class, Byte.class);
+                    return;
                 case SHORT:
-                    return unbox(short.class, Short.class, expr);
+                    unbox(builder, short.class, Short.class);
+                    return;
                 case CHARACTER:
-                    return unbox(char.class, Character.class, expr);
+                    unbox(builder, char.class, Character.class);
+                    return;
                 case INTEGER:
-                    return unbox(int.class, Integer.class, expr);
+                    unbox(builder, int.class, Integer.class);
+                    return;
                 case LONG:
-                    return unbox(long.class, Long.class, expr);
+                    unbox(builder, long.class, Long.class);
+                    return;
                 case FLOAT:
-                    return unbox(float.class, Float.class, expr);
+                    unbox(builder, float.class, Float.class);
+                    return;
                 case DOUBLE:
-                    return unbox(double.class, Double.class, expr);
+                    unbox(builder, double.class, Double.class);
+                    return;
             }
         } else if (type instanceof ValueType.Object) {
             if (((ValueType.Object) type).getClassName().equals("java.lang.Object")) {
-                return expr;
+                return;
             }
         }
         var targetType = typeMapper.mapType(type);
         if (targetType == typeMapper.mapType(ValueType.object("java.lang.Object"))) {
-            return expr;
+            return;
         }
-        return new WasmCast(expr, (WasmType.Reference) targetType);
+        builder.cast((WasmType.Reference) targetType);
     }
 
-    private WasmExpression unbox(Class<?> primitiveType, Class<?> wrapperType, WasmExpression expr) {
+    private void unbox(WasmInstructionBuilder builder, Class<?> primitiveType, Class<?> wrapperType) {
         var method = new MethodReference(wrapperType.getName(), primitiveType.getName() + "Value",
                 ValueType.parse(primitiveType));
         var function = functions.forInstanceMethod(method);
-        var cast = new WasmCast(expr, classInfoProvider.getClassInfo(wrapperType.getName()).getType());
-        return new WasmCall(function, cast);
+        builder
+                .cast(classInfoProvider.getClassInfo(wrapperType.getName()).getType())
+                .call(function);
     }
 
-    private WasmExpression generateTypeParameters(GenericTypeParameter[] params, ClassReader cls,
+    private void generateTypeParameters(WasmInstructionBuilder builder, GenericTypeParameter[] params, ClassReader cls,
             MethodReader method) {
         var struct = classInfoProvider.reflectionTypes().typeVariableInfo();
-        var array = new WasmArrayNewFixed(struct.array());
         for (var param : params) {
-            var arrayItem = new WasmStructNew(struct.structure());
             if (struct.nameIndex() >= 0) {
-                arrayItem.getInitializers().add(new WasmGetGlobal(strings.getStringConstant(param.getName()).global));
+                builder.getGlobal(strings.getStringConstant(param.getName()).global);
             }
             if (struct.boundsIndex() >= 0) {
                 var bounds = param.extractAllBounds();
                 if (bounds.isEmpty()) {
-                    arrayItem.getInitializers().add(new WasmNullConstant(classInfoProvider.reflectionTypes()
-                            .genericTypeArray().getReference()));
+                    builder.nullConst(classInfoProvider.reflectionTypes().genericTypeArray().getReference());
                 } else {
-                    arrayItem.getInitializers().add(generateTypeParameterBounds(cls, method, bounds));
+                    generateTypeParameterBounds(builder, cls, method, bounds);
                 }
             }
-            array.getElements().add(arrayItem);
+            builder.structNew(struct.structure());
         }
-        return array;
+        builder.arrayNewFixed(struct.array(), params.length);
     }
 
-    private WasmExpression generateTypeParameterBounds(ClassReader cls, MethodReader method,
+    private void generateTypeParameterBounds(WasmInstructionBuilder builder, ClassReader cls, MethodReader method,
             List<GenericValueType.Reference> bounds) {
-        var array = new WasmArrayNewFixed(classInfoProvider.reflectionTypes().genericTypeArray());
         for (var bound : bounds) {
-            array.getElements().add(generateGenericType(cls, method, bound));
+            generateGenericType(builder, cls, method, bound);
         }
-        return array;
+        builder.arrayNewFixed(classInfoProvider.reflectionTypes().genericTypeArray(), bounds.size());
     }
 
-    private WasmExpression generateGenericType(ClassReader contextClass, MethodReader contextMethod,
-            GenericValueType type) {
+    private void generateGenericType(WasmInstructionBuilder builder, ClassReader contextClass,
+            MethodReader contextMethod, GenericValueType type) {
         if (type instanceof GenericValueType.Object) {
             var objectType = (GenericValueType.Object) type;
             var args = objectType.getArguments();
             if (args.length == 0) {
-                return generateDerivedClass(ValueType.object(objectType.getClassName()));
+                generateDerivedClass(builder, ValueType.object(objectType.getClassName()));
             } else {
                 var clsInfo = classInfoProvider.getClassInfo(objectType.getFullClassName());
-                var cls = new WasmGetGlobal(clsInfo.getPointer());
                 var resultStruct = classInfoProvider.reflectionTypes().parameterizedTypeInfo();
-                var result = new WasmStructNew(resultStruct.structure());
                 if (resultStruct.rawTypeIndex() >= 0) {
-                    result.getInitializers().add(cls);
+                    builder.getGlobal(clsInfo.getPointer());
                 }
                 if (resultStruct.actualTypeArgumentsIndex() >= 0) {
                     var arrayType = classInfoProvider.reflectionTypes().genericTypeArray();
-                    var array = new WasmArrayNewFixed(arrayType);
                     for (var arg : args) {
-                        array.getElements().add(generateGenericType(contextClass, contextMethod, arg));
+                        generateGenericType(builder, contextClass, contextMethod, arg);
                     }
-                    result.getInitializers().add(array);
+                    builder.arrayNewFixed(arrayType, args.length);
                 }
                 if (resultStruct.ownerTypeIndex() >= 0) {
                     var ownerType = objectType.getParent();
                     if (ownerType != null) {
-                        result.getInitializers().add(generateGenericType(contextClass, contextMethod, ownerType));
+                        generateGenericType(builder, contextClass, contextMethod, ownerType);
                     } else {
-                        result.getInitializers().add(new WasmNullConstant(WasmType.STRUCT));
+                        builder.nullConst(WasmType.STRUCT);
                     }
                 }
-                return result;
+                builder.structNew(resultStruct.structure());
             }
         } else if (type instanceof GenericValueType.Variable) {
             var typeVar = (GenericValueType.Variable) type;
@@ -856,7 +856,8 @@ public class ReflectionMetadataGenerator {
                 for (var i = 0; i < genericParameters.length; i++) {
                     var param = genericParameters[i];
                     if (param.getName().equals(typeVar.getName())) {
-                        return typeVariableRef(0, i);
+                        typeVariableRef(builder, 0, i);
+                        return;
                     }
                 }
                 ++level;
@@ -867,7 +868,8 @@ public class ReflectionMetadataGenerator {
                     for (var i = 0; i < genericParameters.length; i++) {
                         var param = genericParameters[i];
                         if (param.getName().equals(typeVar.getName())) {
-                            return typeVariableRef(level, i);
+                            typeVariableRef(builder, level, i);
+                            return;
                         }
                     }
                 }
@@ -883,70 +885,70 @@ public class ReflectionMetadataGenerator {
             if (nonGenericType == null) {
                 var arrayType = (GenericValueType.Array) type;
                 var struct = classInfoProvider.reflectionTypes().genericArrayInfo();
-                var result = new WasmStructNew(struct.structure());
-                result.getInitializers().add(generateGenericType(contextClass, contextMethod, arrayType.getItemType()));
-                return result;
+                generateGenericType(builder, contextClass, contextMethod, arrayType.getItemType());
+                builder.structNew(struct.structure());
             } else {
-                return generateDerivedClass(nonGenericType);
+                generateDerivedClass(builder, nonGenericType);
             }
         } else if (type instanceof GenericValueType.Primitive) {
             var primitiveType = (GenericValueType.Primitive) type;
-            return generateDerivedClass(ValueType.primitive(primitiveType.getKind()));
+            generateDerivedClass(builder, ValueType.primitive(primitiveType.getKind()));
         } else if (type instanceof GenericValueType.Void) {
-            return generateDerivedClass(ValueType.VOID);
+            generateDerivedClass(builder, ValueType.VOID);
         } else {
             throw new IllegalArgumentException("Unsupported generic type: " + type);
         }
     }
 
-    private WasmExpression typeVariableRef(int level, int index) {
-        var result = new WasmStructNew(classInfoProvider.reflectionTypes().typeVariableReference().structure());
-        result.getInitializers().add(new WasmInt32Constant(level));
-        result.getInitializers().add(new WasmInt32Constant(index));
-        return result;
+    private void typeVariableRef(WasmInstructionBuilder builder, int level, int index) {
+        builder
+                .i32Const(level)
+                .i32Const(index)
+                .structNew(classInfoProvider.reflectionTypes().typeVariableReference().structure());
     }
 
-    private WasmExpression generateGenericType(ClassReader contextClass, MethodReader contextMethod,
-            GenericValueType.Argument arg) {
+    private void generateGenericType(WasmInstructionBuilder builder, ClassReader contextClass,
+            MethodReader contextMethod, GenericValueType.Argument arg) {
         switch (arg.getKind()) {
             case INVARIANT:
-                return generateGenericType(contextClass, contextMethod, arg.getValue());
+                generateGenericType(builder, contextClass, contextMethod, arg.getValue());
+                return;
             case ANY: {
                 var struct = classInfoProvider.reflectionTypes().wildcardTypeInfo();
-                var result = new WasmStructNew(struct.structure());
-                result.getInitializers().add(new WasmInt32Constant(2));
-                result.getInitializers().add(new WasmNullConstant(WasmType.STRUCT));
-                return result;
+                builder
+                        .i32Const(2)
+                        .nullConst(WasmType.STRUCT)
+                        .structNew(struct.structure());
+                return;
             }
             case COVARIANT: {
                 var struct = classInfoProvider.reflectionTypes().wildcardTypeInfo();
-                var result = new WasmStructNew(struct.structure());
-                result.getInitializers().add(new WasmInt32Constant(0));
-                result.getInitializers().add(generateGenericType(contextClass, contextMethod, arg.getValue()));
-                return result;
+                builder.i32Const(0);
+                generateGenericType(builder, contextClass, contextMethod, arg.getValue());
+                builder.structNew(struct.structure());
+                return;
             }
             case CONTRAVARIANT: {
                 var struct = classInfoProvider.reflectionTypes().wildcardTypeInfo();
-                var result = new WasmStructNew(struct.structure());
-                result.getInitializers().add(new WasmInt32Constant(1));
-                result.getInitializers().add(generateGenericType(contextClass, contextMethod, arg.getValue()));
-                return result;
+                builder.i32Const(1);
+                generateGenericType(builder, contextClass, contextMethod, arg.getValue());
+                builder.structNew(struct.structure());
+                return;
             }
-            default: {
+            default:
                 throw new IllegalArgumentException("Unsupported generic type: " + arg.getKind());
-            }
         }
     }
 
-    private WasmExpression generateInnerClasses(List<? extends String> innerClasses) {
+    private void generateInnerClasses(WasmInstructionBuilder builder, List<? extends String> innerClasses) {
         if (innerClasses.isEmpty()) {
-            return new WasmNullConstant(classInfoProvider.reflectionTypes().classInfo().array().getReference());
+            builder.nullConst(classInfoProvider.reflectionTypes().classInfo().array().getReference());
+            return;
         }
-        var array = new WasmArrayNewFixed(classInfoProvider.reflectionTypes().classInfo().array());
         for (var innerClass : innerClasses) {
-            array.getElements().add(new WasmGetGlobal(classInfoProvider.getClassInfo(innerClass).getPointer()));
+            builder.getGlobal(classInfoProvider.getClassInfo(innerClass).getPointer());
         }
-        return array;
+        builder.arrayNewFixed(classInfoProvider.reflectionTypes().classInfo().array(), innerClasses.size());
     }
 
     private List<? extends String> extractInnerClasses(ClassReader cls) {

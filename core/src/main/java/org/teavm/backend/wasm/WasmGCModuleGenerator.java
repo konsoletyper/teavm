@@ -16,15 +16,11 @@
 package org.teavm.backend.wasm;
 
 import org.teavm.backend.wasm.generate.WasmGCDeclarationsGenerator;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
@@ -47,11 +43,15 @@ public class WasmGCModuleGenerator {
     public void initBuffersHeap(WasmGlobal offset, int minSize, WasmGlobal heapLimit) {
         var target = declarationsGenerator.functions().forStaticMethod(new MethodReference(Heap.class,
                 "init", Address.class, int.class, int.class, void.class));
-        var maxSize = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
-                new WasmGetGlobal(heapLimit), new WasmGetGlobal(offset));
-        var call = new WasmCall(target, new WasmGetGlobal(offset), new WasmInt32Constant(minSize), maxSize);
-        var converter = new WasmExpressionToInstructionConverter(initializer.getBody());
-        call.acceptVisitor(converter);
+        var builder = new WasmInstructionList().builder();
+        builder
+                .getGlobal(offset)
+                .i32Const(minSize)
+                .getGlobal(heapLimit)
+                .getGlobal(offset)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB)
+                .call(target);
+        initializer.getBody().transferFrom(builder.list);
     }
 
     public WasmFunction generateReportGarbageCollectedStringFunction() {

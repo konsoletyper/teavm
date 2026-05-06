@@ -15,16 +15,11 @@
  */
 package org.teavm.backend.wasm.generate.classes;
 
-import java.util.ArrayList;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
-import org.teavm.backend.wasm.model.WasmExpressionToInstructionConverter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 
 class WasmGCSystemFunctionGenerator {
@@ -66,19 +61,18 @@ class WasmGCSystemFunctionGenerator {
         function.add(vtParam);
         function.add(clsParam);
         var virtualTable = virtualTables.lookup("java.lang.Object");
-        var body = new ArrayList<WasmExpression>();
+        var body = function.getBody().builder();
         for (var i = 0; i < virtualTable.getEntries().size(); ++i) {
             var entry = virtualTable.getEntries().get(i);
-            classGenerator.fillVirtualTableEntry(body, () -> new WasmGetLocal(vtParam), struct,
-                    virtualTable, entry);
+            classGenerator.fillVirtualTableEntry(body, b -> b.getLocal(vtParam), struct, virtualTable, entry);
         }
-        body.add(new WasmStructSet(struct,
-                new WasmGetLocal(vtParam), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
-                new WasmGetLocal(clsParam)));
-        body.add(new WasmStructSet(classInfoType.structure(),
-                new WasmGetLocal(clsParam), classInfoType.vtableIndex(),
-                new WasmGetLocal(vtParam)));
-        new WasmExpressionToInstructionConverter(function.getBody()).convertAll(body);
+        body
+                .getLocal(vtParam)
+                .getLocal(clsParam)
+                .structSet(struct, WasmGCClassInfoProvider.CLASS_FIELD_OFFSET)
+                .getLocal(clsParam)
+                .getLocal(vtParam)
+                .structSet(classInfoType.structure(), classInfoType.vtableIndex());
         module.functions.add(function);
         return function;
     }

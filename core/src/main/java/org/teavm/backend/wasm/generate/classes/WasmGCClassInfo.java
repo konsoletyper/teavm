@@ -16,14 +16,13 @@
 package org.teavm.backend.wasm.generate.classes;
 
 import com.carrotsearch.hppc.ObjectIntMap;
-import java.util.List;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
 
 public class WasmGCClassInfo {
@@ -34,7 +33,7 @@ public class WasmGCClassInfo {
     WasmGlobal pointer;
     WasmGlobal virtualTablePointer;
     WasmGlobal initializerPointer;
-    Consumer<List<WasmExpression>> initializer;
+    Consumer<WasmInstructionBuilder> initializer;
     WasmFunction newArrayFunction;
     WasmFunction initArrayFunction;
     WasmFunction supertypeFunction;
