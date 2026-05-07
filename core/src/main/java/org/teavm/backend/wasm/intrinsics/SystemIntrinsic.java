@@ -19,15 +19,13 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmConversion;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class SystemIntrinsic implements WasmGCIntrinsic {
     private WasmFunction workerFunction;
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         if (workerFunction == null) {
             workerFunction = new WasmFunction(context.functionTypes().of(WasmType.FLOAT64));
             workerFunction.setName("teavm@currentTimeMillis");
@@ -35,7 +33,6 @@ public class SystemIntrinsic implements WasmGCIntrinsic {
             workerFunction.setImportModule("teavmDate");
             context.module().functions.add(workerFunction);
         }
-        var call = new WasmCall(workerFunction);
-        return new WasmConversion(WasmNumType.FLOAT64, WasmNumType.INT64, true, call);
+        builder.call(workerFunction).convert(WasmNumType.FLOAT64, WasmNumType.INT64, true);
     }
 }

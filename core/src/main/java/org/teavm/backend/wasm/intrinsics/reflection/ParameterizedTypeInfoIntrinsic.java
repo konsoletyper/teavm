@@ -18,39 +18,33 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmArrayGet;
-import org.teavm.backend.wasm.model.expression.WasmArrayLength;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class ParameterizedTypeInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         var reflectionTypes = context.classInfoProvider().reflectionTypes();
+        var paramType = reflectionTypes.parameterizedTypeInfo();
         switch (invocation.getMethod().getName()) {
-            case "rawType": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var paramType = reflectionTypes.parameterizedTypeInfo();
-                return new WasmStructGet(paramType.structure(), receiver, paramType.rawTypeIndex());
-            }
-            case "actualTypeArgumentCount": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var paramType = reflectionTypes.parameterizedTypeInfo();
-                var args = new WasmStructGet(paramType.structure(), receiver, paramType.actualTypeArgumentsIndex());
-                return new WasmArrayLength(args);
-            }
-            case "actualTypeArgument": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var index = context.generate(invocation.getArguments().get(1));
-                var paramType = reflectionTypes.parameterizedTypeInfo();
-                var args = new WasmStructGet(paramType.structure(), receiver, paramType.actualTypeArgumentsIndex());
-                return new WasmArrayGet(reflectionTypes.genericTypeArray(), args, index);
-            }
-            case "ownerType": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var paramType = reflectionTypes.parameterizedTypeInfo();
-                return new WasmStructGet(paramType.structure(), receiver, paramType.ownerTypeIndex());
-            }
+            case "rawType":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(paramType.structure(), paramType.rawTypeIndex());
+                break;
+            case "actualTypeArgumentCount":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(paramType.structure(), paramType.actualTypeArgumentsIndex())
+                        .arrayLength();
+                break;
+            case "actualTypeArgument":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(paramType.structure(), paramType.actualTypeArgumentsIndex());
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.arrayGet(reflectionTypes.genericTypeArray());
+                break;
+            case "ownerType":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(paramType.structure(), paramType.ownerTypeIndex());
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

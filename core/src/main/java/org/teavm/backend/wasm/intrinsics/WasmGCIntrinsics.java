@@ -216,8 +216,8 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
                     break;
                 }
             }
-            intrinsics.put(method, new IntrinsicContainer(intrinsic));
             result = new IntrinsicContainer(intrinsic);
+            intrinsics.put(method, result);
         }
         return result.intrinsic;
     }

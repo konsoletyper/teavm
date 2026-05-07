@@ -22,14 +22,9 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -39,134 +34,131 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
     private WasmFunction argsCheckFunction;
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "arraycopy":
-                return generateArrayCopy(invocation, context);
+                generateArrayCopy(invocation, context, builder);
+                break;
             case "doArrayCopy":
-                return generateDoArrayCopy(invocation, context);
+                generateDoArrayCopy(invocation, context, builder);
+                break;
             default:
                 throw new IllegalArgumentException();
         }
     }
 
-    private WasmExpression generateArrayCopy(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var result = tryGenerateSpecialCase(invocation, context);
-        if (result == null) {
-            tryGenerateSpecialCase(invocation, context);
-            var function = getDefaultFunction(context);
-            result = new WasmCall(function, context.generate(invocation.getArguments().get(0)),
-                    context.generate(invocation.getArguments().get(1)),
-                    context.generate(invocation.getArguments().get(2)),
-                    context.generate(invocation.getArguments().get(3)),
-                    context.generate(invocation.getArguments().get(4)));
+    private void generateArrayCopy(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        if (!tryGenerateSpecialCase(invocation, context, builder)) {
+            for (int i = 0; i < 5; i++) {
+                context.generate(builder, invocation.getArguments().get(i));
+            }
+            builder.call(getDefaultFunction(context));
         }
-        return result;
     }
 
-    private WasmExpression generateDoArrayCopy(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    private void generateDoArrayCopy(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var classInfoStruct = context.classInfoProvider().reflectionTypes().classInfo();
         var objInfo = context.classInfoProvider().getClassInfo(Object.class.getName());
-        var block = new WasmBlock(false);
 
-        var source = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
-                objInfo.getType(), invocation.getLocation(), block.getBody());
-        WasmExpression sourceCls = new WasmStructGet(objInfo.getStructure(), source.expr(),
-                WasmGCClassInfoProvider.VT_FIELD_OFFSET);
-        sourceCls = new WasmStructGet(objInfo.getVirtualTableStructure(), sourceCls,
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var sourceClsCached = context.exprCache().create(sourceCls, classInfoStruct.structure().getReference(),
-                invocation.getLocation(), block.getBody());
-        var copyFunction = new WasmStructGet(classInfoStruct.structure(), sourceClsCached.expr(),
-                classInfoStruct.copyArrayIndex());
-        var call = new WasmCallReference(copyFunction, classInfoStruct.copyArrayFunctionType());
-        call.getArguments().add(sourceClsCached.expr());
-        call.getArguments().add(source.expr());
-        call.getArguments().add(context.generate(invocation.getArguments().get(1)));
-        call.getArguments().add(context.generate(invocation.getArguments().get(2)));
-        call.getArguments().add(context.generate(invocation.getArguments().get(3)));
-        call.getArguments().add(context.generate(invocation.getArguments().get(4)));
-        block.getBody().add(call);
+        context.generate(builder, invocation.getArguments().get(0));
+        var source = context.valueCache().create(objInfo.getType(), builder);
+
+        builder
+                .structGet(objInfo.getStructure(), WasmGCClassInfoProvider.VT_FIELD_OFFSET)
+                .structGet(objInfo.getVirtualTableStructure(), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+
+        var sourceClsCached = context.valueCache().create(classInfoStruct.structure().getReference(), builder);
+        builder.append(source);
+        context.generate(builder, invocation.getArguments().get(1));
+        context.generate(builder, invocation.getArguments().get(2));
+        context.generate(builder, invocation.getArguments().get(3));
+        context.generate(builder, invocation.getArguments().get(4));
+        builder.append(sourceClsCached)
+                .structGet(classInfoStruct.structure(), classInfoStruct.copyArrayIndex())
+                .callReference(classInfoStruct.copyArrayFunctionType());
+
         source.release();
         sourceClsCached.release();
-        return block;
     }
 
-    private WasmExpression tryGenerateSpecialCase(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    private boolean tryGenerateSpecialCase(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var sourceArray = invocation.getArguments().get(0);
         var targetArray = invocation.getArguments().get(2);
         if (sourceArray.getVariableIndex() < 0 || targetArray.getVariableIndex() < 0) {
-            return null;
+            return false;
         }
 
         var sourceType = context.types().typeOf(sourceArray.getVariableIndex());
         if (sourceType == null || !(sourceType.valueType instanceof ValueType.Array)) {
-            return null;
+            return false;
         }
         var targetType = context.types().typeOf(targetArray.getVariableIndex());
         if (targetType == null || !(targetType.valueType instanceof ValueType.Array)) {
-            return null;
+            return false;
         }
 
         var sourceItemType = ((ValueType.Array) sourceType.valueType).getItemType();
         var targetItemType = ((ValueType.Array) targetType.valueType).getItemType();
         if (sourceItemType != targetItemType
                 || !context.hierarchy().isSuperType(targetItemType, sourceItemType, false)) {
-            return null;
+            return false;
         }
-
-        var block = new WasmBlock(false);
 
         var wasmTargetArrayType = (WasmType.CompositeReference) context.typeMapper().mapType(
                 ValueType.arrayOf(targetItemType));
         var wasmTargetArrayStruct = (WasmStructure) wasmTargetArrayType.composite;
-        var wasmTargetArrayWrapper = context.generate(invocation.getArguments().get(2));
         var wasmTargetArrayTypeRef = (WasmType.CompositeReference) wasmTargetArrayStruct.getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
         if (context.isAsync()) {
             wasmTargetArrayTypeRef = wasmTargetArrayTypeRef.composite.getReference();
         }
-        var wasmTargetArray = context.exprCache().create(new WasmStructGet(wasmTargetArrayStruct,
-                wasmTargetArrayWrapper, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET),
-                wasmTargetArrayTypeRef, null, block.getBody());
-        var wasmTargetIndex = context.exprCache().create(context.generate(invocation.getArguments().get(3)),
-                WasmType.INT32, null, block.getBody());
+        context.generate(builder, invocation.getArguments().get(2));
+        builder.structGet(wasmTargetArrayStruct, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
+        var wasmTargetArray = context.valueCache().create(wasmTargetArrayTypeRef, builder);
+        builder.drop();
+
+        context.generate(builder, invocation.getArguments().get(3));
+        var wasmTargetIndex = context.valueCache().create(WasmType.INT32, builder);
+        builder.drop();
+
         var wasmSourceArrayType = (WasmType.CompositeReference) context.typeMapper().mapType(
                 ValueType.arrayOf(sourceItemType));
         var wasmSourceArrayStruct = (WasmStructure) wasmSourceArrayType.composite;
-        var wasmSourceArrayWrapper = context.generate(invocation.getArguments().get(0));
         var wasmSourceArrayTypeRef = (WasmType.CompositeReference) wasmSourceArrayStruct.getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
         if (context.isAsync()) {
             wasmSourceArrayTypeRef = wasmSourceArrayTypeRef.composite.getReference();
         }
-        var wasmSourceArray = context.exprCache().create(new WasmStructGet(wasmSourceArrayStruct,
-                wasmSourceArrayWrapper, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET),
-                wasmSourceArrayTypeRef, null, block.getBody());
-        var wasmSourceIndex = context.exprCache().create(context.generate(invocation.getArguments().get(1)),
-                WasmType.INT32, null, block.getBody());
-        var wasmSize = context.exprCache().create(context.generate(invocation.getArguments().get(4)),
-                WasmType.INT32, null, block.getBody());
+        context.generate(builder, invocation.getArguments().get(0));
+        builder.structGet(wasmSourceArrayStruct, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
+        var wasmSourceArray = context.valueCache().create(wasmSourceArrayTypeRef, builder);
+        builder.drop();
 
+        context.generate(builder, invocation.getArguments().get(1));
+        var wasmSourceIndex = context.valueCache().create(WasmType.INT32, builder);
+        builder.drop();
 
-        block.getBody().add(new WasmCall(
-                getArgsCheckFunction(context),
-                wasmTargetArray.expr(), wasmTargetIndex.expr(),
-                wasmSourceArray.expr(), wasmSourceIndex.expr(),
-                wasmSize.expr()
-        ));
+        context.generate(builder, invocation.getArguments().get(4));
+        var wasmSize = context.valueCache().create(WasmType.INT32, builder);
+        builder.drop();
 
-        block.getBody().add(new WasmArrayCopy(
-                (WasmArray) wasmTargetArrayTypeRef.composite, wasmTargetArray.expr(), wasmTargetIndex.expr(),
-                (WasmArray) wasmSourceArrayTypeRef.composite, wasmSourceArray.expr(), wasmSourceIndex.expr(),
-                wasmSize.expr()
-        ));
+        builder.append(wasmTargetArray).append(wasmTargetIndex)
+                .append(wasmSourceArray).append(wasmSourceIndex).append(wasmSize);
+        builder.call(getArgsCheckFunction(context));
+
+        builder.append(wasmTargetArray).append(wasmTargetIndex)
+                .append(wasmSourceArray).append(wasmSourceIndex).append(wasmSize);
+        builder.arrayCopy((WasmArray) wasmTargetArrayTypeRef.composite, (WasmArray) wasmSourceArrayTypeRef.composite);
+
         wasmTargetArray.release();
         wasmTargetIndex.release();
         wasmSourceArray.release();
         wasmSourceIndex.release();
         wasmSize.release();
-        return block;
+        return true;
     }
 
     private WasmFunction getArgsCheckFunction(WasmGCIntrinsicContext context) {
@@ -226,9 +218,9 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         return function;
     }
 
-    private WasmFunction getDefaultFunction(WasmGCIntrinsicContext manager) {
+    private WasmFunction getDefaultFunction(WasmGCIntrinsicContext context) {
         if (defaultFunction == null) {
-            defaultFunction = manager.functions().forStaticMethod(new MethodReference(System.class,
+            defaultFunction = context.functions().forStaticMethod(new MethodReference(System.class,
                     "arrayCopyImpl", Object.class, int.class, Object.class, int.class, int.class, void.class));
         }
         return defaultFunction;

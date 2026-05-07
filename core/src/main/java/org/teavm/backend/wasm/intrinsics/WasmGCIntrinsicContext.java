@@ -19,8 +19,8 @@ import java.util.function.Consumer;
 import org.teavm.ast.Expr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.generate.ExpressionCache;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
+import org.teavm.backend.wasm.generate.ValueCache;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
@@ -28,7 +28,7 @@ import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 import org.teavm.dependency.DependencyInfo;
@@ -40,7 +40,7 @@ import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.parsing.resource.ResourceProvider;
 
 public interface WasmGCIntrinsicContext {
-    WasmExpression generate(Expr expr);
+    void generate(WasmInstructionBuilder builder, Expr expr);
 
     WasmModule module();
 
@@ -62,7 +62,7 @@ public interface WasmGCIntrinsicContext {
 
     TemporaryVariablePool tempVars();
 
-    ExpressionCache exprCache();
+    ValueCache valueCache();
 
     WasmGCNameProvider names();
 

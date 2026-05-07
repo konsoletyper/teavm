@@ -19,10 +19,7 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmGlobal;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmDrop;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.jso.impl.JSBodyEmitter;
 import org.teavm.model.ValueType;
 
@@ -42,20 +39,19 @@ class WasmGCBodyIntrinsic implements WasmGCIntrinsic {
     }
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         var jsoContext = WasmGCJsoContext.wrap(context);
         if (global == null) {
             global = commonGen.addJSBody(jsoContext, emitter, inlined);
         }
-        var call = new WasmCall(jsFunctions.getFunctionCaller(jsoContext, invocation.getArguments().size()));
-        call.getArguments().add(new WasmGetGlobal(global));
+        var caller = jsFunctions.getFunctionCaller(jsoContext, invocation.getArguments().size());
+        builder.getGlobal(global);
         for (var arg : invocation.getArguments()) {
-            call.getArguments().add(context.generate(arg));
+            context.generate(builder, arg);
         }
-        WasmExpression result = call;
+        builder.call(caller);
         if (invocation.getMethod().getReturnType() == ValueType.VOID) {
-            result = new WasmDrop(result);
+            builder.drop();
         }
-        return result;
     }
 }

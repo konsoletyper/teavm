@@ -19,33 +19,31 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmArrayGet;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class FieldReflectionInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+        var infoStruct = context.classInfoProvider().reflectionTypes().fieldReflectionInfo();
         switch (invocation.getMethod().getName()) {
-            case "annotationCount": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var infoStruct = context.classInfoProvider().reflectionTypes().fieldReflectionInfo();
-                var annotations = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.annotationsIndex());
-                return WasmGCGenerationUtil.getArrayLengthOfNullable(annotations);
-            }
+            case "annotationCount":
+                WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
+                    context.generate(b, invocation.getArguments().get(0));
+                    b.structGet(infoStruct.structure(), infoStruct.annotationsIndex());
+                });
+                break;
             case "annotation": {
-                var infoStruct = context.classInfoProvider().reflectionTypes().fieldReflectionInfo();
                 var array = context.classInfoProvider().reflectionTypes().annotationInfo().array();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var index = context.generate(invocation.getArguments().get(1));
-                var annotations = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.annotationsIndex());
-                return new WasmArrayGet(array, annotations, index);
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.annotationsIndex());
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.arrayGet(array);
+                break;
             }
-            case "genericType": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var infoStruct = context.classInfoProvider().reflectionTypes().fieldReflectionInfo();
-                return new WasmStructGet(infoStruct.structure(), receiver, infoStruct.genericTypeIndex());
-            }
+            case "genericType":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.genericTypeIndex());
+                break;
             default:
                 throw new IllegalStateException(invocation.getMethod().getName());
         }

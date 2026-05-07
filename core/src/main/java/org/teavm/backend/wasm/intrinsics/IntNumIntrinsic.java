@@ -18,14 +18,10 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.model.WasmNumType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmConversion;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.MethodReference;
 
 public class IntNumIntrinsic implements WasmGCIntrinsic {
@@ -38,39 +34,46 @@ public class IntNumIntrinsic implements WasmGCIntrinsic {
     }
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "divideUnsigned":
-                return new WasmIntBinary(wasmType, WasmIntBinaryOperation.DIV_UNSIGNED,
-                        context.generate(invocation.getArguments().get(0)),
-                        context.generate(invocation.getArguments().get(1)));
+                context.generate(builder, invocation.getArguments().get(0));
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.intBinary(wasmType, WasmIntBinaryOperation.DIV_UNSIGNED);
+                break;
             case "remainderUnsigned":
-                return new WasmIntBinary(wasmType, WasmIntBinaryOperation.REM_UNSIGNED,
-                        context.generate(invocation.getArguments().get(0)),
-                        context.generate(invocation.getArguments().get(1)));
+                context.generate(builder, invocation.getArguments().get(0));
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.intBinary(wasmType, WasmIntBinaryOperation.REM_UNSIGNED);
+                break;
             case "compareUnsigned":
-                return new WasmCall(context.functions().forStaticMethod(compareUnsigned),
-                        context.generate(invocation.getArguments().get(0)),
-                        context.generate(invocation.getArguments().get(1)));
+                context.generate(builder, invocation.getArguments().get(0));
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.call(context.functions().forStaticMethod(compareUnsigned));
+                break;
             case "numberOfLeadingZeros":
-                return castToInt(new WasmIntUnary(wasmType, WasmIntUnaryOperation.CLZ,
-                        context.generate(invocation.getArguments().get(0))));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.intUnary(wasmType, WasmIntUnaryOperation.CLZ);
+                castToInt(builder);
+                break;
             case "numberOfTrailingZeros":
-                return castToInt(new WasmIntUnary(wasmType, WasmIntUnaryOperation.CTZ,
-                        context.generate(invocation.getArguments().get(0))));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.intUnary(wasmType, WasmIntUnaryOperation.CTZ);
+                castToInt(builder);
+                break;
             case "bitCount":
-                return castToInt(new WasmIntUnary(wasmType, WasmIntUnaryOperation.POPCNT,
-                        context.generate(invocation.getArguments().get(0))));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.intUnary(wasmType, WasmIntUnaryOperation.POPCNT);
+                castToInt(builder);
+                break;
             default:
                 throw new AssertionError();
         }
     }
 
-    private WasmExpression castToInt(WasmExpression expr) {
+    private void castToInt(WasmInstructionBuilder builder) {
         if (wasmType == WasmIntType.INT64) {
-            return new WasmConversion(WasmNumType.INT64, WasmNumType.INT32, false, expr);
-        } else {
-            return expr;
+            builder.convert(WasmNumType.INT64, WasmNumType.INT32, false);
         }
     }
 }

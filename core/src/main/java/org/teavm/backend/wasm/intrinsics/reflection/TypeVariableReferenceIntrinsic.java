@@ -18,24 +18,20 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class TypeVariableReferenceIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var reflectionTypes = context.classInfoProvider().reflectionTypes();
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+        var struct = context.classInfoProvider().reflectionTypes().typeVariableReference();
+        context.generate(builder, invocation.getArguments().get(0));
         switch (invocation.getMethod().getName()) {
-            case "level": {
-                var struct = reflectionTypes.typeVariableReference();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(struct.structure(), receiver, struct.levelIndex());
-            }
-            case "index": {
-                var struct = reflectionTypes.typeVariableReference();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(struct.structure(), receiver, struct.indexIndex());
-            }
+            case "level":
+                builder.structGet(struct.structure(), struct.levelIndex());
+                break;
+            case "index":
+                builder.structGet(struct.structure(), struct.indexIndex());
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

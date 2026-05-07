@@ -18,36 +18,36 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
 
 public class StructureIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "toAddress":
             case "cast":
-                return context.generate(invocation.getArguments().get(0));
+                context.generate(builder, invocation.getArguments().get(0));
+                break;
             case "sizeOf": {
                 var type = (ValueType.Object) ((ConstantExpr) invocation.getArguments().get(0)).getValue();
-                return new WasmInt32Constant(context.classInfoProvider().getHeapSize(type.getClassName()));
+                builder.i32Const(context.classInfoProvider().getHeapSize(type.getClassName()));
+                break;
             }
             case "add": {
-                var base = context.generate(invocation.getArguments().get(1));
-                var offset = context.generate(invocation.getArguments().get(2));
                 var type = ((ConstantExpr) invocation.getArguments().get(0)).getValue();
                 var className = ((ValueType.Object) type).getClassName();
                 int size = context.classInfoProvider().getHeapSize(className);
                 int alignment = context.classInfoProvider().getHeapAlignment(className);
                 size = WasmGeneratorUtil.align(size, alignment);
 
-                offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL, offset,
-                        new WasmInt32Constant(size));
-                return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, base, offset);
+                context.generate(builder, invocation.getArguments().get(1));
+                context.generate(builder, invocation.getArguments().get(2));
+                builder.i32Const(size).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL)
+                        .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD);
+                break;
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());

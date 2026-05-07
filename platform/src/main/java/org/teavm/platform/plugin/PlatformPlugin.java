@@ -127,11 +127,11 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
     private void installWasmGC(TeaVMHost host, TeaVMWasmGCHost wasmGCHost) {
         WasmGCIntrinsic amplifierIntrinsic =
-                (invocation, context) -> context.generate(invocation.getArguments().get(0));
+                (invocation, context, builder) -> context.generate(builder, invocation.getArguments().get(0));
         wasmGCHost.addIntrinsic(new MethodReference(StringAmplifier.class, "amplify", String.class, String.class),
                 amplifierIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(StringAmplifier.class, "amplifyArray",
-                        String[].class, String[].class), amplifierIntrinsic);
+                String[].class, String[].class), amplifierIntrinsic);
 
         host.add(new ResourceInterfaceToClassTransformer());
         var dependencySupport = new ResourceDependencySupport();

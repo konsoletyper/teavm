@@ -18,23 +18,20 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class AnnotationInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+        var annotInfoStruct = context.classInfoProvider().reflectionTypes().annotationInfo();
+        context.generate(builder, invocation.getArguments().get(0));
         switch (invocation.getMethod().getName()) {
-            case "data": {
-                var annotInfoStruct = context.classInfoProvider().reflectionTypes().annotationInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(annotInfoStruct.structure(), receiver, annotInfoStruct.dataIndex());
-            }
-            case "constructor": {
-                var annotInfoStruct = context.classInfoProvider().reflectionTypes().annotationInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(annotInfoStruct.structure(), receiver, annotInfoStruct.constructorIndex());
-            }
+            case "data":
+                builder.structGet(annotInfoStruct.structure(), annotInfoStruct.dataIndex());
+                break;
+            case "constructor":
+                builder.structGet(annotInfoStruct.structure(), annotInfoStruct.constructorIndex());
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

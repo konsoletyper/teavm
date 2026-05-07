@@ -18,144 +18,133 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmBranch;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmDrop;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt31Get;
-import org.teavm.backend.wasm.model.expression.WasmInt31Reference;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
-import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmStructSet;
-import org.teavm.backend.wasm.model.expression.WasmTest;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
 
 public class ObjectIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "getClassInfo":
-                return generateGetClass(invocation, context);
+                generateGetClass(invocation, context, builder);
+                break;
             case "getMonitor":
-                return generateGetMonitor(invocation, context);
+                generateGetMonitor(invocation, context, builder);
+                break;
             case "setMonitor":
-                return generateSetMonitor(invocation, context);
+                generateSetMonitor(invocation, context, builder);
+                break;
             case "wasmGCIdentity":
-                return generateGetIdentity(invocation, context);
+                generateGetIdentity(invocation, context, builder);
+                break;
             case "setWasmGCIdentity":
-                return generateSetIdentity(invocation, context);
+                generateSetIdentity(invocation, context, builder);
+                break;
             case "cloneObject":
-                return generateClone(invocation, context);
+                generateClone(invocation, context, builder);
+                break;
             default:
                 throw new IllegalArgumentException();
         }
     }
 
-    private WasmExpression generateGetClass(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var obj = context.generate(invocation.getArguments().get(0));
+    private void generateGetClass(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var objectInfo = context.classInfoProvider().getClassInfo("java.lang.Object");
         var objectStruct = objectInfo.getStructure();
-        var vt = new WasmStructGet(objectStruct, obj, WasmGCClassInfoProvider.VT_FIELD_OFFSET);
-        var result = new WasmStructGet(objectInfo.getVirtualTableStructure(), vt,
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        result.setLocation(invocation.getLocation());
-        return result;
+        context.generate(builder, invocation.getArguments().get(0));
+        builder
+                .structGet(objectStruct, WasmGCClassInfoProvider.VT_FIELD_OFFSET)
+                .structGet(objectInfo.getVirtualTableStructure(), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
     }
 
-    private WasmExpression generateGetMonitor(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    private void generateGetMonitor(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var monitorStruct = context.classInfoProvider().getClassInfo(ValueType.object("java.lang.Object$Monitor"))
                 .getStructure();
         var monitorType = monitorStruct.getReference();
         var monitorNotNullType = monitorStruct.getNonNullReference();
         var objectStruct = context.classInfoProvider().getClassInfo(ValueType.object("java.lang.Object"))
                 .getStructure();
-        var block = new WasmBlock(false);
-        block.setType(monitorType.asBlock());
         var tmpVar = context.tempVars().acquire(WasmType.ANY);
-        var instance = context.generate(invocation.getArguments().get(0));
-        block.getBody().add(new WasmSetLocal(tmpVar, new WasmStructGet(objectStruct, instance,
-                WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET)));
+        var block = builder.block(monitorType);
 
-        WasmExpression test = new WasmTest(new WasmGetLocal(tmpVar), monitorNotNullType);
-        test = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, test);
-        var branch = new WasmBranch(test, block);
-        branch.setResult(new WasmNullConstant(monitorType));
-        block.getBody().add(new WasmDrop(branch));
-
-        block.getBody().add(new WasmCast(new WasmGetLocal(tmpVar), monitorNotNullType));
+        context.generate(block, invocation.getArguments().get(0));
+        block
+                .structGet(objectStruct, WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET)
+                .setLocal(tmpVar)
+                .nullConst(monitorType)
+                .getLocal(tmpVar)
+                .test(monitorNotNullType)
+                .intUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ)
+                .branch(block)
+                .drop()
+                .getLocal(tmpVar)
+                .cast(monitorNotNullType);
         context.tempVars().release(tmpVar);
-        return block;
     }
 
-    private WasmExpression generateSetMonitor(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    private void generateSetMonitor(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var objectStruct = context.classInfoProvider().getClassInfo(ValueType.object("java.lang.Object"))
                 .getStructure();
-        var instance = context.generate(invocation.getArguments().get(0));
-        var monitor = context.generate(invocation.getArguments().get(1));
-        return new WasmStructSet(objectStruct, instance, WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET, monitor);
+        context.generate(builder, invocation.getArguments().get(0));
+        context.generate(builder, invocation.getArguments().get(1));
+        builder.structSet(objectStruct, WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET);
     }
 
-    private WasmExpression generateGetIdentity(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    private void generateGetIdentity(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var objectStruct = context.classInfoProvider().getClassInfo(ValueType.object("java.lang.Object"))
                 .getStructure();
-        var block = new WasmBlock(false);
-        block.setType(WasmType.INT32.asBlock());
         var tmpVar = context.tempVars().acquire(WasmType.ANY);
-        var instance = context.generate(invocation.getArguments().get(0));
-        block.getBody().add(new WasmSetLocal(tmpVar, new WasmStructGet(objectStruct, instance,
-                WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET)));
+        var block = builder.block(WasmType.INT32);
 
-        WasmExpression test = new WasmTest(new WasmGetLocal(tmpVar),
-                WasmType.SpecialReferenceKind.I31.asNonNullType());
-        test = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, test);
-        var branch = new WasmBranch(test, block);
-        branch.setResult(new WasmInt32Constant(-1));
-        block.getBody().add(new WasmDrop(branch));
-
-        var i31ref = new WasmCast(new WasmGetLocal(tmpVar), WasmType.SpecialReferenceKind.I31.asNonNullType());
-        block.getBody().add(new WasmInt31Get(i31ref, WasmSignedType.UNSIGNED));
+        context.generate(block, invocation.getArguments().get(0));
+        block
+                .structGet(objectStruct, WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET)
+                .setLocal(tmpVar)
+                .i32Const(-1)
+                .getLocal(tmpVar)
+                .test(WasmType.SpecialReferenceKind.I31.asNonNullType())
+                .negate()
+                .branch(block)
+                .drop()
+                .getLocal(tmpVar)
+                .cast(WasmType.SpecialReferenceKind.I31.asNonNullType())
+                .i31Get(WasmSignedType.UNSIGNED);
         context.tempVars().release(tmpVar);
-        return block;
     }
 
-    private WasmExpression generateSetIdentity(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    private void generateSetIdentity(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var objectStruct = context.classInfoProvider().getClassInfo(ValueType.object("java.lang.Object"))
                 .getStructure();
-        var instance = context.generate(invocation.getArguments().get(0));
-        var identity = context.generate(invocation.getArguments().get(1));
-        var identityWrapper = new WasmInt31Reference(identity);
-        return new WasmStructSet(objectStruct, instance, WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET,
-                identityWrapper);
+        context.generate(builder, invocation.getArguments().get(0));
+        context.generate(builder, invocation.getArguments().get(1));
+        builder
+                .i31Ref()
+                .structSet(objectStruct, WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET);
     }
 
-    private WasmExpression generateClone(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    private void generateClone(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var objectInfo = context.classInfoProvider().getClassInfo("java.lang.Object");
         var objectStruct = objectInfo.getStructure();
         var classStruct = context.classInfoProvider().reflectionTypes().classInfo();
 
-        var block = new WasmBlock(false);
-        block.setType(objectStruct.getReference().asBlock());
-        var obj = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
-                objectStruct.getReference(), invocation.getLocation(), block.getBody());
-        var vt = new WasmStructGet(objectStruct, obj.expr(), WasmGCClassInfoProvider.VT_FIELD_OFFSET);
-        var cls = new WasmStructGet(objectInfo.getVirtualTableStructure(), vt,
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var functionRef = new WasmStructGet(classStruct.structure(), cls, classStruct.cloneFunctionIndex());
-        var call = new WasmCallReference(functionRef, context.functionTypes().of(
-                objectStruct.getReference(), objectStruct.getReference()));
-        call.getArguments().add(obj.expr());
-        block.getBody().add(call);
+        context.generate(builder, invocation.getArguments().get(0));
+        var cachedObj = context.valueCache().create(objectStruct.getReference(), builder);
+        builder
+                .append(cachedObj)
+                .structGet(objectStruct, WasmGCClassInfoProvider.VT_FIELD_OFFSET)
+                .structGet(objectInfo.getVirtualTableStructure(), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET)
+                .structGet(classStruct.structure(), classStruct.cloneFunctionIndex())
+                .callReference(context.functionTypes().of(objectStruct.getReference(), objectStruct.getReference()));
 
-        obj.release();
-        return block;
+        cachedObj.release();
     }
 }

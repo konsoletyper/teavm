@@ -76,8 +76,7 @@ public class ReflectionIntrinsics implements WasmGCIntrinsicProvider {
                     && cls.getName().endsWith(AnnotationGenerationHelper.ANNOTATION_DATA_SUFFIX)) {
                 var origClassName = className.substring(0, className.length()
                         - AnnotationGenerationHelper.ANNOTATION_DATA_SUFFIX.length());
-                var intrinsic = new AnnotationDataIntrinsic(origClassName);
-                intrinsics.put(className, intrinsic);
+                intrinsics.put(className, new AnnotationDataIntrinsic(origClassName));
             }
         }
     }

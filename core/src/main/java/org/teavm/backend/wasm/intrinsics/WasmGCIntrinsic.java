@@ -16,8 +16,8 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public interface WasmGCIntrinsic {
-    WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context);
+    void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder);
 }

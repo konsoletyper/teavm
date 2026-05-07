@@ -243,6 +243,12 @@ public class WasmInstructionBuilder {
         return add(new WasmConversionInstruction(sourceType, targetType, signed));
     }
 
+    public WasmInstructionBuilder reinterpret(WasmNumType sourceType, WasmNumType targetType) {
+        var insn = new WasmConversionInstruction(sourceType, targetType, false);
+        insn.setReinterpret(true);
+        return add(insn);
+    }
+
     public WasmInstructionBuilder nonTrapConvert(WasmNumType sourceType, WasmNumType targetType, boolean signed) {
         var insn = new WasmConversionInstruction(sourceType, targetType, signed);
         insn.setNonTrapping(true);

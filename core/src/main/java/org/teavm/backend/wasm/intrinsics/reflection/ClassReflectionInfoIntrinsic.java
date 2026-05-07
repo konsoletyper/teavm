@@ -22,64 +22,74 @@ import org.teavm.backend.wasm.generate.reflection.ClassReflectionInfoStruct;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
-import org.teavm.backend.wasm.model.expression.WasmArrayGet;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class ClassReflectionInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "annotationCount":
-                return collectionCount(invocation, context, ClassReflectionInfoStruct::annotationsIndex);
+                collectionCount(invocation, context, builder, ClassReflectionInfoStruct::annotationsIndex);
+                break;
             case "annotation": {
                 var array = context.classInfoProvider().reflectionTypes().annotationInfo().array();
-                return collectionElement(invocation, context, array, ClassReflectionInfoStruct::annotationsIndex);
+                collectionElement(invocation, context, builder, array, ClassReflectionInfoStruct::annotationsIndex);
+                break;
             }
             case "fieldCount":
-                return collectionCount(invocation, context, ClassReflectionInfoStruct::fieldsIndex);
+                collectionCount(invocation, context, builder, ClassReflectionInfoStruct::fieldsIndex);
+                break;
             case "field": {
                 var array = context.classInfoProvider().reflectionTypes().fieldInfo().array();
-                return collectionElement(invocation, context, array, ClassReflectionInfoStruct::fieldsIndex);
+                collectionElement(invocation, context, builder, array, ClassReflectionInfoStruct::fieldsIndex);
+                break;
             }
             case "methodCount":
-                return collectionCount(invocation, context, ClassReflectionInfoStruct::methodsIndex);
+                collectionCount(invocation, context, builder, ClassReflectionInfoStruct::methodsIndex);
+                break;
             case "method": {
                 var array = context.classInfoProvider().reflectionTypes().methodInfo().array();
-                return collectionElement(invocation, context, array, ClassReflectionInfoStruct::methodsIndex);
+                collectionElement(invocation, context, builder, array, ClassReflectionInfoStruct::methodsIndex);
+                break;
             }
             case "typeParameterCount":
-                return collectionCount(invocation, context, ClassReflectionInfoStruct::typeParametersIndex);
+                collectionCount(invocation, context, builder, ClassReflectionInfoStruct::typeParametersIndex);
+                break;
             case "typeParameter": {
                 var array = context.classInfoProvider().reflectionTypes().typeVariableInfo().array();
-                return collectionElement(invocation, context, array, ClassReflectionInfoStruct::typeParametersIndex);
+                collectionElement(invocation, context, builder, array,
+                        ClassReflectionInfoStruct::typeParametersIndex);
+                break;
             }
             case "innerClassCount":
-                return collectionCount(invocation, context, ClassReflectionInfoStruct::innerClassesIndex);
+                collectionCount(invocation, context, builder, ClassReflectionInfoStruct::innerClassesIndex);
+                break;
             case "innerClass": {
                 var array = context.classInfoProvider().reflectionTypes().classInfo().array();
-                return collectionElement(invocation, context, array, ClassReflectionInfoStruct::innerClassesIndex);
+                collectionElement(invocation, context, builder, array, ClassReflectionInfoStruct::innerClassesIndex);
+                break;
             }
-
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }
     }
 
-    private WasmExpression collectionCount(InvocationExpr invocation, WasmGCIntrinsicContext context,
-            ToIntFunction<ClassReflectionInfoStruct> fieldIndex) {
-        var receiver = context.generate(invocation.getArguments().get(0));
+    private void collectionCount(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder, ToIntFunction<ClassReflectionInfoStruct> fieldIndex) {
         var infoStruct = context.classInfoProvider().reflectionTypes().classReflectionInfo();
-        var annotations = new WasmStructGet(infoStruct.structure(), receiver, fieldIndex.applyAsInt(infoStruct));
-        return WasmGCGenerationUtil.getArrayLengthOfNullable(annotations);
+        WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
+            context.generate(b, invocation.getArguments().get(0));
+            b.structGet(infoStruct.structure(), fieldIndex.applyAsInt(infoStruct));
+        });
     }
 
-    private WasmExpression collectionElement(InvocationExpr invocation, WasmGCIntrinsicContext context,
-            WasmArray array, ToIntFunction<ClassReflectionInfoStruct> fieldIndex) {
+    private void collectionElement(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder, WasmArray array,
+            ToIntFunction<ClassReflectionInfoStruct> fieldIndex) {
         var infoStruct = context.classInfoProvider().reflectionTypes().classReflectionInfo();
-        var receiver = context.generate(invocation.getArguments().get(0));
-        var index = context.generate(invocation.getArguments().get(1));
-        var annotations = new WasmStructGet(infoStruct.structure(), receiver, fieldIndex.applyAsInt(infoStruct));
-        return new WasmArrayGet(array, annotations, index);
+        context.generate(builder, invocation.getArguments().get(0));
+        builder.structGet(infoStruct.structure(), fieldIndex.applyAsInt(infoStruct));
+        context.generate(builder, invocation.getArguments().get(1));
+        builder.arrayGet(array);
     }
 }

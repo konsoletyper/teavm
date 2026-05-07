@@ -19,32 +19,30 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmArrayGet;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class TypeVariableInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+        var struct = context.classInfoProvider().reflectionTypes().typeVariableInfo();
         switch (invocation.getMethod().getName()) {
-            case "name": {
-                var struct = context.classInfoProvider().reflectionTypes().typeVariableInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(struct.structure(), receiver, struct.nameIndex());
-            }
-            case "boundCount": {
-                var struct = context.classInfoProvider().reflectionTypes().typeVariableInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var bounds = new WasmStructGet(struct.structure(), receiver, struct.boundsIndex());
-                return WasmGCGenerationUtil.getArrayLengthOfNullable(bounds);
-            }
+            case "name":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(struct.structure(), struct.nameIndex());
+                break;
+            case "boundCount":
+                WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
+                    context.generate(b, invocation.getArguments().get(0));
+                    b.structGet(struct.structure(), struct.boundsIndex());
+                });
+                break;
             case "bound": {
-                var struct = context.classInfoProvider().reflectionTypes().typeVariableInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var index = context.generate(invocation.getArguments().get(1));
-                var bounds = new WasmStructGet(struct.structure(), receiver, struct.boundsIndex());
-                return new WasmArrayGet(context.classInfoProvider().reflectionTypes().genericTypeArray(),
-                        bounds, index);
+                var array = context.classInfoProvider().reflectionTypes().genericTypeArray();
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(struct.structure(), struct.boundsIndex());
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.arrayGet(array);
+                break;
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());

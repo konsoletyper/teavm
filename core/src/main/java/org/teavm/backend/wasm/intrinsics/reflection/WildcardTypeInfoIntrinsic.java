@@ -18,19 +18,17 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class WildcardTypeInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var reflectionTypes = context.classInfoProvider().reflectionTypes();
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+        var struct = context.classInfoProvider().reflectionTypes().wildcardTypeInfo();
         switch (invocation.getMethod().getName()) {
-            case "bound": {
-                var struct = reflectionTypes.wildcardTypeInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(struct.structure(), receiver, struct.boundIndex());
-            }
+            case "bound":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(struct.structure(), struct.boundIndex());
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

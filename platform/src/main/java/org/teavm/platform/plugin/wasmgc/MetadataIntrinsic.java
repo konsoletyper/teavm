@@ -30,8 +30,6 @@ import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.common.HashUtils;
 import org.teavm.common.ServiceRepository;
@@ -65,9 +63,8 @@ class MetadataIntrinsic implements WasmGCIntrinsic {
     }
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var global = getGlobal(invocation.getMethod(), context);
-        return new WasmGetGlobal(global);
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+        builder.getGlobal(getGlobal(invocation.getMethod(), context));
     }
 
     private WasmGlobal getGlobal(MethodReference method, WasmGCIntrinsicContext context) {

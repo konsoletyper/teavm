@@ -18,36 +18,24 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmDrop;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
-import org.teavm.backend.wasm.model.expression.WasmSetLocal;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class HeapIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         var pagesVar = context.tempVars().acquire(WasmType.INT32);
-        var block = new WasmBlock(false);
-        block.setType(WasmType.INT32.asBlock());
-        var bytes = context.generate(invocation.getArguments().get(0));
-        WasmExpression pages = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
-                bytes, new WasmInt32Constant(1));
-        pages = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.DIV_UNSIGNED,
-                pages, new WasmInt32Constant(WasmGeneratorUtil.PAGE_SIZE));
-        pages = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                pages, new WasmInt32Constant(1));
-        block.getBody().add(new WasmSetLocal(pagesVar, pages));
-        var grow = new WasmMemoryGrow(new WasmGetLocal(pagesVar));
-        block.getBody().add(new WasmDrop(grow));
-        block.getBody().add(new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL,
-                new WasmGetLocal(pagesVar), new WasmInt32Constant(WasmGeneratorUtil.PAGE_SIZE)));
+
+        context.generate(builder, invocation.getArguments().get(0));
+        builder.i32Const(1).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB)
+                .i32Const(WasmGeneratorUtil.PAGE_SIZE).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.DIV_UNSIGNED)
+                .i32Const(1).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD)
+                .setLocal(pagesVar)
+                .getLocal(pagesVar).memoryGrow().drop()
+                .getLocal(pagesVar).i32Const(WasmGeneratorUtil.PAGE_SIZE)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL);
+
         context.tempVars().release(pagesVar);
-        return block;
     }
 }

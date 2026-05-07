@@ -30,9 +30,7 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmNullConstantInstruction;
@@ -210,8 +208,8 @@ class WasmGCJsoCommonGenerator {
                 .throw_(context.exceptionTag());
     }
 
-    WasmExpression jsStringConstant(WasmGCJsoContext context, String str) {
-        var global = stringsConstants.computeIfAbsent(str, s -> {
+    WasmGlobal jsStringConstant(WasmGCJsoContext context, String str) {
+        return stringsConstants.computeIfAbsent(str, s -> {
             var javaGlobal = context.strings().getStringConstant(s).global;
             var function = context.functions().forStaticMethod(STRING_TO_JS);
             var index = stringsConstants.size();
@@ -227,7 +225,6 @@ class WasmGCJsoCommonGenerator {
                     .setGlobal(jsGlobal));
             return jsGlobal;
         });
-        return new WasmGetGlobal(global);
     }
 
     WasmGlobal getDefaultWrapperClass(WasmGCJsoContext context) {

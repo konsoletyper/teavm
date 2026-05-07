@@ -21,11 +21,9 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.reflect.GenericTypeInfo;
 
@@ -33,33 +31,33 @@ public class GenericTypeInfoIntrinsic implements WasmGCIntrinsic {
     private WasmFunction kindFunction;
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         var reflectionTypes = context.classInfoProvider().reflectionTypes();
         switch (invocation.getMethod().getName()) {
-            case "kind": {
-                var function = getKindFunction(context);
-                return new WasmCall(function, context.generate(invocation.getArguments().get(0)));
-            }
-            case "asParameterizedType": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmCast(receiver, reflectionTypes.parameterizedTypeInfo().structure().getReference());
-            }
-            case "asTypeVariable": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmCast(receiver, reflectionTypes.typeVariableReference().structure().getReference());
-            }
-            case "asGenericArray": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmCast(receiver, reflectionTypes.genericArrayInfo().structure().getReference());
-            }
-            case "asWildcard": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmCast(receiver, reflectionTypes.wildcardTypeInfo().structure().getReference());
-            }
-            case "asRawType": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmCast(receiver, reflectionTypes.derivedClassInfo().structure().getReference());
-            }
+            case "kind":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.call(getKindFunction(context));
+                break;
+            case "asParameterizedType":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.cast(reflectionTypes.parameterizedTypeInfo().structure().getReference());
+                break;
+            case "asTypeVariable":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.cast(reflectionTypes.typeVariableReference().structure().getReference());
+                break;
+            case "asGenericArray":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.cast(reflectionTypes.genericArrayInfo().structure().getReference());
+                break;
+            case "asWildcard":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.cast(reflectionTypes.wildcardTypeInfo().structure().getReference());
+                break;
+            case "asRawType":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.cast(reflectionTypes.derivedClassInfo().structure().getReference());
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

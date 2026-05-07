@@ -19,62 +19,58 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmArrayGet;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class MethodReflectionInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+        var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
         switch (invocation.getMethod().getName()) {
-            case "genericReturnType": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
-                return new WasmStructGet(infoStruct.structure(), receiver, infoStruct.genericReturnTypeIndex());
-            }
-            case "genericParameterTypeCount": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
-                var params = new WasmStructGet(infoStruct.structure(), receiver,
-                        infoStruct.genericParameterTypesIndex());
-                return WasmGCGenerationUtil.getArrayLengthOfNullable(params);
-            }
+            case "genericReturnType":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.genericReturnTypeIndex());
+                break;
+            case "genericParameterTypeCount":
+                WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
+                    context.generate(b, invocation.getArguments().get(0));
+                    b.structGet(infoStruct.structure(), infoStruct.genericParameterTypesIndex());
+                });
+                break;
             case "genericParameterType": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var index = context.generate(invocation.getArguments().get(1));
-                var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
-                var params = new WasmStructGet(infoStruct.structure(), receiver,
-                        infoStruct.genericParameterTypesIndex());
                 var array = context.classInfoProvider().reflectionTypes().genericTypeArray();
-                return new WasmArrayGet(array, params, index);
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.genericParameterTypesIndex());
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.arrayGet(array);
+                break;
             }
-            case "annotationCount": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
-                var annotations = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.annotationsIndex());
-                return WasmGCGenerationUtil.getArrayLengthOfNullable(annotations);
-            }
+            case "annotationCount":
+                WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
+                    context.generate(b, invocation.getArguments().get(0));
+                    b.structGet(infoStruct.structure(), infoStruct.annotationsIndex());
+                });
+                break;
             case "annotation": {
-                var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
                 var array = context.classInfoProvider().reflectionTypes().annotationInfo().array();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var index = context.generate(invocation.getArguments().get(1));
-                var annotations = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.annotationsIndex());
-                return new WasmArrayGet(array, annotations, index);
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.annotationsIndex());
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.arrayGet(array);
+                break;
             }
-            case "typeParameterCount": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
-                var params = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.typeParametersIndex());
-                return WasmGCGenerationUtil.getArrayLengthOfNullable(params);
-            }
+            case "typeParameterCount":
+                WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
+                    context.generate(b, invocation.getArguments().get(0));
+                    b.structGet(infoStruct.structure(), infoStruct.typeParametersIndex());
+                });
+                break;
             case "typeParameter": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var index = context.generate(invocation.getArguments().get(1));
-                var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
-                var params = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.typeParametersIndex());
                 var array = context.classInfoProvider().reflectionTypes().typeVariableInfo().array();
-                return new WasmArrayGet(array, params, index);
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.typeParametersIndex());
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.arrayGet(array);
+                break;
             }
             default:
                 throw new IllegalStateException(invocation.getMethod().getName());

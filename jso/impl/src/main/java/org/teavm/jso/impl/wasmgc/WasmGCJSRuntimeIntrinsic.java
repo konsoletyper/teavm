@@ -22,13 +22,7 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
-import org.teavm.backend.wasm.model.expression.WasmArraySet;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -41,54 +35,61 @@ class WasmGCJSRuntimeIntrinsic implements WasmGCIntrinsic {
     }
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "wrapObject": {
                 var jsoContext = WasmGCJsoContext.wrap(context);
                 var wrapperClass = commonGen.getDefaultWrapperClass(jsoContext);
                 var wrapperFunction = commonGen.javaObjectToJSFunction(jsoContext);
-                return new WasmCall(wrapperFunction, context.generate(invocation.getArguments().get(0)),
-                        new WasmGetGlobal(wrapperClass));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.getGlobal(wrapperClass);
+                builder.call(wrapperFunction);
+                break;
             }
             case "of": {
                 var stringCls = context.classInfoProvider().getClassInfo("java.lang.String");
                 var fieldIndex = context.classInfoProvider().getFieldIndex(new FieldReference(
                         "java.lang.String", "characters"));
-                var arg = context.generate(invocation.getArguments().get(0));
-                var stringField = new WasmStructGet(stringCls.getStructure(), arg, fieldIndex);
-
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(stringCls.getStructure(), fieldIndex);
                 var arrayCls = context.classInfoProvider().getClassInfo(ValueType.arrayOf(ValueType.CHARACTER));
-                return new WasmStructGet(arrayCls.getStructure(), stringField,
-                        WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
+                builder.structGet(arrayCls.getStructure(), WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
+                break;
             }
             case "asString": {
-                var genUtil = new WasmGCGenerationUtil(context.classInfoProvider());
                 var arrayCls = context.classInfoProvider().getClassInfo(ValueType.arrayOf(ValueType.CHARACTER));
                 var field = arrayCls.getStructure().getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
-                var array = genUtil.allocateArray(ValueType.CHARACTER, arrayType ->
-                        new WasmCast(context.generate(invocation.getArguments().get(0)),
-                                (WasmType.Reference) field.getType().asUnpackedType()));
-                var fn = context.functions().forStaticMethod(new MethodReference(String.class, "fromArray",
-                        char[].class, String.class));
-                return new WasmCall(fn, array);
+                WasmGCGenerationUtil.allocateArray(context.classInfoProvider(), ValueType.CHARACTER, builder,
+                        (array, b) -> {
+                            context.generate(b, invocation.getArguments().get(0));
+                            b.cast((WasmType.Reference) field.getType().asUnpackedType());
+                        });
+                builder.call(context.functions().forStaticMethod(new MethodReference(String.class, "fromArray",
+                        char[].class, String.class)));
+                break;
             }
             case "create": {
                 var arrayCls = context.classInfoProvider().getClassInfo(ValueType.arrayOf(ValueType.CHARACTER));
                 var field = arrayCls.getStructure().getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
                 var type = (WasmType.CompositeReference) field.getType().asUnpackedType();
                 var array = (WasmArray) type.composite;
-                return new WasmArrayNewDefault(array, context.generate(invocation.getArguments().get(0)));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.arrayNewDefault(array);
+                break;
             }
             case "toNullable":
-                return context.generate(invocation.getArguments().get(0));
+                context.generate(builder, invocation.getArguments().get(0));
+                break;
             case "put": {
                 var arrayCls = context.classInfoProvider().getClassInfo(ValueType.arrayOf(ValueType.CHARACTER));
                 var field = arrayCls.getStructure().getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
                 var type = (WasmType.CompositeReference) field.getType().asUnpackedType();
                 var array = (WasmArray) type.composite;
-                return new WasmArraySet(array, context.generate(invocation.getArguments().get(0)),
-                        context.generate(invocation.getArguments().get(1)),
-                        context.generate(invocation.getArguments().get(2)));
+                context.generate(builder, invocation.getArguments().get(0));
+                context.generate(builder, invocation.getArguments().get(1));
+                context.generate(builder, invocation.getArguments().get(2));
+                builder.arraySet(array);
+                break;
             }
             default:
                 throw new IllegalArgumentException();

@@ -76,3 +76,12 @@ So the right way to link to an article `foo/bar.md` is to use `/docs/foo/bar.htm
 
 `../teavm-site/src/config.yaml` contains among others the contents section, see `documents` section.
 Links there omit `.md` extension, e.g. `foo/bar` instead of `foo/bar.md`.
+
+
+# Wasm GC backend notes
+
+* When using InstructionBuilder, chain multiple calls
+* Use builder.append(cachedValue) rather than cachedValue.emit(builder)
+* When tests fails due to broken wasm file, you can find *.wast.html file right near the generated module.
+  The HTML file also has `(; hex offset ;)` comment before each instruction to easily navigate through the file.
+  Don't use any external validators, they don't support Wasm GC proposal fully.

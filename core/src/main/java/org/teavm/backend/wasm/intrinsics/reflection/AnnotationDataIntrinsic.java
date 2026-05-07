@@ -18,10 +18,8 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ValueType;
 
@@ -33,26 +31,27 @@ public class AnnotationDataIntrinsic implements WasmGCIntrinsic {
     }
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         var dataStruct = context.classInfoProvider().reflectionTypes().annotationData(annotationClassName);
         if (invocation.getMethod().getName().equals("constructor") && invocation.getArguments().isEmpty()) {
             var fn = dataStruct.constructor();
             fn.setReferenced(true);
-            return new WasmFunctionReference(fn);
+            builder.funcRef(fn);
+            return;
         }
 
         var field = dataStruct.field(invocation.getMethod().getName());
-        var receiver = context.generate(invocation.getArguments().get(0));
-        var result = new WasmStructGet(dataStruct.structure(), receiver, field.index);
+        context.generate(builder, invocation.getArguments().get(0));
+        WasmSignedType signedType = null;
         if (field.type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) field.type).getKind()) {
                 case BOOLEAN:
                 case BYTE:
                 case SHORT:
-                    result.setSignedType(WasmSignedType.SIGNED);
+                    signedType = WasmSignedType.SIGNED;
                     break;
                 case CHARACTER:
-                    result.setSignedType(WasmSignedType.UNSIGNED);
+                    signedType = WasmSignedType.UNSIGNED;
                     break;
                 default:
                     break;
@@ -60,9 +59,9 @@ public class AnnotationDataIntrinsic implements WasmGCIntrinsic {
         } else if (field.type instanceof ValueType.Object) {
             var fieldCls = context.classes().get(((ValueType.Object) field.type).getClassName());
             if (fieldCls != null && fieldCls.hasModifier(ElementModifier.ENUM)) {
-                result.setSignedType(WasmSignedType.SIGNED);
+                signedType = WasmSignedType.SIGNED;
             }
         }
-        return result;
+        builder.structGet(dataStruct.structure(), field.index, signedType);
     }
 }

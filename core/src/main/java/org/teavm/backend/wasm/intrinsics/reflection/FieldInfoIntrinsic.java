@@ -18,44 +18,42 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class FieldInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         var infoStruct = context.classInfoProvider().reflectionTypes().fieldInfo();
         switch (invocation.getMethod().getName()) {
-            case "name": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(infoStruct.structure(), receiver, infoStruct.nameIndex());
-            }
-            case "modifiers": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(infoStruct.structure(), receiver, infoStruct.modifiersIndex());
-            }
-            case "type": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(infoStruct.structure(), receiver, infoStruct.typeIndex());
-            }
-            case "read": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var reader = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.readerIndex());
-                var obj = context.generate(invocation.getArguments().get(1));
-                return new WasmCallReference(reader, infoStruct.readerType(), obj);
-            }
-            case "write": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var writer = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.writerIndex());
-                var obj = context.generate(invocation.getArguments().get(1));
-                var value = context.generate(invocation.getArguments().get(2));
-                return new WasmCallReference(writer, infoStruct.writerType(), obj, value);
-            }
-            case "reflection": {
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(infoStruct.structure(), receiver, infoStruct.reflectionIndex());
-            }
+            case "name":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.nameIndex());
+                break;
+            case "modifiers":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.modifiersIndex());
+                break;
+            case "type":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.typeIndex());
+                break;
+            case "read":
+                context.generate(builder, invocation.getArguments().get(1));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.readerIndex())
+                        .callReference(infoStruct.readerType());
+                break;
+            case "write":
+                context.generate(builder, invocation.getArguments().get(1));
+                context.generate(builder, invocation.getArguments().get(2));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.writerIndex())
+                        .callReference(infoStruct.writerType());
+                break;
+            case "reflection":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.reflectionIndex());
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

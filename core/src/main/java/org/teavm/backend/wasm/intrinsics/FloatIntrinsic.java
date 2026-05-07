@@ -18,66 +18,47 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
-import org.teavm.backend.wasm.model.expression.WasmConversion;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
-import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class FloatIntrinsic implements WasmGCIntrinsic {
     private static final int EXPONENT_BITS = 0x7F800000;
-    private static final int FRACTION_BITS = 0x007FFFFF;
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext manager) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "getNaN":
-                return new WasmFloat32Constant(Float.NaN);
-            case "isNaN":
-                return testNaN(manager.generate(invocation.getArguments().get(0)), manager);
+                builder.f32Const(Float.NaN);
+                break;
+            case "isNaN": {
+                context.generate(builder, invocation.getArguments().get(0));
+                var cache = context.valueCache().create(WasmType.FLOAT32, builder);
+                builder.drop();
+                builder.append(cache).append(cache)
+                        .floatBinary(WasmFloatType.FLOAT32, WasmFloatBinaryOperation.NE);
+                cache.release();
+                break;
+            }
             case "isFinite":
-                return testIsFinite(manager.generate(invocation.getArguments().get(0)));
-            case "floatToRawIntBits": {
-                var conversion = new WasmConversion(WasmNumType.FLOAT32, WasmNumType.INT32, false,
-                        manager.generate(invocation.getArguments().get(0)));
-                conversion.setReinterpret(true);
-                return conversion;
-            }
-            case "intBitsToFloat": {
-                var conversion = new WasmConversion(WasmNumType.INT32, WasmNumType.FLOAT32, false,
-                        manager.generate(invocation.getArguments().get(0)));
-                conversion.setReinterpret(true);
-                return conversion;
-            }
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.reinterpret(WasmNumType.FLOAT32, WasmNumType.INT32);
+                builder.i32Const(EXPONENT_BITS).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND)
+                        .i32Const(EXPONENT_BITS).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.NE);
+                break;
+            case "floatToRawIntBits":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.reinterpret(WasmNumType.FLOAT32, WasmNumType.INT32);
+                break;
+            case "intBitsToFloat":
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.reinterpret(WasmNumType.INT32, WasmNumType.FLOAT32);
+                break;
             default:
                 throw new AssertionError();
         }
     }
 
-    private WasmExpression testNaN(WasmExpression expression, WasmGCIntrinsicContext context) {
-        var block = new WasmBlock(false);
-        block.setType(WasmType.INT32.asBlock());
-        var cache = context.exprCache().create(expression, WasmType.FLOAT32, expression.getLocation(),
-                block.getBody());
-        block.getBody().add(new WasmFloatBinary(WasmFloatType.FLOAT32, WasmFloatBinaryOperation.NE,
-                cache.expr(), cache.expr()));
-        cache.release();
-        return block;
-    }
-
-    private WasmExpression testIsFinite(WasmExpression expression) {
-        var conversion = new WasmConversion(WasmNumType.FLOAT32, WasmNumType.INT32, false, expression);
-        conversion.setReinterpret(true);
-
-        var result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND,
-                conversion, new WasmInt32Constant(EXPONENT_BITS));
-        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.NE, result,
-                new WasmInt32Constant(EXPONENT_BITS));
-    }
 }

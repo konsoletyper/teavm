@@ -16,13 +16,14 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
-import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class WasmGCResourcesIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        return new WasmLoadInt32(1, context.generate(invocation.getArguments().get(0)), WasmInt32Subtype.UINT8);
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        context.generate(builder, invocation.getArguments().get(0));
+        builder.loadI32(1, 0, WasmInt32Subtype.UINT8);
     }
 }

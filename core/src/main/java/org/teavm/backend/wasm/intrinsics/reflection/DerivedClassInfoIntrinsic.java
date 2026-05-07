@@ -18,29 +18,23 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class DerivedClassInfoIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+        var infoStruct = context.classInfoProvider().reflectionTypes().derivedClassInfo();
+        context.generate(builder, invocation.getArguments().get(0));
         switch (invocation.getMethod().getName()) {
-            case "classInfo": {
-                var infoStruct = context.classInfoProvider().reflectionTypes().derivedClassInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                return new WasmStructGet(infoStruct.structure(), receiver, infoStruct.classInfoIndex());
-            }
-            case "arrayDegree": {
-                var infoStruct = context.classInfoProvider().reflectionTypes().derivedClassInfo();
-                var receiver = context.generate(invocation.getArguments().get(0));
-                var result = new WasmStructGet(infoStruct.structure(), receiver, infoStruct.arrayDegreeIndex());
-                result.setSignedType(WasmSignedType.SIGNED);
-                return result;
-            }
-            default: {
+            case "classInfo":
+                builder.structGet(infoStruct.structure(), infoStruct.classInfoIndex());
+                break;
+            case "arrayDegree":
+                builder.structGet(infoStruct.structure(), infoStruct.arrayDegreeIndex(), WasmSignedType.SIGNED);
+                break;
+            default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
-            }
         }
     }
 }

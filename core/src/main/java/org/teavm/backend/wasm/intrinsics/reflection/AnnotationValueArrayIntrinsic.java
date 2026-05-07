@@ -18,61 +18,70 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmArrayGet;
-import org.teavm.backend.wasm.model.expression.WasmArrayLength;
-import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
 public class AnnotationValueArrayIntrinsic implements WasmGCIntrinsic {
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "size":
-                return new WasmArrayLength(context.generate(invocation.getArguments().get(0)));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.arrayLength();
+                break;
             case "getBoolean":
             case "getByte":
-                return get(invocation, context, WasmStorageType.INT8, WasmSignedType.SIGNED);
+                get(invocation, context, builder, WasmStorageType.INT8, WasmSignedType.SIGNED);
+                break;
             case "getShort":
-                return get(invocation, context, WasmStorageType.INT16, WasmSignedType.SIGNED);
+                get(invocation, context, builder, WasmStorageType.INT16, WasmSignedType.SIGNED);
+                break;
             case "getChar":
-                return get(invocation, context, WasmStorageType.INT16, WasmSignedType.UNSIGNED);
+                get(invocation, context, builder, WasmStorageType.INT16, WasmSignedType.UNSIGNED);
+                break;
             case "getInt":
-                return get(invocation, context, WasmType.INT32.asStorage(), null);
+                get(invocation, context, builder, WasmType.INT32.asStorage(), null);
+                break;
             case "getLong":
-                return get(invocation, context, WasmType.INT64.asStorage(), null);
+                get(invocation, context, builder, WasmType.INT64.asStorage(), null);
+                break;
             case "getFloat":
-                return get(invocation, context, WasmType.FLOAT32.asStorage(), null);
+                get(invocation, context, builder, WasmType.FLOAT32.asStorage(), null);
+                break;
             case "getDouble":
-                return get(invocation, context, WasmType.FLOAT64.asStorage(), null);
+                get(invocation, context, builder, WasmType.FLOAT64.asStorage(), null);
+                break;
             case "getClass": {
                 var type = context.classInfoProvider().reflectionTypes().derivedClassInfo().structure()
                         .getReference();
-                return get(invocation, context, type.asStorage(), null);
+                get(invocation, context, builder, type.asStorage(), null);
+                break;
             }
             case "getEnum":
-                return get(invocation, context, WasmStorageType.INT16, WasmSignedType.SIGNED);
+                get(invocation, context, builder, WasmStorageType.INT16, WasmSignedType.SIGNED);
+                break;
             case "getString": {
                 var type = context.classInfoProvider().getClassInfo("java.lang.String").getType();
-                return get(invocation, context, type.asStorage(), null);
+                get(invocation, context, builder, type.asStorage(), null);
+                break;
             }
             case "getAnnotation":
-                return get(invocation, context, WasmType.STRUCT.asStorage(), null);
+                get(invocation, context, builder, WasmType.STRUCT.asStorage(), null);
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }
     }
 
-    private WasmExpression get(InvocationExpr invocation, WasmGCIntrinsicContext context,
-            WasmStorageType type, WasmSignedType signedType) {
-        var arrayRef = context.generate(invocation.getArguments().get(0));
-        var index = context.generate(invocation.getArguments().get(1));
-        var array = context.classInfoProvider().reflectionTypes().arrayTypeOf(type);
-        var cast = new WasmCast(arrayRef, array.getReference());
-        var result = new WasmArrayGet(array, cast, index);
-        result.setSignedType(signedType);
-        return result;
+    private void get(InvocationExpr invocation, WasmGCIntrinsicContext context,
+            WasmInstructionBuilder builder, WasmStorageType type, WasmSignedType signedType) {
+        WasmArray array = context.classInfoProvider().reflectionTypes().arrayTypeOf(type);
+        context.generate(builder, invocation.getArguments().get(0));
+        builder.cast(array.getReference());
+        context.generate(builder, invocation.getArguments().get(1));
+        builder.arrayGet(array, signedType);
     }
 }

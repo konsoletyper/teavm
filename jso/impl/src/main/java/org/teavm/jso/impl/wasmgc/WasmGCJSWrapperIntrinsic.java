@@ -23,11 +23,8 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmExternConversion;
 import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
-import org.teavm.backend.wasm.model.expression.WasmTest;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -35,19 +32,20 @@ class WasmGCJSWrapperIntrinsic implements WasmGCIntrinsic {
     private WasmFunction wrapFunction;
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "wrap": {
-                var function = getWrapFunction(context);
-                return new WasmCall(function, context.generate(invocation.getArguments().get(0)));
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.call(getWrapFunction(context));
+                break;
             }
             case "isJava": {
-                var convert = new WasmExternConversion(WasmExternConversionType.EXTERN_TO_ANY,
-                        context.generate(invocation.getArguments().get(0)));
-                var objectType = context.typeMapper().mapType(ValueType.parse(Object.class));
-                return new WasmTest(convert, (WasmType.Reference) objectType);
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.externConvert(WasmExternConversionType.EXTERN_TO_ANY);
+                var objectType = (WasmType.Reference) context.typeMapper().mapType(ValueType.parse(Object.class));
+                builder.test(objectType);
+                break;
             }
-
             default:
                 throw new IllegalArgumentException();
         }

@@ -20,8 +20,7 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
 
 class ResourceMethodIntrinsic implements WasmGCIntrinsic {
@@ -32,10 +31,11 @@ class ResourceMethodIntrinsic implements WasmGCIntrinsic {
     }
 
     @Override
-    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
         var structType = (WasmType.CompositeReference) context.typeMapper().mapType(
                 ValueType.object(invocation.getMethod().getClassName()));
         var struct = (WasmStructure) structType.composite;
-        return new WasmStructGet(struct, context.generate(invocation.getArguments().get(0)), fieldIndex);
+        context.generate(builder, invocation.getArguments().get(0));
+        builder.structGet(struct, fieldIndex);
     }
 }
