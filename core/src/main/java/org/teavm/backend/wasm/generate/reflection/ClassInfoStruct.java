@@ -30,7 +30,7 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmNullConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmNullConstant;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -473,7 +473,7 @@ public class ClassInfoStruct {
     public WasmGlobal firstClassGlobal() {
         if (firstClassGlobal == null) {
             firstClassGlobal = new WasmGlobal(names.topLevel("teavm@firstClass"), structure.getReference());
-            firstClassGlobal.getInitialValue().add(new WasmNullConstantInstruction(structure.getReference()));
+            firstClassGlobal.getInitialValue().add(new WasmNullConstant(structure.getReference()));
             module.globals.add(firstClassGlobal);
         }
         return firstClassGlobal;
@@ -482,7 +482,7 @@ public class ClassInfoStruct {
     public WasmGlobal currentClassGlobal() {
         if (currentClassGlobal == null) {
             currentClassGlobal = new WasmGlobal(names.topLevel("teavm@currentClass"), structure.getReference());
-            currentClassGlobal.getInitialValue().add(new WasmNullConstantInstruction(structure.getReference()));
+            currentClassGlobal.getInitialValue().add(new WasmNullConstant(structure.getReference()));
             module.globals.add(currentClassGlobal);
         }
         return currentClassGlobal;

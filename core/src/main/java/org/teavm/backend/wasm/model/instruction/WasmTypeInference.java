@@ -28,12 +28,12 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmUnreachableInstruction instruction) {
+    public void visit(WasmUnreachable instruction) {
         typeStack.clear();
     }
 
     @Override
-    public void visit(WasmBlockInstruction instruction) {
+    public void visit(WasmBlock instruction) {
         var type = instruction.getType();
         if (type != null) {
             popN(type.getInputTypes().size());
@@ -43,7 +43,7 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmConditionalInstruction instruction) {
+    public void visit(WasmConditional instruction) {
         pop();
         var type = instruction.getType();
         if (type != null) {
@@ -54,12 +54,12 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmBranchInstruction instruction) {
+    public void visit(WasmBranch instruction) {
         pop();
     }
 
     @Override
-    public void visit(WasmNullBranchInstruction instruction) {
+    public void visit(WasmNullBranch instruction) {
         if (instruction.getCondition() == WasmNullCondition.NOT_NULL) {
             pop();
             depthBeforeLastInstructionOut = typeStack.size();
@@ -74,7 +74,7 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmCastBranchInstruction instruction) {
+    public void visit(WasmCastBranch instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         if (instruction.getCondition() == WasmCastCondition.SUCCESS) {
@@ -85,88 +85,88 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmBreakInstruction instruction) {
+    public void visit(WasmBreak instruction) {
         typeStack.clear();
     }
 
     @Override
-    public void visit(WasmSwitchInstruction instruction) {
+    public void visit(WasmSwitch instruction) {
         typeStack.clear();
     }
 
     @Override
-    public void visit(WasmReturnInstruction instruction) {
+    public void visit(WasmReturn instruction) {
         typeStack.clear();
     }
 
     @Override
-    public void visit(WasmInt32ConstantInstruction instruction) {
+    public void visit(WasmInt32Constant instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT32);
     }
 
     @Override
-    public void visit(WasmInt64ConstantInstruction instruction) {
+    public void visit(WasmInt64Constant instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT64);
     }
 
     @Override
-    public void visit(WasmFloat32ConstantInstruction instruction) {
+    public void visit(WasmFloat32Constant instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.FLOAT32);
     }
 
     @Override
-    public void visit(WasmFloat64ConstantInstruction instruction) {
+    public void visit(WasmFloat64Constant instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.FLOAT64);
     }
 
     @Override
-    public void visit(WasmNullConstantInstruction instruction) {
+    public void visit(WasmNullConstant instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getType());
     }
 
     @Override
-    public void visit(WasmIsNullInstruction instruction) {
+    public void visit(WasmIsNull instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT32);
     }
 
     @Override
-    public void visit(WasmGetLocalInstruction instruction) {
+    public void visit(WasmGetLocal instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getLocal().getType());
     }
 
     @Override
-    public void visit(WasmSetLocalInstruction instruction) {
+    public void visit(WasmSetLocal instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmTeeLocalInstruction instruction) {
+    public void visit(WasmTeeLocal instruction) {
         depthBeforeLastInstructionOut = typeStack.size() - 1;
     }
 
     @Override
-    public void visit(WasmGetGlobalInstruction instruction) {
+    public void visit(WasmGetGlobal instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getGlobal().getType());
     }
 
     @Override
-    public void visit(WasmSetGlobalInstruction instruction) {
+    public void visit(WasmSetGlobal instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmIntBinaryInstruction instruction) {
+    public void visit(WasmIntBinary instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
         switch (instruction.getOperation()) {
@@ -189,7 +189,7 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmFloatBinaryInstruction instruction) {
+    public void visit(WasmFloatBinary instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
         switch (instruction.getOperation()) {
@@ -208,7 +208,7 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmIntUnaryInstruction instruction) {
+    public void visit(WasmIntUnary instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         if (instruction.getOperation() == WasmIntUnaryOperation.EQZ) {
@@ -219,21 +219,21 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmFloatUnaryInstruction instruction) {
+    public void visit(WasmFloatUnary instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getType() == WasmFloatType.FLOAT32 ? WasmType.FLOAT32 : WasmType.FLOAT64);
     }
 
     @Override
-    public void visit(WasmConversionInstruction instruction) {
+    public void visit(WasmConversion instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.num(instruction.getTargetType()));
     }
 
     @Override
-    public void visit(WasmCallInstruction instruction) {
+    public void visit(WasmCall instruction) {
         var function = instruction.getFunction();
         popN(function.getType().getParameterTypes().size());
         depthBeforeLastInstructionOut = typeStack.size();
@@ -241,98 +241,98 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmIndirectCallInstruction instruction) {
+    public void visit(WasmIndirectCall instruction) {
         popN(instruction.getType().getParameterTypes().size() + 1);
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.addAll(instruction.getType().getReturnTypes());
     }
 
     @Override
-    public void visit(WasmCallReferenceInstruction instruction) {
+    public void visit(WasmCallReference instruction) {
         popN(instruction.getType().getParameterTypes().size() + 1);
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.addAll(instruction.getType().getReturnTypes());
     }
 
     @Override
-    public void visit(WasmDropInstruction instruction) {
+    public void visit(WasmDrop instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmLoadInt32Instruction instruction) {
+    public void visit(WasmLoadInt32 instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT32);
     }
 
     @Override
-    public void visit(WasmLoadInt64Instruction instruction) {
+    public void visit(WasmLoadInt64 instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT64);
     }
 
     @Override
-    public void visit(WasmLoadFloat32Instruction instruction) {
+    public void visit(WasmLoadFloat32 instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.FLOAT32);
     }
 
     @Override
-    public void visit(WasmLoadFloat64Instruction instruction) {
+    public void visit(WasmLoadFloat64 instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.FLOAT64);
     }
 
     @Override
-    public void visit(WasmStoreInt32Instruction instruction) {
+    public void visit(WasmStoreInt32 instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmStoreInt64Instruction instruction) {
+    public void visit(WasmStoreInt64 instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmStoreFloat32Instruction instruction) {
+    public void visit(WasmStoreFloat32 instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmStoreFloat64Instruction instruction) {
+    public void visit(WasmStoreFloat64 instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmMemoryGrowInstruction instruction) {
+    public void visit(WasmMemoryGrow instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT32);
     }
 
     @Override
-    public void visit(WasmFillInstruction instruction) {
+    public void visit(WasmFill instruction) {
         popN(3);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmCopyInstruction instruction) {
+    public void visit(WasmCopy instruction) {
         popN(3);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmTryInstruction instruction) {
+    public void visit(WasmTry instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         if (instruction.getType() != null) {
             typeStack.add(instruction.getType());
@@ -340,34 +340,34 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmThrowInstruction instruction) {
+    public void visit(WasmThrow instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.clear();
     }
 
     @Override
-    public void visit(WasmReferencesEqualInstruction instruction) {
+    public void visit(WasmReferencesEqual instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT32);
     }
 
     @Override
-    public void visit(WasmCastInstruction instruction) {
+    public void visit(WasmCast instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getTargetType());
     }
 
     @Override
-    public void visit(WasmTestInstruction instruction) {
+    public void visit(WasmTest instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT32);
     }
 
     @Override
-    public void visit(WasmExternConversionInstruction instruction) {
+    public void visit(WasmExternConversion instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         switch (instruction.getType()) {
@@ -381,86 +381,86 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmStructNewInstruction instruction) {
+    public void visit(WasmStructNew instruction) {
         popN(instruction.getType().getFields().size());
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getType().getReference());
     }
 
     @Override
-    public void visit(WasmStructNewDefaultInstruction instruction) {
+    public void visit(WasmStructNewDefault instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getType().getReference());
     }
 
     @Override
-    public void visit(WasmStructGetInstruction instruction) {
+    public void visit(WasmStructGet instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getType().getFields().get(instruction.getFieldIndex()).getUnpackedType());
     }
 
     @Override
-    public void visit(WasmStructSetInstruction instruction) {
+    public void visit(WasmStructSet instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmArrayNewDefaultInstruction instruction) {
+    public void visit(WasmArrayNewDefault instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getType().getReference());
     }
 
     @Override
-    public void visit(WasmArrayNewFixedInstruction instruction) {
+    public void visit(WasmArrayNewFixed instruction) {
         popN(instruction.getSize());
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getType().getReference());
     }
 
     @Override
-    public void visit(WasmArrayGetInstruction instruction) {
+    public void visit(WasmArrayGet instruction) {
         popN(2);
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getType().getElementType().asUnpackedType());
     }
 
     @Override
-    public void visit(WasmArraySetInstruction instruction) {
+    public void visit(WasmArraySet instruction) {
         popN(3);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmArrayLengthInstruction instruction) {
+    public void visit(WasmArrayLength instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT32);
     }
 
     @Override
-    public void visit(WasmArrayCopyInstruction instruction) {
+    public void visit(WasmArrayCopy instruction) {
         popN(5);
         depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
-    public void visit(WasmFunctionReferenceInstruction instruction) {
+    public void visit(WasmFunctionReference instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(instruction.getFunction().getType().getReference());
     }
 
     @Override
-    public void visit(WasmInt31ReferenceInstruction instruction) {
+    public void visit(WasmInt31Reference instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.I31);
     }
 
     @Override
-    public void visit(WasmInt31GetInstruction instruction) {
+    public void visit(WasmInt31Get instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
         typeStack.add(WasmType.INT32);

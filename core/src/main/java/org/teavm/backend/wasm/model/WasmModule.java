@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.backend.wasm.model.instruction.WasmDefaultInstructionVisitor;
-import org.teavm.backend.wasm.model.instruction.WasmGetGlobalInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmGetGlobal;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 
@@ -134,7 +134,7 @@ public class WasmModule {
         }
 
         @Override
-        public void visit(WasmGetGlobalInstruction instruction) {
+        public void visit(WasmGetGlobal instruction) {
             add(instruction.getGlobal());
         }
     }

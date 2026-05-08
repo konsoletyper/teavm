@@ -24,31 +24,31 @@ import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmBlockInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmBranchInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmBreakInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmCallInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmCallReferenceInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmCastInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmConditionalInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmDropInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmFloat32ConstantInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmFloat64ConstantInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmGetLocalInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmBlock;
+import org.teavm.backend.wasm.model.instruction.WasmBranch;
+import org.teavm.backend.wasm.model.instruction.WasmBreak;
+import org.teavm.backend.wasm.model.instruction.WasmCall;
+import org.teavm.backend.wasm.model.instruction.WasmCallReference;
+import org.teavm.backend.wasm.model.instruction.WasmCast;
+import org.teavm.backend.wasm.model.instruction.WasmConditional;
+import org.teavm.backend.wasm.model.instruction.WasmDrop;
+import org.teavm.backend.wasm.model.instruction.WasmFloat32Constant;
+import org.teavm.backend.wasm.model.instruction.WasmFloat64Constant;
+import org.teavm.backend.wasm.model.instruction.WasmGetLocal;
 import org.teavm.backend.wasm.model.instruction.WasmInstruction;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
-import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmInt64ConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
+import org.teavm.backend.wasm.model.instruction.WasmInt64Constant;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
-import org.teavm.backend.wasm.model.instruction.WasmIntUnaryInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmIntUnary;
 import org.teavm.backend.wasm.model.instruction.WasmIntUnaryOperation;
-import org.teavm.backend.wasm.model.instruction.WasmNullConstantInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmReturnInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmSetLocalInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmSwitchInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmTeeLocalInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmTryInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmNullConstant;
+import org.teavm.backend.wasm.model.instruction.WasmReturn;
+import org.teavm.backend.wasm.model.instruction.WasmSetLocal;
+import org.teavm.backend.wasm.model.instruction.WasmSwitch;
+import org.teavm.backend.wasm.model.instruction.WasmTeeLocal;
+import org.teavm.backend.wasm.model.instruction.WasmTry;
 import org.teavm.backend.wasm.model.instruction.WasmTypeInference;
 import org.teavm.backend.wasm.render.WasmSignature;
 import org.teavm.model.TextLocation;
@@ -82,7 +82,7 @@ public class CoroutineTransformation {
         function.add(fiberLocal);
         function.add(stateLocal);
 
-        var mainBlock = new WasmBlockInstruction(false);
+        var mainBlock = new WasmBlock(false);
         mainBlock.getBody().transferFrom(function.getBody());
 
         generatePrologue(originalLocals);
@@ -90,7 +90,7 @@ public class CoroutineTransformation {
         splitList(mainBlock.getBody(), Collections.emptyList(), function.getType().getReturnTypes(),
                 mainBlock.getBody());
         if (!mainBlock.getBody().getLast().isTerminating()) {
-            mainBlock.getBody().add(new WasmReturnInstruction());
+            mainBlock.getBody().add(new WasmReturn());
         }
         generateEpilogue(originalLocals);
 
@@ -115,9 +115,9 @@ public class CoroutineTransformation {
                 .call(coroutineFunctions.popInt());
         for (var i = localsCount - 1; i >= 0; i--) {
             var local = currentFunction.getLocalVariables().get(i);
-            restoreCond.getThenBlock().add(new WasmGetLocalInstruction(fiberLocal));
+            restoreCond.getThenBlock().add(new WasmGetLocal(fiberLocal));
             coroutineFunctions.restoreValue(local.getType(), restoreCond.getThenBlock(), null);
-            restoreCond.getThenBlock().add(new WasmSetLocalInstruction(local));
+            restoreCond.getThenBlock().add(new WasmSetLocal(local));
         }
 
         restoreCond.getElseBlock().builder()
@@ -131,32 +131,32 @@ public class CoroutineTransformation {
         var list = new WasmInstructionList();
         for (var i = 0; i < localsCount; i++) {
             var local = currentFunction.getLocalVariables().get(i);
-            list.add(new WasmGetLocalInstruction(local));
+            list.add(new WasmGetLocal(local));
             coroutineFunctions.saveValue(local.getType(), list, fiberLocal, null);
         }
-        list.add(new WasmGetLocalInstruction(stateLocal));
-        list.add(new WasmGetLocalInstruction(fiberLocal));
-        list.add(new WasmCallInstruction(coroutineFunctions.pushInt()));
+        list.add(new WasmGetLocal(stateLocal));
+        list.add(new WasmGetLocal(fiberLocal));
+        list.add(new WasmCall(coroutineFunctions.pushInt()));
 
         var returnType = currentFunction.getType().getSingleReturnType();
         if (returnType != null) {
             if (returnType instanceof WasmType.Number) {
                 switch (((WasmType.Number) returnType).number) {
                     case INT32:
-                        list.add(new WasmInt32ConstantInstruction(0));
+                        list.add(new WasmInt32Constant(0));
                         break;
                     case INT64:
-                        list.add(new WasmInt64ConstantInstruction(0));
+                        list.add(new WasmInt64Constant(0));
                         break;
                     case FLOAT32:
-                        list.add(new WasmFloat32ConstantInstruction(0));
+                        list.add(new WasmFloat32Constant(0));
                         break;
                     case FLOAT64:
-                        list.add(new WasmFloat64ConstantInstruction(0));
+                        list.add(new WasmFloat64Constant(0));
                         break;
                 }
             } else {
-                list.add(new WasmNullConstantInstruction((WasmType.Reference) returnType));
+                list.add(new WasmNullConstant((WasmType.Reference) returnType));
             }
         }
 
@@ -178,7 +178,7 @@ public class CoroutineTransformation {
         private WasmTypeInference typeInference;
         private int minDepth;
         private List<WasmType> stackSnapshot = new ArrayList<>();
-        private WasmSwitchInstruction switchInsn;
+        private WasmSwitch switchInsn;
 
         ListSplitter(List<? extends WasmType> inputTypes, List<? extends WasmType> outputTypes,
                 WasmInstructionList suspendLabel) {
@@ -194,7 +194,7 @@ public class CoroutineTransformation {
             while (insn != null) {
                 var next = insn.getNext();
                 if (collector.isSuspending(insn)) {
-                    var block = new WasmBlockInstruction(false);
+                    var block = new WasmBlock(false);
                     var jumpToInsn = block;
                     if (!inputTypes.isEmpty()) {
                         var signature = new WasmSignature(Collections.emptyList(), mapToNullableTypes(inputTypes));
@@ -202,15 +202,15 @@ public class CoroutineTransformation {
                     }
                     moveAllPreviousTo(insn, block.getBody());
                     var stateIndex = ++currentStateOffset;
-                    block.getBody().add(new WasmInt32ConstantInstruction(stateIndex), insn.getLocation());
-                    block.getBody().add(new WasmSetLocalInstruction(stateLocal), insn.getLocation());
+                    block.getBody().add(new WasmInt32Constant(stateIndex), insn.getLocation());
+                    block.getBody().add(new WasmSetLocal(stateLocal), insn.getLocation());
 
                     minDepth = Math.min(minDepth, typeInference.typeStack.size());
                     stackSnapshot.clear();
                     stackSnapshot.addAll(typeInference.typeStack);
                     WasmType functionType = null;
-                    if (insn instanceof WasmCallReferenceInstruction) {
-                        functionType = ((WasmCallReferenceInstruction) insn).getType().getReference();
+                    if (insn instanceof WasmCallReference) {
+                        functionType = ((WasmCallReference) insn).getType().getReference();
                     }
                     updateTypes(insn);
                     if (minDepth != inputTypes.size() || inputTypes.size() != stackSnapshot.size()) {
@@ -237,8 +237,8 @@ public class CoroutineTransformation {
         }
 
         void addPrologue(WasmInstructionList target) {
-            var jumpToFirstLabel = new WasmBlockInstruction(false);
-            var jumpToUnreachable = new WasmBlockInstruction(false);
+            var jumpToFirstLabel = new WasmBlock(false);
+            var jumpToUnreachable = new WasmBlock(false);
             jumpToFirstLabel.getBody().builder()
                     .add(jumpToUnreachable)
                     .unreachable();
@@ -250,25 +250,25 @@ public class CoroutineTransformation {
                         .i32Const(currentStateOffset)
                         .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB);
             }
-            switchInsn = new WasmSwitchInstruction(jumpToUnreachable.getBody());
+            switchInsn = new WasmSwitch(jumpToUnreachable.getBody());
             switchInsn.getTargets().add(jumpToFirstLabel.getBody());
             jumpToUnreachableBuilder.add(switchInsn);
             target.addFirst(jumpToFirstLabel);
         }
 
-        private WasmBlockInstruction createRestoreInstructions(WasmBlockInstruction block, TextLocation location,
+        private WasmBlock createRestoreInstructions(WasmBlock block, TextLocation location,
                 boolean isCallRef) {
             var depthWithoutArgs = typeInference.getDepthBeforeLastInstructionOut();
-            var restoreBlock = new WasmBlockInstruction(false);
+            var restoreBlock = new WasmBlock(false);
             var signature = new WasmSignature(mapToNullableTypes(stackSnapshot), mapToNullableTypes(inputTypes));
             restoreBlock.setType(functionTypes.get(signature).asBlock());
             restoreBlock.setLocation(location);
 
             restoreBlock.getBody().add(block);
-            block.getBody().add(new WasmBreakInstruction(restoreBlock.getBody()), location);
+            block.getBody().add(new WasmBreak(restoreBlock.getBody()), location);
             var typesToPush = stackSnapshot.subList(0, depthWithoutArgs);
             for (var type : typesToPush) {
-                restoreBlock.getBody().add(new WasmGetLocalInstruction(fiberLocal), location);
+                restoreBlock.getBody().add(new WasmGetLocal(fiberLocal), location);
                 coroutineFunctions.restoreValue(type, restoreBlock.getBody(), location);
             }
 
@@ -282,7 +282,7 @@ public class CoroutineTransformation {
             }
             if (isCallRef) {
                 var type = stackSnapshot.get(dummyArgs);
-                restoreBlock.getBody().add(new WasmGetLocalInstruction(fiberLocal), location);
+                restoreBlock.getBody().add(new WasmGetLocal(fiberLocal), location);
                 coroutineFunctions.restoreValue(type, restoreBlock.getBody(), location);
             }
             return restoreBlock;
@@ -292,11 +292,11 @@ public class CoroutineTransformation {
             var depthWithoutArgs = typeInference.getDepthBeforeLastInstructionOut();
             var result = new WasmInstructionList();
             emitIsSuspending(result, location);
-            var check = new WasmConditionalInstruction();
+            var check = new WasmConditional();
             result.add(check, location);
 
             if (callRefType != null) {
-                check.getThenBlock().add(new WasmGetLocalInstruction(savedFunctionLocal()));
+                check.getThenBlock().add(new WasmGetLocal(savedFunctionLocal()));
                 coroutineFunctions.saveValue(callRefType, check.getThenBlock(), fiberLocal, location);
             }
             var condTypes = mapToNullableTypes(typeInference.typeStack.subList(minDepth,
@@ -305,7 +305,7 @@ public class CoroutineTransformation {
                 check.setType(functionTypes.get(new WasmSignature(condTypes, condTypes)).asBlock());
             }
             for (var i = typeInference.typeStack.size() - 1; i >= depthWithoutArgs; --i) {
-                check.getThenBlock().add(new WasmDropInstruction(), location);
+                check.getThenBlock().add(new WasmDrop(), location);
             }
             for (var i = depthWithoutArgs - 1; i >= minDepth; --i) {
                 var type = stackSnapshot.get(i);
@@ -314,7 +314,7 @@ public class CoroutineTransformation {
             for (var i = 0; i < outputTypes.size(); ++i) {
                 pushDefault(check.getThenBlock(), outputTypes.get(i), location);
             }
-            check.getThenBlock().add(new WasmBreakInstruction(suspendLabel), location);
+            check.getThenBlock().add(new WasmBreak(suspendLabel), location);
             return result;
         }
     }
@@ -341,12 +341,12 @@ public class CoroutineTransformation {
     }
 
     private void handleSplitInstruction(WasmInstruction instruction, int stateIndex) {
-        if (instruction instanceof WasmCallReferenceInstruction) {
-            var callRef = (WasmCallReferenceInstruction) instruction;
-            instruction.insertPrevious(new WasmTeeLocalInstruction(savedFunctionLocal()));
-            instruction.insertPrevious(new WasmCastInstruction(callRef.getType().getReference()));
-        } else if (instruction instanceof WasmBlockInstruction) {
-            var block = (WasmBlockInstruction) instruction;
+        if (instruction instanceof WasmCallReference) {
+            var callRef = (WasmCallReference) instruction;
+            instruction.insertPrevious(new WasmTeeLocal(savedFunctionLocal()));
+            instruction.insertPrevious(new WasmCast(callRef.getType().getReference()));
+        } else if (instruction instanceof WasmBlock) {
+            var block = (WasmBlock) instruction;
             if (block.isLoop()) {
                 splitLoop(block, stateIndex);
             } else {
@@ -358,10 +358,10 @@ public class CoroutineTransformation {
                         : Collections.emptyList();
                 splitList(block.getBody(), inputTypes, outputTypes, block.getBody());
             }
-        } else if (instruction instanceof WasmConditionalInstruction) {
-            splitConditional((WasmConditionalInstruction) instruction);
-        } else if (instruction instanceof WasmTryInstruction) {
-            var tryInsn = (WasmTryInstruction) instruction;
+        } else if (instruction instanceof WasmConditional) {
+            splitConditional((WasmConditional) instruction);
+        } else if (instruction instanceof WasmTry) {
+            var tryInsn = (WasmTry) instruction;
             List<? extends WasmType> outTypes = tryInsn.getType() != null
                     ? List.of(tryInsn.getType())
                     : Collections.emptyList();
@@ -369,23 +369,23 @@ public class CoroutineTransformation {
         }
     }
 
-    private void splitLoop(WasmBlockInstruction block, int stateIndex) {
-        var breakLabel = new WasmBlockInstruction(false);
-        var newLoop = new WasmBlockInstruction(true);
+    private void splitLoop(WasmBlock block, int stateIndex) {
+        var breakLabel = new WasmBlock(false);
+        var newLoop = new WasmBlock(true);
         breakLabel.getBody().add(newLoop);
 
         block.insertPrevious(breakLabel);
         block.delete();
         block.setLoop(false);
         newLoop.getBody().add(block);
-        newLoop.getBody().add(new WasmInt32ConstantInstruction(stateIndex));
-        newLoop.getBody().add(new WasmSetLocalInstruction(stateLocal));
-        newLoop.getBody().add(new WasmBreakInstruction(newLoop.getBody()));
+        newLoop.getBody().add(new WasmInt32Constant(stateIndex));
+        newLoop.getBody().add(new WasmSetLocal(stateLocal));
+        newLoop.getBody().add(new WasmBreak(newLoop.getBody()));
 
         splitList(newLoop.getBody(), Collections.emptyList(), Collections.emptyList(), breakLabel.getBody());
     }
 
-    private void splitConditional(WasmConditionalInstruction conditional) {
+    private void splitConditional(WasmConditional conditional) {
         var inputTypes = new ArrayList<WasmType>();
         var outputTypes = new ArrayList<WasmType>();
         if (conditional.getType() != null) {
@@ -394,12 +394,12 @@ public class CoroutineTransformation {
         }
         inputTypes.add(WasmType.INT32);
 
-        var wrapper = new WasmBlockInstruction(false);
+        var wrapper = new WasmBlock(false);
         wrapper.setType(functionTypes.get(new WasmSignature(outputTypes, inputTypes)).asBlock());
         conditional.insertPrevious(wrapper);
         if (conditional.getElseBlock().isEmpty()) {
-            wrapper.getBody().add(new WasmIntUnaryInstruction(WasmIntType.INT32, WasmIntUnaryOperation.EQZ));
-            wrapper.getBody().add(new WasmBranchInstruction(conditional.getThenBlock()));
+            wrapper.getBody().add(new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ));
+            wrapper.getBody().add(new WasmBranch(conditional.getThenBlock()));
             wrapper.getBody().transferFrom(conditional.getThenBlock());
             splitList(wrapper.getBody(), inputTypes, outputTypes, wrapper.getBody());
             var replacement = new BreakTargetReplacement(target -> {
@@ -411,17 +411,17 @@ public class CoroutineTransformation {
             });
             replacement.visit(wrapper);
         } else {
-            var thenWrapper = new WasmBlockInstruction(false);
+            var thenWrapper = new WasmBlock(false);
             thenWrapper.setType(functionTypes.get(new WasmSignature(Collections.emptyList(), inputTypes)).asBlock());
-            thenWrapper.getBody().add(new WasmIntUnaryInstruction(WasmIntType.INT32, WasmIntUnaryOperation.EQZ));
-            thenWrapper.getBody().add(new WasmBranchInstruction(conditional.getThenBlock()));
+            thenWrapper.getBody().add(new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ));
+            thenWrapper.getBody().add(new WasmBranch(conditional.getThenBlock()));
             thenWrapper.getBody().transferFrom(conditional.getThenBlock());
             var splitter = new ListSplitter(inputTypes, outputTypes, wrapper.getBody());
             var first = thenWrapper.getBody().getFirst();
             splitter.addPrologue(thenWrapper.getBody());
             splitter.process(first);
             if (!thenWrapper.getBody().getLast().isTerminating()) {
-                thenWrapper.getBody().add(new WasmBreakInstruction(wrapper.getBody()));
+                thenWrapper.getBody().add(new WasmBreak(wrapper.getBody()));
             }
             wrapper.getBody().add(thenWrapper);
             wrapper.getBody().transferFrom(conditional.getElseBlock());
@@ -457,26 +457,26 @@ public class CoroutineTransformation {
         if (type instanceof WasmType.Number) {
             switch (((WasmType.Number) type).number) {
                 case INT32:
-                    list.add(new WasmInt32ConstantInstruction(0), location);
+                    list.add(new WasmInt32Constant(0), location);
                     break;
                 case INT64:
-                    list.add(new WasmInt64ConstantInstruction(0L), location);
+                    list.add(new WasmInt64Constant(0L), location);
                     break;
                 case FLOAT32:
-                    list.add(new WasmFloat32ConstantInstruction(0), location);
+                    list.add(new WasmFloat32Constant(0), location);
                     break;
                 case FLOAT64:
-                    list.add(new WasmFloat64ConstantInstruction(0), location);
+                    list.add(new WasmFloat64Constant(0), location);
                     break;
             }
         } else {
             var ref = (WasmType.Reference) type;
-            list.add(new WasmNullConstantInstruction(ref), location);
+            list.add(new WasmNullConstant(ref), location);
         }
     }
 
     private void emitIsSuspending(WasmInstructionList list, TextLocation location) {
-        list.add(new WasmGetLocalInstruction(fiberLocal), location);
-        list.add(new WasmCallInstruction(coroutineFunctions.isSuspending()), location);
+        list.add(new WasmGetLocal(fiberLocal), location);
+        list.add(new WasmCall(coroutineFunctions.isSuspending()), location);
     }
 }

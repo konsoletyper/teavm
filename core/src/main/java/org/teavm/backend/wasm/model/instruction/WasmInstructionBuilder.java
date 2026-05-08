@@ -54,7 +54,7 @@ public class WasmInstructionBuilder {
     }
 
     public WasmInstructionBuilder unreachable() {
-        return add(new WasmUnreachableInstruction());
+        return add(new WasmUnreachable());
     }
 
     public WasmInstructionBuilder block() {
@@ -82,7 +82,7 @@ public class WasmInstructionBuilder {
     }
 
     private WasmInstructionBuilder block(WasmBlockType type, boolean loop) {
-        var block = new WasmBlockInstruction(loop);
+        var block = new WasmBlock(loop);
         block.setType(type);
         add(block);
         var inner = new WasmInstructionBuilder(block.getBody());
@@ -93,23 +93,23 @@ public class WasmInstructionBuilder {
         return inner;
     }
 
-    public WasmConditionalInstruction conditional() {
+    public WasmConditional conditional() {
         return conditional((WasmBlockType) null);
     }
 
-    public WasmConditionalInstruction conditional(WasmBlockType type) {
-        var cond = new WasmConditionalInstruction();
+    public WasmConditional conditional(WasmBlockType type) {
+        var cond = new WasmConditional();
         cond.setType(type);
         add(cond);
         return cond;
     }
 
-    public WasmConditionalInstruction conditional(WasmType type) {
+    public WasmConditional conditional(WasmType type) {
         return conditional(type != null ? type.asBlock() : null);
     }
 
     public WasmInstructionBuilder branch(WasmInstructionList target) {
-        return add(new WasmBranchInstruction(target));
+        return add(new WasmBranch(target));
     }
 
     public WasmInstructionBuilder branch(WasmInstructionBuilder target) {
@@ -117,7 +117,7 @@ public class WasmInstructionBuilder {
     }
 
     public WasmInstructionBuilder nullBranch(WasmNullCondition condition, WasmInstructionList target) {
-        return add(new WasmNullBranchInstruction(condition, target));
+        return add(new WasmNullBranch(condition, target));
     }
 
     public WasmInstructionBuilder nullBranch(WasmNullCondition condition, WasmInstructionBuilder target) {
@@ -126,7 +126,7 @@ public class WasmInstructionBuilder {
 
     public WasmInstructionBuilder castBranch(WasmCastCondition condition, WasmType.Reference sourceType,
             WasmType.Reference targetType, WasmInstructionList target) {
-        return add(new WasmCastBranchInstruction(condition, sourceType, targetType, target));
+        return add(new WasmCastBranch(condition, sourceType, targetType, target));
     }
 
     public WasmInstructionBuilder castBranch(WasmCastCondition condition, WasmType.Reference sourceType,
@@ -135,56 +135,56 @@ public class WasmInstructionBuilder {
     }
 
     public WasmInstructionBuilder breakTo(WasmInstructionList target) {
-        return add(new WasmBreakInstruction(target));
+        return add(new WasmBreak(target));
     }
 
     public WasmInstructionBuilder breakTo(WasmInstructionBuilder target) {
         return breakTo(target.list);
     }
 
-    public WasmSwitchInstruction switch_(WasmInstructionList defaultTarget) {
-        var insn = new WasmSwitchInstruction(defaultTarget);
+    public WasmSwitch switch_(WasmInstructionList defaultTarget) {
+        var insn = new WasmSwitch(defaultTarget);
         add(insn);
         return insn;
     }
 
-    public WasmSwitchInstruction switch_(WasmInstructionBuilder defaultTarget) {
+    public WasmSwitch switch_(WasmInstructionBuilder defaultTarget) {
         return switch_(defaultTarget.list);
     }
 
     public WasmInstructionBuilder return_() {
-        return add(new WasmReturnInstruction());
+        return add(new WasmReturn());
     }
 
     public WasmInstructionBuilder i32Const(int value) {
-        return add(new WasmInt32ConstantInstruction(value));
+        return add(new WasmInt32Constant(value));
     }
 
     public WasmInstructionBuilder i64Const(long value) {
-        return add(new WasmInt64ConstantInstruction(value));
+        return add(new WasmInt64Constant(value));
     }
 
     public WasmInstructionBuilder f32Const(float value) {
-        return add(new WasmFloat32ConstantInstruction(value));
+        return add(new WasmFloat32Constant(value));
     }
 
     public WasmInstructionBuilder f64Const(double value) {
-        return add(new WasmFloat64ConstantInstruction(value));
+        return add(new WasmFloat64Constant(value));
     }
 
     public WasmInstructionBuilder nullConst(WasmType.Reference type) {
-        return add(new WasmNullConstantInstruction(type));
+        return add(new WasmNullConstant(type));
     }
 
     public WasmInstructionBuilder isNull() {
-        return add(new WasmIsNullInstruction());
+        return add(new WasmIsNull());
     }
 
     public WasmInstructionBuilder getLocal(WasmLocal local) {
-        if (list.getLast() instanceof WasmSetLocalInstruction) {
-            var setLocal = (WasmSetLocalInstruction) list.getLast();
+        if (list.getLast() instanceof WasmSetLocal) {
+            var setLocal = (WasmSetLocal) list.getLast();
             if (setLocal.getLocal() == local) {
-                var tee = new WasmTeeLocalInstruction(local);
+                var tee = new WasmTeeLocal(local);
                 tee.setLocation(list.getLast().getLocation());
                 list.getLast().delete();
                 list.add(tee);
@@ -192,53 +192,53 @@ public class WasmInstructionBuilder {
                 return this;
             }
         }
-        return add(new WasmGetLocalInstruction(local));
+        return add(new WasmGetLocal(local));
     }
 
     public WasmInstructionBuilder setLocal(WasmLocal local) {
-        return add(new WasmSetLocalInstruction(local));
+        return add(new WasmSetLocal(local));
     }
 
     public WasmInstructionBuilder teeLocal(WasmLocal local) {
-        return add(new WasmTeeLocalInstruction(local));
+        return add(new WasmTeeLocal(local));
     }
 
     public WasmInstructionBuilder getGlobal(WasmGlobal global) {
-        return add(new WasmGetGlobalInstruction(global));
+        return add(new WasmGetGlobal(global));
     }
 
     public WasmInstructionBuilder setGlobal(WasmGlobal global) {
-        return add(new WasmSetGlobalInstruction(global));
+        return add(new WasmSetGlobal(global));
     }
 
     public WasmInstructionBuilder intBinary(WasmIntType type, WasmIntBinaryOperation operation) {
-        return add(new WasmIntBinaryInstruction(type, operation));
+        return add(new WasmIntBinary(type, operation));
     }
 
     public WasmInstructionBuilder floatBinary(WasmFloatType type, WasmFloatBinaryOperation operation) {
-        return add(new WasmFloatBinaryInstruction(type, operation));
+        return add(new WasmFloatBinary(type, operation));
     }
 
     public WasmInstructionBuilder intUnary(WasmIntType type, WasmIntUnaryOperation operation) {
-        return add(new WasmIntUnaryInstruction(type, operation));
+        return add(new WasmIntUnary(type, operation));
     }
 
     public WasmInstructionBuilder floatUnary(WasmFloatType type, WasmFloatUnaryOperation operation) {
-        return add(new WasmFloatUnaryInstruction(type, operation));
+        return add(new WasmFloatUnary(type, operation));
     }
 
     public WasmInstructionBuilder convert(WasmNumType sourceType, WasmNumType targetType, boolean signed) {
-        return add(new WasmConversionInstruction(sourceType, targetType, signed));
+        return add(new WasmConversion(sourceType, targetType, signed));
     }
 
     public WasmInstructionBuilder reinterpret(WasmNumType sourceType, WasmNumType targetType) {
-        var insn = new WasmConversionInstruction(sourceType, targetType, false);
+        var insn = new WasmConversion(sourceType, targetType, false);
         insn.setReinterpret(true);
         return add(insn);
     }
 
     public WasmInstructionBuilder nonTrapConvert(WasmNumType sourceType, WasmNumType targetType, boolean signed) {
-        var insn = new WasmConversionInstruction(sourceType, targetType, signed);
+        var insn = new WasmConversion(sourceType, targetType, signed);
         insn.setNonTrapping(true);
         return add(insn);
     }
@@ -248,13 +248,13 @@ public class WasmInstructionBuilder {
     }
 
     public WasmInstructionBuilder call(WasmFunction function, boolean suspend) {
-        var insn = new WasmCallInstruction(function);
+        var insn = new WasmCall(function);
         insn.setSuspend(suspend);
         return add(insn);
     }
 
     public WasmInstructionBuilder callIndirect(WasmFunctionType type) {
-        return add(new WasmIndirectCallInstruction(type));
+        return add(new WasmIndirectCall(type));
     }
 
     public WasmInstructionBuilder callReference(WasmFunctionType type) {
@@ -262,110 +262,110 @@ public class WasmInstructionBuilder {
     }
 
     public WasmInstructionBuilder callReference(WasmFunctionType type, boolean suspend) {
-        var insn = new WasmCallReferenceInstruction(type);
+        var insn = new WasmCallReference(type);
         insn.setSuspend(suspend);
         return add(insn);
     }
 
     public WasmInstructionBuilder drop() {
-        if (list.getLast() instanceof WasmGetLocalInstruction) {
+        if (list.getLast() instanceof WasmGetLocal) {
             list.getLast().delete();
             typeInference.typeStack.remove(typeInference.typeStack.size() - 1);
             return this;
-        } else if (list.getLast() instanceof WasmTeeLocalInstruction) {
-            var teeLocal = (WasmTeeLocalInstruction) list.getLast();
-            var setLocal = new WasmSetLocalInstruction(teeLocal.getLocal());
+        } else if (list.getLast() instanceof WasmTeeLocal) {
+            var teeLocal = (WasmTeeLocal) list.getLast();
+            var setLocal = new WasmSetLocal(teeLocal.getLocal());
             setLocal.setLocation(teeLocal.getLocation());
             list.getLast().delete();
             list.add(setLocal);
             typeInference.typeStack.remove(typeInference.typeStack.size() - 1);
             return this;
         } else {
-            return add(new WasmDropInstruction());
+            return add(new WasmDrop());
         }
     }
 
     public WasmInstructionBuilder loadI32(int alignment, int offset, WasmInt32Subtype convertFrom) {
-        var insn = new WasmLoadInt32Instruction(alignment, convertFrom);
+        var insn = new WasmLoadInt32(alignment, convertFrom);
         insn.setOffset(offset);
         return add(insn);
     }
 
     public WasmInstructionBuilder loadI64(int alignment, int offset, WasmInt64Subtype convertFrom) {
-        var insn = new WasmLoadInt64Instruction(alignment, convertFrom);
+        var insn = new WasmLoadInt64(alignment, convertFrom);
         insn.setOffset(offset);
         return add(insn);
     }
 
     public WasmInstructionBuilder loadF32(int alignment, int offset) {
-        var insn = new WasmLoadFloat32Instruction(alignment);
+        var insn = new WasmLoadFloat32(alignment);
         insn.setOffset(offset);
         return add(insn);
     }
 
     public WasmInstructionBuilder loadF64(int alignment, int offset) {
-        var insn = new WasmLoadFloat64Instruction(alignment);
+        var insn = new WasmLoadFloat64(alignment);
         insn.setOffset(offset);
         return add(insn);
     }
 
     public WasmInstructionBuilder storeI32(int alignment, int offset, WasmInt32Subtype convertTo) {
-        var insn = new WasmStoreInt32Instruction(alignment, convertTo);
+        var insn = new WasmStoreInt32(alignment, convertTo);
         insn.setOffset(offset);
         return add(insn);
     }
 
     public WasmInstructionBuilder storeI64(int alignment, int offset, WasmInt64Subtype convertTo) {
-        var insn = new WasmStoreInt64Instruction(alignment, convertTo);
+        var insn = new WasmStoreInt64(alignment, convertTo);
         insn.setOffset(offset);
         return add(insn);
     }
 
     public WasmInstructionBuilder storeF32(int alignment, int offset) {
-        var insn = new WasmStoreFloat32Instruction(alignment);
+        var insn = new WasmStoreFloat32(alignment);
         insn.setOffset(offset);
         return add(insn);
     }
 
     public WasmInstructionBuilder storeF64(int alignment, int offset) {
-        var insn = new WasmStoreFloat64Instruction(alignment);
+        var insn = new WasmStoreFloat64(alignment);
         insn.setOffset(offset);
         return add(insn);
     }
 
     public WasmInstructionBuilder memoryGrow() {
-        return add(new WasmMemoryGrowInstruction());
+        return add(new WasmMemoryGrow());
     }
 
     public WasmInstructionBuilder fill() {
-        return add(new WasmFillInstruction());
+        return add(new WasmFill());
     }
 
     public WasmInstructionBuilder copy() {
-        return add(new WasmCopyInstruction());
+        return add(new WasmCopy());
     }
 
-    public WasmTryInstruction try_(WasmType resultType) {
-        var insn = new WasmTryInstruction();
+    public WasmTry try_(WasmType resultType) {
+        var insn = new WasmTry();
         insn.setType(resultType);
         add(insn);
         return insn;
     }
 
-    public WasmTryInstruction try_() {
+    public WasmTry try_() {
         return try_(null);
     }
 
     public WasmInstructionBuilder throw_(WasmTag tag) {
-        return add(new WasmThrowInstruction(tag));
+        return add(new WasmThrow(tag));
     }
 
     public WasmInstructionBuilder refEqual() {
-        return add(new WasmReferencesEqualInstruction());
+        return add(new WasmReferencesEqual());
     }
 
     public WasmInstructionBuilder cast(WasmType.Reference targetType) {
-        return add(new WasmCastInstruction(targetType));
+        return add(new WasmCast(targetType));
     }
 
     public WasmInstructionBuilder cast(WasmCompositeType targetType) {
@@ -373,76 +373,76 @@ public class WasmInstructionBuilder {
     }
 
     public WasmInstructionBuilder test(WasmType.Reference testType) {
-        return add(new WasmTestInstruction(testType));
+        return add(new WasmTest(testType));
     }
 
     public WasmInstructionBuilder externConvert(WasmExternConversionType type) {
-        return add(new WasmExternConversionInstruction(type));
+        return add(new WasmExternConversion(type));
     }
 
     public WasmInstructionBuilder structNew(WasmStructure type) {
-        return add(new WasmStructNewInstruction(type));
+        return add(new WasmStructNew(type));
     }
 
     public WasmInstructionBuilder structNewDefault(WasmStructure type) {
-        add(new WasmStructNewDefaultInstruction(type));
+        add(new WasmStructNewDefault(type));
         return this;
     }
 
     public WasmInstructionBuilder structGet(WasmStructure type, int fieldIndex) {
-        return add(new WasmStructGetInstruction(type, fieldIndex));
+        return add(new WasmStructGet(type, fieldIndex));
     }
 
     public WasmInstructionBuilder structGet(WasmStructure type, int fieldIndex, WasmSignedType signedType) {
-        var insn = new WasmStructGetInstruction(type, fieldIndex);
+        var insn = new WasmStructGet(type, fieldIndex);
         insn.setSignedType(signedType);
         return add(insn);
     }
 
     public WasmInstructionBuilder structSet(WasmStructure type, int fieldIndex) {
-        return add(new WasmStructSetInstruction(type, fieldIndex));
+        return add(new WasmStructSet(type, fieldIndex));
     }
 
     public WasmInstructionBuilder arrayNewDefault(WasmArray type) {
-        return add(new WasmArrayNewDefaultInstruction(type));
+        return add(new WasmArrayNewDefault(type));
     }
 
     public WasmInstructionBuilder arrayNewFixed(WasmArray type, int size) {
-        return add(new WasmArrayNewFixedInstruction(type, size));
+        return add(new WasmArrayNewFixed(type, size));
     }
 
     public WasmInstructionBuilder arrayGet(WasmArray type) {
-        return add(new WasmArrayGetInstruction(type));
+        return add(new WasmArrayGet(type));
     }
 
     public WasmInstructionBuilder arrayGet(WasmArray type, WasmSignedType signedType) {
-        var insn = new WasmArrayGetInstruction(type);
+        var insn = new WasmArrayGet(type);
         insn.setSignedType(signedType);
         return add(insn);
     }
 
     public WasmInstructionBuilder arraySet(WasmArray type) {
-        return add(new WasmArraySetInstruction(type));
+        return add(new WasmArraySet(type));
     }
 
     public WasmInstructionBuilder arrayLength() {
-        return add(new WasmArrayLengthInstruction());
+        return add(new WasmArrayLength());
     }
 
     public WasmInstructionBuilder arrayCopy(WasmArray targetArrayType, WasmArray sourceArrayType) {
-        return add(new WasmArrayCopyInstruction(targetArrayType, sourceArrayType));
+        return add(new WasmArrayCopy(targetArrayType, sourceArrayType));
     }
 
     public WasmInstructionBuilder funcRef(WasmFunction function) {
-        return add(new WasmFunctionReferenceInstruction(function));
+        return add(new WasmFunctionReference(function));
     }
 
     public WasmInstructionBuilder i31Ref() {
-        return add(new WasmInt31ReferenceInstruction());
+        return add(new WasmInt31Reference());
     }
 
     public WasmInstructionBuilder i31Get(WasmSignedType signedType) {
-        return add(new WasmInt31GetInstruction(signedType));
+        return add(new WasmInt31Get(signedType));
     }
 
     public WasmInstructionBuilder add(WasmInstruction instruction) {

@@ -26,8 +26,8 @@ public class WasmCatchClause extends WasmInstructionList {
         this.tag = Objects.requireNonNull(tag);
     }
 
-    public WasmTryInstruction getTryInstruction() {
-        return (WasmTryInstruction) breakTarget;
+    public WasmTry getTryInstruction() {
+        return (WasmTry) breakTarget;
     }
 
     public WasmTag getTag() {

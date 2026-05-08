@@ -32,7 +32,7 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
-import org.teavm.backend.wasm.model.instruction.WasmStructNewDefaultInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmStructNewDefault;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
@@ -110,7 +110,7 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
                     + WasmGCNameProvider.sanitize(brief));
             var globalType = standardClasses.stringClass().getStructure().getNonNullReference();
             var global = new WasmGlobal(globalName, globalType);
-            global.getInitialValue().add(new WasmStructNewDefaultInstruction(
+            global.getInitialValue().add(new WasmStructNewDefault(
                     standardClasses.stringClass().getStructure()));
             global.setImmutable(true);
             module.globals.add(global);

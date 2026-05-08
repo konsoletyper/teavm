@@ -16,121 +16,121 @@
 package org.teavm.backend.wasm.model.instruction;
 
 public interface WasmInstructionVisitor {
-    void visit(WasmUnreachableInstruction instruction);
+    void visit(WasmUnreachable instruction);
 
-    void visit(WasmBlockInstruction instruction);
+    void visit(WasmBlock instruction);
 
-    void visit(WasmConditionalInstruction instruction);
+    void visit(WasmConditional instruction);
 
-    void visit(WasmBranchInstruction instruction);
+    void visit(WasmBranch instruction);
 
-    void visit(WasmNullBranchInstruction instruction);
+    void visit(WasmNullBranch instruction);
 
-    void visit(WasmCastBranchInstruction instruction);
+    void visit(WasmCastBranch instruction);
 
-    void visit(WasmBreakInstruction instruction);
+    void visit(WasmBreak instruction);
 
-    void visit(WasmSwitchInstruction instruction);
+    void visit(WasmSwitch instruction);
 
-    void visit(WasmReturnInstruction instruction);
+    void visit(WasmReturn instruction);
 
-    void visit(WasmInt32ConstantInstruction instruction);
+    void visit(WasmInt32Constant instruction);
 
-    void visit(WasmInt64ConstantInstruction instruction);
+    void visit(WasmInt64Constant instruction);
 
-    void visit(WasmFloat32ConstantInstruction instruction);
+    void visit(WasmFloat32Constant instruction);
 
-    void visit(WasmFloat64ConstantInstruction instruction);
+    void visit(WasmFloat64Constant instruction);
 
-    void visit(WasmNullConstantInstruction instruction);
+    void visit(WasmNullConstant instruction);
 
-    void visit(WasmIsNullInstruction instruction);
+    void visit(WasmIsNull instruction);
 
-    void visit(WasmGetLocalInstruction instruction);
+    void visit(WasmGetLocal instruction);
 
-    void visit(WasmSetLocalInstruction instruction);
+    void visit(WasmSetLocal instruction);
 
-    void visit(WasmTeeLocalInstruction instruction);
+    void visit(WasmTeeLocal instruction);
 
-    void visit(WasmGetGlobalInstruction instruction);
+    void visit(WasmGetGlobal instruction);
 
-    void visit(WasmSetGlobalInstruction instruction);
+    void visit(WasmSetGlobal instruction);
 
-    void visit(WasmIntBinaryInstruction instruction);
+    void visit(WasmIntBinary instruction);
 
-    void visit(WasmFloatBinaryInstruction instruction);
+    void visit(WasmFloatBinary instruction);
 
-    void visit(WasmIntUnaryInstruction instruction);
+    void visit(WasmIntUnary instruction);
 
-    void visit(WasmFloatUnaryInstruction instruction);
+    void visit(WasmFloatUnary instruction);
 
-    void visit(WasmConversionInstruction instruction);
+    void visit(WasmConversion instruction);
 
-    void visit(WasmCallInstruction instruction);
+    void visit(WasmCall instruction);
 
-    void visit(WasmIndirectCallInstruction instruction);
+    void visit(WasmIndirectCall instruction);
 
-    void visit(WasmCallReferenceInstruction instruction);
+    void visit(WasmCallReference instruction);
 
-    void visit(WasmDropInstruction instruction);
+    void visit(WasmDrop instruction);
 
-    void visit(WasmLoadInt32Instruction instruction);
+    void visit(WasmLoadInt32 instruction);
 
-    void visit(WasmLoadInt64Instruction instruction);
+    void visit(WasmLoadInt64 instruction);
 
-    void visit(WasmLoadFloat32Instruction instruction);
+    void visit(WasmLoadFloat32 instruction);
 
-    void visit(WasmLoadFloat64Instruction instruction);
+    void visit(WasmLoadFloat64 instruction);
 
-    void visit(WasmStoreInt32Instruction instruction);
+    void visit(WasmStoreInt32 instruction);
 
-    void visit(WasmStoreInt64Instruction instruction);
+    void visit(WasmStoreInt64 instruction);
 
-    void visit(WasmStoreFloat32Instruction instruction);
+    void visit(WasmStoreFloat32 instruction);
 
-    void visit(WasmStoreFloat64Instruction instruction);
+    void visit(WasmStoreFloat64 instruction);
 
-    void visit(WasmMemoryGrowInstruction instruction);
+    void visit(WasmMemoryGrow instruction);
 
-    void visit(WasmFillInstruction instruction);
+    void visit(WasmFill instruction);
 
-    void visit(WasmCopyInstruction instruction);
+    void visit(WasmCopy instruction);
 
-    void visit(WasmTryInstruction instruction);
+    void visit(WasmTry instruction);
 
-    void visit(WasmThrowInstruction instruction);
+    void visit(WasmThrow instruction);
 
-    void visit(WasmReferencesEqualInstruction instruction);
+    void visit(WasmReferencesEqual instruction);
 
-    void visit(WasmCastInstruction instruction);
+    void visit(WasmCast instruction);
 
-    void visit(WasmTestInstruction instruction);
+    void visit(WasmTest instruction);
 
-    void visit(WasmExternConversionInstruction instruction);
+    void visit(WasmExternConversion instruction);
 
-    void visit(WasmStructNewInstruction instruction);
+    void visit(WasmStructNew instruction);
 
-    void visit(WasmStructNewDefaultInstruction instruction);
+    void visit(WasmStructNewDefault instruction);
 
-    void visit(WasmStructGetInstruction instruction);
+    void visit(WasmStructGet instruction);
 
-    void visit(WasmStructSetInstruction instruction);
+    void visit(WasmStructSet instruction);
 
-    void visit(WasmArrayNewDefaultInstruction instruction);
+    void visit(WasmArrayNewDefault instruction);
 
-    void visit(WasmArrayNewFixedInstruction instruction);
+    void visit(WasmArrayNewFixed instruction);
 
-    void visit(WasmArrayGetInstruction instruction);
+    void visit(WasmArrayGet instruction);
 
-    void visit(WasmArraySetInstruction instruction);
+    void visit(WasmArraySet instruction);
 
-    void visit(WasmArrayLengthInstruction instruction);
+    void visit(WasmArrayLength instruction);
 
-    void visit(WasmArrayCopyInstruction instruction);
+    void visit(WasmArrayCopy instruction);
 
-    void visit(WasmFunctionReferenceInstruction instruction);
+    void visit(WasmFunctionReference instruction);
 
-    void visit(WasmInt31ReferenceInstruction instruction);
+    void visit(WasmInt31Reference instruction);
 
-    void visit(WasmInt31GetInstruction instruction);
+    void visit(WasmInt31Get instruction);
 }

@@ -27,27 +27,27 @@ import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmArrayCopyInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmArrayGetInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmArrayNewDefaultInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmArrayNewFixedInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmArraySetInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmBlockInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmCallInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmCallReferenceInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmCastBranchInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmCastInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmArrayCopy;
+import org.teavm.backend.wasm.model.instruction.WasmArrayGet;
+import org.teavm.backend.wasm.model.instruction.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.instruction.WasmArrayNewFixed;
+import org.teavm.backend.wasm.model.instruction.WasmArraySet;
+import org.teavm.backend.wasm.model.instruction.WasmBlock;
+import org.teavm.backend.wasm.model.instruction.WasmCall;
+import org.teavm.backend.wasm.model.instruction.WasmCallReference;
+import org.teavm.backend.wasm.model.instruction.WasmCast;
+import org.teavm.backend.wasm.model.instruction.WasmCastBranch;
 import org.teavm.backend.wasm.model.instruction.WasmDefaultInstructionVisitor;
-import org.teavm.backend.wasm.model.instruction.WasmFunctionReferenceInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmGetGlobalInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmIndirectCallInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmSetGlobalInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmStructGetInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmStructNewDefaultInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmStructNewInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmStructSetInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmTestInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmTryInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmFunctionReference;
+import org.teavm.backend.wasm.model.instruction.WasmGetGlobal;
+import org.teavm.backend.wasm.model.instruction.WasmIndirectCall;
+import org.teavm.backend.wasm.model.instruction.WasmSetGlobal;
+import org.teavm.backend.wasm.model.instruction.WasmStructGet;
+import org.teavm.backend.wasm.model.instruction.WasmStructNew;
+import org.teavm.backend.wasm.model.instruction.WasmStructNewDefault;
+import org.teavm.backend.wasm.model.instruction.WasmStructSet;
+import org.teavm.backend.wasm.model.instruction.WasmTest;
+import org.teavm.backend.wasm.model.instruction.WasmTry;
 
 public class WasmUsageCounter extends WasmDefaultInstructionVisitor implements WasmCompositeTypeVisitor {
     private ObjectIntMap<WasmFunction> usagesByFunction = new ObjectIntHashMap<>();
@@ -105,105 +105,105 @@ public class WasmUsageCounter extends WasmDefaultInstructionVisitor implements W
     }
 
     @Override
-    public void visit(WasmCallInstruction instruction) {
+    public void visit(WasmCall instruction) {
         addUsage(instruction.getFunction());
     }
 
     @Override
-    public void visit(WasmFunctionReferenceInstruction instruction) {
+    public void visit(WasmFunctionReference instruction) {
         addUsage(instruction.getFunction());
     }
 
     @Override
-    public void visit(WasmGetGlobalInstruction instruction) {
+    public void visit(WasmGetGlobal instruction) {
         addUsage(instruction.getGlobal());
     }
 
     @Override
-    public void visit(WasmSetGlobalInstruction instruction) {
+    public void visit(WasmSetGlobal instruction) {
         addUsage(instruction.getGlobal());
     }
 
     @Override
-    public void visit(WasmBlockInstruction instruction) {
+    public void visit(WasmBlock instruction) {
         super.visit(instruction);
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmTryInstruction instruction) {
+    public void visit(WasmTry instruction) {
         super.visit(instruction);
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmCastBranchInstruction instruction) {
+    public void visit(WasmCastBranch instruction) {
         addUsage(instruction.getSourceType());
         addUsage(instruction.getTargetType());
     }
 
     @Override
-    public void visit(WasmCallReferenceInstruction instruction) {
+    public void visit(WasmCallReference instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmIndirectCallInstruction instruction) {
+    public void visit(WasmIndirectCall instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmCastInstruction instruction) {
+    public void visit(WasmCast instruction) {
         addUsage(instruction.getTargetType());
     }
 
     @Override
-    public void visit(WasmTestInstruction instruction) {
+    public void visit(WasmTest instruction) {
         addUsage(instruction.getTestType());
     }
 
     @Override
-    public void visit(WasmStructNewInstruction instruction) {
+    public void visit(WasmStructNew instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmStructNewDefaultInstruction instruction) {
+    public void visit(WasmStructNewDefault instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmStructGetInstruction instruction) {
+    public void visit(WasmStructGet instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmStructSetInstruction instruction) {
+    public void visit(WasmStructSet instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmArrayNewDefaultInstruction instruction) {
+    public void visit(WasmArrayNewDefault instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmArrayNewFixedInstruction instruction) {
+    public void visit(WasmArrayNewFixed instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmArrayGetInstruction instruction) {
+    public void visit(WasmArrayGet instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmArraySetInstruction instruction) {
+    public void visit(WasmArraySet instruction) {
         addUsage(instruction.getType());
     }
 
     @Override
-    public void visit(WasmArrayCopyInstruction instruction) {
+    public void visit(WasmArrayCopy instruction) {
         addUsage(instruction.getSourceArrayType());
         addUsage(instruction.getTargetArrayType());
     }

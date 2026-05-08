@@ -85,7 +85,7 @@ import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmBlockInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmBlock;
 import org.teavm.backend.wasm.model.instruction.WasmCastCondition;
 import org.teavm.backend.wasm.model.instruction.WasmCatchClause;
 import org.teavm.backend.wasm.model.instruction.WasmFloatBinaryOperation;
@@ -99,7 +99,7 @@ import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
-import org.teavm.backend.wasm.model.instruction.WasmTryInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmTry;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
@@ -1316,12 +1316,12 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
                 .max().orElse(0);
 
         ++blockLevel;
-        var outermostBlock = new WasmBlockInstruction(false);
+        var outermostBlock = new WasmBlock(false);
         breakTargets.put(statement, outermostBlock.getBody());
         var oldBreakTarget = currentBreakTarget;
         currentBreakTarget = statement;
 
-        var innermostBlock = new WasmBlockInstruction(false);
+        var innermostBlock = new WasmBlock(false);
         var innermostBuilder = innermostBlock.getBody().builder();
 
         var builderBackup = builder;
@@ -1334,7 +1334,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
 
         for (int i = 0; i < clauses.size(); i++) {
             clauseLists[i] = currentBlock.getBody();
-            var nextBlock = new WasmBlockInstruction(false);
+            var nextBlock = new WasmBlock(false);
             builder = nextBlock.getBody().builder();
             builder.add(currentBlock);
             currentBlock = nextBlock;
@@ -1618,7 +1618,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
 
         var oldBuilder = builder;
 
-        var tryInsn = new WasmTryInstruction();
+        var tryInsn = new WasmTry();
         var buildersToClose = new ArrayList<WasmInstructionBuilder>();
         Consumer<WasmType> typeConsumer = tryInsn::setType;
         builder = tryInsn.getBody().builder();
@@ -1641,7 +1641,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             }
             var exceptionType = (WasmType.Reference) context.classInfoProvider().getClassInfo(exType).getType();
             typeConsumer.accept(exceptionType);
-            var catchBlock = new WasmBlockInstruction(false);
+            var catchBlock = new WasmBlock(false);
             catchBlock.getBody().add(innerInsnList.getBreakTarget());
 
             catchClauseBuilder.castBranch(WasmCastCondition.SUCCESS, throwableType, exceptionType, innerInsnList);

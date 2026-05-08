@@ -17,9 +17,9 @@ package org.teavm.backend.wasm.generate;
 
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmGetLocalInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmGetLocal;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
-import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 
 public class ValueCache {
     private TemporaryVariablePool tmpVars;
@@ -30,11 +30,11 @@ public class ValueCache {
 
     public CachedValue create(WasmType type, WasmInstructionBuilder builder) {
         var insn = builder.list.getLast();
-        if (insn instanceof WasmGetLocalInstruction) {
-            var getLocal = (WasmGetLocalInstruction) insn;
+        if (insn instanceof WasmGetLocal) {
+            var getLocal = (WasmGetLocal) insn;
             return new LocalVarCachedValue(getLocal.getLocal());
-        } else if (insn instanceof WasmInt32ConstantInstruction) {
-            var constExpr = (WasmInt32ConstantInstruction) insn;
+        } else if (insn instanceof WasmInt32Constant) {
+            var constExpr = (WasmInt32Constant) insn;
             return new Int32CachedValue(constExpr.getValue());
         } else {
             var tmpVar = tmpVars.acquire(type);

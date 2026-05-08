@@ -47,7 +47,7 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmCatchClause;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
-import org.teavm.backend.wasm.model.instruction.WasmUnreachableInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmUnreachable;
 import org.teavm.backend.wasm.transformation.CoroutineTransformation;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
 import org.teavm.backend.wasm.types.PreciseValueType;
@@ -311,7 +311,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             diagnostics.error(new CallLocation(method.getReference()),
                     "Failed generating method body due to internal exception: " + buffer);
             function.getBody().clear();
-            function.getBody().add(new WasmUnreachableInstruction());
+            function.getBody().add(new WasmUnreachable());
         }
     }
 

@@ -18,7 +18,7 @@ package org.teavm.backend.wasm.generators;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
@@ -29,7 +29,7 @@ public class WasmGCStringPoolGenerator implements WasmGCCustomGenerator {
     public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
         var module = context.module();
         var pointer = new WasmGlobal(context.names().topLevel("teavm@stringPoolPointer"), WasmType.INT32);
-        pointer.getInitialValue().add(new WasmInt32ConstantInstruction(0));
+        pointer.getInitialValue().add(new WasmInt32Constant(0));
         module.globals.add(pointer);
 
         var body = function.getBody().builder();

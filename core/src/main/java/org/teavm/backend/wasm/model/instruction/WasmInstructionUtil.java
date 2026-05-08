@@ -20,29 +20,29 @@ public final class WasmInstructionUtil {
     }
 
     public static void negate(WasmInstruction instruction) {
-        if (instruction instanceof WasmIntBinaryInstruction) {
-            var binary = (WasmIntBinaryInstruction) instruction;
+        if (instruction instanceof WasmIntBinary) {
+            var binary = (WasmIntBinary) instruction;
 
             var negatedOp = negate(binary.getOperation());
             if (negatedOp != null) {
                 binary.setOperation(negatedOp);
                 return;
             }
-        } else if (instruction instanceof WasmFloatBinaryInstruction) {
-            var binary = (WasmFloatBinaryInstruction) instruction;
+        } else if (instruction instanceof WasmFloatBinary) {
+            var binary = (WasmFloatBinary) instruction;
             var negatedOp = negate(binary.getOperation());
             if (negatedOp != null) {
                 binary.setOperation(negatedOp);
                 return;
             }
-        } else if (instruction instanceof WasmIntUnaryInstruction) {
-            var unary = (WasmIntUnaryInstruction) instruction;
+        } else if (instruction instanceof WasmIntUnary) {
+            var unary = (WasmIntUnary) instruction;
             if (unary.getOperation() == WasmIntUnaryOperation.EQZ) {
                 unary.delete();
                 return;
             }
-        } else if (instruction instanceof WasmInt32ConstantInstruction) {
-            var cst = (WasmInt32ConstantInstruction) instruction;
+        } else if (instruction instanceof WasmInt32Constant) {
+            var cst = (WasmInt32Constant) instruction;
             if (cst.getValue() == 0) {
                 cst.setValue(1);
             } else {
@@ -51,7 +51,7 @@ public final class WasmInstructionUtil {
             return;
         }
 
-        instruction.insertNext(new WasmIntUnaryInstruction(WasmIntType.INT32, WasmIntUnaryOperation.EQZ));
+        instruction.insertNext(new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ));
     }
 
     private static WasmIntBinaryOperation negate(WasmIntBinaryOperation op) {

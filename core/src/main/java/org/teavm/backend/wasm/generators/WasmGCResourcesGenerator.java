@@ -29,7 +29,7 @@ import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.runtime.WasmGCResources;
@@ -62,7 +62,7 @@ public class WasmGCResourcesGenerator implements WasmGCCustomGenerator {
         segment.setData(resources.toByteArray());
         module.getSegments().add(segment);
         baseGlobal.getInitialValue().clear();
-        baseGlobal.getInitialValue().add(new WasmInt32ConstantInstruction(segment.getOffset()));
+        baseGlobal.getInitialValue().add(new WasmInt32Constant(segment.getOffset()));
     }
 
     @Override

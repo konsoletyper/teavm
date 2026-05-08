@@ -17,170 +17,170 @@ package org.teavm.backend.wasm.model.instruction;
 
 public class WasmDefaultInstructionVisitor implements WasmInstructionVisitor {
     @Override
-    public void visit(WasmUnreachableInstruction instruction) {
+    public void visit(WasmUnreachable instruction) {
     }
 
     @Override
-    public void visit(WasmBlockInstruction instruction) {
+    public void visit(WasmBlock instruction) {
         visitMany(instruction.getBody());
     }
 
     @Override
-    public void visit(WasmConditionalInstruction instruction) {
+    public void visit(WasmConditional instruction) {
         visitMany(instruction.getThenBlock());
         visitMany(instruction.getElseBlock());
     }
 
     @Override
-    public void visit(WasmBranchInstruction instruction) {
+    public void visit(WasmBranch instruction) {
     }
 
     @Override
-    public void visit(WasmNullBranchInstruction instruction) {
+    public void visit(WasmNullBranch instruction) {
     }
 
     @Override
-    public void visit(WasmCastBranchInstruction instruction) {
+    public void visit(WasmCastBranch instruction) {
     }
 
     @Override
-    public void visit(WasmBreakInstruction instruction) {
+    public void visit(WasmBreak instruction) {
     }
 
     @Override
-    public void visit(WasmSwitchInstruction instruction) {
+    public void visit(WasmSwitch instruction) {
     }
 
     @Override
-    public void visit(WasmReturnInstruction instruction) {
+    public void visit(WasmReturn instruction) {
     }
 
     @Override
-    public void visit(WasmInt32ConstantInstruction instruction) {
+    public void visit(WasmInt32Constant instruction) {
     }
 
     @Override
-    public void visit(WasmInt64ConstantInstruction instruction) {
+    public void visit(WasmInt64Constant instruction) {
     }
 
     @Override
-    public void visit(WasmFloat32ConstantInstruction instruction) {
+    public void visit(WasmFloat32Constant instruction) {
     }
 
     @Override
-    public void visit(WasmFloat64ConstantInstruction instruction) {
+    public void visit(WasmFloat64Constant instruction) {
     }
 
     @Override
-    public void visit(WasmNullConstantInstruction instruction) {
+    public void visit(WasmNullConstant instruction) {
     }
 
     @Override
-    public void visit(WasmIsNullInstruction instruction) {
+    public void visit(WasmIsNull instruction) {
     }
 
     @Override
-    public void visit(WasmGetLocalInstruction instruction) {
+    public void visit(WasmGetLocal instruction) {
     }
 
     @Override
-    public void visit(WasmSetLocalInstruction instruction) {
+    public void visit(WasmSetLocal instruction) {
     }
 
     @Override
-    public void visit(WasmTeeLocalInstruction instruction) {
+    public void visit(WasmTeeLocal instruction) {
     }
 
     @Override
-    public void visit(WasmGetGlobalInstruction instruction) {
+    public void visit(WasmGetGlobal instruction) {
     }
 
     @Override
-    public void visit(WasmSetGlobalInstruction instruction) {
+    public void visit(WasmSetGlobal instruction) {
     }
 
     @Override
-    public void visit(WasmIntBinaryInstruction instruction) {
+    public void visit(WasmIntBinary instruction) {
     }
 
     @Override
-    public void visit(WasmFloatBinaryInstruction instruction) {
+    public void visit(WasmFloatBinary instruction) {
     }
 
     @Override
-    public void visit(WasmIntUnaryInstruction instruction) {
+    public void visit(WasmIntUnary instruction) {
     }
 
     @Override
-    public void visit(WasmFloatUnaryInstruction instruction) {
+    public void visit(WasmFloatUnary instruction) {
     }
 
     @Override
-    public void visit(WasmConversionInstruction instruction) {
+    public void visit(WasmConversion instruction) {
     }
 
     @Override
-    public void visit(WasmCallInstruction instruction) {
+    public void visit(WasmCall instruction) {
     }
 
     @Override
-    public void visit(WasmIndirectCallInstruction instruction) {
+    public void visit(WasmIndirectCall instruction) {
     }
 
     @Override
-    public void visit(WasmCallReferenceInstruction instruction) {
+    public void visit(WasmCallReference instruction) {
     }
 
     @Override
-    public void visit(WasmDropInstruction instruction) {
+    public void visit(WasmDrop instruction) {
     }
 
     @Override
-    public void visit(WasmLoadInt32Instruction instruction) {
+    public void visit(WasmLoadInt32 instruction) {
     }
 
     @Override
-    public void visit(WasmLoadInt64Instruction instruction) {
+    public void visit(WasmLoadInt64 instruction) {
     }
 
     @Override
-    public void visit(WasmLoadFloat32Instruction instruction) {
+    public void visit(WasmLoadFloat32 instruction) {
     }
 
     @Override
-    public void visit(WasmLoadFloat64Instruction instruction) {
+    public void visit(WasmLoadFloat64 instruction) {
     }
 
     @Override
-    public void visit(WasmStoreInt32Instruction instruction) {
+    public void visit(WasmStoreInt32 instruction) {
     }
 
     @Override
-    public void visit(WasmStoreInt64Instruction instruction) {
+    public void visit(WasmStoreInt64 instruction) {
     }
 
     @Override
-    public void visit(WasmStoreFloat32Instruction instruction) {
+    public void visit(WasmStoreFloat32 instruction) {
     }
 
     @Override
-    public void visit(WasmStoreFloat64Instruction instruction) {
+    public void visit(WasmStoreFloat64 instruction) {
     }
 
     @Override
-    public void visit(WasmMemoryGrowInstruction instruction) {
+    public void visit(WasmMemoryGrow instruction) {
     }
 
     @Override
-    public void visit(WasmFillInstruction instruction) {
+    public void visit(WasmFill instruction) {
     }
 
     @Override
-    public void visit(WasmCopyInstruction instruction) {
+    public void visit(WasmCopy instruction) {
     }
 
     @Override
-    public void visit(WasmTryInstruction instruction) {
+    public void visit(WasmTry instruction) {
         visitMany(instruction.getBody());
         for (var catchClause : instruction.getCatches()) {
             visitMany(catchClause);
@@ -188,75 +188,75 @@ public class WasmDefaultInstructionVisitor implements WasmInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmThrowInstruction instruction) {
+    public void visit(WasmThrow instruction) {
     }
 
     @Override
-    public void visit(WasmReferencesEqualInstruction instruction) {
+    public void visit(WasmReferencesEqual instruction) {
     }
 
     @Override
-    public void visit(WasmCastInstruction instruction) {
+    public void visit(WasmCast instruction) {
     }
 
     @Override
-    public void visit(WasmTestInstruction instruction) {
+    public void visit(WasmTest instruction) {
     }
 
     @Override
-    public void visit(WasmExternConversionInstruction instruction) {
+    public void visit(WasmExternConversion instruction) {
     }
 
     @Override
-    public void visit(WasmStructNewInstruction instruction) {
+    public void visit(WasmStructNew instruction) {
     }
 
     @Override
-    public void visit(WasmStructNewDefaultInstruction instruction) {
+    public void visit(WasmStructNewDefault instruction) {
     }
 
     @Override
-    public void visit(WasmStructGetInstruction instruction) {
+    public void visit(WasmStructGet instruction) {
     }
 
     @Override
-    public void visit(WasmStructSetInstruction instruction) {
+    public void visit(WasmStructSet instruction) {
     }
 
     @Override
-    public void visit(WasmArrayNewDefaultInstruction instruction) {
+    public void visit(WasmArrayNewDefault instruction) {
     }
 
     @Override
-    public void visit(WasmArrayNewFixedInstruction instruction) {
+    public void visit(WasmArrayNewFixed instruction) {
     }
 
     @Override
-    public void visit(WasmArrayGetInstruction instruction) {
+    public void visit(WasmArrayGet instruction) {
     }
 
     @Override
-    public void visit(WasmArraySetInstruction instruction) {
+    public void visit(WasmArraySet instruction) {
     }
 
     @Override
-    public void visit(WasmArrayLengthInstruction instruction) {
+    public void visit(WasmArrayLength instruction) {
     }
 
     @Override
-    public void visit(WasmArrayCopyInstruction instruction) {
+    public void visit(WasmArrayCopy instruction) {
     }
 
     @Override
-    public void visit(WasmFunctionReferenceInstruction instruction) {
+    public void visit(WasmFunctionReference instruction) {
     }
 
     @Override
-    public void visit(WasmInt31ReferenceInstruction instruction) {
+    public void visit(WasmInt31Reference instruction) {
     }
 
     @Override
-    public void visit(WasmInt31GetInstruction instruction) {
+    public void visit(WasmInt31Get instruction) {
     }
 
     public void visitMany(Iterable<WasmInstruction> instructions) {

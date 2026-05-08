@@ -26,7 +26,7 @@ import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.ValueType;
@@ -99,7 +99,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
     private void generateIsClass(WasmLocal subtypeVar, String className, WasmFunction function) {
         var ranges = tagRegistry.getRanges(className);
         if (ranges.isEmpty()) {
-            function.getBody().add(new WasmInt32ConstantInstruction(0));
+            function.getBody().add(new WasmInt32Constant(0));
             return;
         }
 

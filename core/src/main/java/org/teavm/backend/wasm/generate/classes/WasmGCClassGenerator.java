@@ -46,13 +46,13 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmFunctionReferenceInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmFunctionReference;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
-import org.teavm.backend.wasm.model.instruction.WasmNullConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmNullConstant;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
-import org.teavm.backend.wasm.model.instruction.WasmStructNewDefaultInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmStructNewDefault;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.backend.wasm.transformation.CoroutineTransformation;
@@ -376,13 +376,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             if (vtStructure != null) {
                 var classInfoType = reflectionTypes.classInfo();
                 classInfo.pointer = new WasmGlobal(pointerName, classInfoType.structure().getNonNullReference());
-                classInfo.pointer.getInitialValue().add(new WasmStructNewDefaultInstruction(
+                classInfo.pointer.getInitialValue().add(new WasmStructNewDefault(
                         classInfoType.structure()));
                 classInfo.pointer.setImmutable(true);
                 module.globals.add(classInfo.pointer);
                 if (virtualTable != null && virtualTable.isConcrete()) {
                     classInfo.virtualTablePointer = new WasmGlobal(vtName, vtStructure.getNonNullReference());
-                    classInfo.virtualTablePointer.getInitialValue().add(new WasmStructNewDefaultInstruction(
+                    classInfo.virtualTablePointer.getInitialValue().add(new WasmStructNewDefault(
                             vtStructure));
                     if (compactMode) {
                         var cls = classInfo;
@@ -514,7 +514,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var clinitType = functionTypes.of(null);
                 var wasmName = names.topLevel(names.suggestForClass(name) + "@initializer");
                 classInfo.initializerPointer = new WasmGlobal(wasmName, clinitType.getReference());
-                classInfo.initializerPointer.getInitialValue().add(new WasmNullConstantInstruction(
+                classInfo.initializerPointer.getInitialValue().add(new WasmNullConstant(
                         clinitType.getReference()));
                 module.globals.add(classInfo.initializerPointer);
             }
@@ -630,7 +630,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var initFunction = functionProvider.forStaticMethod(new MethodReference(name, CLINIT_METHOD_DESC));
                 initFunction.setReferenced(true);
                 classInfo.initializerPointer.getInitialValue().clear();
-                classInfo.initializerPointer.getInitialValue().add(new WasmFunctionReferenceInstruction(initFunction));
+                classInfo.initializerPointer.getInitialValue().add(new WasmFunctionReference(initFunction));
                 if (metadataRequirements.hasClassInit() && metadataReq != null && metadataReq.classInit()) {
                     target
                             .getGlobal(classInfo.pointer)

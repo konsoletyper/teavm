@@ -33,7 +33,7 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmExternConversionType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
-import org.teavm.backend.wasm.model.instruction.WasmNullConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmNullConstant;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.impl.AliasCollector;
 import org.teavm.jso.impl.JSBodyAstEmitter;
@@ -100,7 +100,7 @@ class WasmGCJsoCommonGenerator {
         paramCount += imports.length;
 
         var global = new WasmGlobal(context.names().suggestForMethod(emitter.method()), WasmType.EXTERN);
-        global.getInitialValue().add(new WasmNullConstantInstruction(WasmType.EXTERN));
+        global.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
         context.module().globals.add(global);
         var body = "";
         if (emitter instanceof JSBodyBloatedEmitter) {
@@ -158,7 +158,7 @@ class WasmGCJsoCommonGenerator {
         return importGlobals.computeIfAbsent(new ImportDecl(module, id), m -> {
             var name = context.names().topLevel(WasmGCNameProvider.sanitize("teavm.js@imports:" + module + "#" + id));
             var global = new WasmGlobal(name, WasmType.EXTERN);
-            global.getInitialValue().add(new WasmNullConstantInstruction(WasmType.EXTERN));
+            global.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
             global.setImmutable(true);
             context.module().globals.add(global);
             global.setImportModule(module);
@@ -217,7 +217,7 @@ class WasmGCJsoCommonGenerator {
             var name = context.names().topLevel("teavm.js.strings<" + index + ">:"
                     + WasmGCNameProvider.sanitize(brief));
             var jsGlobal = new WasmGlobal(name, WasmType.EXTERN);
-            jsGlobal.getInitialValue().add(new WasmNullConstantInstruction(WasmType.EXTERN));
+            jsGlobal.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
             context.module().globals.add(jsGlobal);
             addInitializerPart(context, initializer -> initializer.getBody().builder()
                     .getGlobal(javaGlobal)
@@ -231,7 +231,7 @@ class WasmGCJsoCommonGenerator {
         if (defaultWrapperClass == null) {
             var name = context.names().topLevel("teavm.js@defaultWrapperClass");
             defaultWrapperClass = new WasmGlobal(name, WasmType.EXTERN);
-            defaultWrapperClass.getInitialValue().add(new WasmNullConstantInstruction(WasmType.EXTERN));
+            defaultWrapperClass.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
             context.module().globals.add(defaultWrapperClass);
             addInitializerPart(context, initializer -> initializer.getBody().builder()
                     .nullConst(WasmType.EXTERN)
@@ -255,7 +255,7 @@ class WasmGCJsoCommonGenerator {
     private WasmGlobal defineClass(WasmGCJsoContext context, String className) {
         var name = context.names().topLevel(context.names().suggestForClass(className + "@js"));
         var global = new WasmGlobal(name, WasmType.EXTERN);
-        global.getInitialValue().add(new WasmNullConstantInstruction(WasmType.EXTERN));
+        global.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
         context.module().globals.add(global);
         var body = new WasmInstructionList().builder();
 
@@ -363,7 +363,7 @@ class WasmGCJsoCommonGenerator {
             if (isModule) {
                 var globalName = context.names().topLevel("teavm.js.export.function@" + aliasEntry.getKey());
                 var functionGlobal = new WasmGlobal(globalName, WasmType.EXTERN);
-                functionGlobal.getInitialValue().add(new WasmNullConstantInstruction(WasmType.EXTERN));
+                functionGlobal.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
                 functionGlobal.setExportName(aliasEntry.getKey());
                 context.module().globals.add(functionGlobal);
                 builder.funcRef(fn)
@@ -416,7 +416,7 @@ class WasmGCJsoCommonGenerator {
         var exportName = getClassAliasName(cls);
         var globalName = context.names().topLevel("teavm.js.export.class@" + exportName);
         var exportGlobal = new WasmGlobal(globalName, WasmType.EXTERN);
-        exportGlobal.getInitialValue().add(new WasmNullConstantInstruction(WasmType.EXTERN));
+        exportGlobal.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
         exportGlobal.setExportName(exportName);
         context.module().globals.add(exportGlobal);
 

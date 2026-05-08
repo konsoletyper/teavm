@@ -275,7 +275,7 @@ public class WasmBinaryRenderer {
         }
 
         var section = new WasmBinaryWriter();
-        var visitor = new WasmBinaryInstructionRenderingVisitor(section, module, null, null, 0);
+        var visitor = new WasmBinaryRenderingVisitor(section, module, null, null, 0);
         section.writeLEB(globals.size());
         for (var global : globals) {
             section.writeType(global.getType(), module);
@@ -463,7 +463,7 @@ public class WasmBinaryRenderer {
             }
         }
 
-        var instructionRenderer = new WasmBinaryInstructionRenderingVisitor(code, module,
+        var instructionRenderer = new WasmBinaryRenderingVisitor(code, module,
                 function.getJavaMethod() != null ? debugLines : null, dwarfGenerator, offset + sectionOffset);
         instructionRenderer.render(function.getBody());
 

@@ -16,13 +16,13 @@
 package org.teavm.backend.wasm.transformation;
 
 import java.util.function.Function;
-import org.teavm.backend.wasm.model.instruction.WasmBranchInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmBreakInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmCastBranchInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmBranch;
+import org.teavm.backend.wasm.model.instruction.WasmBreak;
+import org.teavm.backend.wasm.model.instruction.WasmCastBranch;
 import org.teavm.backend.wasm.model.instruction.WasmDefaultInstructionVisitor;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
-import org.teavm.backend.wasm.model.instruction.WasmNullBranchInstruction;
-import org.teavm.backend.wasm.model.instruction.WasmSwitchInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmNullBranch;
+import org.teavm.backend.wasm.model.instruction.WasmSwitch;
 
 public class BreakTargetReplacement extends WasmDefaultInstructionVisitor {
     private Function<WasmInstructionList, WasmInstructionList> mapping;
@@ -32,31 +32,31 @@ public class BreakTargetReplacement extends WasmDefaultInstructionVisitor {
     }
 
     @Override
-    public void visit(WasmBreakInstruction instruction) {
+    public void visit(WasmBreak instruction) {
         instruction.setTarget(map(instruction.getTarget()));
         super.visit(instruction);
     }
 
     @Override
-    public void visit(WasmBranchInstruction instruction) {
+    public void visit(WasmBranch instruction) {
         instruction.setTarget(map(instruction.getTarget()));
         super.visit(instruction);
     }
 
     @Override
-    public void visit(WasmCastBranchInstruction instruction) {
+    public void visit(WasmCastBranch instruction) {
         instruction.setTarget(map(instruction.getTarget()));
         super.visit(instruction);
     }
 
     @Override
-    public void visit(WasmNullBranchInstruction instruction) {
+    public void visit(WasmNullBranch instruction) {
         instruction.setTarget(map(instruction.getTarget()));
         super.visit(instruction);
     }
 
     @Override
-    public void visit(WasmSwitchInstruction instruction) {
+    public void visit(WasmSwitch instruction) {
         instruction.setDefaultTarget(map(instruction.getDefaultTarget()));
         for (var i = 0; i < instruction.getTargets().size(); ++i) {
             instruction.getTargets().set(i, map(instruction.getTargets().get(i)));

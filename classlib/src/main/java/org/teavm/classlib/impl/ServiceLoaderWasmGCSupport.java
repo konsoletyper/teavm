@@ -27,10 +27,10 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.instruction.WasmFunctionReferenceInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmFunctionReference;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
-import org.teavm.backend.wasm.model.instruction.WasmSetGlobalInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmSetGlobal;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -68,12 +68,12 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
 
             var initializerGlobalName = context.names().topLevel("teavm@initializeServicesRef");
             var global = new WasmGlobal(initializerGlobalName, initializer.getType().getReference());
-            global.getInitialValue().add(new WasmFunctionReferenceInstruction(initializer));
+            global.getInitialValue().add(new WasmFunctionReference(initializer));
             context.module().globals.add(global);
 
-            var ref = new WasmFunctionReferenceInstruction(emptyInitializer);
+            var ref = new WasmFunctionReference(emptyInitializer);
             initializer.getBody().addFirst(ref);
-            ref.insertNext(new WasmSetGlobalInstruction(global));
+            ref.insertNext(new WasmSetGlobal(global));
 
             var body = function.getBody().builder();
             body.getGlobal(global).callReference(initializer.getType());
