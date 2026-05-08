@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmStructure;
-import org.teavm.backend.wasm.model.expression.WasmSignedType;
 
 public class WasmStructGetInstruction extends WasmInstruction {
     private WasmStructure type;

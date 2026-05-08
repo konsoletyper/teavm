@@ -15,20 +15,12 @@
  */
 package org.teavm.backend.wasm.generate.methods;
 
-import java.util.List;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.generate.ValueCache;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmFunctionType;
-import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmCast;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmStructGet;
-import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 import org.teavm.model.MethodReference;
@@ -41,46 +33,6 @@ public class WasmGCVirtualCallGenerator {
             WasmGCClassInfoProvider classInfoProvider) {
         this.virtualTables = virtualTables;
         this.classInfoProvider = classInfoProvider;
-    }
-
-    public WasmExpression generate(MethodReference method, boolean suspending, WasmLocal instance,
-            List<WasmExpression> arguments) {
-        var vtable = virtualTables.lookup(method.getClassName());
-        if (vtable == null) {
-            return new WasmUnreachable();
-        }
-
-        var entry = vtable.entry(method.getDescriptor());
-        var nonInterfaceAncestor = vtable.closestNonInterfaceAncestor();
-        if (entry == null || nonInterfaceAncestor == null) {
-            return new WasmUnreachable();
-        }
-
-        var objectClass = classInfoProvider.getClassInfo("java.lang.Object");
-
-        WasmExpression classRef = new WasmStructGet(objectClass.getStructure(),
-                new WasmGetLocal(instance), WasmGCClassInfoProvider.VT_FIELD_OFFSET);
-        var index = WasmGCClassInfoProvider.VIRTUAL_METHOD_OFFSET + entry.getIndex();
-        var expectedInstanceClassInfo = classInfoProvider.getClassInfo(vtable.getClassName());
-        var expectedInstanceClassStruct = classInfoProvider.getClassInfo(
-                nonInterfaceAncestor.getClassName()).getStructure();
-        var vtableStruct = expectedInstanceClassInfo.getVirtualTableStructure();
-        classRef = new WasmCast(classRef, vtableStruct.getNonNullReference());
-
-        var functionRef = new WasmStructGet(vtableStruct, classRef, index);
-        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).getUnpackedType();
-        var invoke = new WasmCallReference(functionRef, (WasmFunctionType) functionTypeRef.composite);
-        invoke.setSuspensionPoint(suspending);
-        WasmExpression instanceRef = new WasmGetLocal(instance);
-        var instanceType = (WasmType.CompositeReference) instance.getType();
-        var instanceStruct = (WasmStructure) instanceType.composite;
-        if (!expectedInstanceClassStruct.isSupertypeOf(instanceStruct)) {
-            instanceRef = new WasmCast(instanceRef, expectedInstanceClassStruct.getNonNullReference());
-        }
-
-        invoke.getArguments().add(instanceRef);
-        invoke.getArguments().addAll(arguments);
-        return invoke;
     }
 
     public void generate(WasmInstructionBuilder builder, MethodReference method, boolean suspending,

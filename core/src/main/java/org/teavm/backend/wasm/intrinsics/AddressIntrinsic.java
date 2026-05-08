@@ -20,11 +20,11 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.WasmNumType;
-import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
-import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
-import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
+import org.teavm.backend.wasm.model.instruction.WasmInt64Subtype;
+import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 

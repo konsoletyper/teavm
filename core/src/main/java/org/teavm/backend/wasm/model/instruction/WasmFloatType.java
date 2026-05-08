@@ -13,17 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.intrinsics;
+package org.teavm.backend.wasm.model.instruction;
 
-import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
-import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
-
-public class WasmGCResourcesIntrinsic implements WasmGCIntrinsic {
-    @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context,
-            WasmInstructionBuilder builder) {
-        context.generate(builder, invocation.getArguments().get(0));
-        builder.loadI32(1, 0, WasmInt32Subtype.UINT8);
-    }
+public enum WasmFloatType {
+    FLOAT32,
+    FLOAT64
 }

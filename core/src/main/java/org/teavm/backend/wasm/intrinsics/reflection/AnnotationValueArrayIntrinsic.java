@@ -21,8 +21,8 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 
 public class AnnotationValueArrayIntrinsic implements WasmGCIntrinsic {
     @Override

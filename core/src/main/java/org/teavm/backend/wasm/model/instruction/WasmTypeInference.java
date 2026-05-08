@@ -18,11 +18,6 @@ package org.teavm.backend.wasm.model.instruction;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCastCondition;
-import org.teavm.backend.wasm.model.expression.WasmFloatType;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 
 public class WasmTypeInference implements WasmInstructionVisitor {
     public final List<WasmType> typeStack = new ArrayList<>();

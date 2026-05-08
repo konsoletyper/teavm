@@ -21,9 +21,9 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.reflect.GenericTypeInfo;
 

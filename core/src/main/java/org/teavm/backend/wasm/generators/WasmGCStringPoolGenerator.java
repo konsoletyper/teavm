@@ -18,10 +18,10 @@ package org.teavm.backend.wasm.generators;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
-import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmInt32ConstantInstruction;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
+import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.MethodReference;
 
 public class WasmGCStringPoolGenerator implements WasmGCCustomGenerator {

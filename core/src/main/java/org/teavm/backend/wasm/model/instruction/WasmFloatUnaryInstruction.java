@@ -16,8 +16,6 @@
 package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmFloatType;
-import org.teavm.backend.wasm.model.expression.WasmFloatUnaryOperation;
 
 public class WasmFloatUnaryInstruction extends WasmInstruction {
     private WasmFloatType type;

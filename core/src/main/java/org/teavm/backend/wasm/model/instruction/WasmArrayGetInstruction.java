@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmArray;
-import org.teavm.backend.wasm.model.expression.WasmSignedType;
 
 public class WasmArrayGetInstruction extends WasmInstruction {
     private WasmArray type;

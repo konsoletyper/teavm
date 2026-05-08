@@ -16,8 +16,6 @@
 package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 
 public class WasmIntUnaryInstruction extends WasmInstruction {
     private WasmIntType type;

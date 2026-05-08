@@ -16,7 +16,6 @@
 package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 
 public class WasmNullBranchInstruction extends WasmInstruction {
     private WasmNullCondition condition;

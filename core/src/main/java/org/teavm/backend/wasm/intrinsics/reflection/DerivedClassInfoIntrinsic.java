@@ -18,8 +18,8 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 
 public class DerivedClassInfoIntrinsic implements WasmGCIntrinsic {
     @Override

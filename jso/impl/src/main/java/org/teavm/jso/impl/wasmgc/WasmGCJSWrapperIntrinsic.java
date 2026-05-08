@@ -23,7 +23,7 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
+import org.teavm.backend.wasm.model.instruction.WasmExternConversionType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;

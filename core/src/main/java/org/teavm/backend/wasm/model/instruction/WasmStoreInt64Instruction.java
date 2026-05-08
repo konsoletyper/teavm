@@ -16,7 +16,6 @@
 package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
 
 public class WasmStoreInt64Instruction extends WasmInstruction {
     private int alignment;

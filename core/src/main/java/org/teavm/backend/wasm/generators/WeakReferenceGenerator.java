@@ -21,7 +21,7 @@ import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmNullCondition;
+import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 

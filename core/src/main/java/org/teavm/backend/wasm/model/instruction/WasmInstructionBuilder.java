@@ -28,18 +28,6 @@ import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCastCondition;
-import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
-import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmFloatType;
-import org.teavm.backend.wasm.model.expression.WasmFloatUnaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
-import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
-import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmNullCondition;
-import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.model.TextLocation;
 
 public class WasmInstructionBuilder {

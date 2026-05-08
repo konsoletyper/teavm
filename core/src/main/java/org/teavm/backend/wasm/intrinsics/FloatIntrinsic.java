@@ -18,11 +18,11 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmFloatType;
-import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmFloatBinaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmFloatType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmIntType;
 
 public class FloatIntrinsic implements WasmGCIntrinsic {
     private static final int EXPONENT_BITS = 0x7F800000;

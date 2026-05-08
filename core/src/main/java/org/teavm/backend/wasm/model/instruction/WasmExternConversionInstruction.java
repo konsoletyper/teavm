@@ -16,7 +16,6 @@
 package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
 
 public class WasmExternConversionInstruction extends WasmInstruction {
     private WasmExternConversionType type;

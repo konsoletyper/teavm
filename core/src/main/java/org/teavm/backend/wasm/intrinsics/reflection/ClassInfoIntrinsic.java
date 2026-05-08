@@ -25,8 +25,8 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.reflection.ReflectionDependencyListener;
 
 public class ClassInfoIntrinsic implements WasmGCIntrinsic {

@@ -16,8 +16,6 @@
 package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmFloatType;
 
 public class WasmFloatBinaryInstruction extends WasmInstruction {
     private WasmFloatType type;

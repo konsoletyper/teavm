@@ -16,7 +16,6 @@
 package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.expression.WasmSignedType;
 
 public class WasmInt31GetInstruction extends WasmInstruction {
     private WasmSignedType signedType;

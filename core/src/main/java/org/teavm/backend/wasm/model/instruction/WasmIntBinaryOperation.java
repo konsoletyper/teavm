@@ -13,17 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.intrinsics;
+package org.teavm.backend.wasm.model.instruction;
 
-import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
-import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
-
-public class WasmGCResourcesIntrinsic implements WasmGCIntrinsic {
-    @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context,
-            WasmInstructionBuilder builder) {
-        context.generate(builder, invocation.getArguments().get(0));
-        builder.loadI32(1, 0, WasmInt32Subtype.UINT8);
-    }
+public enum WasmIntBinaryOperation {
+    ADD,
+    SUB,
+    MUL,
+    DIV_SIGNED,
+    DIV_UNSIGNED,
+    REM_SIGNED,
+    REM_UNSIGNED,
+    OR,
+    AND,
+    XOR,
+    SHL,
+    SHR_SIGNED,
+    SHR_UNSIGNED,
+    ROTL,
+    ROTR,
+    EQ,
+    NE,
+    LT_SIGNED,
+    LT_UNSIGNED,
+    LE_SIGNED,
+    LE_UNSIGNED,
+    GT_SIGNED,
+    GT_UNSIGNED,
+    GE_SIGNED,
+    GE_UNSIGNED
 }

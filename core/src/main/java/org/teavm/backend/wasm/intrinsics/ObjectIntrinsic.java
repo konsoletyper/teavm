@@ -18,10 +18,10 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 import org.teavm.model.ValueType;
 
 public class ObjectIntrinsic implements WasmGCIntrinsic {

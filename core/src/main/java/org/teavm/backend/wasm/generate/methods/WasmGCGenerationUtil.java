@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.model.ValueType;
 
 public final class WasmGCGenerationUtil {

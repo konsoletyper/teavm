@@ -21,7 +21,7 @@ import java.util.Map;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.intrinsics.reflection.ReflectionIntrinsics;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCResources;
 import org.teavm.common.ServiceRepository;

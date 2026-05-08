@@ -30,7 +30,7 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
+import org.teavm.backend.wasm.model.instruction.WasmExternConversionType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmNullConstantInstruction;

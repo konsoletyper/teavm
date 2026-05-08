@@ -15,11 +15,6 @@
  */
 package org.teavm.backend.wasm.model.instruction;
 
-import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
-
 public final class WasmInstructionUtil {
     private WasmInstructionUtil() {
     }

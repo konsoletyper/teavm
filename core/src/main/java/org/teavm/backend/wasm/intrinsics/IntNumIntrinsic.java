@@ -18,10 +18,10 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.model.WasmNumType;
-import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmIntUnaryOperation;
 import org.teavm.model.MethodReference;
 
 public class IntNumIntrinsic implements WasmGCIntrinsic {

@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.model.instruction;
 
 import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCastCondition;
 
 public class WasmCastBranchInstruction extends WasmInstruction {
     private WasmCastCondition condition;
