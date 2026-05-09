@@ -182,9 +182,6 @@ public class WasmDefaultInstructionVisitor implements WasmInstructionVisitor {
     @Override
     public void visit(WasmTry instruction) {
         visitMany(instruction.getBody());
-        for (var catchClause : instruction.getCatches()) {
-            visitMany(catchClause);
-        }
     }
 
     @Override

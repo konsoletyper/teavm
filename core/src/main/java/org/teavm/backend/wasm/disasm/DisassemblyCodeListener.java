@@ -112,6 +112,38 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     }
 
     @Override
+    public int tryTable(WasmHollowBlockType type) {
+        writer.address();
+        var label = blockIdGen++;
+        writer.startLinkTarget("start" + currentFunctionId + "-" + label)
+                .startLink("end" + currentFunctionId + "-" + label).write("try_table").endLink().endLinkTarget();
+        writer.write(" $label_" + label);
+        if (type != null) {
+            writer.write(" ");
+            writeBlockType(type);
+        }
+        writer.indent().eol();
+        return label;
+    }
+
+    @Override
+    public void catchTag(int tagIndex, boolean withRef, int depth, int target) {
+        writer.address();
+        writer.write("(").write(withRef ? "catch_ref" : "catch");
+        writer.write(" ").write(String.valueOf(tagIndex));
+        writer.write(" ").startLink("start" + currentFunctionId + "-" + target).write("$label_" + target).endLink();
+        writer.write(")").eol();
+    }
+
+    @Override
+    public void catchAll(boolean withRef, int depth, int target) {
+        writer.address();
+        writer.write("(").write(withRef ? "catch_all_ref" : "catch_all");
+        writer.write(" ").startLink("start" + currentFunctionId + "-" + target).write("$label_" + target).endLink();
+        writer.write(")").eol();
+    }
+
+    @Override
     public void endBlock(int token, boolean loop) {
         writer.address().outdent();
         writer.startLinkTarget("end" + currentFunctionId + "-" + token)
@@ -203,6 +235,9 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
                 break;
             case ANY_TO_EXTERN:
                 writer.write("extern.convert_any");
+                break;
+            case THROW_REF:
+                writer.write("throw_ref");
                 break;
         }
         writer.eol();

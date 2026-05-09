@@ -125,6 +125,10 @@ public class Fiber {
         fiber.push(new PlatformFunctionWrapper(value));
     }
 
+    public static void reversePush(PlatformException value, Fiber fiber) {
+        fiber.push(new PlatformExceptionWrapper(value));
+    }
+
     @Unmanaged
     public int popInt() {
         return intValues[--intTop];
@@ -159,6 +163,11 @@ public class Fiber {
 
     public PlatformFunction popPlatformFunction() {
         var wrapper = (PlatformFunctionWrapper) popObject();
+        return wrapper.object;
+    }
+
+    public PlatformException popPlatformException() {
+        var wrapper = (PlatformExceptionWrapper) popObject();
         return wrapper.object;
     }
 
@@ -369,9 +378,20 @@ public class Fiber {
         }
     }
 
+    public static class PlatformExceptionWrapper {
+        public final PlatformException object;
+
+        PlatformExceptionWrapper(PlatformException object) {
+            this.object = object;
+        }
+    }
+
     public static class PlatformObject {
     }
 
     public static class PlatformFunction {
+    }
+
+    public static class PlatformException {
     }
 }

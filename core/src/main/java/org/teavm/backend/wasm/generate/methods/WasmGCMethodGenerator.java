@@ -44,9 +44,9 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.instruction.WasmBreak;
 import org.teavm.backend.wasm.model.instruction.WasmCatchClause;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
-import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmUnreachable;
 import org.teavm.backend.wasm.transformation.CoroutineTransformation;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
@@ -409,10 +409,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         addInitializerErase(method, function);
         var visitor = new WasmGCInstructionGenerationVisitor(getGenerationContext(), method.getReference(),
                 function, firstVar, isSuspend, typeInference, asyncSplitMethods);
-        //visitor.setCompactMode(methodCompact);
-        var target = function.getBody();
-        target = wrapSynchronizedMethod(method, visitor, function, target);
-        visitor.generate(ast.getBody(), target);
+        wrapSynchronizedMethod(method, visitor, function, ast);
+
         if (isSuspend) {
             if (coroutineTransformation == null) {
                 coroutineTransformation = new CoroutineTransformation(functionTypes, this, classInfoProvider);
@@ -421,33 +419,34 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         }
     }
 
-    private WasmInstructionList wrapSynchronizedMethod(MethodHolder method, WasmGCInstructionGenerationVisitor visitor,
-            WasmFunction function, WasmInstructionList target) {
+    private void wrapSynchronizedMethod(MethodHolder method, WasmGCInstructionGenerationVisitor visitor,
+            WasmFunction function, RegularMethodNode ast) {
         if (!method.hasModifier(ElementModifier.SYNCHRONIZED)) {
-            return target;
+            visitor.generate(ast.getBody(), function.getBody());
+            return;
         }
 
-        var builder = target.builder();
+        var builder = function.getBody().builder();
         generateMonitor(method, function, builder);
         visitor.monitorEnter(builder);
 
-        var tryCatch = builder.try_(function.getType().getSingleReturnType());
-        var catchClause = new WasmCatchClause(context.getExceptionTag());
-        tryCatch.getCatches().add(catchClause);
+        var catchBlock = builder.block(function.getType().getSingleReturnType());
+        var tryWrapper = catchBlock.block(WasmType.EXN);
 
-        var catchBuilder = catchClause.builder();
-        catchBuilder.typeInference.typeStack.add(context.classInfoProvider().getClassInfo("java.lang.Throwable")
-                .getType());
-        generateMonitor(method, function, catchBuilder);
-        visitor.monitorExit(catchBuilder);
-        catchBuilder.throw_(context.getExceptionTag());
+        var tryCatch = tryWrapper.try_();
+        tryCatch.getCatches().add(new WasmCatchClause(null, true, tryWrapper.list));
+        visitor.setReturnBlock(catchBlock.list);
+        visitor.generate(ast.getBody(), tryCatch.getBody());
+        tryCatch.getBody().add(new WasmBreak(catchBlock.list));
+        tryWrapper.unreachable();
+
+        catchBlock.typeInference.typeStack.add(WasmType.EXN);
+        generateMonitor(method, function, catchBlock);
+        visitor.monitorExit(catchBlock);
+        catchBlock.throw_(null);
 
         generateMonitor(method, function, builder);
         visitor.monitorExit(builder);
-
-        visitor.setReturnBlock(tryCatch.getBody());
-
-        return tryCatch.getBody();
     }
 
     private void generateMonitor(MethodHolder method, WasmFunction function, WasmInstructionBuilder builder) {

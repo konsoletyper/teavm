@@ -99,7 +99,6 @@ import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
-import org.teavm.backend.wasm.model.instruction.WasmTry;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
@@ -1618,22 +1617,24 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
 
         var oldBuilder = builder;
 
-        var tryInsn = new WasmTry();
         var buildersToClose = new ArrayList<WasmInstructionBuilder>();
-        Consumer<WasmType> typeConsumer = tryInsn::setType;
+        var throwableType = (WasmType.Reference) context.typeMapper().mapType(ValueType.object("java.lang.Throwable"));
+        var dispatchBlock = new WasmBlock(false);
+        var dispatchBlockBuilder = dispatchBlock.getBody().builder();
+        var tryWrapper = dispatchBlockBuilder.block(throwableType);
+        var tryInsn = tryWrapper.try_();
+        tryWrapper.unreachable();
         builder = tryInsn.getBody().builder();
         for (var part : statement.getProtectedBody()) {
             part.acceptVisitor(this);
         }
-        var catchClause = new WasmCatchClause(context.getExceptionTag());
-        tryInsn.getCatches().add(catchClause);
+        tryInsn.getCatches().add(new WasmCatchClause(context.getExceptionTag(), false, tryWrapper.list));
         buildersToClose.add(builder);
 
-        var throwableType = (WasmType.Reference) context.typeMapper().mapType(ValueType.object("java.lang.Throwable"));
-        var catchClauseBuilder = catchClause.builder();
-        catchClauseBuilder.typeInference.typeStack.add(throwableType);
+        Consumer<WasmType> typeConsumer = t -> dispatchBlock.setType(t != null ? t.asBlock() : null);
+        builder = dispatchBlockBuilder;
 
-        WasmInstructionList innerInsnList = tryInsn.getBody();
+        WasmInstructionList innerInsnList = dispatchBlock.getBody();
         for (var tryCatchStmt : tryCatchStatements) {
             var exType = tryCatchStmt.getExceptionType();
             if (exType == null) {
@@ -1644,7 +1645,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             var catchBlock = new WasmBlock(false);
             catchBlock.getBody().add(innerInsnList.getBreakTarget());
 
-            catchClauseBuilder.castBranch(WasmCastCondition.SUCCESS, throwableType, exceptionType, innerInsnList);
+            dispatchBlockBuilder.castBranch(WasmCastCondition.SUCCESS, throwableType, exceptionType, innerInsnList);
 
             builder = catchBlock.getBody().builder();
             builder.typeInference.typeStack.add(exceptionType);
@@ -1661,7 +1662,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             innerInsnList = catchBlock.getBody();
             typeConsumer = t -> catchBlock.setType(t != null ? t.asBlock() : null);
         }
-        catchClauseBuilder.throw_(context.getExceptionTag());
+        dispatchBlockBuilder.throw_(context.getExceptionTag());
 
         for (var i = 0; i < buildersToClose.size(); i++) {
             buildersToClose.get(i).breakTo(innerInsnList);

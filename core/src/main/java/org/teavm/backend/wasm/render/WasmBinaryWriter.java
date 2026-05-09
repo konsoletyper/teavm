@@ -77,6 +77,9 @@ public class WasmBinaryWriter {
             case STRUCT:
                 writeByte(0x6b);
                 break;
+            case EXN:
+                writeByte(0x69);
+                break;
             case ARRAY:
                 writeByte(0x6a);
                 break;

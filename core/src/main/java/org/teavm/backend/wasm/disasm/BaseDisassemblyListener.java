@@ -97,6 +97,9 @@ public abstract class BaseDisassemblyListener  {
                         case STRUCT:
                             writer.write("structref");
                             return;
+                        case EXN:
+                            writer.write("exnref");
+                            return;
                         case I31:
                             writer.write("i31ref");
                             return;
@@ -123,6 +126,9 @@ public abstract class BaseDisassemblyListener  {
                             break;
                         case STRUCT:
                             writer.write("struct");
+                            break;
+                        case EXN:
+                            writer.write("exn");
                             break;
                         case I31:
                             writer.write("i31");

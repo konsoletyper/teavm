@@ -28,6 +28,8 @@ public class WasmGCAsyncTypeMapperFactory implements WasmGCCustomTypeMapperFacto
                 return WasmType.ANY;
             } else if (className.equals("org.teavm.runtime.Fiber$PlatformFunction")) {
                 return WasmType.FUNC;
+            } else if (className.equals("org.teavm.runtime.Fiber$PlatformException")) {
+                return WasmType.EXN;
             }
             return null;
         };

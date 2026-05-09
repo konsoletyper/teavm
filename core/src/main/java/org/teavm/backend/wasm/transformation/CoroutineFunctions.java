@@ -39,6 +39,7 @@ class CoroutineFunctions {
     private WasmFunction pushDoubleCache;
     private WasmFunction pushObjectCache;
     private WasmFunction pushFunctionCache;
+    private WasmFunction pushExceptionCache;
 
     private WasmFunction popIntCache;
     private WasmFunction popLongCache;
@@ -46,6 +47,7 @@ class CoroutineFunctions {
     private WasmFunction popDoubleCache;
     private WasmFunction popObjectCache;
     private WasmFunction popFunctionCache;
+    private WasmFunction popExceptionCache;
 
     private WasmFunction isResumingCache;
     private WasmFunction isSuspendingCache;
@@ -104,6 +106,14 @@ class CoroutineFunctions {
         return pushFunctionCache;
     }
 
+    WasmFunction pushPlatformException() {
+        if (pushExceptionCache == null) {
+            pushExceptionCache = functions.forStaticMethod(new MethodReference(Fiber.class, "reversePush",
+                    Fiber.PlatformException.class, Fiber.class, void.class));
+        }
+        return pushExceptionCache;
+    }
+
     WasmFunction popInt() {
         if (popIntCache == null) {
             popIntCache = functions.forInstanceMethod(new MethodReference(Fiber.class, "popInt", int.class));
@@ -146,6 +156,14 @@ class CoroutineFunctions {
                     Fiber.PlatformFunction.class));
         }
         return popFunctionCache;
+    }
+
+    WasmFunction popPlatformException() {
+        if (popExceptionCache == null) {
+            popExceptionCache = functions.forInstanceMethod(new MethodReference(Fiber.class, "popPlatformException",
+                    Fiber.PlatformException.class));
+        }
+        return popExceptionCache;
     }
 
     WasmFunction isResuming() {
@@ -199,6 +217,9 @@ class CoroutineFunctions {
                     case FUNC:
                         target.add(new WasmCall(popPlatformFunction()), location);
                         break;
+                    case EXN:
+                        target.add(new WasmCall(popPlatformException()), location);
+                        break;
                     default:
                         target.add(new WasmCall(popPlatformObject()), location);
                         break;
@@ -244,6 +265,10 @@ class CoroutineFunctions {
                     case FUNC:
                         list.add(new WasmGetLocal(fiberLocal), location);
                         list.add(new WasmCall(pushPlatformFunction()), location);
+                        return;
+                    case EXN:
+                        list.add(new WasmGetLocal(fiberLocal), location);
+                        list.add(new WasmCall(pushPlatformException()), location);
                         return;
                 }
             } else if (type instanceof WasmType.CompositeReference) {

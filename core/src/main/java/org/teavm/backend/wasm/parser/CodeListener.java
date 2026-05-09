@@ -48,6 +48,16 @@ public interface CodeListener {
     default void startCatch(int tagIndex) {
     }
 
+    default int tryTable(WasmHollowBlockType type) {
+        return 0;
+    }
+
+    default void catchTag(int tagIndex, boolean withRef, int depth, int target) {
+    }
+
+    default void catchAll(boolean withRef, int depth, int target) {
+    }
+
     default void endBlock(int token, boolean loop) {
     }
 

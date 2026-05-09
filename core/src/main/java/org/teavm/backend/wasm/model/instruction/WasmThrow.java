@@ -15,14 +15,13 @@
  */
 package org.teavm.backend.wasm.model.instruction;
 
-import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmTag;
 
 public class WasmThrow extends WasmInstruction {
     private WasmTag tag;
 
     public WasmThrow(WasmTag tag) {
-        this.tag = Objects.requireNonNull(tag);
+        this.tag = tag;
     }
 
     public WasmTag getTag() {
@@ -30,7 +29,7 @@ public class WasmThrow extends WasmInstruction {
     }
 
     public void setTag(WasmTag tag) {
-        this.tag = Objects.requireNonNull(tag);
+        this.tag = tag;
     }
 
     @Override

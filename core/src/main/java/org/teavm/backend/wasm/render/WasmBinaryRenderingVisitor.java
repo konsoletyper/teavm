@@ -939,16 +939,29 @@ class WasmBinaryRenderingVisitor implements WasmInstructionVisitor {
     @Override
     public void visit(WasmTry instruction) {
         emitLocation(instruction);
-        writer.writeByte(0x06);
+        writer.writeByte(0x1F);
         writer.writeType(instruction.getType(), module);
+        writer.writeLEB(instruction.getCatches().size());
+        for (var catchClause : instruction.getCatches()) {
+            if (catchClause.getTag() != null) {
+                if (!catchClause.isRef()) {
+                    writer.writeByte(0x00);
+                } else {
+                    writer.writeByte(0x01);
+                }
+                writer.writeLEB(catchClause.getTag().getIndex());
+            } else {
+                if (!catchClause.isRef()) {
+                    writer.writeByte(0x02);
+                } else {
+                    writer.writeByte(0x03);
+                }
+            }
+            writeLabel(instruction, catchClause.getTarget());
+        }
         ++depth;
         blockDepths.put(instruction, depth);
         render(instruction.getBody());
-        for (var catchClause : instruction.getCatches()) {
-            writer.writeByte(0x07);
-            writer.writeLEB(catchClause.getTag().getIndex());
-            render(catchClause);
-        }
         blockDepths.remove(instruction);
         --depth;
         writer.writeByte(0x0B);
@@ -957,8 +970,12 @@ class WasmBinaryRenderingVisitor implements WasmInstructionVisitor {
     @Override
     public void visit(WasmThrow instruction) {
         emitLocation(instruction);
-        writer.writeByte(0x08);
-        writer.writeLEB(instruction.getTag().getIndex());
+        if (instruction.getTag() != null) {
+            writer.writeByte(0x08);
+            writer.writeLEB(instruction.getTag().getIndex());
+        } else {
+            writer.writeByte(0x0A);
+        }
     }
 
     @Override

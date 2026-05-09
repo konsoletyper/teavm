@@ -109,6 +109,8 @@ public class WasmBinaryReader {
                 return special(WasmType.SpecialReferenceKind.STRUCT, nullable);
             case 0x6A:
                 return special(WasmType.SpecialReferenceKind.ARRAY, nullable);
+            case 0x69:
+                return special(WasmType.SpecialReferenceKind.EXN, nullable);
             default:
                 throw new ParseException("Unknown type", ptr);
         }

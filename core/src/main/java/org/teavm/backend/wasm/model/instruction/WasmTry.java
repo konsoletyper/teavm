@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.model.instruction;
 
-import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.wasm.model.WasmType;
@@ -23,35 +22,7 @@ import org.teavm.backend.wasm.model.WasmType;
 public class WasmTry extends WasmInstruction {
     private WasmType type;
     private WasmInstructionList body = new WasmInstructionList(this);
-    private List<WasmCatchClause> catchesStorage = new ArrayList<>();
-
-    private List<WasmCatchClause> catches = new AbstractList<>() {
-        @Override
-        public void add(int index, WasmCatchClause clause) {
-            if (clause.breakTarget != null) {
-                throw new IllegalArgumentException("Catch clause is already mounted to another try block");
-            }
-            clause.breakTarget = WasmTry.this;
-            catchesStorage.add(clause);
-        }
-
-        @Override
-        public WasmCatchClause remove(int index) {
-            var result = catchesStorage.remove(index);
-            result.breakTarget = null;
-            return result;
-        }
-
-        @Override
-        public int size() {
-            return catchesStorage.size();
-        }
-
-        @Override
-        public WasmCatchClause get(int index) {
-            return catchesStorage.get(index);
-        }
-    };
+    private List<WasmCatchClause> catches = new ArrayList<>();
 
     public WasmInstructionList getBody() {
         return body;
