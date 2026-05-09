@@ -78,23 +78,38 @@ function processRequest(event, processor) {
 
 async function appendFiles(files) {
     for (const file of files) {
-        if (file.type === "module") {
-            const module = await import("./" + file.path);
-            window.main = module.main;
-        } else {
-            let script = document.createElement("script");
-            let promise = new Promise((resolve, reject) => {
-                script.onload = () => {
-                    resolve();
-                };
-                script.onerror = () => {
-                    reject(new Error("failed to load script " + file.path));
-                };
-            })
-            script.src = file.path;
-            document.body.appendChild(script);
-            await promise;
+        let leftAttempts = 5;
+        while (true) {
+            try {
+                await appendFileSingleAttempt(file);
+                break;
+            } catch (e) {
+                if (--leftAttempts === 0) {
+                    throw e;
+                }
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
         }
+    }
+}
+
+async function appendFileSingleAttempt(file) {
+    if (file.type === "module") {
+        const module = await import("./" + file.path);
+        window.main = module.main;
+    } else {
+        let script = document.createElement("script");
+        let promise = new Promise((resolve, reject) => {
+            script.onload = () => {
+                resolve();
+            };
+            script.onerror = () => {
+                reject(new Error("failed to load script " + file.path));
+            };
+        })
+        script.src = file.path;
+        document.body.appendChild(script);
+        await promise;
     }
 }
 
