@@ -29,6 +29,7 @@ configurations {
 dependencies {
     "teavm"(project(":jso:impl"))
     compileOnly(project(":interop:core"))
+    compileOnly(libs.jetbrains.annotations)
 }
 
 teavmPublish {

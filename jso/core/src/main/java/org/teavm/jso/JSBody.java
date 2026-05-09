@@ -19,6 +19,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.intellij.lang.annotations.Language;
 
 /**
  * <p>Indicates that method is to have native JavaScript implementation.
@@ -132,6 +133,7 @@ public @interface JSBody {
     /**
      * <p>JavaScript code.</p>
      */
+    @Language("JavaScript")
     String script();
 
     JSBodyImport[] imports() default {};

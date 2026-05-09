@@ -53,6 +53,8 @@ kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializat
 
 jreleaser = { module = "org.jreleaser:org.jreleaser.gradle.plugin", version.ref = "jreleaser"}
 
+jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.0.2" }
+
 [libraries.maven-plugin-tools-api]
 module = "org.apache.maven.plugin-tools:maven-plugin-tools-api"
 version.ref = "maven-tools"
