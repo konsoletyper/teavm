@@ -16,6 +16,7 @@
 package org.teavm.jso.impl.wasmgc;
 
 import org.teavm.interop.Import;
+import org.teavm.interop.Intrinsified;
 import org.teavm.jso.JSObject;
 
 final class WasmGCJSRuntime {
@@ -92,6 +93,7 @@ final class WasmGCJSRuntime {
     @Import(name = "appendToArray", module = "teavmJso")
     static native JSObject appendToArray(JSObject array, JSObject element);
 
+    @Intrinsified
     static native JSObject wrapObject(Object obj);
 
     static Throwable wrapException(JSObject obj) {
@@ -103,16 +105,21 @@ final class WasmGCJSRuntime {
     }
 
     static final class CharArrayData {
+        @Intrinsified
         static native CharArrayData of(String s);
 
+        @Intrinsified
         native String asString();
 
+        @Intrinsified
         static native CharArrayData create(int size);
 
+        @Intrinsified
         native void put(int index, char code);
     }
 
     static final class NonNullExternal {
+        @Intrinsified
         native JSObject toNullable();
     }
 }

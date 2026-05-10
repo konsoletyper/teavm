@@ -17,11 +17,15 @@ package org.teavm.interop;
 
 @Unmanaged
 public class Structure {
+    @Intrinsified
     public final native <T extends Structure> T cast();
 
+    @Intrinsified
     public final native Address toAddress();
 
+    @Intrinsified
     public static native int sizeOf(Class<? extends Structure> type);
 
+    @Intrinsified
     public static native <T extends Structure> T add(Class<T> type, T base, int offset);
 }

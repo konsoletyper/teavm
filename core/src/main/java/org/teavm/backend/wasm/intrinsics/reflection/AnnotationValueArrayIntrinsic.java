@@ -16,17 +16,24 @@
 package org.teavm.backend.wasm.intrinsics.reflection;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
-import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 
-public class AnnotationValueArrayIntrinsic implements WasmGCIntrinsic {
+public class AnnotationValueArrayIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+
+    public AnnotationValueArrayIntrinsic(WasmGCClassInfoProvider classInfoProvider) {
+        this.classInfoProvider = classInfoProvider;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "size":
                 context.generate(builder, invocation.getArguments().get(0));
@@ -55,8 +62,7 @@ public class AnnotationValueArrayIntrinsic implements WasmGCIntrinsic {
                 get(invocation, context, builder, WasmType.FLOAT64.asStorage(), null);
                 break;
             case "getClass": {
-                var type = context.classInfoProvider().reflectionTypes().derivedClassInfo().structure()
-                        .getReference();
+                var type = classInfoProvider.reflectionTypes().derivedClassInfo().structure().getReference();
                 get(invocation, context, builder, type.asStorage(), null);
                 break;
             }
@@ -64,7 +70,7 @@ public class AnnotationValueArrayIntrinsic implements WasmGCIntrinsic {
                 get(invocation, context, builder, WasmStorageType.INT16, WasmSignedType.SIGNED);
                 break;
             case "getString": {
-                var type = context.classInfoProvider().getClassInfo("java.lang.String").getType();
+                var type = classInfoProvider.getClassInfo("java.lang.String").getType();
                 get(invocation, context, builder, type.asStorage(), null);
                 break;
             }
@@ -76,9 +82,9 @@ public class AnnotationValueArrayIntrinsic implements WasmGCIntrinsic {
         }
     }
 
-    private void get(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void get(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder, WasmStorageType type, WasmSignedType signedType) {
-        WasmArray array = context.classInfoProvider().reflectionTypes().arrayTypeOf(type);
+        var array = classInfoProvider.reflectionTypes().arrayTypeOf(type);
         context.generate(builder, invocation.getArguments().get(0));
         builder.cast(array.getReference());
         context.generate(builder, invocation.getArguments().get(1));

@@ -17,6 +17,8 @@ package org.teavm.backend.lowlevel.transform;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import org.teavm.interop.Intrinsified;
+import org.teavm.model.AnnotationHolder;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
@@ -39,6 +41,7 @@ public class WeakReferenceTransformation implements ClassHolderTransformer {
         for (MethodHolder method : cls.getMethods()) {
             method.setProgram(null);
             method.getModifiers().add(ElementModifier.NATIVE);
+            method.getAnnotations().add(new AnnotationHolder(Intrinsified.class.getName()));
         }
     }
 }

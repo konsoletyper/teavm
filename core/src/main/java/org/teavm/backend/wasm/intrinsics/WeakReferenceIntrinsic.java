@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generators;
+package org.teavm.backend.wasm.intrinsics;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -25,90 +25,81 @@ import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class WeakReferenceGenerator implements WasmGCCustomGenerator {
+public class WeakReferenceIntrinsic implements WasmGCBodyIntrinsic {
+    private WasmGCCodeGenContext context;
     private WasmFunction createWeakReferenceFunction;
 
+    public WeakReferenceIntrinsic(WasmGCCodeGenContext context) {
+        this.context = context;
+    }
+
     @Override
-    public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
+    public void apply(MethodReference method, WasmFunction function) {
         switch (method.getName()) {
             case "<init>":
-                generateConstructor(context, function);
+                generateConstructor(function);
                 break;
             case "get":
-                generateDeref(context, function);
+                generateDeref(function);
                 break;
             case "clear":
-                generateClear(context, function);
+                generateClear(function);
                 break;
         }
     }
 
-    private void generateConstructor(WasmGCCustomGeneratorContext context, WasmFunction function) {
+    private void generateConstructor(WasmFunction function) {
         var weakRefStruct = context.classInfoProvider().getClassInfo(WeakReference.class.getName()).getStructure();
-        var thisLocal = new WasmLocal(context.isCompactMode()
-                ? WasmType.ANY
-                : weakRefStruct.getReference(), "this");
+        var thisLocal = new WasmLocal(weakRefStruct.getReference(), "this");
         var valueLocal = new WasmLocal(context.typeMapper().mapType(ValueType.parse(Object.class)), "value");
         var queueLocal = new WasmLocal(context.typeMapper().mapType(ValueType.parse(ReferenceQueue.class)), "queue");
         function.add(thisLocal);
         function.add(valueLocal);
         function.add(queueLocal);
 
-        var weakRefConstructor = getCreateWeakReferenceFunction(context);
+        var weakRefConstructor = getCreateWeakReferenceFunction();
         var body = function.getBody().builder();
         body.getLocal(thisLocal);
-        if (context.isCompactMode()) {
-            body.cast(weakRefStruct.getReference());
-        }
 
         body.getLocal(valueLocal);
         body.getLocal(thisLocal);
-        if (context.isCompactMode()) {
-            body.cast(weakRefStruct.getReference());
-        }
         body.getLocal(queueLocal);
         body.call(weakRefConstructor);
         body.structSet(weakRefStruct, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET);
     }
 
-    private void generateDeref(WasmGCCustomGeneratorContext context, WasmFunction function) {
+    private void generateDeref(WasmFunction function) {
         var weakRefStruct = context.classInfoProvider().getClassInfo(WeakReference.class.getName()).getStructure();
         var objectType = context.classInfoProvider().getClassInfo("java.lang.Object").getType();
-        var thisType = context.isCompactMode() ? WasmType.ANY : weakRefStruct.getReference();
+        var thisType =  weakRefStruct.getReference();
         var thisLocal = new WasmLocal(thisType, "this");
         function.add(thisLocal);
 
         var body = function.getBody().builder();
         var block = body.block(WasmType.EXTERN);
         block.getLocal(thisLocal);
-        if (context.isCompactMode()) {
-            block.cast(weakRefStruct.getReference());
-        }
         block
                 .structGet(weakRefStruct, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET)
                 .nullBranch(WasmNullCondition.NOT_NULL, block)
                 .nullConst(objectType)
                 .return_();
-        body.call(createDerefFunction(context));
+        body.call(createDerefFunction());
     }
 
-    private void generateClear(WasmGCCustomGeneratorContext context, WasmFunction function) {
+    private void generateClear(WasmFunction function) {
         var weakRefStruct = context.classInfoProvider().getClassInfo(WeakReference.class.getName()).getStructure();
-        var thisType = context.isCompactMode() ? WasmType.ANY : weakRefStruct.getReference();
+        var thisType = weakRefStruct.getReference();
         var thisLocal = new WasmLocal(thisType, "this");
         function.add(thisLocal);
 
         var body = function.getBody().builder();
         body.getLocal(thisLocal);
-        if (context.isCompactMode()) {
-            body.cast(weakRefStruct.getReference());
-        }
         body
                 .nullConst(WasmType.EXTERN)
                 .structSet(weakRefStruct, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET);
     }
 
-    private WasmFunction getCreateWeakReferenceFunction(WasmGCCustomGeneratorContext context) {
+    private WasmFunction getCreateWeakReferenceFunction() {
         if (createWeakReferenceFunction == null) {
             var function = new WasmFunction(context.functionTypes().of(
                     WasmType.EXTERN,
@@ -125,7 +116,7 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         return createWeakReferenceFunction;
     }
 
-    private WasmFunction createDerefFunction(WasmGCCustomGeneratorContext context) {
+    private WasmFunction createDerefFunction() {
         var function = new WasmFunction(context.functionTypes().of(
                 context.typeMapper().mapType(ValueType.parse(Object.class)),
                 WasmType.EXTERN));

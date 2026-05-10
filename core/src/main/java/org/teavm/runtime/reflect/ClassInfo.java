@@ -15,6 +15,7 @@
  */
 package org.teavm.runtime.reflect;
 
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.StringInfo;
 
@@ -33,74 +34,100 @@ public final class ClassInfo extends ReflectionInfo {
     }
 
     @Unmanaged
+    @Intrinsified
     public native int modifiers();
 
     @Unmanaged
+    @Intrinsified
     public native int primitiveKind();
 
     @Unmanaged
+    @Intrinsified
     public native StringInfo name();
 
     @Unmanaged
+    @Intrinsified
     public native StringInfo simpleName();
 
     @Unmanaged
+    @Intrinsified
     public native ClassInfo itemType();
 
     @Unmanaged
+    @Intrinsified
     public native ClassInfo arrayType();
 
     @Unmanaged
+    @Intrinsified
     public native ClassInfo declaringClass();
 
     @Unmanaged
+    @Intrinsified
     public native ClassInfo enclosingClass();
 
     @Unmanaged
+    @Intrinsified
     public native boolean isSuperTypeOf(ClassInfo subtype);
 
     @Unmanaged
+    @Intrinsified
     public native ClassInfo parent();
 
     @Unmanaged
+    @Intrinsified
     public native int superinterfaceCount();
 
     @Unmanaged
+    @Intrinsified
     public native ClassInfo superinterface(int index);
 
     @Unmanaged
+    @Intrinsified
     public native int enumConstantCount();
 
     @Unmanaged
+    @Intrinsified
     public native Object enumConstant(int index);
-    
+
+    @Intrinsified
     public native Object newArrayInstance(int index);
 
     @Unmanaged
+    @Intrinsified
     public native void putItem(Object array, int index, Object value);
 
+    @Intrinsified
     public native Object getItem(Object array, int index);
 
     @Unmanaged
+    @Intrinsified
     public native int arrayLength(Object array);
 
+    @Intrinsified
     public native Object newInstance();
 
+    @Intrinsified
     public native boolean initializeNewInstance(Object instance);
 
+    @Intrinsified
     public native void initialize();
 
     @Unmanaged
+    @Intrinsified
     public native ClassReflectionInfo reflection();
 
     @Unmanaged
+    @Intrinsified
     public static native void rewind();
 
     @Unmanaged
+    @Intrinsified
     public static native ClassInfo next();
 
     @Unmanaged
+    @Intrinsified
     public static native boolean hasNext();
 
+    @Intrinsified
     public native Class<?> classObject();
 }

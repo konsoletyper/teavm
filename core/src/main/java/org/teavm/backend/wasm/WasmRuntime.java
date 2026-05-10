@@ -15,110 +15,107 @@
  */
 package org.teavm.backend.wasm;
 
-import org.teavm.interop.StaticInit;
-import org.teavm.interop.Unmanaged;
+import org.teavm.interop.Intrinsified;
 
-@StaticInit
 public final class WasmRuntime {
     private WasmRuntime() {
     }
 
-    @Unmanaged
+    @Intrinsified
     public static int compare(int a, int b) {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static int compareUnsigned(int a, int b) {
         return gtu(a, b) ? 1 : ltu(a, b) ? -1 : 0;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static int compareUnsigned(long a, long b) {
         return gtu(a, b) ? 1 : ltu(a, b) ? -1 : 0;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static int compare(long a, long b) {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static int compare(float a, float b) {
         return a == b ? 0 : lt(a, b) ? -1 : 1;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static int compareLess(float a, float b) {
         return a == b ? 0 : gt(a, b) ? 1 : -1;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static int compare(double a, double b) {
         return a == b ? 0 : lt(a, b) ? -1 : 1;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static int compareLess(double a, double b) {
         return a == b ? 0 : gt(a, b) ? 1 : -1;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static native float min(float a, float b);
 
-    @Unmanaged
+    @Intrinsified
     public static native double min(double a, double b);
 
-    @Unmanaged
+    @Intrinsified
     public static native float max(float a, float b);
 
-    @Unmanaged
+    @Intrinsified
     public static native double max(double a, double b);
 
-    @Unmanaged
+    @Intrinsified
     public static float remainder(float a, float b) {
         return a - (float) (int) (a / b) * b;
     }
 
-    @Unmanaged
+    @Intrinsified
     public static double remainder(double a, double b) {
         return a - (double) (long) (a / b) * b;
     }
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean lt(int a, int b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean gt(int a, int b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean ltu(int a, int b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean gtu(int a, int b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean lt(long a, long b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean gt(long a, long b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean ltu(long a, long b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean gtu(long a, long b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean lt(float a, float b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean gt(float a, float b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean lt(double a, double b);
 
-    @Unmanaged
+    @Intrinsified
     private static native boolean gt(double a, double b);
-
 }

@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.NativeAsync;
 import org.teavm.jso.browser.Window;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -43,6 +44,7 @@ public class WasmAsyncTest {
 
     @Async
     @NativeAsync
+    @Intrinsified
     private static native int generatedMethod(int n);
     
     @Async

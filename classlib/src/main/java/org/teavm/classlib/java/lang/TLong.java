@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
 import java.util.Objects;
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.NoSideEffects;
 
 public class TLong extends TNumber implements TComparable<TLong> {
@@ -414,14 +415,17 @@ public class TLong extends TNumber implements TComparable<TLong> {
 
     @GeneratedBy(LongNativeGenerator.class)
     @NoSideEffects
+    @Intrinsified
     public static native long divideUnsigned(long dividend, long divisor);
 
     @GeneratedBy(LongNativeGenerator.class)
     @NoSideEffects
+    @Intrinsified
     public static native long remainderUnsigned(long dividend, long divisor);
 
     @GeneratedBy(LongNativeGenerator.class)
     @NoSideEffects
+    @Intrinsified
     public static native int compareUnsigned(long a, long b);
     
     public static long min(long a, long b) {

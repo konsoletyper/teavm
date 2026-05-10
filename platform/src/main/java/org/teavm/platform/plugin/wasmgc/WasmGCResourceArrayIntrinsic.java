@@ -16,17 +16,25 @@
 package org.teavm.platform.plugin.wasmgc;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
 import org.teavm.platform.metadata.ResourceArray;
 
-public class WasmGCResourceArrayIntrinsic implements WasmGCIntrinsic {
+public class WasmGCResourceArrayIntrinsic implements WasmGCInlineIntrinsic {
+    private WasmGCTypeMapper typeMapper;
+
+    public WasmGCResourceArrayIntrinsic(WasmGCTypeMapper typeMapper) {
+        this.typeMapper = typeMapper;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "size":
                 context.generate(builder, invocation.getArguments().get(0));
@@ -35,16 +43,15 @@ public class WasmGCResourceArrayIntrinsic implements WasmGCIntrinsic {
             case "get":
                 context.generate(builder, invocation.getArguments().get(0));
                 context.generate(builder, invocation.getArguments().get(1));
-                builder.arrayGet(getArrayType(context));
+                builder.arrayGet(getArrayType());
                 break;
             default:
                 throw new IllegalArgumentException();
         }
     }
 
-    private WasmArray getArrayType(WasmGCIntrinsicContext context) {
-        var type = (WasmType.CompositeReference) context.typeMapper().mapType(
-                ValueType.object(ResourceArray.class.getName()));
+    private WasmArray getArrayType() {
+        var type = (WasmType.CompositeReference) typeMapper.mapType(ValueType.object(ResourceArray.class.getName()));
         return (WasmArray) type.composite;
     }
 }

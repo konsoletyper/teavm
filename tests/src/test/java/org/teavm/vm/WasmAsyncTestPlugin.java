@@ -16,18 +16,18 @@
 package org.teavm.vm;
 
 import org.teavm.backend.wasm.TeaVMWasmGCHost;
-import org.teavm.model.MethodReference;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 public class WasmAsyncTestPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
-        var gen = new WasmAsyncTestGenerator();
+        var gen = new WasmAsyncTestDependency();
         var wasmGC = host.getExtension(TeaVMWasmGCHost.class);
         if (wasmGC != null) {
-            wasmGC.addGenerator(new MethodReference(WasmAsyncTest.class, "generatedMethod", int.class, 
-                    int.class), gen);
+            wasmGC.contributeToCodeGen((context, registry) -> {
+                registry.bodyIntrinsics().registerIntrinsic(WasmAsyncTest.class, new WasmAsyncTestGenerator(context));
+            });
         }
         host.add(gen);
     }

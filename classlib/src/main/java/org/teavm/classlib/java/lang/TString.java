@@ -35,9 +35,10 @@ import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.classlib.java.util.stream.intimpl.TStringCharsStream;
 import org.teavm.classlib.java.util.stream.intimpl.TStringCodePointsStream;
 import org.teavm.dependency.PluggableDependency;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.NoSideEffects;
 
-public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
+public final class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     private static final char[] EMPTY_CHARS = new char[0];
     private static final TString EMPTY = new TString();
     public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
@@ -872,6 +873,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     @PluggableDependency(StringNativeDependency.class)
     @NoSideEffects
+    @Intrinsified
     public native TString intern();
 
     public boolean matches(String regex) {

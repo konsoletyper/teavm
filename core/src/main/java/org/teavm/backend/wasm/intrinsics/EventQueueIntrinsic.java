@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generators;
+package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -21,9 +21,15 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.EventQueue;
 
-public class EventQueueGenerator implements WasmGCCustomGenerator {
+public class EventQueueIntrinsic implements WasmGCBodyIntrinsic {
+    private WasmGCCodeGenContext context;
+
+    public EventQueueIntrinsic(WasmGCCodeGenContext context) {
+        this.context = context;
+    }
+
     @Override
-    public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
+    public void apply(MethodReference method, WasmFunction function) {
         var eventType = context.classInfoProvider().getClassInfo(EventQueue.Event.class.getName()).getType();
         var eventCallbackType = context.functionTypes().of(null, eventType);
 

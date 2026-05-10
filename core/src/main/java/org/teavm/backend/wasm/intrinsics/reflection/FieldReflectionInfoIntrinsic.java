@@ -16,15 +16,23 @@
 package org.teavm.backend.wasm.intrinsics.reflection;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
-public class FieldReflectionInfoIntrinsic implements WasmGCIntrinsic {
+public class FieldReflectionInfoIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+
+    public FieldReflectionInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider) {
+        this.classInfoProvider = classInfoProvider;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var infoStruct = context.classInfoProvider().reflectionTypes().fieldReflectionInfo();
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        var infoStruct = classInfoProvider.reflectionTypes().fieldReflectionInfo();
         switch (invocation.getMethod().getName()) {
             case "annotationCount":
                 WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
@@ -33,7 +41,7 @@ public class FieldReflectionInfoIntrinsic implements WasmGCIntrinsic {
                 });
                 break;
             case "annotation": {
-                var array = context.classInfoProvider().reflectionTypes().annotationInfo().array();
+                var array = classInfoProvider.reflectionTypes().annotationInfo().array();
                 context.generate(builder, invocation.getArguments().get(0));
                 builder.structGet(infoStruct.structure(), infoStruct.annotationsIndex());
                 context.generate(builder, invocation.getArguments().get(1));

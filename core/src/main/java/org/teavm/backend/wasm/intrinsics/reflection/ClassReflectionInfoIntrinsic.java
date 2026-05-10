@@ -17,22 +17,30 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 
 import java.util.function.ToIntFunction;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.generate.reflection.ClassReflectionInfoStruct;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
-public class ClassReflectionInfoIntrinsic implements WasmGCIntrinsic {
+public class ClassReflectionInfoIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+
+    public ClassReflectionInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider) {
+        this.classInfoProvider = classInfoProvider;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "annotationCount":
                 collectionCount(invocation, context, builder, ClassReflectionInfoStruct::annotationsIndex);
                 break;
             case "annotation": {
-                var array = context.classInfoProvider().reflectionTypes().annotationInfo().array();
+                var array = classInfoProvider.reflectionTypes().annotationInfo().array();
                 collectionElement(invocation, context, builder, array, ClassReflectionInfoStruct::annotationsIndex);
                 break;
             }
@@ -40,7 +48,7 @@ public class ClassReflectionInfoIntrinsic implements WasmGCIntrinsic {
                 collectionCount(invocation, context, builder, ClassReflectionInfoStruct::fieldsIndex);
                 break;
             case "field": {
-                var array = context.classInfoProvider().reflectionTypes().fieldInfo().array();
+                var array = classInfoProvider.reflectionTypes().fieldInfo().array();
                 collectionElement(invocation, context, builder, array, ClassReflectionInfoStruct::fieldsIndex);
                 break;
             }
@@ -48,7 +56,7 @@ public class ClassReflectionInfoIntrinsic implements WasmGCIntrinsic {
                 collectionCount(invocation, context, builder, ClassReflectionInfoStruct::methodsIndex);
                 break;
             case "method": {
-                var array = context.classInfoProvider().reflectionTypes().methodInfo().array();
+                var array = classInfoProvider.reflectionTypes().methodInfo().array();
                 collectionElement(invocation, context, builder, array, ClassReflectionInfoStruct::methodsIndex);
                 break;
             }
@@ -56,7 +64,7 @@ public class ClassReflectionInfoIntrinsic implements WasmGCIntrinsic {
                 collectionCount(invocation, context, builder, ClassReflectionInfoStruct::typeParametersIndex);
                 break;
             case "typeParameter": {
-                var array = context.classInfoProvider().reflectionTypes().typeVariableInfo().array();
+                var array = classInfoProvider.reflectionTypes().typeVariableInfo().array();
                 collectionElement(invocation, context, builder, array,
                         ClassReflectionInfoStruct::typeParametersIndex);
                 break;
@@ -65,7 +73,7 @@ public class ClassReflectionInfoIntrinsic implements WasmGCIntrinsic {
                 collectionCount(invocation, context, builder, ClassReflectionInfoStruct::innerClassesIndex);
                 break;
             case "innerClass": {
-                var array = context.classInfoProvider().reflectionTypes().classInfo().array();
+                var array = classInfoProvider.reflectionTypes().classInfo().array();
                 collectionElement(invocation, context, builder, array, ClassReflectionInfoStruct::innerClassesIndex);
                 break;
             }
@@ -74,19 +82,19 @@ public class ClassReflectionInfoIntrinsic implements WasmGCIntrinsic {
         }
     }
 
-    private void collectionCount(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void collectionCount(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder, ToIntFunction<ClassReflectionInfoStruct> fieldIndex) {
-        var infoStruct = context.classInfoProvider().reflectionTypes().classReflectionInfo();
+        var infoStruct = classInfoProvider.reflectionTypes().classReflectionInfo();
         WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
             context.generate(b, invocation.getArguments().get(0));
             b.structGet(infoStruct.structure(), fieldIndex.applyAsInt(infoStruct));
         });
     }
 
-    private void collectionElement(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void collectionElement(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder, WasmArray array,
             ToIntFunction<ClassReflectionInfoStruct> fieldIndex) {
-        var infoStruct = context.classInfoProvider().reflectionTypes().classReflectionInfo();
+        var infoStruct = classInfoProvider.reflectionTypes().classReflectionInfo();
         context.generate(builder, invocation.getArguments().get(0));
         builder.structGet(infoStruct.structure(), fieldIndex.applyAsInt(infoStruct));
         context.generate(builder, invocation.getArguments().get(1));

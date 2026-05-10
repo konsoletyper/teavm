@@ -15,13 +15,12 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactory;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactoryContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.jso.impl.JSBodyRepository;
 import org.teavm.model.MethodReference;
+import org.teavm.vm.intrinsic.IntrinsicProvider;
 
-class WasmGCJSBodyRenderer implements WasmGCIntrinsicFactory {
+class WasmGCJSBodyRenderer implements IntrinsicProvider<WasmGCInlineIntrinsic> {
     private JSBodyRepository repository;
     private WasmGCJSFunctions jsFunctions;
     private WasmGCJsoCommonGenerator commonGen;
@@ -34,12 +33,12 @@ class WasmGCJSBodyRenderer implements WasmGCIntrinsicFactory {
     }
 
     @Override
-    public WasmGCIntrinsic createIntrinsic(MethodReference methodRef, WasmGCIntrinsicFactoryContext context) {
-        var emitter = repository.emitters.get(methodRef);
+    public WasmGCInlineIntrinsic getIntrinsic(MethodReference method) {
+        var emitter = repository.emitters.get(method);
         if (emitter == null) {
             return null;
         }
         var inlined = repository.inlineMethods.contains(emitter.method());
-        return new WasmGCBodyIntrinsic(emitter, inlined, commonGen, jsFunctions);
+        return new WasmGCJSBodyIntrinsic(emitter, inlined, commonGen, jsFunctions);
     }
 }

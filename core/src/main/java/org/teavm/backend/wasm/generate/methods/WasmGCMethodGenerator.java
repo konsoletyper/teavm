@@ -37,12 +37,11 @@ import org.teavm.backend.wasm.generate.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.generate.classes.WasmGCSupertypeFunctionProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
-import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
-import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCBodyIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
-import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmBreak;
 import org.teavm.backend.wasm.model.instruction.WasmCatchClause;
@@ -63,7 +62,6 @@ import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
-import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -77,6 +75,7 @@ import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.RegisterAllocator;
 import org.teavm.model.util.UsageExtractor;
 import org.teavm.parsing.resource.ResourceProvider;
+import org.teavm.vm.intrinsic.IntrinsicProvider;
 
 public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmModule module;
@@ -91,8 +90,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     public final WasmGCNameProvider names;
     private Diagnostics diagnostics;
     private WasmGCTypeMapper typeMapper;
-    private WasmGCCustomGeneratorProvider customGenerators;
-    private WasmGCIntrinsicProvider intrinsics;
+    private IntrinsicProvider<WasmGCBodyIntrinsic> bodyIntrinsics;
+    private IntrinsicProvider<WasmGCInlineIntrinsic> inlineIntrinsics;
     private Queue<Runnable> queue = new ArrayDeque<>();
     private Map<MethodReference, WasmFunction> staticMethods = new HashMap<>();
     private Map<MethodReference, WasmFunction> instanceMethods = new HashMap<>();
@@ -123,8 +122,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmFunctionTypes functionTypes,
             WasmGCNameProvider names,
             Diagnostics diagnostics,
-            WasmGCCustomGeneratorProvider customGenerators,
-            WasmGCIntrinsicProvider intrinsics,
+            IntrinsicProvider<WasmGCBodyIntrinsic> bodyIntrinsics,
+            IntrinsicProvider<WasmGCInlineIntrinsic> inlineIntrinsics,
             DependencyInfo dependency,
             boolean strict,
             String entryPoint,
@@ -140,8 +139,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.functionTypes = functionTypes;
         this.names = names;
         this.diagnostics = diagnostics;
-        this.customGenerators = customGenerators;
-        this.intrinsics = intrinsics;
+        this.bodyIntrinsics = bodyIntrinsics;
+        this.inlineIntrinsics = inlineIntrinsics;
         this.dependency = dependency;
         this.strict = strict;
         this.entryPoint = entryPoint;
@@ -296,9 +295,9 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
 
     private void generateMethodBody(MethodHolder method, WasmFunction function) {
         try {
-            var customGenerator = customGenerators.get(method.getReference());
-            if (customGenerator != null) {
-                generateCustomMethodBody(customGenerator, method.getReference(), function);
+            var bodyIntrinsic = bodyIntrinsics.getIntrinsic(method.getReference());
+            if (bodyIntrinsic != null) {
+                generateCustomMethodBody(bodyIntrinsic, method.getReference(), function);
             } else if (!method.hasModifier(ElementModifier.NATIVE)) {
                 generateRegularMethodBody(method, function);
             } else {
@@ -315,9 +314,9 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         }
     }
 
-    private void generateCustomMethodBody(WasmGCCustomGenerator customGenerator, MethodReference method,
+    private void generateCustomMethodBody(WasmGCBodyIntrinsic intrinsic, MethodReference method,
             WasmFunction function) {
-        customGenerator.apply(method, function, customGeneratorContext);
+        intrinsic.apply(method, function);
         var isSuspend = asyncMethods.contains(method);
         if (isSuspend) {
             if (coroutineTransformation == null) {
@@ -326,6 +325,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             coroutineTransformation.transform(function);
         }
     }
+
 
     private void generateRegularMethodBody(MethodHolder method, WasmFunction function) {
         Objects.requireNonNull(method.getProgram());
@@ -598,8 +598,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     classInfoProvider,
                     standardClasses,
                     strings,
-                    customGenerators,
-                    intrinsics,
+                    inlineIntrinsics,
                     names,
                     strict,
                     entryPoint,
@@ -621,81 +620,4 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         }
         return dummyInitializer;
     }
-
-    private WasmGCCustomGeneratorContext customGeneratorContext = new WasmGCCustomGeneratorContext() {
-        @Override
-        public ClassLoader classLoader() {
-            return classLoader;
-        }
-
-        @Override
-        public ListableClassReaderSource classes() {
-            return classes;
-        }
-
-        @Override
-        public WasmModule module() {
-            return module;
-        }
-
-        @Override
-        public WasmFunctionTypes functionTypes() {
-            return functionTypes;
-        }
-
-        @Override
-        public WasmGCTypeMapper typeMapper() {
-            return typeMapper;
-        }
-
-        @Override
-        public WasmGCClassInfoProvider classInfoProvider() {
-            return classInfoProvider;
-        }
-
-        @Override
-        public WasmGCNameProvider names() {
-            return names;
-        }
-
-        @Override
-        public WasmTag exceptionTag() {
-            return context.getExceptionTag();
-        }
-
-        @Override
-        public BaseWasmFunctionRepository functions() {
-            return WasmGCMethodGenerator.this;
-        }
-
-        @Override
-        public Diagnostics diagnostics() {
-            return diagnostics;
-        }
-
-        @Override
-        public WasmGCStringProvider strings() {
-            return context.strings();
-        }
-
-        @Override
-        public WasmGCVirtualTableProvider virtualTables() {
-            return context.virtualTables();
-        }
-
-        @Override
-        public String entryPoint() {
-            return context.entryPoint();
-        }
-
-        @Override
-        public boolean isCompactMode() {
-            return compactMode;
-        }
-
-        @Override
-        public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
-            context.addToInitializer(initializerContributor);
-        }
-    };
 }

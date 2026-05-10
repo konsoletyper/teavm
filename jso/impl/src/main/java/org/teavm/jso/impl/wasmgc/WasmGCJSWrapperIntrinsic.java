@@ -19,30 +19,48 @@ import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
 import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
 import static org.teavm.jso.impl.JSMethods.OBJECT;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmExternConversionType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-class WasmGCJSWrapperIntrinsic implements WasmGCIntrinsic {
+class WasmGCJSWrapperIntrinsic implements WasmGCInlineIntrinsic {
+    private WasmGCTypeMapper typeMapper;
+    private BaseWasmFunctionRepository functions;
+    private WasmFunctionTypes functionTypes;
+    private WasmModule module;
+
     private WasmFunction wrapFunction;
 
+    WasmGCJSWrapperIntrinsic(WasmGCTypeMapper typeMapper, BaseWasmFunctionRepository functions,
+            WasmFunctionTypes functionTypes, WasmModule module) {
+        this.typeMapper = typeMapper;
+        this.functions = functions;
+        this.functionTypes = functionTypes;
+        this.module = module;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "wrap": {
                 context.generate(builder, invocation.getArguments().get(0));
-                builder.call(getWrapFunction(context));
+                builder.call(getWrapFunction());
                 break;
             }
             case "isJava": {
                 context.generate(builder, invocation.getArguments().get(0));
                 builder.externConvert(WasmExternConversionType.EXTERN_TO_ANY);
-                var objectType = (WasmType.Reference) context.typeMapper().mapType(ValueType.parse(Object.class));
+                var objectType = (WasmType.Reference) typeMapper.mapType(ValueType.parse(Object.class));
                 builder.test(objectType);
                 break;
             }
@@ -51,15 +69,15 @@ class WasmGCJSWrapperIntrinsic implements WasmGCIntrinsic {
         }
     }
 
-    private WasmFunction getWrapFunction(WasmGCIntrinsicContext context) {
+    private WasmFunction getWrapFunction() {
         if (wrapFunction == null) {
-            var objectType = context.typeMapper().mapType(ValueType.parse(Object.class));
-            wrapFunction = new WasmFunction(context.functionTypes().of(objectType, WasmType.EXTERN));
+            var objectType = typeMapper.mapType(ValueType.parse(Object.class));
+            wrapFunction = new WasmFunction(functionTypes.of(objectType, WasmType.EXTERN));
             wrapFunction.setImportName("wrapObject");
             wrapFunction.setImportModule("teavmJso");
-            context.module().functions.add(wrapFunction);
+            module.functions.add(wrapFunction);
 
-            var createWrapperFunction = context.functions().forStaticMethod(new MethodReference(
+            var createWrapperFunction = functions.forStaticMethod(new MethodReference(
                     JS_WRAPPER_CLASS, "createWrapper", JS_OBJECT, OBJECT));
             createWrapperFunction.setExportName("teavm.jso.createWrapper");
         }

@@ -90,7 +90,11 @@ public class JCLPlugin implements TeaVMPlugin {
 
             var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
             if (wasmGCHost != null) {
-                wasmGCHost.addGeneratorFactory(new ServiceLoaderWasmGCSupport());
+                wasmGCHost.contributeToCodeGen((ctx, reg) -> {
+                    reg.bodyIntrinsics().registerIntrinsic(ServiceLoader.class, new ServiceLoaderWasmGCSupport(
+                            serviceLoaderSupport, ctx.classInfoProvider(), ctx.functions(), ctx.functionTypes(),
+                            ctx.names(), ctx.typeMapper(), ctx.module()));
+                });
             }
         }
 

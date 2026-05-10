@@ -16,14 +16,22 @@
 package org.teavm.backend.wasm.intrinsics.reflection;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
-public class FieldInfoIntrinsic implements WasmGCIntrinsic {
+public class FieldInfoIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+
+    public FieldInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider) {
+        this.classInfoProvider = classInfoProvider;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var infoStruct = context.classInfoProvider().reflectionTypes().fieldInfo();
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        var infoStruct = classInfoProvider.reflectionTypes().fieldInfo();
         switch (invocation.getMethod().getName()) {
             case "name":
                 context.generate(builder, invocation.getArguments().get(0));

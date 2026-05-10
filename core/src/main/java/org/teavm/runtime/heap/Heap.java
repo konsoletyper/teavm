@@ -18,6 +18,7 @@ package org.teavm.runtime.heap;
 import org.teavm.interop.Address;
 import org.teavm.interop.Export;
 import org.teavm.interop.Import;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
@@ -421,5 +422,6 @@ public final class Heap {
         return node;
     }
 
+    @Intrinsified
     static native int grow(int bytes);
 }

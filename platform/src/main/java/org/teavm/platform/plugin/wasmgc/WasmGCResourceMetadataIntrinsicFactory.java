@@ -17,21 +17,18 @@ package org.teavm.platform.plugin.wasmgc;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactory;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactoryContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContributor;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenRegistry;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 
-public class WasmGCResourceMetadataIntrinsicFactory implements WasmGCIntrinsicFactory {
-    private Properties properties;
+public class WasmGCResourceMetadataIntrinsicFactory implements WasmGCCodeGenContributor {
     private ServiceRepository services;
     private Map<MethodReference, MetadataGenerator> generators = new HashMap<>();
 
-    public WasmGCResourceMetadataIntrinsicFactory(Properties properties, ServiceRepository services) {
-        this.properties = properties;
+    public WasmGCResourceMetadataIntrinsicFactory(ServiceRepository services) {
         this.services = services;
     }
 
@@ -40,10 +37,15 @@ public class WasmGCResourceMetadataIntrinsicFactory implements WasmGCIntrinsicFa
     }
 
     @Override
-    public WasmGCIntrinsic createIntrinsic(MethodReference methodRef, WasmGCIntrinsicFactoryContext context) {
-        var generator = generators.get(methodRef);
-        return generator != null
-                ? new MetadataIntrinsic(properties, services, generator)
-                : null;
+    public void contribute(WasmGCCodeGenContext context, WasmGCCodeGenRegistry registry) {
+        registry.inlineIntrinsics().registerIntrinsic(m -> {
+            var generator = generators.get(m);
+            if (generator == null) {
+                return null;
+            }
+            return new MetadataIntrinsic(context.hierarchy(), context.resources(), context.classLoader(),
+                    context.typeMapper(), context.strings(), context.names(), context.module(),
+                    context.properties(), services, generator, m);
+        });
     }
 }

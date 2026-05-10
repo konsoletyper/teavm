@@ -25,10 +25,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.teavm.backend.javascript.rendering.AstWriter;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.WasmGCInitializerRegistry;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
+import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmExternConversionType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
@@ -42,12 +49,24 @@ import org.teavm.jso.impl.JSBodyEmitter;
 import org.teavm.jso.impl.JSMarshallable;
 import org.teavm.jso.impl.JSVararg;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 class WasmGCJsoCommonGenerator {
     private WasmGCJSFunctions jsFunctions;
+    private WasmFunctionTypes functionTypes;
+    private ClassReaderSource classes;
+    private BaseWasmFunctionRepository functions;
+    private WasmGCTypeMapper typeMapper;
+    private WasmGCNameProvider names;
+    private WasmGCStringProvider strings;
+    private WasmModule module;
+    private WasmTag exceptionTag;
+    private WasmGCInitializerRegistry initializerRegistry;
+    private String entryPoint;
+
     private boolean initialized;
     private List<Consumer<WasmFunction>> initializerParts = new ArrayList<>();
     private boolean rethrowExported;
@@ -65,17 +84,30 @@ class WasmGCJsoCommonGenerator {
     private Map<String, WasmGlobal> definedClasses = new HashMap<>();
     private Map<ImportDecl, WasmGlobal> importGlobals = new HashMap<>();
 
-    WasmGCJsoCommonGenerator(WasmGCJSFunctions jsFunctions) {
+    WasmGCJsoCommonGenerator(WasmGCJSFunctions jsFunctions, WasmFunctionTypes functionTypes,
+            ClassReaderSource classes, BaseWasmFunctionRepository functions, WasmGCTypeMapper typeMapper,
+            WasmGCNameProvider names, WasmGCStringProvider strings, WasmModule module, WasmTag exceptionTag,
+            WasmGCInitializerRegistry initializerRegistry, String entryPoint) {
         this.jsFunctions = jsFunctions;
+        this.functionTypes = functionTypes;
+        this.classes = classes;
+        this.functions = functions;
+        this.typeMapper = typeMapper;
+        this.names = names;
+        this.strings = strings;
+        this.module = module;
+        this.exceptionTag = exceptionTag;
+        this.initializerRegistry = initializerRegistry;
+        this.entryPoint = entryPoint;
     }
 
-    private void initialize(WasmGCJsoContext context) {
+    private void initialize() {
         if (initialized) {
             return;
         }
         initialized = true;
-        context.addToInitializer(this::writeToInitializer);
-        exportRethrowException(context);
+        initializerRegistry.register(this::writeToInitializer);
+        exportRethrowException();
     }
 
     private void writeToInitializer(WasmFunction function) {
@@ -84,13 +116,13 @@ class WasmGCJsoCommonGenerator {
         }
     }
 
-    private void addInitializerPart(WasmGCJsoContext context, Consumer<WasmFunction> part) {
-        initialize(context);
+    private void addInitializerPart(Consumer<WasmFunction> part) {
+        initialize();
         initializerParts.add(part);
     }
 
-    WasmGlobal addJSBody(WasmGCJsoContext context, JSBodyEmitter emitter, boolean inlined) {
-        initialize(context);
+    WasmGlobal addJSBody(JSBodyEmitter emitter, boolean inlined) {
+        initialize();
         var builder = new WasmInstructionList().builder();
         var paramCount = emitter.method().parameterCount();
         if (!emitter.isStatic()) {
@@ -99,9 +131,9 @@ class WasmGCJsoCommonGenerator {
         var imports = emitter.imports();
         paramCount += imports.length;
 
-        var global = new WasmGlobal(context.names().suggestForMethod(emitter.method()), WasmType.EXTERN);
+        var global = new WasmGlobal(names.suggestForMethod(emitter.method()), WasmType.EXTERN);
         global.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
-        context.module().globals.add(global);
+        module.globals.add(global);
         var body = "";
         if (emitter instanceof JSBodyBloatedEmitter) {
             body = ((JSBodyBloatedEmitter) emitter).script;
@@ -134,19 +166,19 @@ class WasmGCJsoCommonGenerator {
         paramNames.addAll(List.of(emitter.parameterNames()));
         for (var parameter : paramNames) {
             builder
-                    .getGlobal(context.strings().getStringConstant(parameter).global)
-                    .call(stringToJsFunction(context));
+                    .getGlobal(strings.getStringConstant(parameter).global)
+                    .call(stringToJsFunction());
         }
         builder
-                .getGlobal(context.strings().getStringConstant(body).global)
-                .call(stringToJsFunction(context));
-        builder.call(jsFunctions.getFunctionConstructor(context, paramCount));
+                .getGlobal(strings.getStringConstant(body).global)
+                .call(stringToJsFunction());
+        builder.call(jsFunctions.getFunctionConstructor(paramCount));
         if (imports.length > 0) {
             for (var importDecl : imports) {
-                var importGlobal = getImportGlobal(context, importDecl.fromModule, "__self__");
+                var importGlobal = getImportGlobal(importDecl.fromModule, "__self__");
                 builder.getGlobal(importGlobal);
             }
-            builder.call(jsFunctions.getBind(context, imports.length));
+            builder.call(jsFunctions.getBind(imports.length));
         }
         builder.setGlobal(global);
         initializerParts.add(initializer -> initializer.getBody().transferFrom(builder.list));
@@ -154,72 +186,72 @@ class WasmGCJsoCommonGenerator {
         return global;
     }
 
-    WasmGlobal getImportGlobal(WasmGCJsoContext context, String module, String id) {
+    WasmGlobal getImportGlobal(String module, String id) {
         return importGlobals.computeIfAbsent(new ImportDecl(module, id), m -> {
-            var name = context.names().topLevel(WasmGCNameProvider.sanitize("teavm.js@imports:" + module + "#" + id));
+            var name = names.topLevel(WasmGCNameProvider.sanitize("teavm.js@imports:" + module + "#" + id));
             var global = new WasmGlobal(name, WasmType.EXTERN);
             global.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
             global.setImmutable(true);
-            context.module().globals.add(global);
+            this.module.globals.add(global);
             global.setImportModule(module);
             global.setImportName(id);
             return global;
         });
     }
 
-    private WasmFunction stringToJsFunction(WasmGCJsoContext context) {
-        var fun = context.functions().forStaticMethod(STRING_TO_JS);
+    private WasmFunction stringToJsFunction() {
+        var fun = functions.forStaticMethod(STRING_TO_JS);
         if (fun.getExportName() == null) {
             fun.setExportName("teavm.stringToJs");
         }
         return fun;
     }
 
-    private void exportRethrowException(WasmGCJsoContext context) {
+    private void exportRethrowException() {
         if (rethrowExported) {
             return;
         }
         rethrowExported = true;
-        var fn = context.functions().forStaticMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "wrapException",
+        var fn = functions.forStaticMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "wrapException",
                 JS_OBJECT, ValueType.object("java.lang.Throwable")));
         fn.setExportName("teavm.js.wrapException");
 
-        fn = context.functions().forStaticMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "extractException",
+        fn = functions.forStaticMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "extractException",
                 ValueType.object("java.lang.Throwable"), JS_OBJECT));
         fn.setExportName("teavm.js.extractException");
 
-        createThrowExceptionFunction(context);
+        createThrowExceptionFunction();
     }
 
-    private void createThrowExceptionFunction(WasmGCJsoContext context) {
-        var fn = new WasmFunction(context.functionTypes().of(null, WasmType.EXTERN));
-        fn.setName(context.names().topLevel("teavm@throwException"));
+    private void createThrowExceptionFunction() {
+        var fn = new WasmFunction(functionTypes.of(null, WasmType.EXTERN));
+        fn.setName(names.topLevel("teavm@throwException"));
         fn.setExportName("teavm.js.throwException");
-        context.module().functions.add(fn);
+        module.functions.add(fn);
 
         var exceptionLocal = new WasmLocal(WasmType.EXTERN);
         fn.add(exceptionLocal);
 
-        var throwableType = (WasmType.Reference) context.typeMapper().mapType(ValueType.parse(Throwable.class));
+        var throwableType = (WasmType.Reference) typeMapper.mapType(ValueType.parse(Throwable.class));
         fn.getBody().builder()
                 .getLocal(exceptionLocal)
                 .externConvert(WasmExternConversionType.EXTERN_TO_ANY)
                 .cast(throwableType)
-                .throw_(context.exceptionTag());
+                .throw_(exceptionTag);
     }
 
-    WasmGlobal jsStringConstant(WasmGCJsoContext context, String str) {
+    WasmGlobal jsStringConstant(String str) {
         return stringsConstants.computeIfAbsent(str, s -> {
-            var javaGlobal = context.strings().getStringConstant(s).global;
-            var function = context.functions().forStaticMethod(STRING_TO_JS);
+            var javaGlobal = strings.getStringConstant(s).global;
+            var function = functions.forStaticMethod(STRING_TO_JS);
             var index = stringsConstants.size();
             var brief = str.length() > 16 ? str.substring(0, 16) : str;
-            var name = context.names().topLevel("teavm.js.strings<" + index + ">:"
+            var name = names.topLevel("teavm.js.strings<" + index + ">:"
                     + WasmGCNameProvider.sanitize(brief));
             var jsGlobal = new WasmGlobal(name, WasmType.EXTERN);
             jsGlobal.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
-            context.module().globals.add(jsGlobal);
-            addInitializerPart(context, initializer -> initializer.getBody().builder()
+            module.globals.add(jsGlobal);
+            addInitializerPart(initializer -> initializer.getBody().builder()
                     .getGlobal(javaGlobal)
                     .call(function)
                     .setGlobal(jsGlobal));
@@ -227,60 +259,60 @@ class WasmGCJsoCommonGenerator {
         });
     }
 
-    WasmGlobal getDefaultWrapperClass(WasmGCJsoContext context) {
+    WasmGlobal getDefaultWrapperClass() {
         if (defaultWrapperClass == null) {
-            var name = context.names().topLevel("teavm.js@defaultWrapperClass");
+            var name = names.topLevel("teavm.js@defaultWrapperClass");
             defaultWrapperClass = new WasmGlobal(name, WasmType.EXTERN);
             defaultWrapperClass.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
-            context.module().globals.add(defaultWrapperClass);
-            addInitializerPart(context, initializer -> initializer.getBody().builder()
+            module.globals.add(defaultWrapperClass);
+            addInitializerPart(initializer -> initializer.getBody().builder()
                     .nullConst(WasmType.EXTERN)
                     .nullConst(WasmType.EXTERN)
                     .nullConst(WasmType.FUNC)
-                    .call(createClassFunction(context))
+                    .call(createClassFunction())
                     .setGlobal(defaultWrapperClass));
         }
         return defaultWrapperClass;
     }
 
-    WasmGlobal getDefinedClass(WasmGCJsoContext context, String className) {
+    WasmGlobal getDefinedClass(String className) {
         var result = definedClasses.get(className);
         if (result == null) {
-            result = defineClass(context, className);
+            result = defineClass(className);
             definedClasses.put(className, result);
         }
         return result;
     }
 
-    private WasmGlobal defineClass(WasmGCJsoContext context, String className) {
-        var name = context.names().topLevel(context.names().suggestForClass(className + "@js"));
+    private WasmGlobal defineClass(String className) {
+        var name = names.topLevel(names.suggestForClass(className + "@js"));
         var global = new WasmGlobal(name, WasmType.EXTERN);
         global.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
-        context.module().globals.add(global);
+        module.globals.add(global);
         var body = new WasmInstructionList().builder();
 
-        var cls = context.classes().get(className);
-        var isModule = context.entryPoint().equals(className);
+        var cls = classes.get(className);
+        var isModule = entryPoint.equals(className);
         var members = AliasCollector.collectMembers(cls, AliasCollector::isInstanceMember);
 
         var staticMembers = AliasCollector.collectMembers(cls, AliasCollector::isStaticMember);
 
         var simpleName = className.substring(className.lastIndexOf('.') + 1);
-        var javaClassName = context.strings().getStringConstant(simpleName);
-        var exportedParent = parentExportedClass(context, cls.getParent());
+        var javaClassName = strings.getStringConstant(simpleName);
+        var exportedParent = parentExportedClass(cls.getParent());
 
-        var needsExport = !className.equals(context.entryPoint())
+        var needsExport = !className.equals(entryPoint)
                 && (!staticMembers.methods.isEmpty() || !staticMembers.properties.isEmpty());
         WasmFunction constructorFn = null;
         if (members.constructor != null) {
-            constructorFn = context.functions().forStaticMethod(members.constructor);
+            constructorFn = functions.forStaticMethod(members.constructor);
             constructorFn.setReferenced(true);
             needsExport = true;
         }
 
-        body.getGlobal(javaClassName.global).call(stringToJsFunction(context));
+        body.getGlobal(javaClassName.global).call(stringToJsFunction());
         if (exportedParent != null) {
-            body.getGlobal(getDefinedClass(context, exportedParent));
+            body.getGlobal(getDefinedClass(exportedParent));
         } else {
             body.nullConst(WasmType.EXTERN);
         }
@@ -289,94 +321,94 @@ class WasmGCJsoCommonGenerator {
         } else {
             body.nullConst(WasmType.FUNC);
         }
-        body.call(createClassFunction(context)).setGlobal(global);
+        body.call(createClassFunction()).setGlobal(global);
 
-        defineMethods(context, members, cls, global, body);
-        defineProperties(context, members, cls, global, body);
+        defineMethods(members, cls, global, body);
+        defineProperties(members, cls, global, body);
 
         var globalForStatic = global;
         if (needsExport) {
-            globalForStatic = exportClass(context, cls, global, body);
+            globalForStatic = exportClass(cls, global, body);
         }
 
-        defineStaticMethods(context, staticMembers, cls, globalForStatic, body, isModule);
-        defineStaticProperties(context, staticMembers, cls, globalForStatic, body);
+        defineStaticMethods(staticMembers, cls, globalForStatic, body, isModule);
+        defineStaticProperties(staticMembers, cls, globalForStatic, body);
 
-        context.addToInitializer(f -> f.getBody().transferFrom(body.list));
+        initializerRegistry.register(f -> f.getBody().transferFrom(body.list));
         return global;
     }
 
-    private void defineMethods(WasmGCJsoContext context, AliasCollector.Members members, ClassReader cls,
-            WasmGlobal global, WasmInstructionBuilder builder) {
+    private void defineMethods(AliasCollector.Members members, ClassReader cls, WasmGlobal global,
+            WasmInstructionBuilder builder) {
         for (var aliasEntry : members.methods.entrySet()) {
             if (!aliasEntry.getValue().getClassName().equals(cls.getName())) {
                 continue;
             }
-            var fn = context.functions().forStaticMethod(aliasEntry.getValue());
-            var methodReader = context.classes().getMethod(aliasEntry.getValue());
+            var fn = functions.forStaticMethod(aliasEntry.getValue());
+            var methodReader = classes.getMethod(aliasEntry.getValue());
             fn.setReferenced(true);
-            var methodName = context.strings().getStringConstant(aliasEntry.getKey());
+            var methodName = strings.getStringConstant(aliasEntry.getKey());
             builder.getGlobal(global)
-                    .getGlobal(methodName.global).call(stringToJsFunction(context))
+                    .getGlobal(methodName.global).call(stringToJsFunction())
                     .funcRef(fn)
                     .i32Const(varargValue(methodReader))
-                    .call(defineMethodFunction(context));
+                    .call(defineMethodFunction());
         }
     }
 
-    private void defineProperties(WasmGCJsoContext context, AliasCollector.Members members, ClassReader cls,
-            WasmGlobal global, WasmInstructionBuilder builder) {
+    private void defineProperties(AliasCollector.Members members, ClassReader cls, WasmGlobal global,
+            WasmInstructionBuilder builder) {
         for (var aliasEntry : members.properties.entrySet()) {
             var property = aliasEntry.getValue();
             if (!property.getter.getClassName().equals(cls.getName())) {
                 continue;
             }
-            var getter = context.functions().forStaticMethod(property.getter);
+            var getter = functions.forStaticMethod(property.getter);
             getter.setReferenced(true);
             WasmFunction setter = null;
             if (property.setter != null) {
-                setter = context.functions().forStaticMethod(property.setter);
+                setter = functions.forStaticMethod(property.setter);
                 setter.setReferenced(true);
             }
-            var methodName = context.strings().getStringConstant(aliasEntry.getKey());
+            var methodName = strings.getStringConstant(aliasEntry.getKey());
             builder.getGlobal(global)
-                    .getGlobal(methodName.global).call(stringToJsFunction(context))
+                    .getGlobal(methodName.global).call(stringToJsFunction())
                     .funcRef(getter);
             if (setter != null) {
                 builder.funcRef(setter);
             } else {
                 builder.nullConst(WasmType.FUNC);
             }
-            builder.call(definePropertyFunction(context));
+            builder.call(definePropertyFunction());
         }
     }
 
-    private void defineStaticMethods(WasmGCJsoContext context, AliasCollector.Members members, ClassReader cls,
-            WasmGlobal global, WasmInstructionBuilder builder, boolean isModule) {
+    private void defineStaticMethods(AliasCollector.Members members, ClassReader cls, WasmGlobal global,
+            WasmInstructionBuilder builder, boolean isModule) {
         for (var aliasEntry : members.methods.entrySet()) {
             if (!aliasEntry.getValue().getClassName().equals(cls.getName())) {
                 continue;
             }
-            var fn = context.functions().forStaticMethod(aliasEntry.getValue());
+            var fn = functions.forStaticMethod(aliasEntry.getValue());
             fn.setReferenced(true);
-            var methodReader = context.classes().getMethod(aliasEntry.getValue());
+            var methodReader = classes.getMethod(aliasEntry.getValue());
             if (isModule) {
-                var globalName = context.names().topLevel("teavm.js.export.function@" + aliasEntry.getKey());
+                var globalName = names.topLevel("teavm.js.export.function@" + aliasEntry.getKey());
                 var functionGlobal = new WasmGlobal(globalName, WasmType.EXTERN);
                 functionGlobal.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
                 functionGlobal.setExportName(aliasEntry.getKey());
-                context.module().globals.add(functionGlobal);
+                module.globals.add(functionGlobal);
                 builder.funcRef(fn)
                         .i32Const(varargValue(methodReader))
-                        .call(defineFunctionFunction(context))
+                        .call(defineFunctionFunction())
                         .setGlobal(functionGlobal);
             }
-            var methodName = context.strings().getStringConstant(aliasEntry.getKey());
+            var methodName = strings.getStringConstant(aliasEntry.getKey());
             builder.getGlobal(global)
-                    .getGlobal(methodName.global).call(stringToJsFunction(context))
+                    .getGlobal(methodName.global).call(stringToJsFunction())
                     .funcRef(fn)
                     .i32Const(varargValue(methodReader))
-                    .call(defineStaticMethodFunction(context));
+                    .call(defineStaticMethodFunction());
         }
     }
 
@@ -384,50 +416,49 @@ class WasmGCJsoCommonGenerator {
         return methodReader.getAnnotations().get(JSVararg.class.getName()) != null ? 1 : 0;
     }
 
-    private void defineStaticProperties(WasmGCJsoContext context, AliasCollector.Members members, ClassReader cls,
+    private void defineStaticProperties(AliasCollector.Members members, ClassReader cls,
             WasmGlobal global, WasmInstructionBuilder builder) {
         for (var aliasEntry : members.properties.entrySet()) {
             var property = aliasEntry.getValue();
             if (!property.getter.getClassName().equals(cls.getName())) {
                 continue;
             }
-            var getter = context.functions().forStaticMethod(property.getter);
+            var getter = functions.forStaticMethod(property.getter);
             getter.setReferenced(true);
             WasmFunction setter = null;
             if (property.setter != null) {
-                setter = context.functions().forStaticMethod(property.setter);
+                setter = functions.forStaticMethod(property.setter);
                 setter.setReferenced(true);
             }
-            var methodName = context.strings().getStringConstant(aliasEntry.getKey());
+            var methodName = strings.getStringConstant(aliasEntry.getKey());
             builder.getGlobal(global)
-                    .getGlobal(methodName.global).call(stringToJsFunction(context))
+                    .getGlobal(methodName.global).call(stringToJsFunction())
                     .funcRef(getter);
             if (setter != null) {
                 builder.funcRef(setter);
             } else {
                 builder.nullConst(WasmType.FUNC);
             }
-            builder.call(defineStaticPropertyFunction(context));
+            builder.call(defineStaticPropertyFunction());
         }
     }
 
-    private WasmGlobal exportClass(WasmGCJsoContext context, ClassReader cls, WasmGlobal global,
-            WasmInstructionBuilder builder) {
+    private WasmGlobal exportClass(ClassReader cls, WasmGlobal global, WasmInstructionBuilder builder) {
         var exportName = getClassAliasName(cls);
-        var globalName = context.names().topLevel("teavm.js.export.class@" + exportName);
+        var globalName = names.topLevel("teavm.js.export.class@" + exportName);
         var exportGlobal = new WasmGlobal(globalName, WasmType.EXTERN);
         exportGlobal.getInitialValue().add(new WasmNullConstant(WasmType.EXTERN));
         exportGlobal.setExportName(exportName);
-        context.module().globals.add(exportGlobal);
+        module.globals.add(exportGlobal);
 
-        builder.getGlobal(global).call(exportClassFunction(context)).setGlobal(exportGlobal);
+        builder.getGlobal(global).call(exportClassFunction()).setGlobal(exportGlobal);
 
         return exportGlobal;
     }
 
-    private String parentExportedClass(WasmGCJsoContext context, String className) {
+    private String parentExportedClass(String className) {
         while (className != null) {
-            var cls = context.classes().get(className);
+            var cls = classes.get(className);
             if (cls == null) {
                 return null;
             }
@@ -439,97 +470,97 @@ class WasmGCJsoCommonGenerator {
         return null;
     }
 
-    private WasmFunction createClassFunction(WasmGCJsoContext context) {
+    private WasmFunction createClassFunction() {
         if (createClassFunction == null) {
-            createClassFunction = new WasmFunction(context.functionTypes().of(WasmType.EXTERN,
-                    WasmType.EXTERN, WasmType.EXTERN, WasmType.FUNC));
-            createClassFunction.setName(context.names().suggestForClass("teavm.jso@createClass"));
+            createClassFunction = new WasmFunction(functionTypes.of(WasmType.EXTERN, WasmType.EXTERN,
+                    WasmType.EXTERN, WasmType.FUNC));
+            createClassFunction.setName(names.topLevel("teavm.jso@createClass"));
             createClassFunction.setImportName("createClass");
             createClassFunction.setImportModule("teavmJso");
-            context.module().functions.add(createClassFunction);
+            module.functions.add(createClassFunction);
         }
         return createClassFunction;
     }
 
-    private WasmFunction defineFunctionFunction(WasmGCJsoContext context) {
+    private WasmFunction defineFunctionFunction() {
         if (defineFunctionFunction == null) {
-            defineFunctionFunction = new WasmFunction(context.functionTypes().of(WasmType.EXTERN,
-                    WasmType.FUNC, WasmType.INT32));
-            defineFunctionFunction.setName(context.names().suggestForClass("teavm.jso@defineFunction"));
+            defineFunctionFunction = new WasmFunction(functionTypes.of(WasmType.EXTERN, WasmType.FUNC,
+                    WasmType.INT32));
+            defineFunctionFunction.setName(names.topLevel("teavm.jso@defineFunction"));
             defineFunctionFunction.setImportName("defineFunction");
             defineFunctionFunction.setImportModule("teavmJso");
-            context.module().functions.add(defineFunctionFunction);
+            module.functions.add(defineFunctionFunction);
         }
         return defineFunctionFunction;
     }
 
-    private WasmFunction defineMethodFunction(WasmGCJsoContext context) {
+    private WasmFunction defineMethodFunction() {
         if (defineMethodFunction == null) {
-            defineMethodFunction = new WasmFunction(context.functionTypes().of(null, WasmType.EXTERN,
-                    WasmType.EXTERN, WasmType.FUNC, WasmType.INT32));
-            defineMethodFunction.setName(context.names().suggestForClass("teavm.jso@defineMethod"));
+            defineMethodFunction = new WasmFunction(functionTypes.of(null, WasmType.EXTERN, WasmType.EXTERN,
+                    WasmType.FUNC, WasmType.INT32));
+            defineMethodFunction.setName(names.topLevel("teavm.jso@defineMethod"));
             defineMethodFunction.setImportName("defineMethod");
             defineMethodFunction.setImportModule("teavmJso");
-            context.module().functions.add(defineMethodFunction);
+            module.functions.add(defineMethodFunction);
         }
         return defineMethodFunction;
     }
 
-    private WasmFunction defineStaticMethodFunction(WasmGCJsoContext context) {
+    private WasmFunction defineStaticMethodFunction() {
         if (defineStaticMethodFunction == null) {
-            defineStaticMethodFunction = new WasmFunction(context.functionTypes().of(null, WasmType.EXTERN,
-                    WasmType.EXTERN, WasmType.FUNC, WasmType.INT32));
-            defineStaticMethodFunction.setName(context.names().suggestForClass("teavm.jso@defineStaticMethod"));
+            defineStaticMethodFunction = new WasmFunction(functionTypes.of(null, WasmType.EXTERN, WasmType.EXTERN,
+                    WasmType.FUNC, WasmType.INT32));
+            defineStaticMethodFunction.setName(names.topLevel("teavm.jso@defineStaticMethod"));
             defineStaticMethodFunction.setImportName("defineStaticMethod");
             defineStaticMethodFunction.setImportModule("teavmJso");
-            context.module().functions.add(defineStaticMethodFunction);
+            module.functions.add(defineStaticMethodFunction);
         }
         return defineStaticMethodFunction;
     }
 
-    private WasmFunction definePropertyFunction(WasmGCJsoContext context) {
+    private WasmFunction definePropertyFunction() {
         if (definePropertyFunction == null) {
-            definePropertyFunction = new WasmFunction(context.functionTypes().of(null, WasmType.EXTERN,
+            definePropertyFunction = new WasmFunction(functionTypes.of(null, WasmType.EXTERN,
                     WasmType.EXTERN, WasmType.FUNC, WasmType.FUNC));
-            definePropertyFunction.setName(context.names().suggestForClass("teavm.jso@defineProperty"));
+            definePropertyFunction.setName(names.topLevel("teavm.jso@defineProperty"));
             definePropertyFunction.setImportName("defineProperty");
             definePropertyFunction.setImportModule("teavmJso");
-            context.module().functions.add(definePropertyFunction);
+            module.functions.add(definePropertyFunction);
         }
         return definePropertyFunction;
     }
 
-    private WasmFunction defineStaticPropertyFunction(WasmGCJsoContext context) {
+    private WasmFunction defineStaticPropertyFunction() {
         if (defineStaticPropertyFunction == null) {
-            defineStaticPropertyFunction = new WasmFunction(context.functionTypes().of(null, WasmType.EXTERN,
-                    WasmType.EXTERN, WasmType.FUNC, WasmType.FUNC));
-            defineStaticPropertyFunction.setName(context.names().suggestForClass("teavm.jso@defineStaticProperty"));
+            defineStaticPropertyFunction = new WasmFunction(functionTypes.of(null, WasmType.EXTERN, WasmType.EXTERN,
+                    WasmType.FUNC, WasmType.FUNC));
+            defineStaticPropertyFunction.setName(names.topLevel("teavm.jso@defineStaticProperty"));
             defineStaticPropertyFunction.setImportName("defineStaticProperty");
             defineStaticPropertyFunction.setImportModule("teavmJso");
-            context.module().functions.add(defineStaticPropertyFunction);
+            module.functions.add(defineStaticPropertyFunction);
         }
         return defineStaticPropertyFunction;
     }
 
-    private WasmFunction exportClassFunction(WasmGCJsoContext context) {
+    private WasmFunction exportClassFunction() {
         if (exportClassFunction == null) {
-            exportClassFunction = new WasmFunction(context.functionTypes().of(WasmType.EXTERN, WasmType.EXTERN));
-            exportClassFunction.setName(context.names().suggestForClass("teavm.jso@exportClass"));
+            exportClassFunction = new WasmFunction(functionTypes.of(WasmType.EXTERN, WasmType.EXTERN));
+            exportClassFunction.setName(names.topLevel("teavm.jso@exportClass"));
             exportClassFunction.setImportName("exportClass");
             exportClassFunction.setImportModule("teavmJso");
-            context.module().functions.add(exportClassFunction);
+            module.functions.add(exportClassFunction);
         }
         return exportClassFunction;
     }
 
-    WasmFunction javaObjectToJSFunction(WasmGCJsoContext context) {
+    WasmFunction javaObjectToJSFunction() {
         if (javaObjectToJSFunction == null) {
-            javaObjectToJSFunction = new WasmFunction(context.functionTypes().of(WasmType.EXTERN,
-                    context.typeMapper().mapType(ValueType.parse(Object.class)), WasmType.EXTERN));
-            javaObjectToJSFunction.setName(context.names().topLevel("teavm.jso@javaObjectToJS"));
+            javaObjectToJSFunction = new WasmFunction(functionTypes.of(WasmType.EXTERN,
+                    typeMapper.mapType(ValueType.parse(Object.class)), WasmType.EXTERN));
+            javaObjectToJSFunction.setName(names.topLevel("teavm.jso@javaObjectToJS"));
             javaObjectToJSFunction.setImportName("javaObjectToJS");
             javaObjectToJSFunction.setImportModule("teavmJso");
-            context.module().functions.add(javaObjectToJSFunction);
+            module.functions.add(javaObjectToJSFunction);
         }
         return javaObjectToJSFunction;
     }

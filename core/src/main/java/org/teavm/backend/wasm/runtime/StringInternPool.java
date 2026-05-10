@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.runtime;
 
+import org.teavm.interop.Intrinsified;
+
 public final class StringInternPool {
     private static Entry[] table = new Entry[16];
     private static int occupiedCells;
@@ -104,8 +106,10 @@ public final class StringInternPool {
             setValue(str);
         }
 
+        @Intrinsified
         final native String getValue();
 
+        @Intrinsified
         final native void setValue(String str);
     }
 }

@@ -16,14 +16,22 @@
 package org.teavm.backend.wasm.intrinsics.reflection;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
-public class ParameterizedTypeInfoIntrinsic implements WasmGCIntrinsic {
+public class ParameterizedTypeInfoIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+
+    public ParameterizedTypeInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider) {
+        this.classInfoProvider = classInfoProvider;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var reflectionTypes = context.classInfoProvider().reflectionTypes();
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        var reflectionTypes = classInfoProvider.reflectionTypes();
         var paramType = reflectionTypes.parameterizedTypeInfo();
         switch (invocation.getMethod().getName()) {
             case "rawType":

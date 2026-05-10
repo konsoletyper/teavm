@@ -15,11 +15,10 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.common.ServiceRepository;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.vm.intrinsic.IntrinsicRegistry;
 
-public interface WasmGCIntrinsicFactoryContext {
-    ClassReaderSource classes();
+public interface WasmGCCodeGenRegistry {
+    IntrinsicRegistry<WasmGCInlineIntrinsic> inlineIntrinsics();
 
-    ServiceRepository services();
+    IntrinsicRegistry<WasmGCBodyIntrinsic> bodyIntrinsics();
 }

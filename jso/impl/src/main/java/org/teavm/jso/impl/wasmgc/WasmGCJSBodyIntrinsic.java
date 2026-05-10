@@ -16,21 +16,21 @@
 package org.teavm.jso.impl.wasmgc;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.jso.impl.JSBodyEmitter;
 import org.teavm.model.ValueType;
 
-class WasmGCBodyIntrinsic implements WasmGCIntrinsic {
+class WasmGCJSBodyIntrinsic implements WasmGCInlineIntrinsic {
     private JSBodyEmitter emitter;
     private boolean inlined;
     private WasmGCJsoCommonGenerator commonGen;
     private WasmGlobal global;
     private WasmGCJSFunctions jsFunctions;
 
-    WasmGCBodyIntrinsic(JSBodyEmitter emitter, boolean inlined, WasmGCJsoCommonGenerator commonGen,
+    WasmGCJSBodyIntrinsic(JSBodyEmitter emitter, boolean inlined, WasmGCJsoCommonGenerator commonGen,
             WasmGCJSFunctions jsFunctions) {
         this.emitter = emitter;
         this.inlined = inlined;
@@ -39,12 +39,12 @@ class WasmGCBodyIntrinsic implements WasmGCIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var jsoContext = WasmGCJsoContext.wrap(context);
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         if (global == null) {
-            global = commonGen.addJSBody(jsoContext, emitter, inlined);
+            global = commonGen.addJSBody(emitter, inlined);
         }
-        var caller = jsFunctions.getFunctionCaller(jsoContext, invocation.getArguments().size());
+        var caller = jsFunctions.getFunctionCaller(invocation.getArguments().size());
         builder.getGlobal(global);
         for (var arg : invocation.getArguments()) {
             context.generate(builder, arg);

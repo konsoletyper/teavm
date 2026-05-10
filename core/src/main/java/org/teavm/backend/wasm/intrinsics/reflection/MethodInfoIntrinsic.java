@@ -16,15 +16,23 @@
 package org.teavm.backend.wasm.intrinsics.reflection;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
-public class MethodInfoIntrinsic implements WasmGCIntrinsic {
+public class MethodInfoIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+
+    public MethodInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider) {
+        this.classInfoProvider = classInfoProvider;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var infoStruct = context.classInfoProvider().reflectionTypes().methodInfo();
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        var infoStruct = classInfoProvider.reflectionTypes().methodInfo();
         switch (invocation.getMethod().getName()) {
             case "name":
                 context.generate(builder, invocation.getArguments().get(0));
@@ -45,7 +53,7 @@ public class MethodInfoIntrinsic implements WasmGCIntrinsic {
                 });
                 break;
             case "parameterType": {
-                var paramsType = context.classInfoProvider().reflectionTypes().derivedClassInfo().array();
+                var paramsType = classInfoProvider.reflectionTypes().derivedClassInfo().array();
                 context.generate(builder, invocation.getArguments().get(0));
                 builder.structGet(infoStruct.structure(), infoStruct.parameterTypesIndex());
                 context.generate(builder, invocation.getArguments().get(1));

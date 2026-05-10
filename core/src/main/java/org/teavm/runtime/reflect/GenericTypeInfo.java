@@ -15,6 +15,7 @@
  */
 package org.teavm.runtime.reflect;
 
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.Unmanaged;
 
 public class GenericTypeInfo extends ReflectionInfo {
@@ -29,20 +30,26 @@ public class GenericTypeInfo extends ReflectionInfo {
     }
 
     @Unmanaged
+    @Intrinsified
     public final native int kind();
 
     @Unmanaged
+    @Intrinsified
     public final native ParameterizedTypeInfo asParameterizedType();
 
     @Unmanaged
+    @Intrinsified
     public final native TypeVariableReference asTypeVariable();
 
     @Unmanaged
+    @Intrinsified
     public final native GenericArrayInfo asGenericArray();
 
     @Unmanaged
+    @Intrinsified
     public final native WildcardTypeInfo asWildcard();
 
     @Unmanaged
+    @Intrinsified
     public final native RawTypeInfo asRawType();
 }

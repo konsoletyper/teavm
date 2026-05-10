@@ -16,23 +16,43 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.model.ValueType;
 
-class StringInternPoolIntrinsic implements WasmGCIntrinsic {
+class StringInternPoolIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+    private final WasmFunctionTypes functionTypes;
+    private final WasmGCTypeMapper typeMapper;
+    private final WasmGCNameProvider names;
+    private final WasmModule module;
+
+    StringInternPoolIntrinsic(WasmGCClassInfoProvider classInfoProvider, WasmFunctionTypes functionTypes,
+            WasmGCTypeMapper typeMapper, WasmGCNameProvider names, WasmModule module) {
+        this.classInfoProvider = classInfoProvider;
+        this.functionTypes = functionTypes;
+        this.typeMapper = typeMapper;
+        this.names = names;
+        this.module = module;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var entryStruct = context.classInfoProvider().getClassInfo(StringInternPool.class.getName() + "$Entry")
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        var entryStruct = classInfoProvider.getClassInfo(StringInternPool.class.getName() + "$Entry")
                 .getStructure();
         switch (invocation.getMethod().getName()) {
             case "getValue":
                 context.generate(builder, invocation.getArguments().get(0));
                 builder.structGet(entryStruct, WasmGCClassInfoProvider.STRING_POOL_ENTRY_OFFSET);
-                builder.call(createDerefFunction(context));
+                builder.call(createDerefFunction());
                 break;
             case "setValue": {
                 context.generate(builder, invocation.getArguments().get(0));
@@ -42,7 +62,7 @@ class StringInternPoolIntrinsic implements WasmGCIntrinsic {
                 builder.append(instance);
                 context.generate(builder, invocation.getArguments().get(1));
                 builder.append(instance);
-                builder.call(createRefFunction(context));
+                builder.call(createRefFunction());
                 builder.structSet(entryStruct, WasmGCClassInfoProvider.STRING_POOL_ENTRY_OFFSET);
 
                 instance.release();
@@ -53,28 +73,28 @@ class StringInternPoolIntrinsic implements WasmGCIntrinsic {
         }
     }
 
-    private WasmFunction createRefFunction(WasmGCIntrinsicContext context) {
-        var function = new WasmFunction(context.functionTypes().of(
+    private WasmFunction createRefFunction() {
+        var function = new WasmFunction(functionTypes.of(
                 WasmType.EXTERN,
-                context.typeMapper().mapType(ValueType.parse(String.class)),
-                context.typeMapper().mapType(ValueType.object(StringInternPool.class.getName() + "$Entry"))
+                typeMapper.mapType(ValueType.parse(String.class)),
+                typeMapper.mapType(ValueType.object(StringInternPool.class.getName() + "$Entry"))
         ));
-        function.setName(context.names().topLevel("teavm@stringRef"));
+        function.setName(names.topLevel("teavm@stringRef"));
         function.setImportModule("teavm");
         function.setImportName("createStringWeakRef");
-        context.module().functions.add(function);
+        module.functions.add(function);
         return function;
     }
 
-    private WasmFunction createDerefFunction(WasmGCIntrinsicContext context) {
-        var function = new WasmFunction(context.functionTypes().of(
-                context.typeMapper().mapType(ValueType.parse(String.class)),
+    private WasmFunction createDerefFunction() {
+        var function = new WasmFunction(functionTypes.of(
+                typeMapper.mapType(ValueType.parse(String.class)),
                 WasmType.EXTERN
         ));
-        function.setName(context.names().topLevel("teavm@stringDeref"));
+        function.setName(names.topLevel("teavm@stringDeref"));
         function.setImportModule("teavm");
         function.setImportName("stringDeref");
-        context.module().functions.add(function);
+        module.functions.add(function);
         return function;
     }
 }

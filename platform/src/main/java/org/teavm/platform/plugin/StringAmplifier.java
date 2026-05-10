@@ -16,6 +16,7 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.dependency.PluggableDependency;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.Unmanaged;
 
 final class StringAmplifier {
@@ -24,9 +25,11 @@ final class StringAmplifier {
 
     @PluggableDependency(StringAmplifierDependencyPlugin.class)
     @Unmanaged
+    @Intrinsified
     static native String amplify(String string);
 
     @PluggableDependency(StringAmplifierDependencyPlugin.class)
     @Unmanaged
+    @Intrinsified
     static native String[] amplifyArray(String[] strings);
 }

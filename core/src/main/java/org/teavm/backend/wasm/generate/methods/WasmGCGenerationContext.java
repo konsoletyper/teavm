@@ -31,6 +31,7 @@ import org.teavm.backend.wasm.generate.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.generate.classes.WasmGCSupertypeFunctionProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
@@ -44,6 +45,7 @@ import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.parsing.resource.ResourceProvider;
+import org.teavm.vm.intrinsic.IntrinsicProvider;
 
 public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmModule module;
@@ -59,8 +61,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private ClassHierarchy hierarchy;
     private BaseWasmFunctionRepository functions;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
-    private WasmGCCustomGeneratorProvider customGenerators;
-    private WasmGCIntrinsicProvider intrinsics;
+    private IntrinsicProvider<WasmGCInlineIntrinsic> callSiteIntrinsics;
     private WasmFunction npeMethod;
     private WasmFunction aaiobeMethod;
     private WasmFunction cceMethod;
@@ -79,8 +80,8 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
             ResourceProvider resources, ClassLoader classLoader, ClassHierarchy hierarchy,
             BaseWasmFunctionRepository functions, WasmGCSupertypeFunctionProvider supertypeFunctions,
             WasmGCClassInfoProvider classInfoProvider, WasmGCStandardClasses standardClasses,
-            WasmGCStringProvider strings, WasmGCCustomGeneratorProvider customGenerators,
-            WasmGCIntrinsicProvider intrinsics, WasmGCNameProvider names, boolean strict, String entryPoint,
+            WasmGCStringProvider strings, IntrinsicProvider<WasmGCInlineIntrinsic> callSiteIntrinsics,
+            WasmGCNameProvider names, boolean strict, String entryPoint,
             Consumer<WasmGCInitializerContributor> initializerContributors,
             Diagnostics diagnostics, ClassInitializerInfo classInitInfo, DependencyInfo dependency) {
         this.module = module;
@@ -96,8 +97,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.classInfoProvider = classInfoProvider;
         this.standardClasses = standardClasses;
         this.strings = strings;
-        this.customGenerators = customGenerators;
-        this.intrinsics = intrinsics;
+        this.callSiteIntrinsics = callSiteIntrinsics;
         this.names = names;
         this.strict = strict;
         this.entryPoint = entryPoint;
@@ -210,12 +210,8 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         return module;
     }
 
-    public WasmGCCustomGeneratorProvider customGenerators() {
-        return customGenerators;
-    }
-
-    public WasmGCIntrinsicProvider intrinsics() {
-        return intrinsics;
+    public IntrinsicProvider<WasmGCInlineIntrinsic> callSiteIntrinsics() {
+        return callSiteIntrinsics;
     }
 
     public Diagnostics diagnostics() {

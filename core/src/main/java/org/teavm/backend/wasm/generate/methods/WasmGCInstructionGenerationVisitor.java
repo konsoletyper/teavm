@@ -64,26 +64,19 @@ import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
-import org.teavm.backend.wasm.BaseWasmFunctionRepository;
-import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.ValueCache;
-import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfo;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
-import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
-import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
-import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmStructure;
-import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmBlock;
 import org.teavm.backend.wasm.model.instruction.WasmCastCondition;
@@ -101,18 +94,11 @@ import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
-import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
-import org.teavm.dependency.DependencyInfo;
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
-import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
-import org.teavm.model.analysis.ClassInitializerInfo;
-import org.teavm.parsing.resource.ResourceProvider;
 
 public class WasmGCInstructionGenerationVisitor implements StatementVisitor, ExprVisitor {
     private static final MethodReference MONITOR_ENTER_SYNC = new MethodReference(Object.class,
@@ -1709,9 +1695,9 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
     }
 
     private void generateInvocation(InvocationExpr expr) {
-        var intrinsic = context.intrinsics().get(expr.getMethod());
-        if (intrinsic != null) {
-            intrinsic.apply(expr, intrinsicContext, builder);
+        var csIntrinsic = context.callSiteIntrinsics().getIntrinsic(expr.getMethod());
+        if (csIntrinsic != null) {
+            csIntrinsic.apply(expr, intrinsicContext, builder);
             return;
         }
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
@@ -1877,65 +1863,10 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         return ((WasmType.SpecialReference) type).kind == WasmType.SpecialReferenceKind.EXTERN;
     }
 
-    WasmGCIntrinsicContext intrinsicContext = new WasmGCIntrinsicContext() {
+    private WasmGCInlineIntrinsicContext intrinsicContext = new WasmGCInlineIntrinsicContext() {
         @Override
         public void generate(WasmInstructionBuilder builder, Expr expr) {
             accept(expr, builder);
-        }
-
-        @Override
-        public ResourceProvider resources() {
-            return context.resources();
-        }
-
-        @Override
-        public ClassLoader classLoader() {
-            return context.classLoader();
-        }
-
-        @Override
-        public WasmModule module() {
-            return context.module();
-        }
-
-        @Override
-        public WasmFunctionTypes functionTypes() {
-            return context.functionTypes();
-        }
-
-        @Override
-        public PreciseTypeInference types() {
-            return types;
-        }
-
-        @Override
-        public BaseWasmFunctionRepository functions() {
-            return context.functions();
-        }
-
-        @Override
-        public ClassHierarchy hierarchy() {
-            return context.hierarchy();
-        }
-
-        @Override
-        public ListableClassReaderSource classes() {
-            return context.classes();
-        }
-
-        @Override
-        public WasmGCTypeMapper typeMapper() {
-            return context.typeMapper();
-        }
-
-        @Override
-        public WasmGCClassInfoProvider classInfoProvider() {
-            return context.classInfoProvider();
-        }
-
-        @Override
-        public WasmGCVirtualTableProvider virtualTables() {
-            return context.virtualTables();
         }
 
         @Override
@@ -1949,28 +1880,13 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         }
 
         @Override
-        public WasmGCNameProvider names() {
-            return context.names();
+        public boolean isAsync() {
+            return WasmGCInstructionGenerationVisitor.this.async;
         }
 
         @Override
-        public WasmGCStringProvider strings() {
-            return context.strings();
-        }
-
-        @Override
-        public WasmTag exceptionTag() {
-            return context.getExceptionTag();
-        }
-
-        @Override
-        public String entryPoint() {
-            return context.entryPoint();
-        }
-
-        @Override
-        public Diagnostics diagnostics() {
-            return context.diagnostics();
+        public boolean isAsyncMethod(MethodReference method) {
+            return asyncSplitMethods.contains(method);
         }
 
         @Override
@@ -1979,28 +1895,8 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         }
 
         @Override
-        public ClassInitializerInfo classInitInfo() {
-            return context.classInitInfo();
-        }
-
-        @Override
-        public DependencyInfo dependency() {
-            return context.dependency();
-        }
-
-        @Override
-        public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
-            context.addToInitializer(initializerContributor);
-        }
-
-        @Override
-        public boolean isAsync() {
-            return WasmGCInstructionGenerationVisitor.this.async;
-        }
-
-        @Override
-        public boolean isAsyncMethod(MethodReference method) {
-            return asyncSplitMethods.contains(method);
+        public PreciseTypeInference types() {
+            return types;
         }
     };
 }

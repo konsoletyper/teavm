@@ -35,6 +35,7 @@ import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.browser.Performance;
@@ -160,6 +161,7 @@ public final class TSystem extends TObject {
     @DelegateTo("currentTimeMillisLowLevel")
     @GeneratedBy(SystemNativeGenerator.class)
     @NoSideEffects
+    @Intrinsified
     public static native long currentTimeMillis();
 
     private static long currentTimeMillisLowLevel() {

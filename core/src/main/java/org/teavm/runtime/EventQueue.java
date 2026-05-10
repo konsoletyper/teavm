@@ -20,6 +20,7 @@ import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Export;
 import org.teavm.interop.Import;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.StaticInit;
 
 @StaticInit
@@ -60,6 +61,7 @@ public final class EventQueue {
         return id;
     }
 
+    @Intrinsified
     private static native int offerWasmGC(Event action, double time);
 
     private static void run(Event action) {

@@ -16,10 +16,14 @@
 package org.teavm.backend.wasm.intrinsics.reflection;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.WasmGCNameProvider;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
@@ -27,16 +31,29 @@ import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.reflect.GenericTypeInfo;
 
-public class GenericTypeInfoIntrinsic implements WasmGCIntrinsic {
+public class GenericTypeInfoIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+    private final WasmFunctionTypes functionTypes;
+    private final WasmGCNameProvider names;
+    private final WasmModule module;
     private WasmFunction kindFunction;
 
+    public GenericTypeInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider, WasmFunctionTypes functionTypes,
+            WasmGCNameProvider names, WasmModule module) {
+        this.classInfoProvider = classInfoProvider;
+        this.functionTypes = functionTypes;
+        this.names = names;
+        this.module = module;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var reflectionTypes = context.classInfoProvider().reflectionTypes();
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        var reflectionTypes = classInfoProvider.reflectionTypes();
         switch (invocation.getMethod().getName()) {
             case "kind":
                 context.generate(builder, invocation.getArguments().get(0));
-                builder.call(getKindFunction(context));
+                builder.call(getKindFunction());
                 break;
             case "asParameterizedType":
                 context.generate(builder, invocation.getArguments().get(0));
@@ -63,13 +80,13 @@ public class GenericTypeInfoIntrinsic implements WasmGCIntrinsic {
         }
     }
 
-    private WasmFunction getKindFunction(WasmGCIntrinsicContext context) {
+    private WasmFunction getKindFunction() {
         if (kindFunction == null) {
-            kindFunction = new WasmFunction(context.functionTypes().of(WasmType.INT32, WasmType.STRUCT));
-            kindFunction.setName(context.names().topLevel(context.names().suggestForMethod(new MethodReference(
+            kindFunction = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.STRUCT));
+            kindFunction.setName(names.topLevel(names.suggestForMethod(new MethodReference(
                     GenericTypeInfo.class, "kind", int.class))));
 
-            var reflectionTypes = context.classInfoProvider().reflectionTypes();
+            var reflectionTypes = classInfoProvider.reflectionTypes();
 
             var param = new WasmLocal(WasmType.STRUCT, "this");
             kindFunction.add(param);
@@ -98,7 +115,7 @@ public class GenericTypeInfoIntrinsic implements WasmGCIntrinsic {
 
             body.i32Const(GenericTypeInfo.Kind.RAW_TYPE);
 
-            context.module().functions.add(kindFunction);
+            module.functions.add(kindFunction);
         }
         return kindFunction;
     }

@@ -13,10 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generators;
+package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.model.MethodReference;
-
-public interface WasmGCCustomGeneratorFactory {
-    WasmGCCustomGenerator createGenerator(MethodReference methodRef, WasmGCCustomGeneratorFactoryContext context);
+public interface WasmGCCodeGenContributor {
+    void contribute(WasmGCCodeGenContext context, WasmGCCodeGenRegistry registry);
 }

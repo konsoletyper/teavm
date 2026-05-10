@@ -15,7 +15,9 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
+import java.util.Set;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
@@ -24,17 +26,23 @@ import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmIntUnaryOperation;
 import org.teavm.model.MethodReference;
 
-public class IntNumIntrinsic implements WasmGCIntrinsic {
+public class IntNumIntrinsic implements WasmGCInlineIntrinsic {
+    static final Set<String> METHODS = Set.of("divideUnsigned", "remainderUnsigned", "compareUnsigned",
+            "numberOfLeadingZeros", "numberOfTrailingZeros", "bitCount");
+
     private final MethodReference compareUnsigned;
     private final WasmIntType wasmType;
+    private final BaseWasmFunctionRepository functions;
 
-    public IntNumIntrinsic(Class<?> javaType, WasmIntType wasmType) {
+    public IntNumIntrinsic(Class<?> javaType, WasmIntType wasmType, BaseWasmFunctionRepository functions) {
         compareUnsigned = new MethodReference(WasmRuntime.class, "compareUnsigned", javaType, javaType, int.class);
         this.wasmType = wasmType;
+        this.functions = functions;
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "divideUnsigned":
                 context.generate(builder, invocation.getArguments().get(0));
@@ -49,7 +57,7 @@ public class IntNumIntrinsic implements WasmGCIntrinsic {
             case "compareUnsigned":
                 context.generate(builder, invocation.getArguments().get(0));
                 context.generate(builder, invocation.getArguments().get(1));
-                builder.call(context.functions().forStaticMethod(compareUnsigned));
+                builder.call(functions.forStaticMethod(compareUnsigned));
                 break;
             case "numberOfLeadingZeros":
                 context.generate(builder, invocation.getArguments().get(0));

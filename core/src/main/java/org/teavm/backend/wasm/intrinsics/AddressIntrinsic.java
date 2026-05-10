@@ -17,8 +17,10 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
@@ -28,9 +30,18 @@ import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class AddressIntrinsic implements WasmGCIntrinsic {
+public class AddressIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+    private final BaseWasmFunctionRepository functions;
+
+    public AddressIntrinsic(WasmGCClassInfoProvider classInfoProvider, BaseWasmFunctionRepository functions) {
+        this.classInfoProvider = classInfoProvider;
+        this.functions = functions;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "toInt":
             case "toStructure":
@@ -57,8 +68,8 @@ public class AddressIntrinsic implements WasmGCIntrinsic {
                 } else {
                     var type = ((ConstantExpr) invocation.getArguments().get(1)).getValue();
                     var className = ((ValueType.Object) type).getClassName();
-                    int size = context.classInfoProvider().getHeapSize(className);
-                    int alignment = context.classInfoProvider().getHeapAlignment(className);
+                    int size = classInfoProvider.getHeapSize(className);
+                    int alignment = classInfoProvider.getHeapAlignment(className);
                     size = WasmGeneratorUtil.align(size, alignment);
                     context.generate(builder, invocation.getArguments().get(2));
                     builder.i32Const(size).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL);
@@ -140,7 +151,7 @@ public class AddressIntrinsic implements WasmGCIntrinsic {
                 for (var arg : invocation.getArguments()) {
                     context.generate(builder, arg);
                 }
-                builder.call(context.functions().forStaticMethod(delegate));
+                builder.call(functions.forStaticMethod(delegate));
                 break;
             }
             case "isLessThan":

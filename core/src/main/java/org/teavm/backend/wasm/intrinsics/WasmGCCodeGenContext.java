@@ -15,44 +15,24 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import java.util.function.Consumer;
-import org.teavm.ast.Expr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.generate.TemporaryVariablePool;
-import org.teavm.backend.wasm.generate.ValueCache;
+import org.teavm.backend.wasm.generate.WasmGCInitializerRegistry;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
-import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
-import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
-import org.teavm.backend.wasm.types.PreciseTypeInference;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
-import org.teavm.dependency.DependencyInfo;
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.ClassHierarchy;
-import org.teavm.model.ListableClassReaderSource;
-import org.teavm.model.MethodReference;
-import org.teavm.model.analysis.ClassInitializerInfo;
-import org.teavm.parsing.resource.ResourceProvider;
+import org.teavm.vm.intrinsic.IntrinsicContributorContext;
 
-public interface WasmGCIntrinsicContext {
-    void generate(WasmInstructionBuilder builder, Expr expr);
-
+public interface WasmGCCodeGenContext extends IntrinsicContributorContext {
     WasmModule module();
 
     WasmFunctionTypes functionTypes();
 
-    PreciseTypeInference types();
-
     BaseWasmFunctionRepository functions();
-
-    ClassHierarchy hierarchy();
-
-    ListableClassReaderSource classes();
 
     WasmGCTypeMapper typeMapper();
 
@@ -60,33 +40,11 @@ public interface WasmGCIntrinsicContext {
 
     WasmGCVirtualTableProvider virtualTables();
 
-    TemporaryVariablePool tempVars();
-
-    ValueCache valueCache();
-
     WasmGCNameProvider names();
 
     WasmGCStringProvider strings();
 
-    ClassLoader classLoader();
-
-    ResourceProvider resources();
-
     WasmTag exceptionTag();
 
-    String entryPoint();
-
-    Diagnostics diagnostics();
-
-    MethodReference currentMethod();
-
-    ClassInitializerInfo classInitInfo();
-
-    DependencyInfo dependency();
-
-    boolean isAsync();
-
-    boolean isAsyncMethod(MethodReference method);
-
-    void addToInitializer(Consumer<WasmFunction> initializerContributor);
+    WasmGCInitializerRegistry initializerRegistry();
 }

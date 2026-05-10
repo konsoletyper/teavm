@@ -21,6 +21,7 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Import;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
@@ -133,6 +134,7 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Intrinsified
     public static native JSObject wrap(String value);
 
     @InjectedBy(JSNativeInjector.class)
@@ -178,6 +180,7 @@ public final class JS {
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Intrinsified
     public static native String unwrapString(JSObject value);
 
     public static <T extends JSObject> JSObject wrap(T[] array) {
@@ -1022,11 +1025,13 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
+    @Intrinsified
     public static native JSObject get(JSObject instance, JSObject index);
 
     @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
     @NoSideEffects
+    @Intrinsified
     public static native JSObject getPure(JSObject instance, JSObject index);
 
     @InjectedBy(JSNativeInjector.class)
@@ -1052,10 +1057,12 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Intrinsified
     public static native JSObject global(String name);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Intrinsified
     public static native JSObject importModule(String name);
 
     @InjectedBy(JSNativeInjector.class)
@@ -1075,10 +1082,12 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Intrinsified
     public static native JSObject throwCCEIfFalse(boolean value, JSObject o);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Intrinsified
     public static native JSObject argumentsBeginningAt(int index);
 
     @InjectedBy(JSNativeInjector.class)
@@ -1088,8 +1097,10 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Intrinsified
     public static native boolean isNull(JSObject o);
 
     @NoSideEffects
+    @Intrinsified
     public static native Object jsArrayItem(Object array, int index);
 }

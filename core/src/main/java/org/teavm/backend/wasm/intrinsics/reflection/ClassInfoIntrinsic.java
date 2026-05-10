@@ -19,25 +19,32 @@ import java.util.List;
 import java.util.function.ToIntFunction;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.CachedValue;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.reflection.ClassInfoStruct;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
-import org.teavm.reflection.ReflectionDependencyListener;
 
-public class ClassInfoIntrinsic implements WasmGCIntrinsic {
-    private ReflectionDependencyListener reflection;
+public class ClassInfoIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+    private final WasmFunctionTypes functionTypes;
+    private final ReflectionMetadataGenerator metadataGenerator;
 
-    public ClassInfoIntrinsic(ReflectionDependencyListener reflection) {
-        this.reflection = reflection;
+    public ClassInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider, WasmFunctionTypes functionTypes,
+            ReflectionMetadataGenerator metadataGenerator) {
+        this.classInfoProvider = classInfoProvider;
+        this.functionTypes = functionTypes;
+        this.metadataGenerator = metadataGenerator;
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "modifiers":
                 fieldAccess(invocation, context, builder, ClassInfoStruct::modifiersIndex);
@@ -65,32 +72,32 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 break;
             case "classObject": {
                 context.generate(builder, invocation.getArguments().get(0));
-                builder.call(context.classInfoProvider().reflectionTypes().classInfo().classObjectFunction());
+                builder.call(classInfoProvider.reflectionTypes().classInfo().classObjectFunction());
                 break;
             }
             case "isSuperTypeOf": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 var args = List.of(invocation.getArguments().get(1), invocation.getArguments().get(0));
                 callVirtual(context, builder, classInfoType.supertypeFunctionType(),
                         classInfoType.supertypeFunctionIndex(), args, 1);
                 break;
             }
             case "newArrayInstance": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 var args = List.of(invocation.getArguments().get(0), invocation.getArguments().get(1));
                 callVirtual(context, builder, classInfoType.newArrayFunctionType(),
                         classInfoType.newArrayFunctionIndex(), args, 0);
                 break;
             }
             case "arrayLength": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 var args = List.of(invocation.getArguments().get(0), invocation.getArguments().get(1));
                 callVirtual(context, builder, classInfoType.arrayLengthFunctionType(),
                         classInfoType.arrayLengthIndex(), args, 0);
                 break;
             }
             case "getItem": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 var args = List.of(invocation.getArguments().get(0), invocation.getArguments().get(1),
                         invocation.getArguments().get(2));
                 callVirtual(context, builder, classInfoType.getItemFunctionType(),
@@ -98,7 +105,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 break;
             }
             case "putItem": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 var args = List.of(invocation.getArguments().get(0), invocation.getArguments().get(1),
                         invocation.getArguments().get(2), invocation.getArguments().get(3));
                 callVirtual(context, builder, classInfoType.putItemFunctionType(),
@@ -111,11 +118,11 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 var isSuspend = context.isAsyncMethod(invocation.getMethod());
                 block
                         .nullBranch(WasmNullCondition.NULL, block)
-                        .callReference(context.functionTypes().of(null), isSuspend);
+                        .callReference(functionTypes.of(null), isSuspend);
                 break;
             }
             case "enumConstantCount": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 context.generate(builder, invocation.getArguments().get(0));
                 var cachedReceiver = context.valueCache().create(
                         classInfoType.structure().getReference(), builder);
@@ -123,7 +130,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
 
                 var outerBlock = builder.block(WasmType.INT32);
                 var initBlock = outerBlock.block(classInfoType.enumConstantsType().getReference());
-                var fnType = context.functionTypes().of(classInfoType.enumConstantsType().getReference());
+                var fnType = functionTypes.of(classInfoType.enumConstantsType().getReference());
 
                 initBlock
                         .append(cachedReceiver)
@@ -144,7 +151,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 break;
             }
             case "enumConstant": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 fieldAccess(invocation, context, builder, ClassInfoStruct::enumConstantsIndex);
                 context.generate(builder, invocation.getArguments().get(1));
                 builder.arrayGet(classInfoType.enumConstantsType());
@@ -164,33 +171,25 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 break;
             }
             case "superinterface": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 fieldAccess(invocation, context, builder, ClassInfoStruct::interfacesIndex);
                 context.generate(builder, invocation.getArguments().get(1));
                 builder.arrayGet(classInfoType.interfacesType());
                 break;
             }
-            case "reflection": {
-                var metadataGen = new ReflectionMetadataGenerator(context.names(), context.module(),
-                        context.functionTypes(), context.dependency(), reflection, context.classes(),
-                        context.classInfoProvider(), context.functions(), context.typeMapper(),
-                        context.strings(), context.classInitInfo(), context.virtualTables());
-                metadataGen.generate();
-                context.addToInitializer(fn -> {
-                    fn.getBody().builder().call(metadataGen.initFunction());
-                });
+            case "reflection":
+                metadataGenerator.generate();
                 fieldAccess(invocation, context, builder, ClassInfoStruct::reflectionInfoIndex);
                 break;
-            }
             case "rewind": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 builder
                         .getGlobal(classInfoType.firstClassGlobal())
                         .setGlobal(classInfoType.currentClassGlobal());
                 break;
             }
             case "hasNext": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 builder
                         .getGlobal(classInfoType.currentClassGlobal())
                         .isNull()
@@ -198,7 +197,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 break;
             }
             case "next": {
-                var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+                var classInfoType = classInfoProvider.reflectionTypes().classInfo();
                 var currentCache = context.tempVars().acquire(classInfoType.structure().getReference());
                 builder
                         .getGlobal(classInfoType.currentClassGlobal())
@@ -211,12 +210,12 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
             }
             case "newInstance": {
                 fieldAccess(invocation, context, builder, ClassInfoStruct::createInstanceIndex);
-                var objType = context.classInfoProvider().getClassInfo("java.lang.Object");
-                builder.callReference(context.functionTypes().of(objType.getType()));
+                var objType = classInfoProvider.getClassInfo("java.lang.Object");
+                builder.callReference(functionTypes.of(objType.getType()));
                 break;
             }
             case "initializeNewInstance": {
-                var objType = context.classInfoProvider().getClassInfo("java.lang.Object");
+                var objType = classInfoProvider.getClassInfo("java.lang.Object");
                 var isSuspend = context.isAsyncMethod(invocation.getMethod());
 
                 var outerBlock = builder.block(WasmType.INT32);
@@ -226,7 +225,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
                 fieldAccess(invocation, context, innerBlock, ClassInfoStruct::initNewInstanceIndex);
                 innerBlock
                         .nullBranch(WasmNullCondition.NULL, innerBlock)
-                        .callReference(context.functionTypes().of(null, objType.getType()), isSuspend)
+                        .callReference(functionTypes.of(null, objType.getType()), isSuspend)
                         .i32Const(1)
                         .breakTo(outerBlock);
 
@@ -235,7 +234,7 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
             }
             case "arrayType": {
                 context.generate(builder, invocation.getArguments().get(0));
-                builder.call(context.classInfoProvider().getGetArrayClassFunction());
+                builder.call(classInfoProvider.getGetArrayClassFunction());
                 break;
             }
             default:
@@ -243,16 +242,16 @@ public class ClassInfoIntrinsic implements WasmGCIntrinsic {
         }
     }
 
-    private void fieldAccess(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void fieldAccess(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder, ToIntFunction<ClassInfoStruct> field) {
-        var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+        var classInfoType = classInfoProvider.reflectionTypes().classInfo();
         context.generate(builder, invocation.getArguments().get(0));
         builder.structGet(classInfoType.structure(), field.applyAsInt(classInfoType));
     }
 
-    private void callVirtual(WasmGCIntrinsicContext context, WasmInstructionBuilder builder,
+    private void callVirtual(WasmGCInlineIntrinsicContext context, WasmInstructionBuilder builder,
             WasmFunctionType fnType, int index, List<Expr> argExprs, int receiverArgIndex) {
-        var classInfoType = context.classInfoProvider().reflectionTypes().classInfo();
+        var classInfoType = classInfoProvider.reflectionTypes().classInfo();
         CachedValue cachedReceiver = null;
         for (int i = 0; i < argExprs.size(); i++) {
             context.generate(builder, argExprs.get(i));

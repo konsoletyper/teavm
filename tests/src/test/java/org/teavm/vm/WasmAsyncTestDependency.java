@@ -13,11 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.methods;
+package org.teavm.vm;
 
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
+import org.teavm.dependency.AbstractDependencyListener;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
 
-public interface WasmGCIntrinsicProvider {
-    WasmGCIntrinsic get(MethodReference method);
+public class WasmAsyncTestDependency extends AbstractDependencyListener {
+    @Override
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
+        if (method.getMethod().getName().equals("generatedMethod")) {
+            agent.linkMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class, int.class, int.class)).use();
+        }
+    }
 }

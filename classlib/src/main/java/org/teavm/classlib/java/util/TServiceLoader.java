@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.lang.*;
+import org.teavm.interop.Intrinsified;
 import org.teavm.runtime.reflect.ClassInfo;
 
 public final class TServiceLoader<S> extends TObject implements TIterable<S> {
@@ -61,6 +62,7 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
         return load(service);
     }
 
+    @Intrinsified
     private static native Object[] loadServices(ClassInfo cls);
 
     public void reload() {

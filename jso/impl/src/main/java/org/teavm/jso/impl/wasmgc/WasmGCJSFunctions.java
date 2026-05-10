@@ -16,74 +16,87 @@
 package org.teavm.jso.impl.wasmgc;
 
 import java.util.Arrays;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 
 class WasmGCJSFunctions {
+    private WasmFunctionTypes functionTypes;
+    private WasmGCNameProvider names;
+    private WasmModule module;
+
     private WasmFunction[] constructors = new WasmFunction[32];
     private WasmFunction[] binds = new WasmFunction[32];
     private WasmFunction[] callers = new WasmFunction[32];
     private WasmFunction getFunction;
 
-    WasmFunction getFunctionConstructor(WasmGCJsoContext context, int index) {
+    WasmGCJSFunctions(WasmFunctionTypes functionTypes, WasmGCNameProvider names, WasmModule module) {
+        this.functionTypes = functionTypes;
+        this.names = names;
+        this.module = module;
+    }
+
+    WasmFunction getFunctionConstructor(int index) {
         var function = constructors[index];
         if (function == null) {
             var extern = WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
             var constructorParamTypes = new WasmType[index + 1];
             Arrays.fill(constructorParamTypes, WasmType.EXTERN);
-            var functionType = context.functionTypes().of(extern, constructorParamTypes);
+            var functionType = functionTypes.of(extern, constructorParamTypes);
             function = new WasmFunction(functionType);
-            function.setName(context.names().topLevel("teavm.js:createFunction" + index));
+            function.setName(names.topLevel("teavm.js:createFunction" + index));
             function.setImportModule("teavmJso");
             function.setImportName("createFunction" + index);
-            context.module().functions.add(function);
+            module.functions.add(function);
             constructors[index] = function;
         }
         return function;
     }
 
-    WasmFunction getBind(WasmGCJsoContext context, int index) {
+    WasmFunction getBind(int index) {
         var function = binds[index];
         if (function == null) {
             var extern = WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
             var constructorParamTypes = new WasmType[index + 1];
             Arrays.fill(constructorParamTypes, WasmType.EXTERN);
-            var functionType = context.functionTypes().of(extern, constructorParamTypes);
+            var functionType = functionTypes.of(extern, constructorParamTypes);
             function = new WasmFunction(functionType);
-            function.setName(context.names().topLevel("teavm.js:bindFunction" + index));
+            function.setName(names.topLevel("teavm.js:bindFunction" + index));
             function.setImportModule("teavmJso");
             function.setImportName("bindFunction" + index);
-            context.module().functions.add(function);
+            module.functions.add(function);
             binds[index] = function;
         }
         return function;
     }
 
-    WasmFunction getGet(WasmGCJsoContext context) {
+    WasmFunction getGet() {
         var function = getFunction;
         if (function == null) {
-            var functionType = context.functionTypes().of(WasmType.EXTERN, WasmType.EXTERN, WasmType.EXTERN);
+            var functionType = functionTypes.of(WasmType.EXTERN, WasmType.EXTERN, WasmType.EXTERN);
             function = new WasmFunction(functionType);
-            function.setName(context.names().topLevel("teavm.js:getProperty"));
+            function.setName(names.topLevel("teavm.js:getProperty"));
             function.setImportModule("teavmJso");
             function.setImportName("getProperty");
-            context.module().functions.add(function);
+            module.functions.add(function);
             getFunction = function;
         }
         return function;
     }
 
-    WasmFunction getFunctionCaller(WasmGCJsoContext context, int index) {
+    WasmFunction getFunctionCaller(int index) {
         var function = callers[index];
         if (function == null) {
             var paramTypes = new WasmType[index + 1];
             Arrays.fill(paramTypes, WasmType.EXTERN);
-            var functionType = context.functionTypes().of(WasmType.EXTERN, paramTypes);
+            var functionType = functionTypes.of(WasmType.EXTERN, paramTypes);
             function = new WasmFunction(functionType);
-            function.setName(context.names().topLevel("teavm.js:callFunction" + index));
+            function.setName(names.topLevel("teavm.js:callFunction" + index));
             function.setImportModule("teavmJso");
             function.setImportName("callFunction" + index);
-            context.module().functions.add(function);
+            module.functions.add(function);
             callers[index] = function;
         }
         return function;

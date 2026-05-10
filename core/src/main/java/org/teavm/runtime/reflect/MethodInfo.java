@@ -15,28 +15,36 @@
  */
 package org.teavm.runtime.reflect;
 
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.StringInfo;
 
 public final class MethodInfo extends ReflectionInfo {
     @Unmanaged
+    @Intrinsified
     public native StringInfo name();
 
     @Unmanaged
+    @Intrinsified
     public native int modifiers();
 
     @Unmanaged
+    @Intrinsified
     public native DerivedClassInfo returnType();
 
     @Unmanaged
+    @Intrinsified
     public native int parameterCount();
 
     @Unmanaged
+    @Intrinsified
     public native DerivedClassInfo parameterType(int index);
 
     @Unmanaged
+    @Intrinsified
     public native Object call(Object instance, Object[] args);
 
     @Unmanaged
+    @Intrinsified
     public native MethodReflectionInfo reflection();
 }

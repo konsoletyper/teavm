@@ -15,25 +15,32 @@
  */
 package org.teavm.runtime.reflect;
 
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.StringInfo;
 
 public final class FieldInfo extends ReflectionInfo {
     @Unmanaged
+    @Intrinsified
     public native StringInfo name();
 
     @Unmanaged
+    @Intrinsified
     public native int modifiers();
 
     @Unmanaged
+    @Intrinsified
     public native DerivedClassInfo type();
 
     @Unmanaged
+    @Intrinsified
     public native Object read(Object instance);
 
     @Unmanaged
+    @Intrinsified
     public native void write(Object instance, Object value);
 
     @Unmanaged
+    @Intrinsified
     public native FieldReflectionInfo reflection();
 }

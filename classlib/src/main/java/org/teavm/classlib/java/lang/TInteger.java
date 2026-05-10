@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
 import java.util.Objects;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.NoSideEffects;
 
 public class TInteger extends TNumber implements TComparable<TInteger> {
@@ -421,14 +422,17 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
 
     @InjectedBy(IntegerNativeGenerator.class)
     @NoSideEffects
+    @Intrinsified
     public static native int divideUnsigned(int dividend, int divisor);
 
     @InjectedBy(IntegerNativeGenerator.class)
     @NoSideEffects
+    @Intrinsified
     public static native int remainderUnsigned(int dividend, int divisor);
 
     @InjectedBy(IntegerNativeGenerator.class)
     @NoSideEffects
+    @Intrinsified
     public static native int compareUnsigned(int a, int b);
 
     public static int min(int a, int b) {

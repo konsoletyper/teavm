@@ -24,10 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.generate.WasmGCNameProvider;
+import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmGlobal;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
@@ -38,6 +42,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
@@ -48,45 +53,65 @@ import org.teavm.platform.metadata.builders.ResourceMapBuilder;
 import org.teavm.platform.plugin.DefaultMetadataGeneratorContext;
 import org.teavm.platform.plugin.ResourceTypeDescriptor;
 
-class MetadataIntrinsic implements WasmGCIntrinsic {
+class MetadataIntrinsic implements WasmGCInlineIntrinsic {
+    private ClassHierarchy hierarchy;
+    private ResourceProvider resources;
+    private ClassLoader classLoader;
+    private WasmGCTypeMapper typeMapper;
+    private WasmGCStringProvider strings;
+    private WasmGCNameProvider names;
+    private WasmModule module;
     private Properties properties;
     private ServiceRepository services;
     private MetadataGenerator generator;
+    private MethodReference method;
+
     private WasmGlobal global;
     private Map<Class<?>, ResourceTypeDescriptor> descriptors = new HashMap<>();
     private Map<Class<?>, ObjectIntMap<String>> fieldIndexMap = new HashMap<>();
 
-    MetadataIntrinsic(Properties properties, ServiceRepository services, MetadataGenerator generator) {
+    MetadataIntrinsic(ClassHierarchy hierarchy, ResourceProvider resources, ClassLoader classLoader,
+            WasmGCTypeMapper typeMapper, WasmGCStringProvider strings, WasmGCNameProvider names, WasmModule module,
+            Properties properties, ServiceRepository services, MetadataGenerator generator, MethodReference method) {
+        this.hierarchy = hierarchy;
+        this.resources = resources;
+        this.classLoader = classLoader;
+        this.typeMapper = typeMapper;
+        this.strings = strings;
+        this.names = names;
+        this.module = module;
         this.properties = properties;
         this.services = services;
         this.generator = generator;
+        this.method = method;
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        builder.getGlobal(getGlobal(invocation.getMethod(), context));
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        builder.getGlobal(getGlobal());
     }
 
-    private WasmGlobal getGlobal(MethodReference method, WasmGCIntrinsicContext context) {
+    private WasmGlobal getGlobal() {
         if (global == null) {
-            var genContext = new DefaultMetadataGeneratorContext(context.hierarchy().getClassSource(),
-                    context.resources(), context.classLoader(), properties, services);
+            var genContext = new DefaultMetadataGeneratorContext(hierarchy.getClassSource(),
+                    resources, classLoader, properties, services);
             var metadata = generator.generateMetadata(genContext, method);
-            var type = context.typeMapper().mapType(method.getReturnType());
-            var name = context.names().topLevel(context.names().suggestForMethod(method));
+            var type = typeMapper.mapType(method.getReturnType());
+            var name = names.topLevel(names.suggestForMethod(method));
             global = new WasmGlobal(name, type);
-            generateMetadata(context, metadata, type, global.getInitialValue().builder());
-            context.module().globals.add(global);
+            generateMetadata(metadata, type, global.getInitialValue().builder());
+            module.globals.add(global);
         }
         return global;
     }
 
-    private void generateMetadata(WasmGCIntrinsicContext context, Object value, WasmType expectedType,
+    private void generateMetadata(Object value, WasmType expectedType,
             WasmInstructionBuilder builder) {
         if (value == null) {
             builder.nullConst((WasmType.Reference) expectedType);
         } else if (value instanceof String) {
-            builder.getGlobal(context.strings().getStringConstant((String) value).global);
+            builder.getGlobal(strings.getStringConstant((String) value).global);
         } else if (value instanceof Boolean) {
             builder.i32Const((Boolean) value ? 1 : 0);
         } else if (value instanceof Integer) {
@@ -105,37 +130,34 @@ class MetadataIntrinsic implements WasmGCIntrinsic {
             builder.f64Const((Double) value);
         } else if (value instanceof ResourceArrayBuilder) {
             var array = (ResourceArrayBuilder<?>) value;
-            var type = (WasmType.CompositeReference) context.typeMapper().mapType(
+            var type = (WasmType.CompositeReference) typeMapper.mapType(
                     ValueType.object(ResourceArray.class.getName()));
             var arrayType = (WasmArray) type.composite;
             for (var i = 0; i < array.values.size(); ++i) {
-                generateMetadata(context, array.values.get(i),
-                        arrayType.getElementType().asUnpackedType(), builder);
+                generateMetadata(array.values.get(i), arrayType.getElementType().asUnpackedType(), builder);
             }
             builder.arrayNewFixed(arrayType, array.values.size());
         } else if (value instanceof ResourceMapBuilder) {
-            generateMapResource(context, (ResourceMapBuilder<?>) value, builder);
+            generateMapResource((ResourceMapBuilder<?>) value, builder);
         } else if (value instanceof ObjectResourceBuilder) {
             var objBuilder = (ObjectResourceBuilder) value;
-            var descriptor = getDescriptor(context.hierarchy(), objBuilder);
-            generateObjectResource(context, objBuilder, descriptor, builder);
+            var descriptor = getDescriptor(objBuilder);
+            generateObjectResource(objBuilder, descriptor, builder);
         } else {
             throw new IllegalArgumentException("Don't know how to write resource: " + value);
         }
     }
 
-    private ResourceTypeDescriptor getDescriptor(ClassHierarchy hierarchy, ObjectResourceBuilder builder) {
+    private ResourceTypeDescriptor getDescriptor(ObjectResourceBuilder builder) {
         return descriptors.computeIfAbsent(builder.getOutputClass(), key ->
                 new ResourceTypeDescriptor(hierarchy, hierarchy.getClassSource().get(key.getName())));
     }
 
-    private void generateMapResource(WasmGCIntrinsicContext context, ResourceMapBuilder<?> map,
-            WasmInstructionBuilder builder) {
+    private void generateMapResource(ResourceMapBuilder<?> map, WasmInstructionBuilder builder) {
         var hashTable = HashUtils.createHashTable(map.values.keySet().toArray(new String[0]));
-        var type = (WasmType.CompositeReference) context.typeMapper().mapType(
-                ValueType.object(ResourceMap.class.getName()));
+        var type = (WasmType.CompositeReference) typeMapper.mapType(ValueType.object(ResourceMap.class.getName()));
         var arrayType = (WasmArray) type.composite;
-        var entryType = (WasmType.CompositeReference) context.typeMapper().mapType(
+        var entryType = (WasmType.CompositeReference) typeMapper.mapType(
                 ValueType.object(ResourceMapEntry.class.getName()));
         var entryStruct = (WasmStructure) entryType.composite;
 
@@ -144,21 +166,21 @@ class MetadataIntrinsic implements WasmGCIntrinsic {
                 builder.nullConst(entryType);
             } else {
                 var value = map.values.get(key);
-                var keyConstant = context.strings().getStringConstant(key);
+                var keyConstant = strings.getStringConstant(key);
                 builder.getGlobal(keyConstant.global);
-                generateMetadata(context, value, WasmType.EQ, builder);
+                generateMetadata(value, WasmType.EQ, builder);
                 builder.structNew(entryStruct);
             }
         }
         builder.arrayNewFixed(arrayType, hashTable.length);
     }
 
-    private void generateObjectResource(WasmGCIntrinsicContext context, ObjectResourceBuilder value,
-            ResourceTypeDescriptor descriptor, WasmInstructionBuilder builder) {
+    private void generateObjectResource(ObjectResourceBuilder value, ResourceTypeDescriptor descriptor,
+            WasmInstructionBuilder builder) {
         var javaItf = descriptor.getRootInterface();
-        var cls = context.hierarchy().getClassSource().get(javaItf.getName());
+        var cls = hierarchy.getClassSource().get(javaItf.getName());
 
-        var wasmType = (WasmType.CompositeReference) context.typeMapper().mapType(ValueType.object(cls.getName()));
+        var wasmType = (WasmType.CompositeReference) typeMapper.mapType(ValueType.object(cls.getName()));
         var wasmStruct = (WasmStructure) wasmType.composite;
         var map = fieldIndexMap.computeIfAbsent(value.getOutputClass(), key -> {
             var result = new ObjectIntHashMap<String>();
@@ -168,10 +190,10 @@ class MetadataIntrinsic implements WasmGCIntrinsic {
             }
             return result;
         });
-        for (var field : collectFields(context.hierarchy().getClassSource(), cls)) {
+        for (var field : collectFields(hierarchy.getClassSource(), cls)) {
             var index = map.getOrDefault(field.name, -1);
             var fieldValue = value.getValue(index);
-            generateMetadata(context, fieldValue, context.typeMapper().mapType(field.type), builder);
+            generateMetadata(fieldValue, typeMapper.mapType(field.type), builder);
         }
         builder.structNew(wasmStruct);
     }

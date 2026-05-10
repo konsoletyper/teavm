@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.transformation;
 
 import java.lang.ref.ReferenceQueue;
 import org.teavm.interop.Import;
+import org.teavm.interop.Intrinsified;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationValue;
@@ -89,14 +90,17 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
             var constructor = cls.getMethod(new MethodDescriptor("<init>", Object.class, ReferenceQueue.class,
                     void.class));
             constructor.getModifiers().add(ElementModifier.NATIVE);
+            constructor.getAnnotations().add(new AnnotationHolder(Intrinsified.class.getName()));
             constructor.setProgram(null);
 
             var get = cls.getMethod(new MethodDescriptor("get", Object.class));
             get.getModifiers().add(ElementModifier.NATIVE);
+            get.getAnnotations().add(new AnnotationHolder(Intrinsified.class.getName()));
             get.setProgram(null);
 
             var clear = cls.getMethod(new MethodDescriptor("clear", void.class));
             clear.getModifiers().add(ElementModifier.NATIVE);
+            clear.getAnnotations().add(new AnnotationHolder(Intrinsified.class.getName()));
             clear.setProgram(null);
         } else if (cls.getName().equals("java.lang.Integer") || cls.getName().equals("java.lang.Long")) {
             for (var method : cls.getMethods()) {
@@ -106,6 +110,7 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                 case "bitCount":
                     method.setProgram(null);
                     method.getModifiers().add(ElementModifier.NATIVE);
+                    method.getAnnotations().add(new AnnotationHolder(Intrinsified.class.getName()));
                     break;
                 }
             }

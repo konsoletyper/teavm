@@ -15,35 +15,46 @@
  */
 package org.teavm.runtime.reflect;
 
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.Unmanaged;
 
 public final class ClassReflectionInfo extends ReflectionInfo {
     @Unmanaged
+    @Intrinsified
     public native int annotationCount();
 
     @Unmanaged
+    @Intrinsified
     public native AnnotationInfo annotation(int index);
 
     @Unmanaged
+    @Intrinsified
     public native int fieldCount();
 
     @Unmanaged
+    @Intrinsified
     public native FieldInfo field(int index);
 
     @Unmanaged
+    @Intrinsified
     public native int methodCount();
 
     @Unmanaged
+    @Intrinsified
     public native MethodInfo method(int index);
 
     @Unmanaged
+    @Intrinsified
     public native int typeParameterCount();
 
     @Unmanaged
+    @Intrinsified
     public native TypeVariableInfo typeParameter(int index);
 
     @Unmanaged
+    @Intrinsified
     public native int innerClassCount();
 
+    @Intrinsified
     public native ClassInfo innerClass(int index);
 }

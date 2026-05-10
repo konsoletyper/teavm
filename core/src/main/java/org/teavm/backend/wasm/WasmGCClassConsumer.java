@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm;
 
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContext;
+
 public interface WasmGCClassConsumer {
-    void accept(WasmGCClassConsumerContext context, String className);
+    void accept(WasmGCCodeGenContext context, String className);
 }

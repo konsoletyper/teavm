@@ -13,11 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.methods;
+package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
-import org.teavm.model.MethodReference;
+import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
-public interface WasmGCCustomGeneratorProvider {
-    WasmGCCustomGenerator get(MethodReference method);
+public interface WasmGCInlineIntrinsic {
+    void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context, WasmInstructionBuilder builder);
 }

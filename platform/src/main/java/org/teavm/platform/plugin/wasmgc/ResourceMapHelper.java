@@ -15,6 +15,7 @@
  */
 package org.teavm.platform.plugin.wasmgc;
 
+import org.teavm.interop.Intrinsified;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceMap;
 
@@ -22,8 +23,10 @@ public final class ResourceMapHelper {
     private ResourceMapHelper() {
     }
 
+    @Intrinsified
     private static native ResourceMapEntry entry(ResourceMap<?> map, int index);
 
+    @Intrinsified
     private static native int entryCount(ResourceMap<?> map);
 
     public static Resource get(ResourceMap<?> map, String key) {

@@ -23,12 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.function.Consumer;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.teavm.backend.c.analyze.InteropDependencyListener;
 import org.teavm.backend.wasm.debug.CompositeDebugLines;
@@ -38,18 +36,21 @@ import org.teavm.backend.wasm.debug.GCDebugInfoBuilder;
 import org.teavm.backend.wasm.debug.sourcemap.SourceMapBuilder;
 import org.teavm.backend.wasm.dependencies.WasmGCDependencies;
 import org.teavm.backend.wasm.generate.WasmGCDeclarationsGenerator;
+import org.teavm.backend.wasm.generate.WasmGCInitializerRegistry;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCCustomTypeMapperFactory;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
-import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
-import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactory;
-import org.teavm.backend.wasm.generators.WasmGCCustomGenerators;
 import org.teavm.backend.wasm.intrinsics.WasmGCAsyncTypeMapperFactory;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactory;
+import org.teavm.backend.wasm.intrinsics.WasmGCBodyIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContributor;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenRegistry;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsics;
+import org.teavm.backend.wasm.intrinsics.WasmGCResourcesIntrinsic;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
@@ -63,10 +64,12 @@ import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.runtime.StringInternPool;
+import org.teavm.backend.wasm.runtime.WasmGCResources;
 import org.teavm.backend.wasm.transformation.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.ClassLoaderResourceTransformation;
 import org.teavm.backend.wasm.transformation.EntryPointTransformation;
 import org.teavm.backend.wasm.transformation.ReferenceQueueTransformation;
+import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.common.JsonUtil;
 import org.teavm.dependency.DependencyAnalyzer;
@@ -77,9 +80,9 @@ import org.teavm.interop.Async;
 import org.teavm.interop.Export;
 import org.teavm.interop.Platforms;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -88,6 +91,7 @@ import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
 import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.NullCheckInsertion;
+import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.model.util.VariableCategoryProvider;
 import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
@@ -95,6 +99,9 @@ import org.teavm.runtime.heap.Heap;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
+import org.teavm.vm.intrinsic.BaseIntrinsicContributorContext;
+import org.teavm.vm.intrinsic.DefaultIntrinsicRegistry;
+import org.teavm.vm.intrinsic.IntrinsicRegistry;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
@@ -111,14 +118,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private WasmDebugInfoLevel debugLevel = WasmDebugInfoLevel.FULL;
     private int bufferHeapMinSize = 1024 * 1024 * 2;
     private boolean sharedBuffer;
-    private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
-    private Map<MethodReference, WasmGCIntrinsic> customIntrinsics = new HashMap<>();
     private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
-    private Map<MethodReference, WasmGCCustomGenerator> customCustomGenerators = new HashMap<>();
-    private List<WasmGCCustomGeneratorFactory> customGeneratorFactories = new ArrayList<>();
     private EntryPointTransformation entryPointTransformation = new EntryPointTransformation();
-    private List<WasmGCClassConsumer> classConsumers = new ArrayList<>();
     private List<Supplier<Collection<MethodReference>>> additionalMethodsOnCallSites = new ArrayList<>();
+    private List<WasmGCCodeGenContributor> intrinsicContributors = new ArrayList<>();
 
     private ReflectionDependencyListener reflection;
 
@@ -169,33 +172,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     }
 
     @Override
-    public void addIntrinsicFactory(WasmGCIntrinsicFactory intrinsicFactory) {
-        intrinsicFactories.add(intrinsicFactory);
-    }
-
-    @Override
-    public void addIntrinsic(MethodReference method, WasmGCIntrinsic intrinsic) {
-        customIntrinsics.put(method, intrinsic);
-    }
-
-    @Override
-    public void addGeneratorFactory(WasmGCCustomGeneratorFactory factory) {
-        customGeneratorFactories.add(factory);
-    }
-
-    @Override
-    public void addGenerator(MethodReference method, WasmGCCustomGenerator generator) {
-        customCustomGenerators.put(method, generator);
-    }
-
-    @Override
     public void addCustomTypeMapperFactory(WasmGCCustomTypeMapperFactory customTypeMapperFactory) {
         customTypeMapperFactories.add(customTypeMapperFactory);
-    }
-
-    @Override
-    public void addClassConsumer(WasmGCClassConsumer consumer) {
-        classConsumers.add(consumer);
     }
 
     @Override
@@ -296,22 +274,27 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     }
 
     @Override
+    public void contributeToCodeGen(WasmGCCodeGenContributor contributor) {
+        intrinsicContributors.add(contributor);
+    }
+
+    @Override
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
         module.memoryImportName = "memory";
         module.memoryImportModule = "env";
         controller.addVirtualMethods(reflection::isVirtual);
         addMethodsOnCallSites(reflection::getVirtualCallSites);
-        var customGenerators = new WasmGCCustomGenerators(classes, controller.getServices(),
-                customGeneratorFactories, customCustomGenerators,
-                controller.getProperties());
-        var intrinsics = new WasmGCIntrinsics(classes, controller.getServices(), intrinsicFactories, customIntrinsics,
-                reflection);
+        var inlineIntrinsics = new DefaultIntrinsicRegistry<WasmGCInlineIntrinsic>(classes);
+        var bodyIntrinsics = new DefaultIntrinsicRegistry<WasmGCBodyIntrinsic>(classes);
         var debugInfoBuilder = new GCDebugInfoBuilder();
         var methodsOnCallSites = new LinkedHashSet<MethodReference>();
         for (var provider : additionalMethodsOnCallSites) {
             methodsOnCallSites.addAll(provider.get());
         }
+        var asyncMethodFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph(),
+                controller.getDependencyInfo());
+        asyncMethodFinder.find(classes);
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
                 classes,
@@ -321,24 +304,27 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 controller.getClassInitializerInfo(),
                 controller.getDependencyInfo(),
                 controller.getDiagnostics(),
-                customGenerators,
-                intrinsics,
                 customTypeMapperFactories,
                 controller::isVirtual,
                 strict,
                 controller.getEntryPoint(),
-                methodsOnCallSites
+                methodsOnCallSites,
+                inlineIntrinsics,
+                bodyIntrinsics
         );
+        declarationsGenerator.setAsyncMethodFinder(asyncMethodFinder);
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
         declarationsGenerator.setCompactMode(compactMode);
         var moduleGenerator = new WasmGCModuleGenerator(declarationsGenerator);
-
-        var classConsumerContext = createClassConsumerContext(classes, declarationsGenerator);
-        for (var cls : classes.getClassNames()) {
-            for (var consumer : classConsumers) {
-                consumer.accept(classConsumerContext, cls);
-            }
+        var codeGenContext = createCodeGenContext(classes, declarationsGenerator,
+                asyncMethodFinder.getAsyncFamilyMethods());
+        var codeGenRegistry = createCodeGenRegistry(inlineIntrinsics, bodyIntrinsics);
+        WasmGCIntrinsics.apply(reflection, codeGenContext, inlineIntrinsics, bodyIntrinsics);
+        for (var contributor : intrinsicContributors) {
+            contributor.contribute(codeGenContext, codeGenRegistry);
         }
+        var resourceGenerator = new WasmGCResourcesIntrinsic(controller.getProperties(), codeGenContext);
+        inlineIntrinsics.registerIntrinsic(WasmGCResources.class, resourceGenerator);
 
         var internMethod = controller.getDependencyInfo().getMethod(new MethodReference(String.class,
                 "intern", String.class));
@@ -375,7 +361,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             }
         }
         moduleGenerator.generate();
-        customGenerators.contributeToModule(module);
+        resourceGenerator.writeModule(module);
         generateExceptionExports(declarationsGenerator);
         adjustModuleMemory(module, moduleGenerator, buffersHeap);
 
@@ -417,14 +403,14 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         declarationsGenerator.module.functions.add(setFunction);
     }
 
-    private WasmGCClassConsumerContext createClassConsumerContext(
-            ClassReaderSource classes,
-            WasmGCDeclarationsGenerator generator
+    private WasmGCCodeGenContext createCodeGenContext(
+            ListableClassReaderSource classes,
+            WasmGCDeclarationsGenerator generator,
+            Set<MethodReference> asyncSplitMethods
     ) {
-        return new WasmGCClassConsumerContext() {
-            @Override
-            public ClassReaderSource classes() {
-                return classes;
+        class ContextImpl extends BaseIntrinsicContributorContext implements WasmGCCodeGenContext {
+            ContextImpl() {
+                super(controller, generator.hierarchy, classes, asyncSplitMethods);
             }
 
             @Override
@@ -468,8 +454,37 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             }
 
             @Override
-            public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
-                generator.addToInitializer(initializerContributor);
+            public WasmGCClassInfoProvider classInfoProvider() {
+                return generator.classInfoProvider();
+            }
+
+            @Override
+            public WasmGCVirtualTableProvider virtualTables() {
+                return generator.virtualTables;
+            }
+
+            @Override
+            public WasmGCInitializerRegistry initializerRegistry() {
+                return initializerRegistry;
+            }
+
+            private WasmGCInitializerRegistry initializerRegistry = generator::addToInitializer;
+        }
+        return new ContextImpl();
+    }
+
+    private WasmGCCodeGenRegistry createCodeGenRegistry(
+            IntrinsicRegistry<WasmGCInlineIntrinsic> callSiteIntrinsics,
+            IntrinsicRegistry<WasmGCBodyIntrinsic> bodyIntrinsics) {
+        return new WasmGCCodeGenRegistry() {
+            @Override
+            public IntrinsicRegistry<WasmGCInlineIntrinsic> inlineIntrinsics() {
+                return callSiteIntrinsics;
+            }
+
+            @Override
+            public IntrinsicRegistry<WasmGCBodyIntrinsic> bodyIntrinsics() {
+                return bodyIntrinsics;
             }
         };
     }

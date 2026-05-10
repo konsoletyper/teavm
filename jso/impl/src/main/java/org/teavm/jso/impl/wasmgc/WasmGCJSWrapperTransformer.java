@@ -20,7 +20,9 @@ import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
 import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
 import static org.teavm.jso.impl.JSMethods.OBJECT;
 import static org.teavm.jso.impl.JSMethods.WASM_GC_JS_RUNTIME_CLASS;
+import org.teavm.interop.Intrinsified;
 import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationHolder;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
@@ -73,6 +75,7 @@ class WasmGCJSWrapperTransformer implements ClassHolderTransformer {
 
     private void transformWrapMethod(MethodHolder method) {
         method.getModifiers().add(ElementModifier.NATIVE);
+        method.getAnnotations().add(new AnnotationHolder(Intrinsified.class.getName()));
         method.setProgram(null);
     }
 

@@ -13,13 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generators;
+package org.teavm.interop;
 
-import org.teavm.common.ServiceRepository;
-import org.teavm.model.ClassReaderSource;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface WasmGCCustomGeneratorFactoryContext {
-    ClassReaderSource classes();
-
-    ServiceRepository services();
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.METHOD)
+public @interface Intrinsified {
 }

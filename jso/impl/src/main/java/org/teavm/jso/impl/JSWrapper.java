@@ -17,6 +17,7 @@ package org.teavm.jso.impl;
 
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
+import org.teavm.interop.Intrinsified;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSClass;
@@ -142,39 +143,48 @@ public final class JSWrapper {
 
     @JSBody(params = "target", script = "return new WeakRef(target);")
     @NoSideEffects
+    @Intrinsified
     private static native JSWeakRef<JSObject> createWeakRef(JSObject target);
 
     @JSBody(params = "target", script = "return target.deref();")
     @NoSideEffects
+    @Intrinsified
     private static native JSObject deref(JSWeakRef<JSObject> target);
 
     @JSBody(params = { "map", "key" }, script = "return map.get(key);")
     @NoSideEffects
+    @Intrinsified
     private static native JSWeakRef<JSObject> get(JSMap<? extends JSObject, JSWeakRef<JSObject>> map, JSObject key);
 
     @JSBody(params = { "map", "key", "value" }, script = "map.set(key, value);")
     @NoSideEffects
+    @Intrinsified
     private static native void set(JSMap<? extends JSObject, JSWeakRef<JSObject>> map, JSObject key, JSObject value);
 
     @JSBody(params = { "map", "key" }, script = "return map.get(key);")
     @NoSideEffects
+    @Intrinsified
     private static native JSWeakRef<JSObject> get(JSWeakMap<? extends JSObject, JSWeakRef<JSObject>> map,
             JSObject key);
 
     @JSBody(params = { "map", "key", "value" }, script = "map.set(key, value);")
     @NoSideEffects
+    @Intrinsified
     private static native void set(JSWeakMap<? extends JSObject, JSWeakRef<JSObject>> map, JSObject key,
             JSObject value);
 
     @NoSideEffects
+    @Intrinsified
     public static Object maybeWrap(Object o) {
         return o == null || isJava(o) ? o : wrap(directJavaToJs(o));
     }
 
     @NoSideEffects
+    @Intrinsified
     public static native JSObject directJavaToJs(Object obj);
 
     @NoSideEffects
+    @Intrinsified
     public static native JSObject marshallJavaToJs(Object obj);
 
     @NoSideEffects
@@ -182,21 +192,27 @@ public final class JSWrapper {
     public static native Object unmarshallJavaFromJs(JSObject obj);
 
     @NoSideEffects
+    @Intrinsified
     public static native JSObject dependencyJavaToJs(Object obj);
 
     @NoSideEffects
+    @Intrinsified
     public static native Object dependencyJsToJava(JSObject obj);
 
     @NoSideEffects
+    @Intrinsified
     private static native JSObject wrapperToJs(JSWrapper obj);
 
     @NoSideEffects
+    @Intrinsified
     private static native JSWrapper jsToWrapper(JSObject obj);
 
     @NoSideEffects
+    @Intrinsified
     public static native boolean isJava(Object obj);
 
     @NoSideEffects
+    @Intrinsified
     public static native boolean isJava(JSObject obj);
 
     public static JSObject unwrap(Object o) {
@@ -300,6 +316,7 @@ public final class JSWrapper {
 
     @JSBody(params = "bigint", script = "return BigInt.asIntN(bigint, 32);")
     @NoSideEffects
+    @Intrinsified
     private static native int bigintTruncate(JSObject bigint);
 
     @Override
@@ -324,12 +341,15 @@ public final class JSWrapper {
     @JSClass(transparent = true)
     static abstract class JSTransparentInt implements JSObject {
         @JSBody(script = "return this;")
+        @Intrinsified
         native int intValue();
 
         @JSBody(params = "value", script = "return value;")
+        @Intrinsified
         static native JSTransparentInt valueOf(int value);
     }
 
     @JSBody(params = "obj", script = "return typeof obj == 'undefined'")
+    @Intrinsified
     private static native boolean isUndefined(JSObject obj);
 }

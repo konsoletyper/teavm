@@ -16,23 +16,31 @@
 package org.teavm.backend.wasm.intrinsics.reflection;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.ValueType;
 
-public class AnnotationDataIntrinsic implements WasmGCIntrinsic {
-    private String annotationClassName;
+public class AnnotationDataIntrinsic implements WasmGCInlineIntrinsic {
+    private final WasmGCClassInfoProvider classInfoProvider;
+    private final ListableClassReaderSource classes;
+    private final String annotationClassName;
 
-    public AnnotationDataIntrinsic(String annotationClassName) {
+    public AnnotationDataIntrinsic(WasmGCClassInfoProvider classInfoProvider, ListableClassReaderSource classes,
+            String annotationClassName) {
+        this.classInfoProvider = classInfoProvider;
+        this.classes = classes;
         this.annotationClassName = annotationClassName;
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var dataStruct = context.classInfoProvider().reflectionTypes().annotationData(annotationClassName);
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
+        var dataStruct = classInfoProvider.reflectionTypes().annotationData(annotationClassName);
         if (invocation.getMethod().getName().equals("constructor") && invocation.getArguments().isEmpty()) {
             var fn = dataStruct.constructor();
             fn.setReferenced(true);
@@ -57,7 +65,7 @@ public class AnnotationDataIntrinsic implements WasmGCIntrinsic {
                     break;
             }
         } else if (field.type instanceof ValueType.Object) {
-            var fieldCls = context.classes().get(((ValueType.Object) field.type).getClassName());
+            var fieldCls = classes.get(((ValueType.Object) field.type).getClassName());
             if (fieldCls != null && fieldCls.hasModifier(ElementModifier.ENUM)) {
                 signedType = WasmSignedType.SIGNED;
             }

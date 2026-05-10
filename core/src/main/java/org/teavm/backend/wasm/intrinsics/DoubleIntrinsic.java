@@ -24,11 +24,12 @@ import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 
-public class DoubleIntrinsic implements WasmGCIntrinsic {
+public class DoubleIntrinsic implements WasmGCInlineIntrinsic {
     private static final long EXPONENT_BITS = 0x7FF0000000000000L;
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "getNaN":
                 builder.f64Const(Double.NaN);

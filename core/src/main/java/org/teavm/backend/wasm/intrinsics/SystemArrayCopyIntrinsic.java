@@ -16,25 +16,55 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
+public class SystemArrayCopyIntrinsic implements WasmGCInlineIntrinsic {
+    private ClassHierarchy hierarchy;
+    private WasmModule module;
+    private BaseWasmFunctionRepository functions;
+    private WasmGCClassInfoProvider classInfoProvider;
+    private WasmGCTypeMapper typeMapper;
+    private WasmFunctionTypes functionTypes;
+    private WasmGCNameProvider names;
+    private WasmTag exceptionTag;
+
     private WasmFunction defaultFunction;
     private WasmFunction argsCheckFunction;
 
+    public SystemArrayCopyIntrinsic(ClassHierarchy hierarchy, WasmModule module, BaseWasmFunctionRepository functions,
+            WasmGCClassInfoProvider classInfoProvider, WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes,
+            WasmGCNameProvider names, WasmTag exceptionTag) {
+        this.hierarchy = hierarchy;
+        this.module = module;
+        this.functions = functions;
+        this.classInfoProvider = classInfoProvider;
+        this.typeMapper = typeMapper;
+        this.functionTypes = functionTypes;
+        this.names = names;
+        this.exceptionTag = exceptionTag;
+    }
+
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "arraycopy":
                 generateArrayCopy(invocation, context, builder);
@@ -47,20 +77,20 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         }
     }
 
-    private void generateArrayCopy(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void generateArrayCopy(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         if (!tryGenerateSpecialCase(invocation, context, builder)) {
             for (int i = 0; i < 5; i++) {
                 context.generate(builder, invocation.getArguments().get(i));
             }
-            builder.call(getDefaultFunction(context));
+            builder.call(getDefaultFunction());
         }
     }
 
-    private void generateDoArrayCopy(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void generateDoArrayCopy(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
-        var classInfoStruct = context.classInfoProvider().reflectionTypes().classInfo();
-        var objInfo = context.classInfoProvider().getClassInfo(Object.class.getName());
+        var classInfoStruct = classInfoProvider.reflectionTypes().classInfo();
+        var objInfo = classInfoProvider.getClassInfo(Object.class.getName());
 
         context.generate(builder, invocation.getArguments().get(0));
         var source = context.valueCache().create(objInfo.getType(), builder);
@@ -83,7 +113,7 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         sourceClsCached.release();
     }
 
-    private boolean tryGenerateSpecialCase(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private boolean tryGenerateSpecialCase(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var sourceArray = invocation.getArguments().get(0);
         var targetArray = invocation.getArguments().get(2);
@@ -103,11 +133,11 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         var sourceItemType = ((ValueType.Array) sourceType.valueType).getItemType();
         var targetItemType = ((ValueType.Array) targetType.valueType).getItemType();
         if (sourceItemType != targetItemType
-                || !context.hierarchy().isSuperType(targetItemType, sourceItemType, false)) {
+                || !hierarchy.isSuperType(targetItemType, sourceItemType, false)) {
             return false;
         }
 
-        var wasmTargetArrayType = (WasmType.CompositeReference) context.typeMapper().mapType(
+        var wasmTargetArrayType = (WasmType.CompositeReference) typeMapper.mapType(
                 ValueType.arrayOf(targetItemType));
         var wasmTargetArrayStruct = (WasmStructure) wasmTargetArrayType.composite;
         var wasmTargetArrayTypeRef = (WasmType.CompositeReference) wasmTargetArrayStruct.getFields()
@@ -124,7 +154,7 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         var wasmTargetIndex = context.valueCache().create(WasmType.INT32, builder);
         builder.drop();
 
-        var wasmSourceArrayType = (WasmType.CompositeReference) context.typeMapper().mapType(
+        var wasmSourceArrayType = (WasmType.CompositeReference) typeMapper.mapType(
                 ValueType.arrayOf(sourceItemType));
         var wasmSourceArrayStruct = (WasmStructure) wasmSourceArrayType.composite;
         var wasmSourceArrayTypeRef = (WasmType.CompositeReference) wasmSourceArrayStruct.getFields()
@@ -147,7 +177,7 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
 
         builder.append(wasmTargetArray).append(wasmTargetIndex)
                 .append(wasmSourceArray).append(wasmSourceIndex).append(wasmSize);
-        builder.call(getArgsCheckFunction(context));
+        builder.call(getArgsCheckFunction());
 
         builder.append(wasmTargetArray).append(wasmTargetIndex)
                 .append(wasmSourceArray).append(wasmSourceIndex).append(wasmSize);
@@ -161,19 +191,19 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         return true;
     }
 
-    private WasmFunction getArgsCheckFunction(WasmGCIntrinsicContext context) {
+    private WasmFunction getArgsCheckFunction() {
         if (argsCheckFunction == null) {
-            argsCheckFunction = createArgsCheckFunction(context);
+            argsCheckFunction = createArgsCheckFunction();
         }
         return argsCheckFunction;
     }
 
-    private WasmFunction createArgsCheckFunction(WasmGCIntrinsicContext context) {
-        var function = new WasmFunction(context.functionTypes().of(null,
+    private WasmFunction createArgsCheckFunction() {
+        var function = new WasmFunction(functionTypes.of(null,
                 WasmType.ARRAY, WasmType.INT32, WasmType.ARRAY,
                 WasmType.INT32, WasmType.INT32));
-        function.setName(context.names().topLevel("teavm@checkArrayCopy"));
-        context.module().functions.add(function);
+        function.setName(names.topLevel("teavm@checkArrayCopy"));
+        module.functions.add(function);
 
         var targetArrayLocal = new WasmLocal(WasmType.ARRAY, "targetArray");
         var targetArrayIndexLocal = new WasmLocal(WasmType.INT32, "targetIndex");
@@ -212,15 +242,15 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
 
         blockBody.return_();
 
-        var aioobeFunction = context.functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "aiiobe",
+        var aioobeFunction = functions.forStaticMethod(new MethodReference(WasmGCSupport.class, "aiiobe",
                 ArrayIndexOutOfBoundsException.class));
-        body.call(aioobeFunction).throw_(context.exceptionTag());
+        body.call(aioobeFunction).throw_(exceptionTag);
         return function;
     }
 
-    private WasmFunction getDefaultFunction(WasmGCIntrinsicContext context) {
+    private WasmFunction getDefaultFunction() {
         if (defaultFunction == null) {
-            defaultFunction = context.functions().forStaticMethod(new MethodReference(System.class,
+            defaultFunction = functions.forStaticMethod(new MethodReference(System.class,
                     "arrayCopyImpl", Object.class, int.class, Object.class, int.class, int.class, void.class));
         }
         return defaultFunction;

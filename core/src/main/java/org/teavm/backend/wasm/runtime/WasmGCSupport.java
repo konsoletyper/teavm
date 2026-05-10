@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.runtime;
 
 import org.teavm.interop.Import;
+import org.teavm.interop.Intrinsified;
 
 public class WasmGCSupport {
     private static int lastObjectId = 1831433054;
@@ -101,6 +102,7 @@ public class WasmGCSupport {
         return result;
     }
 
+    @Intrinsified
     private static native byte nextByte();
 
     private static native void error();

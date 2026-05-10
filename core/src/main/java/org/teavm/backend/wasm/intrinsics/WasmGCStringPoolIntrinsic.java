@@ -13,10 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generators;
+package org.teavm.backend.wasm.intrinsics;
 
+import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
@@ -24,11 +26,18 @@ import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.MethodReference;
 
-public class WasmGCStringPoolGenerator implements WasmGCCustomGenerator {
+public class WasmGCStringPoolIntrinsic implements WasmGCBodyIntrinsic {
+    private WasmModule module;
+    private WasmGCNameProvider names;
+
+    public WasmGCStringPoolIntrinsic(WasmModule module, WasmGCNameProvider names) {
+        this.module = module;
+        this.names = names;
+    }
+
     @Override
-    public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
-        var module = context.module();
-        var pointer = new WasmGlobal(context.names().topLevel("teavm@stringPoolPointer"), WasmType.INT32);
+    public void apply(MethodReference method, WasmFunction function) {
+        var pointer = new WasmGlobal(names.topLevel("teavm@stringPoolPointer"), WasmType.INT32);
         pointer.getInitialValue().add(new WasmInt32Constant(0));
         module.globals.add(pointer);
 

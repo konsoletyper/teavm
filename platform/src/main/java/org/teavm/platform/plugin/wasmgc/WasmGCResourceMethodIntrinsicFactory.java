@@ -15,27 +15,28 @@
  */
 package org.teavm.platform.plugin.wasmgc;
 
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactory;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactoryContext;
-import org.teavm.model.MethodReference;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContributor;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenRegistry;
 
-public class WasmGCResourceMethodIntrinsicFactory implements WasmGCIntrinsicFactory {
+public class WasmGCResourceMethodIntrinsicFactory implements WasmGCCodeGenContributor {
     @Override
-    public WasmGCIntrinsic createIntrinsic(MethodReference methodRef, WasmGCIntrinsicFactoryContext context) {
-        var cls = context.classes().get(methodRef.getClassName());
-        if (cls == null) {
-            return null;
-        }
-        var method = cls.getMethod(methodRef.getDescriptor());
-        if (method == null) {
-            return null;
-        }
-        var annot = method.getAnnotations().get(FieldMarker.class.getName());
-        if (annot == null) {
-            return null;
-        }
-        var index = annot.getValue("index").getInt();
-        return new ResourceMethodIntrinsic(index);
+    public void contribute(WasmGCCodeGenContext context, WasmGCCodeGenRegistry registry) {
+        registry.inlineIntrinsics().registerIntrinsic(methodRef -> {
+            var cls = context.classes().get(methodRef.getClassName());
+            if (cls == null) {
+                return null;
+            }
+            var method = cls.getMethod(methodRef.getDescriptor());
+            if (method == null) {
+                return null;
+            }
+            var annot = method.getAnnotations().get(FieldMarker.class.getName());
+            if (annot == null) {
+                return null;
+            }
+            var index = annot.getValue("index").getInt();
+            return new ResourceMethodIntrinsic(context.typeMapper(), index);
+        });
     }
 }

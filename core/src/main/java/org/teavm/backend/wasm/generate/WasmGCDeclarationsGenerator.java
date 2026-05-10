@@ -28,10 +28,10 @@ import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCCustomTypeMapperFactory;
 import org.teavm.backend.wasm.generate.classes.WasmGCSupertypeFunctionProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
-import org.teavm.backend.wasm.generate.methods.WasmGCCustomGeneratorProvider;
-import org.teavm.backend.wasm.generate.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCMethodGenerator;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCBodyIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -50,17 +50,17 @@ import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableBuilder;
 import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.parsing.resource.ResourceProvider;
+import org.teavm.vm.intrinsic.IntrinsicProvider;
 
 public class WasmGCDeclarationsGenerator {
-    private final ListableClassHolderSource classes;
     public final ClassHierarchy hierarchy;
     public final WasmModule module;
     public final WasmFunctionTypes functionTypes;
     private final WasmGCClassGenerator classGenerator;
     private final WasmGCMethodGenerator methodGenerator;
+    public final WasmGCVirtualTableProvider virtualTables;
     private List<WasmGCInitializerContributor> initializerContributors = new ArrayList<>();
     private Collection<MethodReference> additionalMethodsOnCallSites;
-    private AsyncMethodFinder asyncMethodFinder;
 
     public WasmGCDeclarationsGenerator(
             WasmModule module,
@@ -71,19 +71,18 @@ public class WasmGCDeclarationsGenerator {
             ClassInitializerInfo classInitializerInfo,
             DependencyInfo dependencyInfo,
             Diagnostics diagnostics,
-            WasmGCCustomGeneratorProvider customGenerators,
-            WasmGCIntrinsicProvider intrinsics,
             List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories,
             Predicate<MethodReference> isVirtual,
             boolean strict,
             String entryPoint,
-            Collection<MethodReference> additionalMethodsOnCallSites
+            Collection<MethodReference> additionalMethodsOnCallSites,
+            IntrinsicProvider<WasmGCInlineIntrinsic> callSiteIntrinsics,
+            IntrinsicProvider<WasmGCBodyIntrinsic> bodyIntrinsics
     ) {
         this.module = module;
-        this.classes = classes;
         hierarchy = new ClassHierarchy(classes);
         this.additionalMethodsOnCallSites = additionalMethodsOnCallSites;
-        var virtualTables = createVirtualTableProvider(classes, isVirtual);
+        virtualTables = createVirtualTableProvider(classes, isVirtual);
         functionTypes = new WasmFunctionTypes(module);
         var names = new WasmGCNameProvider();
         methodGenerator = new WasmGCMethodGenerator(
@@ -97,8 +96,8 @@ public class WasmGCDeclarationsGenerator {
                 functionTypes,
                 names,
                 diagnostics,
-                customGenerators,
-                intrinsics,
+                bodyIntrinsics,
+                callSiteIntrinsics,
                 dependencyInfo,
                 strict,
                 entryPoint,
@@ -126,7 +125,6 @@ public class WasmGCDeclarationsGenerator {
         methodGenerator.setSupertypeFunctions(classGenerator.getSupertypeProvider());
         methodGenerator.setStandardClasses(classGenerator.standardClasses);
         methodGenerator.setTypeMapper(classGenerator.typeMapper);
-        asyncMethodFinder = new AsyncMethodFinder(dependencyInfo.getCallGraph(), dependencyInfo);
     }
 
     public void setCompactMode(boolean compactMode) {
@@ -154,12 +152,14 @@ public class WasmGCDeclarationsGenerator {
         return classGenerator.getSupertypeProvider();
     }
 
-    public void generate() {
-        asyncMethodFinder.find(classes);
+    public void setAsyncMethodFinder(AsyncMethodFinder asyncMethodFinder) {
         var asyncSplitMethods = asyncMethodFinder.getAsyncFamilyMethods();
         classGenerator.setAsyncSplitMethods(asyncSplitMethods);
         methodGenerator.setAsyncMethods(asyncMethodFinder.getAsyncMethods());
         methodGenerator.setAsyncSplitMethods(asyncSplitMethods);
+    }
+
+    public void generate() {
         var lastTypeIndex = 0;
         do {
             generateRound();

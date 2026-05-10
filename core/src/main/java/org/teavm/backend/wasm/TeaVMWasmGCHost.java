@@ -18,25 +18,14 @@ package org.teavm.backend.wasm;
 import java.util.Collection;
 import java.util.function.Supplier;
 import org.teavm.backend.wasm.generate.classes.WasmGCCustomTypeMapperFactory;
-import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
-import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactory;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicFactory;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContributor;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public interface TeaVMWasmGCHost extends TeaVMHostExtension {
-    void addIntrinsicFactory(WasmGCIntrinsicFactory intrinsicFactory);
-
-    void addIntrinsic(MethodReference method, WasmGCIntrinsic intrinsic);
-
-    void addGeneratorFactory(WasmGCCustomGeneratorFactory factory);
-
-    void addGenerator(MethodReference method, WasmGCCustomGenerator generator);
-
     void addCustomTypeMapperFactory(WasmGCCustomTypeMapperFactory customTypeMapperFactory);
 
-    void addClassConsumer(WasmGCClassConsumer consumer);
-
     void addMethodsOnCallSites(Supplier<Collection<MethodReference>> methodsOnCallSites);
+
+    void contributeToCodeGen(WasmGCCodeGenContributor contributor);
 }

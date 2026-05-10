@@ -22,9 +22,10 @@ import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 
-public class HeapIntrinsic implements WasmGCIntrinsic {
+public class HeapIntrinsic implements WasmGCInlineIntrinsic {
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var pagesVar = context.tempVars().acquire(WasmType.INT32);
 
         context.generate(builder, invocation.getArguments().get(0));

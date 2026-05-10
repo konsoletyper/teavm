@@ -15,28 +15,33 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
-import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactory;
-import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorFactoryContext;
+import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.intrinsics.WasmGCBodyIntrinsic;
 import org.teavm.jso.impl.JSMethods;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.vm.intrinsic.IntrinsicProvider;
 
-class WasmGCMarshallMethodGeneratorFactory implements WasmGCCustomGeneratorFactory {
+class WasmGCMarshallMethodGeneratorFactory implements IntrinsicProvider<WasmGCBodyIntrinsic> {
     private WasmGCJsoCommonGenerator commonGen;
+    private ClassReaderSource classes;
+    private WasmGCTypeMapper typeMapper;
 
-    WasmGCMarshallMethodGeneratorFactory(WasmGCJsoCommonGenerator commonGen) {
+    WasmGCMarshallMethodGeneratorFactory(WasmGCJsoCommonGenerator commonGen, ClassReaderSource classes,
+            WasmGCTypeMapper typeMapper) {
         this.commonGen = commonGen;
+        this.classes = classes;
+        this.typeMapper = typeMapper;
     }
 
     @Override
-    public WasmGCCustomGenerator createGenerator(MethodReference methodRef,
-            WasmGCCustomGeneratorFactoryContext context) {
-        if (!methodRef.getName().equals(JSMethods.MARSHALL_TO_JS.getName())) {
+    public WasmGCBodyIntrinsic getIntrinsic(MethodReference method) {
+        if (!method.getName().equals(JSMethods.MARSHALL_TO_JS.getName())) {
             return null;
         }
-        var cls = context.classes().get(methodRef.getClassName());
+        var cls = classes.get(method.getClassName());
         return cls != null && cls.getInterfaces().contains(JSMethods.JS_MARSHALLABLE)
-                ? new WasmGCMarshallMethodGenerator(commonGen)
+                ? new WasmGCMarshallMethodGenerator(commonGen, typeMapper)
                 : null;
     }
 }

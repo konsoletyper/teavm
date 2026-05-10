@@ -13,10 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.intrinsics;
+package org.teavm.vm.intrinsic;
 
 import org.teavm.model.MethodReference;
 
-public interface WasmGCIntrinsicFactory {
-    WasmGCIntrinsic createIntrinsic(MethodReference methodRef, WasmGCIntrinsicFactoryContext context);
+public interface IntrinsicRegistry<I> {
+    void registerIntrinsic(MethodReference method, I intrinsic);
+
+    void registerIntrinsic(String className, I intrinsic, String... methods);
+
+    default void registerIntrinsic(Class<?> cls, I intrinsic, String... methods) {
+        registerIntrinsic(cls.getName(), intrinsic, methods);
+    }
+
+    void registerIntrinsic(IntrinsicProvider<I> provider);
 }

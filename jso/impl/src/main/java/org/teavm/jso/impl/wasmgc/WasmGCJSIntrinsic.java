@@ -23,42 +23,67 @@ import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.STRING_TO_JS;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.WasmGCNameProvider;
+import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.jso.impl.JSMethods;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-class WasmGCJSIntrinsic implements WasmGCIntrinsic {
-    private WasmFunction globalFunction;
+class WasmGCJSIntrinsic implements WasmGCInlineIntrinsic {
     private WasmGCJsoCommonGenerator commonGen;
-    private WasmGCJSFunctions functions;
+    private WasmGCJSFunctions jsFunctions;
+    private Diagnostics diagnostics;
+    private WasmGCClassInfoProvider classInfoProvider;
+    private BaseWasmFunctionRepository functions;
+    private WasmFunctionTypes functionTypes;
+    private WasmGCNameProvider names;
+    private WasmModule module;
+    private WasmTag exceptionTag;
 
-    WasmGCJSIntrinsic(WasmGCJsoCommonGenerator commonGen, WasmGCJSFunctions functions) {
+    private WasmFunction globalFunction;
+
+    WasmGCJSIntrinsic(WasmGCJsoCommonGenerator commonGen, WasmGCJSFunctions jsFunctions, Diagnostics diagnostics,
+            WasmGCClassInfoProvider classInfoProvider, BaseWasmFunctionRepository functions,
+            WasmFunctionTypes functionTypes, WasmGCNameProvider names, WasmModule module, WasmTag exceptionTag) {
         this.commonGen = commonGen;
+        this.jsFunctions = jsFunctions;
+        this.diagnostics = diagnostics;
+        this.classInfoProvider = classInfoProvider;
         this.functions = functions;
+        this.functionTypes = functionTypes;
+        this.names = names;
+        this.module = module;
+        this.exceptionTag = exceptionTag;
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "wrap":
                 wrapString(invocation.getArguments().get(0), context, builder);
                 break;
             case "unwrapString": {
-                var function = context.functions().forStaticMethod(JS_TO_STRING);
+                var function = functions.forStaticMethod(JS_TO_STRING);
                 context.generate(builder, invocation.getArguments().get(0));
                 builder.call(function);
                 break;
             }
             case "global": {
                 wrapString(invocation.getArguments().get(0), context, builder);
-                builder.call(getGlobalFunction(context));
+                builder.call(getGlobalFunction());
                 break;
             }
             case "throwCCEIfFalse":
@@ -83,18 +108,16 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
         }
     }
 
-    private void getProperty(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void getProperty(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
-        if (!tryGetFromModule(invocation, context, builder)) {
-            var jsoContext = WasmGCJsoContext.wrap(context);
+        if (!tryGetFromModule(invocation, builder)) {
             context.generate(builder, invocation.getArguments().get(0));
             context.generate(builder, invocation.getArguments().get(1));
-            builder.call(functions.getGet(jsoContext));
+            builder.call(jsFunctions.getGet());
         }
     }
 
-    private boolean tryGetFromModule(InvocationExpr invocation, WasmGCIntrinsicContext context,
-            WasmInstructionBuilder builder) {
+    private boolean tryGetFromModule(InvocationExpr invocation, WasmInstructionBuilder builder) {
         var target = invocation.getArguments().get(0);
         if (!(target instanceof InvocationExpr)) {
             return false;
@@ -121,22 +144,20 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
             return false;
         }
 
-        var jsoContext = WasmGCJsoContext.wrap(context);
-        var global = commonGen.getImportGlobal(jsoContext, moduleName, name);
+        var global = commonGen.getImportGlobal(moduleName, name);
         builder.getGlobal(global);
         return true;
     }
 
-    private void importModule(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void importModule(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
-        var jsoContext = WasmGCJsoContext.wrap(context);
         var nameArg = invocation.getArguments().get(0);
         var name = extractString(nameArg);
         if (name == null) {
-            context.diagnostics().error(new CallLocation(context.currentMethod(), invocation.getLocation()),
+            diagnostics.error(new CallLocation(context.currentMethod(), invocation.getLocation()),
                     "Invalid JS module import call");
         }
-        var global = commonGen.getImportGlobal(jsoContext, name, "__self__");
+        var global = commonGen.getImportGlobal(name, "__self__");
         builder.getGlobal(global);
     }
 
@@ -151,50 +172,50 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
         return (String) constant;
     }
 
-    private void wrapString(Expr stringExpr, WasmGCIntrinsicContext context,
+    private void wrapString(Expr stringExpr, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         if (stringExpr instanceof ConstantExpr) {
             var constantExpr = (ConstantExpr) stringExpr;
             if (constantExpr.getValue() instanceof String) {
-                builder.getGlobal(commonGen.jsStringConstant(WasmGCJsoContext.wrap(context),
-                        (String) constantExpr.getValue()));
+                builder.getGlobal(commonGen.jsStringConstant((String) constantExpr.getValue()));
                 return;
             }
         }
-        var function = context.functions().forStaticMethod(STRING_TO_JS);
+        var function = functions.forStaticMethod(STRING_TO_JS);
         context.generate(builder, stringExpr);
         builder.call(function);
     }
 
-    private WasmFunction getGlobalFunction(WasmGCIntrinsicContext context) {
+    private WasmFunction getGlobalFunction() {
         if (globalFunction == null) {
-            globalFunction = new WasmFunction(context.functionTypes().of(WasmType.EXTERN, WasmType.EXTERN));
-            globalFunction.setName(context.names().suggestForMethod(new MethodReference(JS_CLASS,
-                    "global", STRING, JS_OBJECT)));
+            globalFunction = new WasmFunction(functionTypes.of(WasmType.EXTERN, WasmType.EXTERN));
+            globalFunction.setName(names.topLevel(names.suggestForMethod(new MethodReference(JS_CLASS,
+                    "global", STRING, JS_OBJECT))));
             globalFunction.setImportName("global");
             globalFunction.setImportModule("teavmJso");
-            context.module().functions.add(globalFunction);
+            module.functions.add(globalFunction);
         }
         return globalFunction;
     }
 
-    private void throwCCEIfFalse(InvocationExpr invocation, WasmGCIntrinsicContext context,
+    private void throwCCEIfFalse(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var outerBlock = builder.block(WasmType.EXTERN);
         var innerBlock = outerBlock.block();
         context.generate(innerBlock, invocation.getArguments().get(0));
         innerBlock.branch(innerBlock);
-        var cceFunction = context.functions().forStaticMethod(new MethodReference(
-                WasmGCSupport.class, "cce", ClassCastException.class));
+        var cceFunction = functions.forStaticMethod(new MethodReference(WasmGCSupport.class, "cce",
+                ClassCastException.class));
         innerBlock.call(cceFunction);
-        innerBlock.throw_(context.exceptionTag());
+        innerBlock.throw_(exceptionTag);
         context.generate(outerBlock, invocation.getArguments().get(1));
     }
 
-    private void arrayItem(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
+    private void arrayItem(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         context.generate(builder, invocation.getArguments().get(0));
         context.generate(builder, invocation.getArguments().get(1));
-        var arrayType = context.classInfoProvider().getClassInfo(ValueType.parse(Object[].class)).getArray();
+        var arrayType = classInfoProvider.getClassInfo(ValueType.parse(Object[].class)).getArray();
         builder.arrayGet(arrayType);
     }
 }

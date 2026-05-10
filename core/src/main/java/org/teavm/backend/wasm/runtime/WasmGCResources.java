@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.interop.Intrinsified;
 
 public final class WasmGCResources {
     private static Map<String, Resource> resources = new HashMap<>();
@@ -32,6 +33,7 @@ public final class WasmGCResources {
         }
     }
 
+    @Intrinsified
     private static native Resource[] acquireResources();
 
     private static Resource create(String name, int start, int length) {
@@ -90,5 +92,6 @@ public final class WasmGCResources {
         }
     }
 
+    @Intrinsified
     private static native int readSingleByte(int address);
 }

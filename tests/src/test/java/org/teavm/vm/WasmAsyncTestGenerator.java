@@ -16,29 +16,25 @@
 package org.teavm.vm;
 
 import java.util.function.Consumer;
-import org.teavm.backend.wasm.generators.WasmGCCustomGenerator;
-import org.teavm.backend.wasm.generators.WasmGCCustomGeneratorContext;
+import org.teavm.backend.wasm.intrinsics.WasmGCBodyIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
-import org.teavm.dependency.AbstractDependencyListener;
-import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
 
-public class WasmAsyncTestGenerator extends AbstractDependencyListener implements WasmGCCustomGenerator {
-    @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method) {
-        if (method.getMethod().getName().equals("generatedMethod")) {
-            agent.linkMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class, int.class, int.class)).use();
-        }
+public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
+    private WasmGCCodeGenContext context;
+
+    public WasmAsyncTestGenerator(WasmGCCodeGenContext context) {
+        this.context = context;
     }
 
     @Override
-    public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
+    public void apply(MethodReference method, WasmFunction function) {
         if (method.getName().equals("generatedMethod")) {
             var param = new WasmLocal(WasmType.INT32, "n");
             function.add(param);
@@ -48,10 +44,10 @@ public class WasmAsyncTestGenerator extends AbstractDependencyListener implement
     }
 
     private static class Generator {
-        final WasmGCCustomGeneratorContext context;
+        final WasmGCCodeGenContext context;
         final WasmLocal param;
 
-        Generator(WasmGCCustomGeneratorContext context, WasmLocal param) {
+        Generator(WasmGCCodeGenContext context, WasmLocal param) {
             this.context = context;
             this.param = param;
         }
