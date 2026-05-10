@@ -17,6 +17,7 @@ package org.teavm.reflection;
 
 import static org.teavm.reflection.ReflectionMethods.CLASS_GET_TYPE_PARAMS;
 import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_GENERIC_PARAMETER_TYPES;
+import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_PARAMETER_ANNOTATIONS;
 import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_PARAMETER_TYPES;
 import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_TYPE_PARAMS;
 import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_PARAMETER_TYPE;
@@ -111,6 +112,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private List<MethodReader> methodsReadViaReflection = new ArrayList<>();
     private DependencyNode fieldsAnnotationsConsumer;
     private DependencyNode methodsAnnotationsConsumer;
+    private DependencyNode parameterAnnotationsConsumer;
 
     private boolean getReached;
     private boolean setReached;
@@ -308,6 +310,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                                         reflectableMethod.getAnnotations().all(),
                                         methodsAnnotationsConsumer);
                             }
+                            if (parameterAnnotationsConsumer != null) {
+                                propagateParamAnnotationImplementations(agent, reflectableMethod);
+                            }
                             methodsReadViaReflection.add(reflectableMethod);
                         }
                     }
@@ -319,6 +324,13 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             for (var reflectableMethod : methodsReadViaReflection) {
                 annotHelper.propagateAnnotationImplementations(agent, reflectableMethod.getAnnotations().all(),
                         methodsAnnotationsConsumer);
+            }
+        } else if (method.getReference().equals(EXECUTABLE_GET_PARAMETER_ANNOTATIONS)) {
+            parameterAnnotationsConsumer = method.getResult().getArrayItem().getArrayItem();
+            method.getResult().propagate(agent.getType(ValueType.parse(Annotation[][].class)));
+            method.getResult().getArrayItem().propagate(agent.getType(ValueType.parse(Annotation[].class)));
+            for (var reflectableMethod : methodsReadViaReflection) {
+                propagateParamAnnotationImplementations(agent, reflectableMethod);
             }
         } else if (method.getReference().equals(getClassAnnotations)) {
             method.getVariable(0).getClassValueNode().addConsumer(type -> {
@@ -361,6 +373,16 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             linkGenerics(agent);
             method.getResult().propagate(agent.getType(ValueType.parse(Type[].class)));
             propagateGenerics(agent, method.getResult().getArrayItem());
+        }
+    }
+
+    private void propagateParamAnnotationImplementations(DependencyAgent agent, MethodReader method) {
+        var paramAnnotations = method.getParameterAnnotations();
+        if (paramAnnotations == null) {
+            return;
+        }
+        for (var paramAnnots : paramAnnotations) {
+            annotHelper.propagateAnnotationImplementations(agent, paramAnnots.all(), parameterAnnotationsConsumer);
         }
     }
 

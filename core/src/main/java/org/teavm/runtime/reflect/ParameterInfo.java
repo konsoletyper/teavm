@@ -17,25 +17,13 @@ package org.teavm.runtime.reflect;
 
 import org.teavm.interop.Unmanaged;
 
-public final class MethodReflectionInfo extends ReflectionInfo {
+public final class ParameterInfo extends ReflectionInfo {
     @Unmanaged
-    public native GenericTypeInfo genericReturnType();
-
-    @Unmanaged
-    public native int parameterInfoCount();
-
-    @Unmanaged
-    public native ParameterInfo parameterInfo(int index);
+    public native GenericTypeInfo genericType();
 
     @Unmanaged
     public native int annotationCount();
 
     @Unmanaged
     public native AnnotationInfo annotation(int index);
-
-    @Unmanaged
-    public native int typeParameterCount();
-
-    @Unmanaged
-    public native TypeVariableInfo typeParameter(int index);
 }

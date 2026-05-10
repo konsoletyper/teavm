@@ -167,6 +167,9 @@ public class WasmGCTypeMapper {
                     case "org.teavm.runtime.reflect.MethodReflectionInfo":
                         result = reflectionTypes.methodReflectionInfo().structure().getReference();
                         break;
+                    case "org.teavm.runtime.reflect.ParameterInfo":
+                        result = reflectionTypes.parameterInfo().structure().getReference();
+                        break;
                     case "org.teavm.runtime.reflect.TypeVariableInfo":
                         result = reflectionTypes.typeVariableInfo().structure().getReference();
                         break;

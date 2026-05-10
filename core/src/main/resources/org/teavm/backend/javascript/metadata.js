@@ -206,15 +206,23 @@ let $rt_readMethodMetadata = (cls, method) => {
     let methodReflection = method[5];
     let resolvedMethodReflection;
     if (methodReflection !== void 0) {
-        let resolvedGenericParameterTypes;
-        let parameterTypes = methodReflection.s;
-        if (typeof parameterTypes !== "undefined") {
-            resolvedGenericParameterTypes = new Array(parameterTypes.length);
-            for (let i = 0; i < parameterTypes.length; ++i) {
-                resolvedGenericParameterTypes[i] = $rt_readGenericType(parameterTypes[i]);
+        let resolvedParameterInfos;
+        let parameterInfoData = methodReflection.s;
+        if (typeof parameterInfoData !== "undefined") {
+            resolvedParameterInfos = new Array(parameterInfoData.length);
+            for (let i = 0; i < parameterInfoData.length; ++i) {
+                let pi = parameterInfoData[i];
+                if (pi !== 0) {
+                    resolvedParameterInfos[i] = {
+                        genericType: pi.t !== void 0 ? $rt_readGenericType(pi.t) : null,
+                        annotations: pi.a !== void 0 ? $rt_readAnnotations(pi.a) : []
+                    };
+                } else {
+                    resolvedParameterInfos[i] = {genericType: null, annotations: []};
+                }
             }
         } else {
-            resolvedGenericParameterTypes = null;
+            resolvedParameterInfos = [];
         }
         let resolvedTypeParameters;
         let typeParameters = methodReflection.p;
@@ -229,7 +237,7 @@ let $rt_readMethodMetadata = (cls, method) => {
         resolvedMethodReflection = {
             annotations: methodReflection.a !== void 0 ? $rt_readAnnotations(methodReflection.a) : [],
             genericReturnType: methodReflection.r !== void 0 ? $rt_readGenericType(methodReflection.r) : null,
-            genericParameterTypes: resolvedGenericParameterTypes,
+            parameterInfos: resolvedParameterInfos,
             typeParameters: resolvedTypeParameters
         }
     } else {

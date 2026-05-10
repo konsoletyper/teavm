@@ -15,6 +15,7 @@
  */
 package org.teavm.reflection;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -47,6 +48,8 @@ public final class ReflectionMethods {
             "getGenericParameterTypes", Type[].class);
     public static final MethodReference EXECUTABLE_GET_TYPE_PARAMS = new MethodReference(Executable.class,
             "getTypeParameters", TypeVariable[].class);
+    public static final MethodReference EXECUTABLE_GET_PARAMETER_ANNOTATIONS = new MethodReference(
+            Executable.class, "getParameterAnnotations", Annotation[][].class);
 
     public static final MethodReference METHOD_GET_RETURN_TYPE = new MethodReference(Method.class, "getReturnType",
             Class.class);

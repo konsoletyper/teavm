@@ -21,29 +21,11 @@ import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
-public class MethodReflectionInfoIntrinsic implements WasmGCIntrinsic {
+public class ParameterInfoIntrinsic implements WasmGCIntrinsic {
     @Override
     public void apply(InvocationExpr invocation, WasmGCIntrinsicContext context, WasmInstructionBuilder builder) {
-        var infoStruct = context.classInfoProvider().reflectionTypes().methodReflectionInfo();
+        var infoStruct = context.classInfoProvider().reflectionTypes().parameterInfo();
         switch (invocation.getMethod().getName()) {
-            case "genericReturnType":
-                context.generate(builder, invocation.getArguments().get(0));
-                builder.structGet(infoStruct.structure(), infoStruct.genericReturnTypeIndex());
-                break;
-            case "parameterInfoCount":
-                WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
-                    context.generate(b, invocation.getArguments().get(0));
-                    b.structGet(infoStruct.structure(), infoStruct.parameterInfosIndex());
-                });
-                break;
-            case "parameterInfo": {
-                var paramInfoStruct = context.classInfoProvider().reflectionTypes().parameterInfo();
-                context.generate(builder, invocation.getArguments().get(0));
-                builder.structGet(infoStruct.structure(), infoStruct.parameterInfosIndex());
-                context.generate(builder, invocation.getArguments().get(1));
-                builder.arrayGet(paramInfoStruct.array());
-                break;
-            }
             case "annotationCount":
                 WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
                     context.generate(b, invocation.getArguments().get(0));
@@ -58,20 +40,10 @@ public class MethodReflectionInfoIntrinsic implements WasmGCIntrinsic {
                 builder.arrayGet(array);
                 break;
             }
-            case "typeParameterCount":
-                WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
-                    context.generate(b, invocation.getArguments().get(0));
-                    b.structGet(infoStruct.structure(), infoStruct.typeParametersIndex());
-                });
-                break;
-            case "typeParameter": {
-                var array = context.classInfoProvider().reflectionTypes().typeVariableInfo().array();
+            case "genericType":
                 context.generate(builder, invocation.getArguments().get(0));
-                builder.structGet(infoStruct.structure(), infoStruct.typeParametersIndex());
-                context.generate(builder, invocation.getArguments().get(1));
-                builder.arrayGet(array);
+                builder.structGet(infoStruct.structure(), infoStruct.genericTypeIndex());
                 break;
-            }
             default:
                 throw new IllegalStateException(invocation.getMethod().getName());
         }

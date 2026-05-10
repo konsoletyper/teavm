@@ -45,6 +45,7 @@ import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.ClassReader;
@@ -359,14 +360,25 @@ public class ReflectionMetadataGenerator {
         var genericReturnType = methodReflectionStruct.genericReturnTypeIndex() >= 0
                 ? method.getGenericResultType()
                 : null;
-        var genericParameterTypes = methodReflectionStruct.genericParameterTypesIndex() >= 0
-                ? method.getGenericParameterTypes()
-                : null;
+
+        GenericValueType[] genericParameterTypes = null;
+        List<List<AnnotationReader>> paramAnnotations = null;
+        if (methodReflectionStruct.parameterInfosIndex() >= 0) {
+            var paramInfoStruct = reflectionTypes.parameterInfo();
+            if (paramInfoStruct.genericTypeIndex() >= 0) {
+                genericParameterTypes = method.getGenericParameterTypes();
+            }
+            if (paramInfoStruct.annotationsIndex() >= 0) {
+                paramAnnotations = collectParamAnnotations(method);
+            }
+        }
+
         var typeParameters = methodReflectionStruct.typeParametersIndex() >= 0
                 ? method.getTypeParameters()
                 : null;
-        if (annotations.isEmpty() && genericReturnType == null
-                && (genericParameterTypes == null || genericParameterTypes.length == 0)
+        var hasNonTrivialParams = computeHasNonTrivialParams(method, genericParameterTypes, paramAnnotations);
+
+        if (annotations.isEmpty() && genericReturnType == null && !hasNonTrivialParams
                 && (typeParameters == null || typeParameters.length == 0)) {
             builder.nullConst(methodReflectionStruct.structure().getReference());
             return;
@@ -382,20 +394,11 @@ public class ReflectionMetadataGenerator {
             }
         }
 
-        if (methodReflectionStruct.genericParameterTypesIndex() >= 0) {
-            if (genericParameterTypes != null && genericParameterTypes.length > 0) {
-                for (var i = 0; i < genericParameterTypes.length; ++i) {
-                    var paramType = genericParameterTypes[i];
-                    if (paramType.canBeRepresentedAsRaw() && paramType.asValueType()
-                            .equals(method.parameterType(i))) {
-                        builder.nullConst(WasmType.STRUCT);
-                    } else {
-                        generateGenericType(builder, cls, method, paramType);
-                    }
-                }
-                builder.arrayNewFixed(reflectionTypes.genericTypeArray(), genericParameterTypes.length);
+        if (methodReflectionStruct.parameterInfosIndex() >= 0) {
+            if (hasNonTrivialParams) {
+                generateParameterInfos(builder, cls, method, genericParameterTypes, paramAnnotations);
             } else {
-                builder.nullConst(reflectionTypes.genericTypeArray().getReference());
+                builder.nullConst(reflectionTypes.parameterInfo().array().getReference());
             }
         }
 
@@ -412,6 +415,75 @@ public class ReflectionMetadataGenerator {
         }
 
         builder.structNew(methodReflectionStruct.structure());
+    }
+
+    private boolean computeHasNonTrivialParams(MethodReader method, GenericValueType[] genericParameterTypes,
+            List<List<AnnotationReader>> paramAnnotations) {
+        if (genericParameterTypes != null) {
+            for (var i = 0; i < genericParameterTypes.length; ++i) {
+                var paramType = genericParameterTypes[i];
+                if (!paramType.canBeRepresentedAsRaw() || !paramType.asValueType().equals(method.parameterType(i))) {
+                    return true;
+                }
+            }
+        }
+        if (paramAnnotations != null) {
+            for (var annots : paramAnnotations) {
+                if (!annots.isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private List<List<AnnotationReader>> collectParamAnnotations(MethodReader method) {
+        var paramAnnots = method.getParameterAnnotations();
+        if (paramAnnots == null) {
+            return null;
+        }
+        var result = new ArrayList<List<AnnotationReader>>();
+        var hasAny = false;
+        for (AnnotationContainerReader container : paramAnnots) {
+            var annots = AnnotationGenerationHelper.collectRuntimeAnnotations(classes, container.all());
+            result.add(annots);
+            if (!annots.isEmpty()) {
+                hasAny = true;
+            }
+        }
+        return hasAny ? result : null;
+    }
+
+    private void generateParameterInfos(WasmInstructionBuilder builder, ClassReader cls, MethodReader method,
+            GenericValueType[] genericParameterTypes, List<List<AnnotationReader>> paramAnnotations) {
+        var reflectionTypes = classInfoProvider.reflectionTypes();
+        var paramInfoStruct = reflectionTypes.parameterInfo();
+        var count = method.parameterCount();
+
+        for (var i = 0; i < count; ++i) {
+            if (paramInfoStruct.annotationsIndex() >= 0) {
+                var annots = paramAnnotations != null && i < paramAnnotations.size()
+                        ? paramAnnotations.get(i) : List.<AnnotationReader>of();
+                generateAnnotations(builder, annots);
+            }
+            if (paramInfoStruct.genericTypeIndex() >= 0) {
+                var hasNonTrivialType = genericParameterTypes != null && i < genericParameterTypes.length;
+                if (hasNonTrivialType) {
+                    var paramType = genericParameterTypes[i];
+                    hasNonTrivialType = !paramType.canBeRepresentedAsRaw()
+                            || !paramType.asValueType().equals(method.parameterType(i));
+                    if (hasNonTrivialType) {
+                        generateGenericType(builder, cls, method, paramType);
+                    } else {
+                        builder.nullConst(WasmType.STRUCT);
+                    }
+                } else {
+                    builder.nullConst(WasmType.STRUCT);
+                }
+            }
+            builder.structNew(paramInfoStruct.structure());
+        }
+        builder.arrayNewFixed(paramInfoStruct.array(), count);
     }
 
     private void generateAnnotations(WasmInstructionBuilder builder, List<AnnotationReader> annotations) {

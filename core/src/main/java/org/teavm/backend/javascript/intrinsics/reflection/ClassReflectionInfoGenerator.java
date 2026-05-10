@@ -36,6 +36,7 @@ import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -60,6 +61,7 @@ public class ClassReflectionInfoGenerator implements Injector {
     private boolean methodTypeParametersRequired;
     private boolean methodGenericReturnTypeRequired;
     private boolean methodGenericParamTypesRequired;
+    private boolean methodParamAnnotationsRequired;
     private boolean innerClassesRequired;
     private Set<String> innerClassesAccessed = new HashSet<>();
 
@@ -78,6 +80,8 @@ public class ClassReflectionInfoGenerator implements Injector {
                 "getGenericReturnType", Type.class)) != null;
         methodGenericParamTypesRequired = dependencyInfo.getMethod(new MethodReference(Executable.class,
                 "getGenericParameterTypes", Type[].class)) != null;
+        methodParamAnnotationsRequired = dependencyInfo.getMethod(new MethodReference(Executable.class,
+                "getParameterAnnotations", Annotation[][].class)) != null;
 
         var classesMethod = dependencyInfo.getMethod(new MethodReference(Class.class, "getDeclaredClasses",
                 Class[].class));
@@ -470,10 +474,16 @@ public class ClassReflectionInfoGenerator implements Injector {
             var genericReturnType = methodGenericReturnTypeRequired && !method.getName().equals("<init>")
                     ? method.getGenericResultType() : null;
             var genericParamTypes = methodGenericParamTypesRequired ? method.getGenericParameterTypes() : null;
+            var paramAnnotationsList = methodParamAnnotationsRequired
+                    ? collectAllParamAnnotations(method, context.getClassSource())
+                    : null;
+            var hasParamGenericTypes = genericParamTypes != null && genericParamTypes.length > 0;
+            var hasParamAnnotations = paramAnnotationsList != null;
             if (!annotations.isEmpty()
                     || (typeParameters != null && typeParameters.length > 0)
                     || genericReturnType != null
-                    || genericParamTypes != null && genericParamTypes.length > 0) {
+                    || hasParamGenericTypes
+                    || hasParamAnnotations) {
                 writer.append(',').ws().append('{');
                 var needsComma = false;
                 if (!annotations.isEmpty()) {
@@ -496,15 +506,38 @@ public class ClassReflectionInfoGenerator implements Injector {
                     generateGenericType(context, cls, method, genericReturnType);
                     needsComma = true;
                 }
-                if (genericParamTypes != null && genericParamTypes.length > 0) {
+                if (hasParamGenericTypes || hasParamAnnotations) {
                     if (needsComma) {
                         writer.append(',').ws();
                     }
                     writer.append("s:").ws().append('[');
-                    generateGenericType(context, cls, method, genericParamTypes[0]);
-                    for (var j = 1; j < genericParamTypes.length; ++j) {
-                        writer.append(',').ws();
-                        generateGenericType(context, cls, method, genericParamTypes[j]);
+                    for (var j = 0; j < method.parameterCount(); ++j) {
+                        if (j > 0) {
+                            writer.append(',').ws();
+                        }
+                        var genericParamType = (genericParamTypes != null && j < genericParamTypes.length)
+                                ? genericParamTypes[j] : null;
+                        var paramAnnots = (paramAnnotationsList != null && j < paramAnnotationsList.size())
+                                ? paramAnnotationsList.get(j) : Collections.<AnnotationReader>emptyList();
+                        if (genericParamType != null || !paramAnnots.isEmpty()) {
+                            writer.append('{');
+                            var needsComma2 = false;
+                            if (genericParamType != null) {
+                                writer.append("t:").ws();
+                                generateGenericType(context, cls, method, genericParamType);
+                                needsComma2 = true;
+                            }
+                            if (!paramAnnots.isEmpty()) {
+                                if (needsComma2) {
+                                    writer.append(',').ws();
+                                }
+                                writer.append("a:").ws();
+                                generateAnnotations(writer, context.getClassSource(), paramAnnots);
+                            }
+                            writer.append('}');
+                        } else {
+                            writer.append("0");
+                        }
                     }
                     writer.append(']');
                 }
@@ -513,6 +546,23 @@ public class ClassReflectionInfoGenerator implements Injector {
             writer.append(']');
         }
         writer.softNewLine().outdent().append("]");
+    }
+
+    private List<List<AnnotationReader>> collectAllParamAnnotations(MethodReader method, ClassReaderSource classes) {
+        var paramAnnots = method.getParameterAnnotations();
+        if (paramAnnots == null) {
+            return null;
+        }
+        var result = new ArrayList<List<AnnotationReader>>();
+        var hasAny = false;
+        for (AnnotationContainerReader container : paramAnnots) {
+            var annots = AnnotationGenerationHelper.collectRuntimeAnnotations(classes, container.all());
+            result.add(annots);
+            if (!annots.isEmpty()) {
+                hasAny = true;
+            }
+        }
+        return hasAny ? result : null;
     }
 
     private void generateGenericType(InjectorContext context, ClassReader cls, MethodReader method,

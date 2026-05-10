@@ -50,6 +50,7 @@ public class ReflectionTypes {
     private FieldReflectionInfoStruct fieldReflectionInfoStruct;
     private MethodInfoStruct methodInfoStruct;
     private MethodReflectionInfoStruct methodReflectionInfoStruct;
+    private ParameterInfoStruct parameterInfoStruct;
     private TypeVariableInfoStruct typeVariableInfoStruct;
     private ParameterizedTypeInfoStruct parameterizedTypeInfoStruct;
     private TypeVariableReferenceStruct typeVariableReferenceStruct;
@@ -134,6 +135,13 @@ public class ReflectionTypes {
             methodReflectionInfoStruct = new MethodReflectionInfoStruct(names, module, dependency, classInfoProvider);
         }
         return methodReflectionInfoStruct;
+    }
+
+    public ParameterInfoStruct parameterInfo() {
+        if (parameterInfoStruct == null) {
+            parameterInfoStruct = new ParameterInfoStruct(names, module, dependency, classInfoProvider);
+        }
+        return parameterInfoStruct;
     }
 
     public TypeVariableInfoStruct typeVariableInfo() {

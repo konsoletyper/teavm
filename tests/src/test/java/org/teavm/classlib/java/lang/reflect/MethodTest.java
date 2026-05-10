@@ -185,12 +185,54 @@ public class MethodTest {
     }
 
     @Test
-    public void overriddenMethodAnnotations() throws Exception {        
+    public void overriddenMethodAnnotations() throws Exception {
         var method = SubclassVirtualMethod.class.getDeclaredMethod("g");
         assertNull(method.getAnnotation(TestAnnot.class));
-        
+
         method = SuperclassVirtualMethod.class.getDeclaredMethod("g");
         assertEquals(TestAnnot.class, method.getAnnotation(TestAnnot.class).annotationType());
+    }
+
+    @Test
+    public void parameterAnnotationsRead() throws Exception {
+        var method = ClassWithParameterAnnotations.class.getMethod("m", int.class, String.class, Object.class);
+        var paramAnnotations = method.getParameterAnnotations();
+        assertEquals(3, paramAnnotations.length);
+
+        assertEquals(1, paramAnnotations[0].length);
+        assertEquals(TestAnnot.class, paramAnnotations[0][0].annotationType());
+
+        assertEquals(0, paramAnnotations[1].length);
+
+        assertEquals(1, paramAnnotations[2].length);
+        assertEquals(TestAnnot.class, paramAnnotations[2][0].annotationType());
+    }
+
+    @Test
+    public void parameterAnnotationsEmptyOnUnannotatedMethod() throws Exception {
+        var method = ClassWithParameterAnnotations.class.getMethod("noAnnotations", int.class);
+        var paramAnnotations = method.getParameterAnnotations();
+        assertEquals(1, paramAnnotations.length);
+        assertEquals(0, paramAnnotations[0].length);
+    }
+
+    @Test
+    public void parameterAnnotationsReadForConstructor() throws Exception {
+        var ctor = ClassWithParameterAnnotations.class.getConstructor(int.class);
+        var paramAnnotations = ctor.getParameterAnnotations();
+        assertEquals(1, paramAnnotations.length);
+        assertEquals(1, paramAnnotations[0].length);
+        assertEquals(TestAnnot.class, paramAnnotations[0][0].annotationType());
+    }
+
+    @Test
+    public void parameterAnnotationsCoexistWithMethodAnnotations() throws Exception {
+        var method = ClassWithParameterAnnotations.class.getMethod("annotatedMethod", int.class);
+        assertEquals(1, extractAnnotations(method).size());
+        var paramAnnotations = method.getParameterAnnotations();
+        assertEquals(1, paramAnnotations.length);
+        assertEquals(1, paramAnnotations[0].length);
+        assertEquals(TestAnnot.class, paramAnnotations[0][0].annotationType());
     }
 
     private void callMethods() {
@@ -372,5 +414,24 @@ public class MethodTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Inherited
     @interface TestAnnot {
+    }
+
+    static class ClassWithParameterAnnotations {
+        @Reflectable
+        public ClassWithParameterAnnotations(@TestAnnot int x) {
+        }
+
+        @Reflectable
+        public void m(@TestAnnot int x, String y, @TestAnnot Object z) {
+        }
+
+        @Reflectable
+        public void noAnnotations(int x) {
+        }
+
+        @Reflectable
+        @TestAnnot
+        public void annotatedMethod(@TestAnnot int x) {
+        }
     }
 }

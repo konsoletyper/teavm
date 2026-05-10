@@ -39,6 +39,7 @@ import org.teavm.runtime.reflect.GenericArrayInfo;
 import org.teavm.runtime.reflect.GenericTypeInfo;
 import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.runtime.reflect.MethodReflectionInfo;
+import org.teavm.runtime.reflect.ParameterInfo;
 import org.teavm.runtime.reflect.ParameterizedTypeInfo;
 import org.teavm.runtime.reflect.RawTypeInfo;
 import org.teavm.runtime.reflect.TypeVariableInfo;
@@ -62,6 +63,7 @@ public class ReflectionIntrinsics implements WasmGCIntrinsicProvider {
         intrinsics.put(FieldReflectionInfo.class.getName(), new FieldReflectionInfoIntrinsic());
         intrinsics.put(MethodInfo.class.getName(), new MethodInfoIntrinsic());
         intrinsics.put(MethodReflectionInfo.class.getName(), new MethodReflectionInfoIntrinsic());
+        intrinsics.put(ParameterInfo.class.getName(), new ParameterInfoIntrinsic());
         intrinsics.put(TypeVariableInfo.class.getName(), new TypeVariableInfoIntrinsic());
         intrinsics.put(GenericTypeInfo.class.getName(), new GenericTypeInfoIntrinsic());
         intrinsics.put(ParameterizedTypeInfo.class.getName(), new ParameterizedTypeInfoIntrinsic());

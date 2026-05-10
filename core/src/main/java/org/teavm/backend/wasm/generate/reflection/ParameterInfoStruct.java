@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generate.reflection;
 import java.util.List;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmField;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
@@ -25,50 +26,41 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.reflect.GenericTypeInfo;
-import org.teavm.runtime.reflect.MethodReflectionInfo;
+import org.teavm.runtime.reflect.ParameterInfo;
 
-public class MethodReflectionInfoStruct {
+public class ParameterInfoStruct {
     private final DependencyInfo dependency;
     private final WasmGCClassInfoProvider classInfoProvider;
 
     private WasmStructure structure;
-    private int genericReturnTypeIndex = -1;
-    private int parameterInfosIndex = -1;
+    private WasmArray array;
     private int annotationsIndex = -1;
-    private int typeParametersIndex = -1;
+    private int genericTypeIndex = -1;
 
-    MethodReflectionInfoStruct(WasmGCNameProvider names, WasmModule module, DependencyInfo dependency,
+    public ParameterInfoStruct(WasmGCNameProvider names, WasmModule module, DependencyInfo dependency,
             WasmGCClassInfoProvider classInfoProvider) {
         this.dependency = dependency;
         this.classInfoProvider = classInfoProvider;
 
-        var name = names.topLevel(names.suggestForClass(MethodReflectionInfo.class.getName()));
+        var name = names.topLevel(names.suggestForClass(ParameterInfo.class.getName()));
         structure = new WasmStructure(name, this::initFields);
         module.types.add(structure);
+        var arrayName = names.topLevel(names.suggestForArray(names.suggestForClass(ParameterInfo.class.getName())));
+        array = new WasmArray(arrayName, structure.getReference().asStorage());
+        module.types.add(array);
     }
 
     private void initFields(List<WasmField> fields) {
-        if (dependency.getMethod(new MethodReference(MethodReflectionInfo.class, "genericReturnType",
-                GenericTypeInfo.class)) != null) {
-            genericReturnTypeIndex = fields.size();
-            fields.add(new WasmField(WasmType.STRUCT, "genericReturnType"));
-        }
-        if (dependency.getMethod(new MethodReference(MethodReflectionInfo.class, "parameterInfoCount",
-                int.class)) != null) {
-            parameterInfosIndex = fields.size();
-            fields.add(new WasmField(classInfoProvider.reflectionTypes().parameterInfo().array(), "parameterInfos"));
-        }
-        if (dependency.getMethod(new MethodReference(MethodReflectionInfo.class, "annotationCount",
+        if (dependency.getMethod(new MethodReference(ParameterInfo.class, "annotationCount",
                 int.class)) != null) {
             annotationsIndex = fields.size();
             var annotStruct = classInfoProvider.reflectionTypes().annotationInfo();
             fields.add(new WasmField(annotStruct.array(), "annotations"));
         }
-        if (dependency.getMethod(new MethodReference(MethodReflectionInfo.class, "typeParameterCount",
-                int.class)) != null) {
-            typeParametersIndex = fields.size();
-            var typeParamStruct = classInfoProvider.reflectionTypes().typeVariableInfo();
-            fields.add(new WasmField(typeParamStruct.array(), "typeParameters"));
+        if (dependency.getMethod(new MethodReference(ParameterInfo.class, "genericType",
+                GenericTypeInfo.class)) != null) {
+            genericTypeIndex = fields.size();
+            fields.add(new WasmField(WasmType.STRUCT, "genericType"));
         }
     }
 
@@ -76,14 +68,8 @@ public class MethodReflectionInfoStruct {
         return structure;
     }
 
-    public int genericReturnTypeIndex() {
-        init();
-        return genericReturnTypeIndex;
-    }
-
-    public int parameterInfosIndex() {
-        init();
-        return parameterInfosIndex;
+    public WasmArray array() {
+        return array;
     }
 
     public int annotationsIndex() {
@@ -91,9 +77,9 @@ public class MethodReflectionInfoStruct {
         return annotationsIndex;
     }
 
-    public int typeParametersIndex() {
+    public int genericTypeIndex() {
         init();
-        return typeParametersIndex;
+        return genericTypeIndex;
     }
 
     private void init() {

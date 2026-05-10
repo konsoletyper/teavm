@@ -23,6 +23,7 @@ import org.teavm.runtime.reflect.ClassInfo;
 import org.teavm.runtime.reflect.ClassInfoUtil;
 import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.runtime.reflect.ModifiersInfo;
+import org.teavm.runtime.reflect.ParameterInfo;
 
 public abstract class TExecutable extends TAccessibleObject implements TMember, TGenericDeclaration {
     TClass<?> declaringClass;
@@ -31,6 +32,7 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
     private TType[] genericParameterTypes;
     private TAnnotation[] declaredAnnotations;
     private TTypeVariable<?>[] typeParameters;
+    private TAnnotation[][] parameterAnnotations;
 
     TExecutable(TClass<?> declaringClass, MethodInfo methodInfo) {
         this.declaringClass = declaringClass;
@@ -72,14 +74,16 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
 
     public TType[] getGenericParameterTypes() {
         if (genericParameterTypes == null) {
+            resolveParameterTypes();
             var reflection = methodInfo.reflection();
             if (reflection == null) {
                 genericParameterTypes = new TType[0];
             } else {
                 genericParameterTypes = new TType[parameterTypes.length];
-                var count = reflection.genericParameterTypeCount();
+                var count = reflection.parameterInfoCount();
                 for (var i = 0; i < count; ++i) {
-                    var paramTypeInfo = reflection.genericParameterType(i);
+                    var paramInfo = reflection.parameterInfo(i);
+                    var paramTypeInfo = paramInfo != null ? paramInfo.genericType() : null;
                     genericParameterTypes[i] = paramTypeInfo != null
                             ? TGenericTypeFactory.create(this, paramTypeInfo)
                             : (TClass<?>) (Object) ClassInfoUtil.resolve(methodInfo.parameterType(i)).classObject();
@@ -91,6 +95,30 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
             }
         }
         return genericParameterTypes.clone();
+    }
+
+    public TAnnotation[][] getParameterAnnotations() {
+        if (parameterAnnotations == null) {
+            parameterAnnotations = new TAnnotation[parameterTypes.length][];
+            var reflection = methodInfo.reflection();
+            if (reflection != null) {
+                var count = reflection.parameterInfoCount();
+                for (var i = 0; i < count && i < parameterAnnotations.length; ++i) {
+                    ParameterInfo paramInfo = reflection.parameterInfo(i);
+                    parameterAnnotations[i] = new TAnnotation[paramInfo.annotationCount()];
+                    for (var j = 0; j < parameterAnnotations[i].length; ++j) {
+                        parameterAnnotations[i][j] = (TAnnotation) AnnotationInfoUtil.createAnnotation(
+                                paramInfo.annotation(j));
+                    }
+                }
+            }
+            for (var i = 0; i < parameterAnnotations.length; ++i) {
+                if (parameterAnnotations[i] == null) {
+                    parameterAnnotations[i] = new TAnnotation[0];
+                }
+            }
+        }
+        return parameterAnnotations.clone();
     }
 
     @Override

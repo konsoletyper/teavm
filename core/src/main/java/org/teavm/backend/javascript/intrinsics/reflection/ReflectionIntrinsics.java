@@ -43,6 +43,7 @@ import org.teavm.runtime.reflect.GenericArrayInfo;
 import org.teavm.runtime.reflect.GenericTypeInfo;
 import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.runtime.reflect.MethodReflectionInfo;
+import org.teavm.runtime.reflect.ParameterInfo;
 import org.teavm.runtime.reflect.ParameterizedTypeInfo;
 import org.teavm.runtime.reflect.RawTypeInfo;
 import org.teavm.runtime.reflect.TypeVariableInfo;
@@ -81,6 +82,7 @@ public class ReflectionIntrinsics {
         applyIntrinsics(FieldReflectionInfo.class, new FieldReflectionInfoGenerator());
         applyIntrinsics(MethodInfo.class, new MethodInfoGenerator());
         applyIntrinsics(MethodReflectionInfo.class, new MethodReflectionInfoGenerator());
+        applyIntrinsics(ParameterInfo.class, new ParameterInfoGenerator());
         applyIntrinsics(TypeVariableInfo.class, new TypeVariableInfoGenerator());
 
         var genericTypeGen = new GenericTypeInfoGenerator();
