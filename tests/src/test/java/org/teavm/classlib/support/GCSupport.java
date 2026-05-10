@@ -78,7 +78,7 @@ public final class GCSupport {
     @Async
     private static native void waitImpl();
     private static void waitImpl(AsyncCallback<Void> callback) {
-        Window.setTimeout(() -> callback.complete(null), 50);
+        Window.setTimeout(() -> callback.complete(null), 250);
     }
 
     @JSBody(script = "if (typeof window.gc === 'function') { window.gc(); }")
