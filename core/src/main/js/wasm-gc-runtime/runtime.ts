@@ -629,26 +629,26 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
         )(c) as Function;
     }
     imports.teavmJso = {
-        stringBuiltinsSupported: () => stringBuiltins,
-        isUndefined: (o: unknown) => typeof o === "undefined",
+        stringBuiltinsSupported: (): boolean => stringBuiltins,
+        isUndefined: (o: unknown): boolean => typeof o === "undefined",
         emptyArray: () => [],
         appendToArray: (array: unknown[], e: unknown) => array.push(e),
-        unwrapBoolean: (value: unknown) => value ? 1 : 0,
-        wrapBoolean: (value: unknown) => !!value,
+        unwrapBoolean: (value: unknown): number => value ? 1 : 0,
+        wrapBoolean: (value: unknown): boolean => !!value,
         getProperty,
         setProperty,
         setPropertyPure: setProperty,
-        global(name: string) {
+        global(name: string): any {
             try {
                 return getGlobalName(name);
             } catch (e) {
                 rethrowJsAsJava(e);
             }
         },
-        createClass(name: string | null, parent: Function | null, constructor: Function | null) {
+        createClass(name: string | null, parent: Function | null, constructor: Function | null): object {
             name = sanitizeName(name ?? "JavaObject");
             let action: (this: any, javaObject: unknown) => void;
-            const fn: any = renameConstructor(name, function(this: any, marker: unknown, javaObject: unknown) {
+            const fn: any = renameConstructor(name, function javajava(this: any, marker: unknown, javaObject: unknown) {
                 if (marker === wrapperCallMarkerSymbol) {
                     action.call(this, javaObject);
                 } else if (constructor === null) {
@@ -680,10 +680,10 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
             boundFn.prototype = fn.prototype;
             return boundFn;
         },
-        exportClass(cls: any) {
+        exportClass(cls: any): object {
             return cls[wrapperCallMarkerSymbol];
         },
-        defineMethod(cls: any, name: string, fn: Function, vararg: boolean) {
+        defineMethod(cls: any, name: string, fn: Function, vararg: boolean): void {
             const params: string[] = [];
             const paramsForString: string[] = [];
             for (let i = 1; i < fn.length; ++i) {
@@ -706,11 +706,11 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
                 `};`
             )(rethrowJavaAsJs, fn);
         },
-        defineStaticMethod(cls: any, name: string, fn: Function, vararg: boolean) {
+        defineStaticMethod(cls: any, name: string, fn: Function, vararg: boolean): void {
             cls[name] = defineFunction(fn, vararg);
         },
         defineFunction,
-        defineProperty(cls: any, name: string, getFn: Function, setFn: Function | null) {
+        defineProperty(cls: any, name: string, getFn: Function, setFn: Function | null): void {
             const descriptor: PropertyDescriptor = {
                 get() {
                     try {
@@ -731,7 +731,7 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
             }
             Object.defineProperty(cls.prototype, name, descriptor);
         },
-        defineStaticProperty(cls: any, name: string, getFn: Function, setFn: Function | null) {
+        defineStaticProperty(cls: any, name: string, getFn: Function, setFn: Function | null): void {
             const descriptor: PropertyDescriptor = {
                 get() {
                     try {
@@ -752,7 +752,7 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
             }
             Object.defineProperty(cls, name, descriptor);
         },
-        javaObjectToJS(instance: object | null, cls: any) {
+        javaObjectToJS(instance: object | null, cls: any): object | null {
             if (instance === null) {
                 return null;
             }
@@ -767,10 +767,10 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
             jsWrappers.set(instance, new WeakRef(obj));
             return obj;
         },
-        unwrapJavaObject(instance: any) {
+        unwrapJavaObject(instance: any): object {
             return instance[javaObjectSymbol];
         },
-        asFunction(instance: any, propertyName: string) {
+        asFunction(instance: any, propertyName: string): object | null {
             if (instance === null || instance === undefined) {
                 return null;
             }
@@ -789,7 +789,7 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
             }
             return result;
         },
-        functionAsObject(fn: any, property: string) {
+        functionAsObject(fn: any, property: string): object | null {
             if (fn === null || fn === void 0) {
                 return null;
             }
@@ -810,7 +810,7 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
                 }
             };
         },
-        wrapObject(obj: unknown) {
+        wrapObject(obj: unknown): object | null | undefined {
             if (obj === null) {
                 return null;
             }
@@ -838,11 +838,11 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
                 return result;
             }
         },
-        isPrimitive: (value: unknown, type: string) => typeof value === type || value === null,
-        instanceOf: (value: unknown, type: Function) => value instanceof type,
-        instanceOfOrNull: (value: unknown, type: Function) => value === null || value instanceof type,
-        sameRef: (a: unknown, b: unknown) => a === b,
-        hashCode: (obj: unknown) => {
+        isPrimitive: (value: unknown, type: string): boolean => typeof value === type || value === null,
+        instanceOf: (value: unknown, type: Function): boolean => value instanceof type,
+        instanceOfOrNull: (value: unknown, type: Function): boolean => value === null || value instanceof type,
+        sameRef: (a: unknown, b: unknown): boolean => a === b,
+        hashCode: (obj: unknown): number => {
             if (typeof obj === "object" || typeof obj === "function" || typeof obj === "symbol") {
                 let code = hashCodes.get(obj as object);
                 if (typeof code === "number") {
@@ -854,14 +854,14 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
             } else if (typeof obj === "number") {
                 return obj | 0;
             } else if (typeof obj === "bigint") {
-                return BigInt.asIntN(32, obj);
+                return Number(BigInt.asIntN(32, obj));
             } else if (typeof obj === "boolean") {
                 return obj ? 1 : 0;
             } else {
                 return 0;
             }
         },
-        apply: (instance: object | null, method: string, args: unknown[]) => {
+        apply: (instance: object | null, method: string, args: unknown[]): any => {
             try {
                 if (instance === null) {
                     const fn = getGlobalName(method) as Function;
@@ -873,9 +873,9 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
                 rethrowJsAsJava(e);
             }
         },
-        concatArray: (a: unknown[], b: unknown[]) => [...a, ...b],
-        getJavaException: (e: Record<symbol, unknown>) => e[javaExceptionSymbol],
-        getJSException: (e: unknown) => {
+        concatArray: (a: unknown[], b: unknown[]): unknown[] => [...a, ...b],
+        getJavaException: (e: Record<symbol, unknown>): any => e[javaExceptionSymbol],
+        getJSException: (e: unknown): Error => {
             const getJsException = context.exports["teavm.getJsException"] as Function;
             return getJsException(e);
         },
