@@ -160,13 +160,6 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 .use();
 
         var context = new ReflectionContextImpl(agent);
-        for (var reflectionSupplier : reflectionSuppliers) {
-            for (var className : reflectionSupplier.getClassesFoundByName(context)) {
-                if (classesFoundByName.add(className)) {
-                    agent.linkClass(className);
-                }
-            }
-        }
         allClasses.addConsumer(type -> {
             if (type.getValueType() instanceof ValueType.Object) {
                 var className = ((ValueType.Object) type.getValueType()).getClassName();
