@@ -56,6 +56,8 @@ public final class ReflectionMethods {
     public static final MethodReference METHOD_GET_GENERIC_RETURN_TYPE = new MethodReference(Method.class,
             "getGenericReturnType", Type.class);
 
+    public static final String PROXY_ACQUIRE_METHOD = "_acquireMethod_";
+
     private ReflectionMethods() {
     }
 }

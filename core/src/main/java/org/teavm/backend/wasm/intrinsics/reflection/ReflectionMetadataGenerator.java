@@ -300,7 +300,7 @@ public class ReflectionMetadataGenerator {
                     continue;
                 }
             }
-            if (method.getName().equals("<clinit>")) {
+            if (method.getName().equals("<clinit>") || !methods.contains(method.getDescriptor())) {
                 continue;
             }
 

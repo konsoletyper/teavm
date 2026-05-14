@@ -40,4 +40,5 @@ public final class ModifiersInfo {
     public static final int SYNTHETIC = 1 << 15;
     public static final int ENUM = 1 << 16;
     public static final int BRIDGE = 1 << 17;
+    public static final int PROXY = 1 << 18;
 }

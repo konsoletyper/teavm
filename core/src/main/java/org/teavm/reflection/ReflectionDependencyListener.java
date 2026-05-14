@@ -33,10 +33,13 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -94,11 +97,14 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private MethodReference forNameShort = new MethodReference(Class.class, "forName", String.class, Class.class);
     private MethodReference fieldGetType = new MethodReference(Field.class, "getType", Class.class);
     private MethodReference fieldGetName = new MethodReference(Field.class, "getName", String.class);
+    private MethodReference proxyMethod = new MethodReference(Proxy.class, "newProxyInstance", ClassLoader.class,
+            Class[].class, InvocationHandler.class, Object.class);
 
     private Map<String, Set<String>> accessibleFieldCache = new LinkedHashMap<>();
     private Map<String, Set<MethodDescriptor>> accessibleMethodCache = new LinkedHashMap<>();
     private Set<String> classesWithReflectableFields = new LinkedHashSet<>();
     private Set<String> classesWithReflectableMethods = new LinkedHashSet<>();
+    private DependencyAgent agent;
     private DependencyNode allClasses;
     private DependencyNode typesInReflectableSignaturesNode;
     private DependencyNode typesInGenericReflectableSignaturesNode;
@@ -110,13 +116,20 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private Set<FieldReference> writtenFields = new HashSet<>();
     private List<FieldReader> fieldsReadViaReflection = new ArrayList<>();
     private List<MethodReader> methodsReadViaReflection = new ArrayList<>();
+    private Map<List<? extends String>, String> proxyClasses = new LinkedHashMap<>();
+    private Map<? extends List<? extends String>, ? extends String> proxyClassesReadonly =
+            Collections.unmodifiableMap(proxyClasses);
     private DependencyNode fieldsAnnotationsConsumer;
     private DependencyNode methodsAnnotationsConsumer;
     private DependencyNode parameterAnnotationsConsumer;
+    private ReflectionContextImpl reflectionContext;
+    private ProxyDependencySupport proxySupport;
+    private Set<String> usedProxyNames = new HashSet<>();
 
     private boolean getReached;
     private boolean setReached;
     private boolean callReached;
+    private boolean proxyReached;
     private AnnotationGenerationHelper annotHelper;
     private boolean withGenerics;
 
@@ -146,6 +159,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         return writtenFields.contains(fieldRef);
     }
 
+    public Map<? extends List<? extends String>, ? extends String> getProxyClasses() {
+        return proxyClassesReadonly;
+    }
+
     @Override
     public void started(DependencyAgent agent) {
         allClasses = agent.createNode();
@@ -159,17 +176,19 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         agent.linkMethod(new MethodReference(Class.class, "createClass", ClassInfo.class, Class.class))
                 .use();
 
-        var context = new ReflectionContextImpl(agent);
+        reflectionContext = new ReflectionContextImpl(agent);
+        this.agent = agent;
         allClasses.addConsumer(type -> {
             if (type.getValueType() instanceof ValueType.Object) {
                 var className = ((ValueType.Object) type.getValueType()).getClassName();
-                if (reflectionSuppliers.stream().anyMatch(s -> s.isClassFoundByName(context, className))) {
+                if (reflectionSuppliers.stream().anyMatch(s -> s.isClassFoundByName(reflectionContext, className))) {
                     if (classesFoundByName.add(className)) {
                         agent.linkClass(className);
                     }
                 }
             }
         });
+
         if (!classesFoundByName.isEmpty()) {
             var getName = agent.linkMethod(new MethodReference(Class.class, "getName", String.class));
             getName.getVariable(0).propagate(agent.getType(ValueType.object("java.lang.Class")));
@@ -191,6 +210,22 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         return callReached;
     }
 
+    public boolean isProxyReached() {
+        return proxyReached;
+    }
+
+    public boolean isGeneratedProxyClass(String className) {
+        return proxySupport != null && proxySupport.isGeneratedClass(className);
+    }
+
+    public Collection<? extends MethodReference> getProxyReflectionMethods() {
+        return proxySupport != null ? proxySupport.getUsedMethods() : List.of();
+    }
+
+    public MethodReference getProxyWorkerAcquireMethod(MethodReference method) {
+        return proxySupport.getWorkerAcquireMethod(method);
+    }
+
     public Set<String> getClassesWithReflectableFields() {
         return classesWithReflectableFields;
     }
@@ -204,7 +239,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     }
 
     public Set<MethodDescriptor> getAccessibleMethods(String className) {
-        return accessibleMethodCache.get(className);
+        var result = accessibleMethodCache.get(className);
+        return result != null ? result : Collections.emptySet();
     }
 
     @Override
@@ -274,7 +310,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     ClassReader cls = agent.getClassSource().get(className);
                     if (cls != null) {
                         var skipPrivates = shouldSkipPrivates(cls);
-                        var reflectable = getAccessibleMethods(agent, className);
+                        var reflectable = collectAccessibleMethods(className);
                         for (MethodReader reflectableMethod : cls.getMethods()) {
                             if (!reflectable.contains(reflectableMethod.getDescriptor())) {
                                 continue;
@@ -285,28 +321,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                                     continue;
                                 }
                             }
-                            linkType(agent, reflectableMethod.getResultType());
-                            for (ValueType param : reflectableMethod.getParameterTypes()) {
-                                linkType(agent, param);
-                            }
-                            if (reflectableMethod.getGenericResultType() != null) {
-                                linkGenericType(agent, reflectableMethod.getGenericResultType());
-                            }
-                            var genericParamTypes = reflectableMethod.getGenericParameterTypes();
-                            if (genericParamTypes != null) {
-                                for (var param : genericParamTypes) {
-                                    linkGenericType(agent, param);
-                                }
-                            }
-                            if (methodsAnnotationsConsumer != null) {
-                                annotHelper.propagateAnnotationImplementations(agent,
-                                        reflectableMethod.getAnnotations().all(),
-                                        methodsAnnotationsConsumer);
-                            }
-                            if (parameterAnnotationsConsumer != null) {
-                                propagateParamAnnotationImplementations(agent, reflectableMethod);
-                            }
-                            methodsReadViaReflection.add(reflectableMethod);
+                            addReflectableMethod(agent, reflectableMethod);
                         }
                     }
                 }
@@ -366,6 +381,101 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             linkGenerics(agent);
             method.getResult().propagate(agent.getType(ValueType.parse(Type[].class)));
             propagateGenerics(agent, method.getResult().getArrayItem());
+        } else if (method.getReference().equals(proxyMethod)) {
+            installProxy();
+        }
+
+        if (proxySupport != null) {
+            proxySupport.onMethodAdded(method);
+        }
+    }
+
+    private void installProxy() {
+        proxySupport = new ProxyDependencySupport(this, agent);
+        proxyReached = true;
+        for (var reflectionSupplier : reflectionSuppliers) {
+            var listener = reflectionSupplier.getProxyInterfaces(reflectionContext, this::registerProxy);
+            if (listener != null) {
+                for (var type : allClasses.getTypes()) {
+                    if (type instanceof ValueType.Object) {
+                        var className = ((ValueType.Object) type).getClassName();
+                        listener.onClassAdded(className);
+                    }
+                }
+                allClasses.addConsumer(type -> {
+                    if (type.getValueType() instanceof ValueType.Object) {
+                        var className = ((ValueType.Object) type.getValueType()).getClassName();
+                        listener.onClassAdded(className);
+                    }
+                });
+            }
+        }
+        agent.linkMethod(new MethodReference(Proxy.class, "appendInterface", ClassInfo.class, void.class)).use();
+        agent.linkMethod(new MethodReference(Proxy.class, "registerClass", ClassInfo.class, void.class)).use();
+    }
+
+    private void registerProxy(List<? extends String> interfaces) {
+        if (proxyClasses.containsKey(interfaces)) {
+            return;
+        }
+        if (interfaces.isEmpty()) {
+            throw new IllegalArgumentException("Proxy interfaces cannot be empty");
+        }
+        for (var className : interfaces) {
+            var cls = agent.getClassSource().get(className);
+            if (cls == null) {
+                throw new IllegalArgumentException("Proxy interface '" + className + "' provided by "
+                        + "user's ReflectionSupplier was not found");
+            }
+            if (!cls.hasModifier(ElementModifier.INTERFACE)) {
+                throw new IllegalArgumentException("Proxy interface '" + className + "' provided by "
+                        + "user's ReflectionSupplier is not an interface");
+            }
+            agent.linkClass(className);
+        }
+        var proxyClassName = interfaces.get(0) + "$_Proxy_";
+        if (!usedProxyNames.add(proxyClassName)) {
+            var prefix = proxyClassName;
+            var i = 1;
+            do {
+                proxyClassName = prefix + i;
+                i++;
+            } while (!usedProxyNames.add(proxyClassName));
+        }
+        proxyClasses.put(interfaces, proxyClassName);
+        proxySupport.generateProxyClass(interfaces, proxyClassName);
+    }
+
+    void addAccessibleMethod(MethodReference method) {
+        accessibleMethodCache.computeIfAbsent(method.getClassName(), k -> new HashSet<>())
+                .add(method.getDescriptor());
+    }
+
+    void addReflectableMethod(DependencyAgent agent, MethodReader reflectableMethod) {
+        if (!methodsReadViaReflection.add(reflectableMethod)) {
+            return;
+        }
+        classesWithReflectableMethods.add(reflectableMethod.getOwnerName());
+        linkType(agent, reflectableMethod.getResultType());
+        for (ValueType param : reflectableMethod.getParameterTypes()) {
+            linkType(agent, param);
+        }
+        if (reflectableMethod.getGenericResultType() != null) {
+            linkGenericType(agent, reflectableMethod.getGenericResultType());
+        }
+        var genericParamTypes = reflectableMethod.getGenericParameterTypes();
+        if (genericParamTypes != null) {
+            for (var param : genericParamTypes) {
+                linkGenericType(agent, param);
+            }
+        }
+        if (methodsAnnotationsConsumer != null) {
+            annotHelper.propagateAnnotationImplementations(agent,
+                    reflectableMethod.getAnnotations().all(),
+                    methodsAnnotationsConsumer);
+        }
+        if (parameterAnnotationsConsumer != null) {
+            propagateParamAnnotationImplementations(agent, reflectableMethod);
         }
     }
 
@@ -509,7 +619,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 return;
             }
 
-            Set<MethodDescriptor> accessibleMethods = getAccessibleMethods(agent, className);
+            Set<MethodDescriptor> accessibleMethods = collectAccessibleMethods(className);
 
             var hasConstructors = false;
             for (MethodDescriptor methodDescriptor : accessibleMethods) {
@@ -575,7 +685,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             }
 
             var className = ((ValueType.Object) reflectedType.getValueType()).getClassName();
-            Set<MethodDescriptor> accessibleMethods = getAccessibleMethods(agent, className);
+            Set<MethodDescriptor> accessibleMethods = collectAccessibleMethods(className);
             ClassReader cls = agent.getClassSource().get(className);
             for (MethodDescriptor methodDescriptor : accessibleMethods) {
                 if (methodDescriptor.getName().equals("<init>")) {
@@ -811,8 +921,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         return accessibleFieldCache.computeIfAbsent(className, key -> gatherAccessibleFields(agent, key));
     }
 
-    private Set<MethodDescriptor> getAccessibleMethods(DependencyAgent agent, String className) {
-        return accessibleMethodCache.computeIfAbsent(className, key -> gatherAccessibleMethods(agent, key));
+    private Set<MethodDescriptor> collectAccessibleMethods(String className) {
+        return accessibleMethodCache.computeIfAbsent(className, this::gatherAccessibleMethods);
     }
 
     private Set<String> gatherAccessibleFields(DependencyAgent agent, String className) {
@@ -824,11 +934,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         return fields;
     }
 
-    private Set<MethodDescriptor> gatherAccessibleMethods(DependencyAgent agent, String className) {
-        ReflectionContextImpl context = new ReflectionContextImpl(agent);
+    private Set<MethodDescriptor> gatherAccessibleMethods(String className) {
         Set<MethodDescriptor> methods = new LinkedHashSet<>();
         for (ReflectionSupplier supplier : reflectionSuppliers) {
-            methods.addAll(supplier.getAccessibleMethods(context, className));
+            methods.addAll(supplier.getAccessibleMethods(reflectionContext, className));
         }
         return methods;
     }
@@ -917,7 +1026,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private static class ReflectionContextImpl implements ReflectionContext {
         private DependencyAgent agent;
 
-        public ReflectionContextImpl(DependencyAgent agent) {
+        ReflectionContextImpl(DependencyAgent agent) {
             this.agent = agent;
         }
 

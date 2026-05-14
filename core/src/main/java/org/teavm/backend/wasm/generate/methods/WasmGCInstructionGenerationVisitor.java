@@ -627,32 +627,10 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             var stringConstant = context.strings().getStringConstant((String) expr.getValue());
             builder.getGlobal(stringConstant.global);
         } else if (expr.getValue() instanceof ValueType) {
-            emitClassLiteral((ValueType) expr.getValue());
+            WasmGCGenerationUtil.emitClassLiteral(context.classInfoProvider(), builder, (ValueType) expr.getValue());
         } else {
             throw new IllegalArgumentException("Constant unsupported: " + expr.getValue());
         }
-    }
-
-    private void emitClassInfoLiteral(WasmInstructionBuilder builder, ValueType type) {
-        var degree = 0;
-        if (type instanceof ValueType.Array) {
-            var itemType = ((ValueType.Array) type).getItemType();
-            if (!(itemType instanceof ValueType.Primitive)) {
-                while (type instanceof ValueType.Array) {
-                    type = ((ValueType.Array) type).getItemType();
-                    ++degree;
-                }
-            }
-        }
-        builder.getGlobal(context.classInfoProvider().getClassInfo(type).getPointer());
-        while (degree-- > 0) {
-            builder.call(context.classInfoProvider().getGetArrayClassFunction());
-        }
-    }
-
-    private void emitClassLiteral(ValueType type) {
-        emitClassInfoLiteral(builder, type);
-        builder.call(context.classInfoProvider().reflectionTypes().classInfo().classObjectFunction());
     }
 
     @Override
@@ -858,7 +836,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             return;
         }
         builder.pushLocation(expr.getLocation());
-        emitClassInfoLiteral(builder, expr.getType());
+        WasmGCGenerationUtil.emitClassInfoLiteral(context.classInfoProvider(), builder, expr.getType());
         accept(expr.getLength(), builder, WasmType.INT32);
         builder.call(context.classInfoProvider().getArrayConstructor(expr.getType()));
         builder.popLocation();
@@ -870,7 +848,8 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             return;
         }
         builder.pushLocation(expr.getLocation());
-        emitClassInfoLiteral(builder, ((ValueType.Array) expr.getType()).getItemType());
+        WasmGCGenerationUtil.emitClassInfoLiteral(context.classInfoProvider(), builder,
+                ((ValueType.Array) expr.getType()).getItemType());
         for (var dimension : expr.getDimensions()) {
             accept(dimension, builder, WasmType.INT32);
         }
@@ -930,7 +909,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
                         .nullBranch(WasmNullCondition.NULL, innerBlock)
                         .structGet(objectClass.getStructure(), WasmGCClassInfoProvider.VT_FIELD_OFFSET)
                         .structGet(vtStruct, WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-                emitClassInfoLiteral(innerBlock, type);
+                WasmGCGenerationUtil.emitClassInfoLiteral(context.classInfoProvider(), innerBlock, type);
                 innerBlock
                         .call(context.supertypeFunctions().getIsSupertypeFunction(type))
                         .breakTo(block);
@@ -1031,7 +1010,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
                         .nullBranch(WasmNullCondition.NULL, block)
                         .structGet(objectClass.getStructure(), WasmGCClassInfoProvider.VT_FIELD_OFFSET)
                         .structGet(vtStruct, WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-                emitClassInfoLiteral(block, expr.getTarget());
+                WasmGCGenerationUtil.emitClassInfoLiteral(context.classInfoProvider(), block, expr.getTarget());
                 block
                         .call(context.supertypeFunctions().getIsSupertypeFunction(expr.getTarget()))
                         .branch(block);

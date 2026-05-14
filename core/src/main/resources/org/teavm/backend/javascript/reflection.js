@@ -105,3 +105,4 @@ let $rt_callMethod = (method, instance, args) => {
     let result = caller.apply(instance, argsToPass);
     return method.returnType[$rt_meta].valueToObject(result);
 }
+let $rt_proxyMethods = {};

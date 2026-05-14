@@ -19,6 +19,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.util.Set;
 import org.teavm.runtime.reflect.ModifiersInfo;
+import org.teavm.runtime.reflect.ProxyImplementor;
 
 /**
  * Represents flags for classes and class members.
@@ -67,6 +68,9 @@ public enum ElementModifier {
                     modifiers |= ModifiersInfo.INHERITED_ANNOTATION;
                 }
             }
+        }
+        if (cls.getAnnotations().get(ProxyImplementor.class.getName()) != null) {
+            modifiers |= ModifiersInfo.PROXY;
         }
         return modifiers;
     }

@@ -398,7 +398,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
         };
         renderingContext.setMinifying(obfuscated);
-        new ReflectionIntrinsics(methodInjectors, methodGenerators, classes, reflection,
+        new ReflectionIntrinsics(methodInjectors, methodGenerators, injectorProviders, classes, reflection,
                 controller.getDependencyInfo()).apply();
 
         if (controller.wasCancelled()) {

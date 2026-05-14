@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Proxy;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.intrinsics.reflection.AnnotationConstructorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.reflection.AnnotationDataIntrinsic;
@@ -32,6 +33,9 @@ import org.teavm.backend.wasm.intrinsics.reflection.MethodInfoIntrinsic;
 import org.teavm.backend.wasm.intrinsics.reflection.MethodReflectionInfoIntrinsic;
 import org.teavm.backend.wasm.intrinsics.reflection.ParameterInfoIntrinsic;
 import org.teavm.backend.wasm.intrinsics.reflection.ParameterizedTypeInfoIntrinsic;
+import org.teavm.backend.wasm.intrinsics.reflection.ProxyIntrinsic;
+import org.teavm.backend.wasm.intrinsics.reflection.ProxyIntrinsicContext;
+import org.teavm.backend.wasm.intrinsics.reflection.ProxyMethodIntrinsicProvider;
 import org.teavm.backend.wasm.intrinsics.reflection.RawTypeInfoIntrinsic;
 import org.teavm.backend.wasm.intrinsics.reflection.ReflectionMetadataGenerator;
 import org.teavm.backend.wasm.intrinsics.reflection.StringInfoIntrinsic;
@@ -143,6 +147,10 @@ public class WasmGCIntrinsics {
             var annotationClassName = className.substring(0, nameLength);
             return new AnnotationDataIntrinsic(classInfoProvider, ctx.classes(), annotationClassName);
         });
+        
+        var proxyIntrinsicContext = new ProxyIntrinsicContext(ctx);
+        reg.registerIntrinsic(Proxy.class, new ProxyIntrinsic(reflection, ctx, proxyIntrinsicContext));
+        reg.registerIntrinsic(new ProxyMethodIntrinsicProvider(reflection, proxyIntrinsicContext));
     }
 
     private static void fillSystem(IntrinsicRegistry<WasmGCInlineIntrinsic> reg,

@@ -15,6 +15,8 @@
  */
 package org.teavm.runtime.reflect;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import org.teavm.interop.Intrinsified;
 import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.StringInfo;
@@ -105,6 +107,9 @@ public final class ClassInfo extends ReflectionInfo {
 
     @Intrinsified
     public native Object newInstance();
+
+    @Intrinsified
+    public native Proxy newProxyInstance(InvocationHandler handler);
 
     @Intrinsified
     public native boolean initializeNewInstance(Object instance);

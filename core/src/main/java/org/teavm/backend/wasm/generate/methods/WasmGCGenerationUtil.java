@@ -63,4 +63,28 @@ public final class WasmGCGenerationUtil {
                 .breakTo(outerBlock);
         outerBlock.i32Const(0);
     }
+    
+    public static void emitClassInfoLiteral(WasmGCClassInfoProvider classInfoProvider, WasmInstructionBuilder builder,
+            ValueType type) {
+        var degree = 0;
+        if (type instanceof ValueType.Array) {
+            var itemType = ((ValueType.Array) type).getItemType();
+            if (!(itemType instanceof ValueType.Primitive)) {
+                while (type instanceof ValueType.Array) {
+                    type = ((ValueType.Array) type).getItemType();
+                    ++degree;
+                }
+            }
+        }
+        builder.getGlobal(classInfoProvider.getClassInfo(type).getPointer());
+        while (degree-- > 0) {
+            builder.call(classInfoProvider.getGetArrayClassFunction());
+        }
+    }
+
+    public static void emitClassLiteral(WasmGCClassInfoProvider classInfoProvider, WasmInstructionBuilder builder,
+            ValueType type) {
+        emitClassInfoLiteral(classInfoProvider, builder, type);
+        builder.call(classInfoProvider.reflectionTypes().classInfo().classObjectFunction());
+    }
 }

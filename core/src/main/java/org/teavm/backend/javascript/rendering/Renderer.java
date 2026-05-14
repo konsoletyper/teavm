@@ -566,7 +566,7 @@ public class Renderer implements RenderingManager {
 
             MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
             if (clinit != null && context.isDynamicInitializer(cls.getName())) {
-                writer.append("()").ws().append("=>").ws().appendClassInit(cls.getName())
+                writer.append("()").sameLineWs().append("=>").ws().appendClassInit(cls.getName())
                         .append("()");
             } else {
                 writer.append('0');

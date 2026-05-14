@@ -15,9 +15,13 @@
  */
 package org.teavm.backend.javascript.intrinsics.reflection;
 
+import java.lang.reflect.Proxy;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import org.teavm.backend.javascript.ProviderContext;
 import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.Injector;
@@ -53,15 +57,17 @@ import org.teavm.runtime.reflect.WildcardTypeInfo;
 public class ReflectionIntrinsics {
     private Map<MethodReference, Injector> injectors;
     private Map<MethodReference, Generator> generators;
+    private List<Function<ProviderContext, Injector>> injectorProviders;
     private ListableClassReaderSource classes;
     private ReflectionDependencyListener reflection;
     private DependencyInfo dependencies;
 
     public ReflectionIntrinsics(Map<MethodReference, Injector> injectors, Map<MethodReference, Generator> generators,
-            ListableClassReaderSource classes, ReflectionDependencyListener reflection,
-            DependencyInfo dependencies) {
+            List<Function<ProviderContext, Injector>> injectorProviders, ListableClassReaderSource classes,
+            ReflectionDependencyListener reflection, DependencyInfo dependencies) {
         this.injectors = injectors;
         this.generators = generators;
+        this.injectorProviders = injectorProviders;
         this.classes = classes;
         this.reflection = reflection;
         this.dependencies = dependencies;
@@ -94,6 +100,12 @@ public class ReflectionIntrinsics {
         applyIntrinsics(RawTypeInfo.class, genericTypeGen);
 
         generators.put(new MethodReference(Object.class, "getClassInfo", ClassInfo.class), new ObjectGenerator());
+        
+        var proxyContext = new ProxyGeneratorContext();
+        var proxyGen = new ProxyGenerator(reflection, proxyContext);
+        injectors.put(new MethodReference(Proxy.class, "wrapDependency", Object.class, Object.class), proxyGen);
+        injectors.put(new MethodReference(Proxy.class, "registerProxyClasses", void.class), proxyGen);
+        injectorProviders.add(new ProxyMethodInjectorProvider(reflection, proxyContext));
 
         applyToAnnotationData();
     }

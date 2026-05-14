@@ -16,16 +16,21 @@
 package org.teavm.classlib.support;
 
 import java.lang.invoke.SerializedLambda;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import org.teavm.classlib.ProxyInterfaceConsumer;
+import org.teavm.classlib.ProxyListener;
 import org.teavm.classlib.ReflectionContext;
 import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
+import org.teavm.model.ValueType;
 
 public class ReflectionSupplierImpl implements ReflectionSupplier {
     @Override
@@ -65,5 +70,26 @@ public class ReflectionSupplierImpl implements ReflectionSupplier {
     @Override
     public boolean isClassFoundByName(ReflectionContext context, String name) {
         return name.equals("org.teavm.classlib.java.lang.TestObject");
+    }
+
+    @Override
+    public ProxyListener getProxyInterfaces(ReflectionContext context, ProxyInterfaceConsumer consumer) {
+        return className -> {
+            var cls = context.getClassSource().get(className);
+            if (cls != null && cls.getAnnotations().get(Proxiable.class.getName()) != null) {
+                consumer.accept(List.of(className));
+                for (var annot : cls.getAnnotations().all()) {
+                    if (annot.getType().equals(ProxyConfiguration.class.getName())) {
+                        var otherList = annot.getValue("value").getList();
+                        var classNames = new ArrayList<String>();
+                        classNames.add(className);
+                        for (var other : otherList) {
+                            classNames.add(((ValueType.Object) other.getJavaClass()).getClassName());
+                        }
+                        consumer.accept(classNames);
+                    }
+                }
+            }
+        };
     }
 }

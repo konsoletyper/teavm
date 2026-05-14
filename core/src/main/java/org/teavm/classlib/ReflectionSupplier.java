@@ -31,4 +31,8 @@ public interface ReflectionSupplier {
     default boolean isClassFoundByName(ReflectionContext context, String name) {
         return false;
     }
+
+    default ProxyListener getProxyInterfaces(ReflectionContext context, ProxyInterfaceConsumer consumer) {
+        return null;
+    }
 }
