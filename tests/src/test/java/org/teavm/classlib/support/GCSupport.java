@@ -67,8 +67,6 @@ public final class GCSupport {
             doc.getBody().appendChild(div);
             triggerGCInJS();
             waitImpl();
-            triggerGCInJS();
-            waitImpl();
         } else {
             Runtime.getRuntime().gc();
             Runtime.getRuntime().gc();
@@ -78,7 +76,7 @@ public final class GCSupport {
     @Async
     private static native void waitImpl();
     private static void waitImpl(AsyncCallback<Void> callback) {
-        Window.setTimeout(() -> callback.complete(null), 250);
+        Window.setTimeout(() -> callback.complete(null), 500);
     }
 
     @JSBody(script = "if (typeof window.gc === 'function') { window.gc(); }")
