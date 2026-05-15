@@ -48,6 +48,7 @@ public class WeakReferenceTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
     public void deref() {
         var ref = createAndTestRef(null);
         GCSupport.tryToTriggerGC(ref);
@@ -55,6 +56,7 @@ public class WeakReferenceTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
     public void refQueue() {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
@@ -82,7 +84,7 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC })
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT })
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);

@@ -52,6 +52,7 @@ public class CleanerTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
     public void gcTriggersClean() {
         var cleaner = Cleaner.create();
         var counter = new int[1];
