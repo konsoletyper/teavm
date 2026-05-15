@@ -128,6 +128,9 @@ public class Parser {
                     node.visibleParameterAnnotations != null ? node.visibleParameterAnnotations[i] : null,
                     node.invisibleParameterAnnotations != null ? node.invisibleParameterAnnotations[i] : null);
         }
+        if (node.exceptions != null && !node.exceptions.isEmpty()) {
+            method.setThrownTypes(node.exceptions);
+        }
 
         if (node.signature != null) {
             parseMethodGenericSignature(node.signature, method);

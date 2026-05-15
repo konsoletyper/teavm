@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -208,6 +209,11 @@ public class ClassIO {
             output.writeUnsigned(0);
         }
 
+        output.writeUnsigned(method.getThrownTypes().size());
+        for (var thrownType : method.getThrownTypes()) {
+            output.writeUnsigned(symbolTable.lookup(thrownType));
+        }
+
         if (method.getProgram() != null) {
             output.writeUnsigned(1);
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -237,6 +243,16 @@ public class ClassIO {
 
         if (input.readUnsigned() != 0) {
             method.annotationDefault = annotationIO.readAnnotationValue(input);
+        }
+
+        var thrownTypeCount = input.readUnsigned();
+        if (thrownTypeCount > 0) {
+            var thrownTypes = new ArrayList<String>();
+            thrownTypes = new ArrayList<>(thrownTypeCount);
+            for (var i = 0; i < thrownTypeCount; ++i) {
+                thrownTypes.add(symbolTable.at(input.readUnsigned()));
+            }
+            method.thrownTypes = Collections.unmodifiableList(thrownTypes);
         }
 
         if (input.readUnsigned() != 0) {

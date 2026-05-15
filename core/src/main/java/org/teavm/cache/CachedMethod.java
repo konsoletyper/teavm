@@ -16,6 +16,8 @@
 package org.teavm.cache;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Supplier;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationValue;
@@ -36,6 +38,7 @@ class CachedMethod extends CachedMember implements MethodReader {
     AnnotationValue annotationDefault;
     WeakReference<ProgramReader> program;
     Supplier<ProgramReader> programSupplier;
+    List<? extends String> thrownTypes = Collections.emptyList();
 
     @Override
     public GenericTypeParameter[] getTypeParameters() {
@@ -118,5 +121,10 @@ class CachedMethod extends CachedMember implements MethodReader {
     @Override
     public AnnotationValue getAnnotationDefault() {
         return annotationDefault;
+    }
+
+    @Override
+    public List<? extends String> getThrownTypes() {
+        return thrownTypes;
     }
 }

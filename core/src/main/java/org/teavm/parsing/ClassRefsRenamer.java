@@ -15,6 +15,7 @@
  */
 package org.teavm.parsing;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -138,6 +139,13 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         rename(method.getAnnotations(), renamedMethod.getAnnotations());
         for (int i = 0; i < method.parameterCount(); ++i) {
             rename(method.parameterAnnotation(i), renamedMethod.parameterAnnotation(i));
+        }
+
+        if (!method.getThrownTypes().isEmpty()) {
+            var types = new ArrayList<String>(method.getThrownTypes());
+            for (var i = 0; i < types.size(); ++i) {
+                types.set(i, classNameMapper.apply(types.get(i)));
+            }
         }
 
         if (renamedMethod.getProgram() != null) {

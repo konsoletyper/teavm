@@ -15,6 +15,8 @@
  */
 package org.teavm.model;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
 public class MethodHolder extends MemberHolder implements MethodReader {
@@ -28,6 +30,7 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     private AnnotationValue annotationDefault;
     private AnnotationContainer[] parameterAnnotations;
     private MethodReference reference;
+    private List<String> thrownTypes;
 
     public MethodHolder(MethodDescriptor descriptor) {
         super(descriptor.getName());
@@ -178,5 +181,18 @@ public class MethodHolder extends MemberHolder implements MethodReader {
 
     public void setAnnotationDefault(AnnotationValue annotationDefault) {
         this.annotationDefault = annotationDefault;
+    }
+
+    @Override
+    public List<? extends String> getThrownTypes() {
+        return thrownTypes != null ? thrownTypes : Collections.emptyList();
+    }
+
+    public void setThrownTypes(List<? extends String> thrownTypes) {
+        if (thrownTypes.isEmpty()) {
+            this.thrownTypes = null;
+        } else {
+            this.thrownTypes = List.copyOf(thrownTypes);
+        }
     }
 }
