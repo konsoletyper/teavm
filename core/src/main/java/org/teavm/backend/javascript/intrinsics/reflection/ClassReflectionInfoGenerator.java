@@ -62,6 +62,7 @@ public class ClassReflectionInfoGenerator implements Injector {
     private boolean methodGenericReturnTypeRequired;
     private boolean methodGenericParamTypesRequired;
     private boolean methodParamAnnotationsRequired;
+    private boolean methodCheckedExceptionTypesRequired;
     private boolean innerClassesRequired;
     private Set<String> innerClassesAccessed = new HashSet<>();
 
@@ -82,6 +83,8 @@ public class ClassReflectionInfoGenerator implements Injector {
                 "getGenericParameterTypes", Type[].class)) != null;
         methodParamAnnotationsRequired = dependencyInfo.getMethod(new MethodReference(Executable.class,
                 "getParameterAnnotations", Annotation[][].class)) != null;
+        methodCheckedExceptionTypesRequired = dependencyInfo.getMethod(new MethodReference(Executable.class,
+                "getExceptionTypes", Class[].class)) != null;
 
         var classesMethod = dependencyInfo.getMethod(new MethodReference(Class.class, "getDeclaredClasses",
                 Class[].class));
@@ -479,11 +482,15 @@ public class ClassReflectionInfoGenerator implements Injector {
                     : null;
             var hasParamGenericTypes = genericParamTypes != null && genericParamTypes.length > 0;
             var hasParamAnnotations = paramAnnotationsList != null;
-            if (!annotations.isEmpty()
+            var thrownTypes = methodCheckedExceptionTypesRequired ? method.getThrownTypes()
+                    : Collections.<String>emptyList();
+            var hasReflectionInfo = !annotations.isEmpty()
                     || (typeParameters != null && typeParameters.length > 0)
                     || genericReturnType != null
                     || hasParamGenericTypes
-                    || hasParamAnnotations) {
+                    || hasParamAnnotations;
+            var hasExceptionTypes = !thrownTypes.isEmpty();
+            if (hasReflectionInfo) {
                 writer.append(',').ws().append('{');
                 var needsComma = false;
                 if (!annotations.isEmpty()) {
@@ -542,6 +549,20 @@ public class ClassReflectionInfoGenerator implements Injector {
                     writer.append(']');
                 }
                 writer.append('}');
+            } else if (hasExceptionTypes) {
+                writer.append(',').ws().append("0");
+            }
+            if (hasExceptionTypes) {
+                writer.append(',').ws().append('[');
+                var firstEx = true;
+                for (var thrownType : thrownTypes) {
+                    if (!firstEx) {
+                        writer.append(',').ws();
+                    }
+                    firstEx = false;
+                    writer.appendClass(thrownType.replace('/', '.'));
+                }
+                writer.append(']');
             }
             writer.append(']');
         }

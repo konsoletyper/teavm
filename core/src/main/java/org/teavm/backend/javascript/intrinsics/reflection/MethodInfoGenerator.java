@@ -50,6 +50,16 @@ public class MethodInfoGenerator implements Injector {
                 context.writeExpr(context.getArgument(1), Precedence.min());
                 context.getWriter().append("]");
                 break;
+            case "checkedExceptionCount":
+                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
+                context.getWriter().append(".checkedExceptionTypes.length");
+                break;
+            case "checkedExceptionType":
+                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
+                context.getWriter().append(".checkedExceptionTypes[");
+                context.writeExpr(context.getArgument(1), Precedence.min());
+                context.getWriter().append("]");
+                break;
         }
     }
 }

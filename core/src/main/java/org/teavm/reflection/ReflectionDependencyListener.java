@@ -17,6 +17,7 @@ package org.teavm.reflection;
 
 import static org.teavm.reflection.ReflectionMethods.CLASS_GET_TYPE_PARAMS;
 import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_GENERIC_PARAMETER_TYPES;
+import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_EXCEPTION_TYPES;
 import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_PARAMETER_ANNOTATIONS;
 import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_PARAMETER_TYPES;
 import static org.teavm.reflection.ReflectionMethods.EXECUTABLE_GET_TYPE_PARAMS;
@@ -107,6 +108,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private DependencyAgent agent;
     private DependencyNode allClasses;
     private DependencyNode typesInReflectableSignaturesNode;
+    private DependencyNode typesInThrownNode;
     private DependencyNode typesInGenericReflectableSignaturesNode;
     private Set<MethodReference> virtualMethods = new HashSet<>();
     private Set<MethodReference> virtualCallSites = new HashSet<>();
@@ -167,6 +169,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     public void started(DependencyAgent agent) {
         allClasses = agent.createNode();
         typesInReflectableSignaturesNode = agent.createNode();
+        typesInThrownNode = agent.createNode();
         typesInGenericReflectableSignaturesNode = agent.createNode();
 
         agent.linkMethod(new MethodReference(ClassInfo.class, "classObject", Class.class))
@@ -367,6 +370,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Class"))));
             method.getResult().getArrayItem().propagate(agent.getType(ValueType.object("java.lang.Class")));
             typesInReflectableSignaturesNode.connect(method.getResult().getArrayItem().getClassValueNode());
+        } else if (method.getReference().equals(EXECUTABLE_GET_EXCEPTION_TYPES)) {
+            method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Class"))));
+            method.getResult().getArrayItem().propagate(agent.getType(ValueType.object("java.lang.Class")));
+            typesInThrownNode.connect(method.getResult().getArrayItem().getClassValueNode());
         } else if (method.getReference().equals(EXECUTABLE_PARAMETER_TYPE)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));
             typesInReflectableSignaturesNode.connect(method.getResult().getClassValueNode());
@@ -468,6 +475,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             for (var param : genericParamTypes) {
                 linkGenericType(agent, param);
             }
+        }
+        for (var thrownType : reflectableMethod.getThrownTypes()) {
+            typesInThrownNode.propagate(agent.getType(ValueType.object(thrownType)));
+            agent.linkClass(thrownType);
         }
         if (methodsAnnotationsConsumer != null) {
             annotHelper.propagateAnnotationImplementations(agent,

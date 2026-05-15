@@ -60,6 +60,20 @@ public class MethodInfoIntrinsic implements WasmGCInlineIntrinsic {
                 builder.arrayGet(paramsType);
                 break;
             }
+            case "checkedExceptionCount":
+                WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
+                    context.generate(b, invocation.getArguments().get(0));
+                    b.structGet(infoStruct.structure(), infoStruct.checkedExceptionTypesIndex());
+                });
+                break;
+            case "checkedExceptionType": {
+                var exceptionTypesArray = classInfoProvider.reflectionTypes().derivedClassInfo().array();
+                context.generate(builder, invocation.getArguments().get(0));
+                builder.structGet(infoStruct.structure(), infoStruct.checkedExceptionTypesIndex());
+                context.generate(builder, invocation.getArguments().get(1));
+                builder.arrayGet(exceptionTypesArray);
+                break;
+            }
             case "call":
                 context.generate(builder, invocation.getArguments().get(1));
                 context.generate(builder, invocation.getArguments().get(2));

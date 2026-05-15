@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang.reflect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import java.io.IOException;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -223,6 +224,39 @@ public class MethodTest {
         assertEquals(1, paramAnnotations.length);
         assertEquals(1, paramAnnotations[0].length);
         assertEquals(TestAnnot.class, paramAnnotations[0][0].annotationType());
+    }
+
+    @Test
+    public void checkedExceptionTypesRead() throws Exception {
+        var method = ClassWithCheckedExceptions.class.getMethod("m");
+        var exceptionTypes = method.getExceptionTypes();
+        assertEquals(2, exceptionTypes.length);
+        var names = Arrays.stream(exceptionTypes).map(Class::getName).sorted().collect(Collectors.toList());
+        assertEquals(List.of("java.io.IOException", "java.lang.InterruptedException"), names);
+        
+        method = ClassWithCheckedExceptions.class.getMethod("noExceptions");
+        exceptionTypes = method.getExceptionTypes();
+        assertEquals(0, exceptionTypes.length);
+        
+        var ctor = ClassWithCheckedExceptions.class.getDeclaredConstructor();
+        exceptionTypes = ctor.getExceptionTypes();
+        assertEquals(1, exceptionTypes.length);
+        assertEquals("java.io.IOException", exceptionTypes[0].getName());
+
+        method = ClassWithCheckedExceptions.class.getMethod("annotatedWithExceptions");
+        assertEquals(List.of("TestAnnot"), extractAnnotations(method));
+        exceptionTypes = method.getExceptionTypes();
+        assertEquals(1, exceptionTypes.length);
+        assertEquals("java.io.IOException", exceptionTypes[0].getName());
+        
+        method = ClassWithCheckedExceptions.class.getMethod("paramAnnotationsWithExceptions", int.class);
+        var paramAnnotations = method.getParameterAnnotations();
+        assertEquals(1, paramAnnotations.length);
+        assertEquals(1, paramAnnotations[0].length);
+        assertEquals(TestAnnot.class, paramAnnotations[0][0].annotationType());
+        exceptionTypes = method.getExceptionTypes();
+        assertEquals(1, exceptionTypes.length);
+        assertEquals("java.io.IOException", exceptionTypes[0].getName());
     }
 
     @Test
@@ -432,6 +466,29 @@ public class MethodTest {
         @Reflectable
         @TestAnnot
         public void annotatedMethod(@TestAnnot int x) {
+        }
+    }
+
+    static class ClassWithCheckedExceptions {
+        @Reflectable
+        public ClassWithCheckedExceptions() throws IOException {
+        }
+
+        @Reflectable
+        public void m() throws IOException, InterruptedException {
+        }
+
+        @Reflectable
+        public void noExceptions() {
+        }
+
+        @Reflectable
+        @TestAnnot
+        public void annotatedWithExceptions() throws IOException {
+        }
+
+        @Reflectable
+        public void paramAnnotationsWithExceptions(@TestAnnot int x) throws IOException {
         }
     }
 }

@@ -50,6 +50,8 @@ public final class ReflectionMethods {
             "getTypeParameters", TypeVariable[].class);
     public static final MethodReference EXECUTABLE_GET_PARAMETER_ANNOTATIONS = new MethodReference(
             Executable.class, "getParameterAnnotations", Annotation[][].class);
+    public static final MethodReference EXECUTABLE_GET_EXCEPTION_TYPES = new MethodReference(
+            Executable.class, "getExceptionTypes", Class[].class);
 
     public static final MethodReference METHOD_GET_RETURN_TYPE = new MethodReference(Method.class, "getReturnType",
             Class.class);

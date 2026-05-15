@@ -331,6 +331,19 @@ public class ReflectionMetadataGenerator {
                 }
             }
 
+            if (methodInfoStruct.checkedExceptionTypesIndex() >= 0) {
+                var thrownTypes = method.getThrownTypes();
+                var derivedClassInfoStruct = classInfoProvider.reflectionTypes().derivedClassInfo();
+                if (thrownTypes == null || thrownTypes.isEmpty()) {
+                    builder.nullConst(derivedClassInfoStruct.array().getReference());
+                } else {
+                    for (var thrownType : thrownTypes) {
+                        generateDerivedClass(builder, ValueType.object(thrownType));
+                    }
+                    builder.arrayNewFixed(derivedClassInfoStruct.array(), thrownTypes.size());
+                }
+            }
+
             if (methodInfoStruct.callerIndex() >= 0) {
                 if (reflection.isCalled(method.getReference())) {
                     var caller = generateCaller(method);

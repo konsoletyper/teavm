@@ -72,6 +72,15 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
         return methodInfo.parameterCount();
     }
 
+    public TClass<?>[] getExceptionTypes() {
+        var count = methodInfo.checkedExceptionCount();
+        var result = new TClass<?>[count];
+        for (var i = 0; i < count; ++i) {
+            result[i] = (TClass<?>) (Object) ClassInfoUtil.resolve(methodInfo.checkedExceptionType(i)).classObject();
+        }
+        return result;
+    }
+
     public TType[] getGenericParameterTypes() {
         if (genericParameterTypes == null) {
             resolveParameterTypes();

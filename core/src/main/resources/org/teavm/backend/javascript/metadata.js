@@ -253,12 +253,17 @@ let $rt_readMethodMetadata = (cls, method) => {
     }
     let modifiers = method[1];
     let name = method[0];
+    let checkedExceptionTypes = method[6];
+    if (checkedExceptionTypes === undefined) {
+        checkedExceptionTypes = [];
+    }
     return {
         cls: cls,
         name: name,
         modifiers: modifiers,
         returnType: method[2],
         parameterTypes: parameterTypes,
+        checkedExceptionTypes: checkedExceptionTypes,
         caller: caller,
         calledDirectly: (modifiers & 8) === 0 && ((modifiers & 2) !== 0 || name === '<init>'),
         reflection: resolvedMethodReflection

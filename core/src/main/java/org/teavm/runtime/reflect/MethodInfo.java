@@ -42,6 +42,14 @@ public final class MethodInfo extends ReflectionInfo {
 
     @Unmanaged
     @Intrinsified
+    public native int checkedExceptionCount();
+
+    @Unmanaged
+    @Intrinsified
+    public native DerivedClassInfo checkedExceptionType(int index);
+
+    @Unmanaged
+    @Intrinsified
     public native Object call(Object instance, Object[] args);
 
     @Unmanaged

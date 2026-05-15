@@ -129,7 +129,11 @@ public class Parser {
                     node.invisibleParameterAnnotations != null ? node.invisibleParameterAnnotations[i] : null);
         }
         if (node.exceptions != null && !node.exceptions.isEmpty()) {
-            method.setThrownTypes(node.exceptions);
+            var thrownTypes = new ArrayList<String>();
+            for (var type : node.exceptions) {
+                thrownTypes.add(type.replace('/', '.'));
+            }
+            method.setThrownTypes(thrownTypes);
         }
 
         if (node.signature != null) {

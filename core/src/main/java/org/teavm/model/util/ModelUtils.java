@@ -87,6 +87,7 @@ public final class ModelUtils {
         for (int i = 0; i < method.parameterCount(); ++i) {
             copyAnnotations(method.parameterAnnotation(i), copy.parameterAnnotation(i));
         }
+        copy.setThrownTypes(method.getThrownTypes());
         return copy;
     }
 

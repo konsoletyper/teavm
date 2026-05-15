@@ -46,6 +46,7 @@ public class MethodInfoStruct {
     private int modifiersIndex = -1;
     private int returnTypeIndex = -1;
     private int parameterTypesIndex = -1;
+    private int checkedExceptionTypesIndex = -1;
     private int callerIndex = -1;
     private int reflectionIndex = -1;
 
@@ -86,6 +87,11 @@ public class MethodInfoStruct {
             parameterTypesIndex = fields.size();
             var infoType = classInfoProvider.reflectionTypes().derivedClassInfo().array().getReference();
             fields.add(new WasmField(infoType, "parameterTypes"));
+        }
+        if (dependencies.getMethod(new MethodReference(MethodInfo.class, "checkedExceptionCount", int.class)) != null) {
+            checkedExceptionTypesIndex = fields.size();
+            var infoType = classInfoProvider.reflectionTypes().derivedClassInfo().array().getReference();
+            fields.add(new WasmField(infoType, "checkedExceptionTypes"));
         }
         if (dependencies.getMethod(new MethodReference(MethodInfo.class, "call", Object.class, Object[].class,
                 Object.class)) != null) {
@@ -134,6 +140,11 @@ public class MethodInfoStruct {
     public int parameterTypesIndex() {
         init();
         return parameterTypesIndex;
+    }
+
+    public int checkedExceptionTypesIndex() {
+        init();
+        return checkedExceptionTypesIndex;
     }
 
     public int callerIndex() {
