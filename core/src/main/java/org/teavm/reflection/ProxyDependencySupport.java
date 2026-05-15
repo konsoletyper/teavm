@@ -18,6 +18,7 @@ package org.teavm.reflection;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,9 +37,11 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.runtime.reflect.ProxyImplementor;
 
 class ProxyDependencySupport {
@@ -152,7 +155,7 @@ class ProxyDependencySupport {
         }
     }
 
-    private class MethodIdHolder {
+    private static class MethodIdHolder {
         int id;
     }
 
@@ -201,6 +204,40 @@ class ProxyDependencySupport {
         } else {
             unboxIfNecessary(result, method.getResultType()).returnValue();
         }
+
+        var mainBlock = pe.getBlock();
+        var passThoughBlock = pe.prepareBlock();
+        var exVar = pe.newVar(Throwable.class);
+        for (var exception : originalMethod.getThrownTypes()) {
+            var tryCatch = new TryCatchBlock();
+            tryCatch.setExceptionType(exception);
+            tryCatch.setHandler(passThoughBlock);
+            mainBlock.getTryCatchBlocks().add(tryCatch);
+        }
+
+        var tryCatch = new TryCatchBlock();
+        tryCatch.setHandler(passThoughBlock);
+        tryCatch.setExceptionType(RuntimeException.class.getName());
+        mainBlock.getTryCatchBlocks().add(tryCatch);
+
+        passThoughBlock.setExceptionVariable(exVar.getVariable());
+        pe.enter(passThoughBlock);
+        var throwInsn = new RaiseInstruction();
+        throwInsn.setException(exVar.getVariable());
+        pe.addInstruction(throwInsn);
+
+        var wrapBlock = pe.prepareBlock();
+        var wrapTryCatch = new TryCatchBlock();
+        wrapTryCatch.setHandler(wrapBlock);
+        wrapTryCatch.setExceptionType(Exception.class.getName());
+        mainBlock.getTryCatchBlocks().add(wrapTryCatch);
+        exVar = pe.newVar(Exception.class);
+        wrapBlock.setExceptionVariable(exVar.getVariable());
+        pe.enter(wrapBlock);
+        var wrapperVar = pe.construct(UndeclaredThrowableException.class, exVar.cast(Throwable.class));
+        throwInsn = new RaiseInstruction();
+        throwInsn.setException(wrapperVar.getVariable());
+        pe.addInstruction(throwInsn);
 
         cls.addMethod(method);
     }

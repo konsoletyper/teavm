@@ -21,9 +21,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Proxiable;
@@ -352,14 +354,14 @@ public class ProxyTest {
     }
 
     @Test
-    public void exceptionPropagated() {
+    public void exceptionPropagated() throws Throwable {
         var a = (A) Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { A.class },
                 (_, _, _) -> {
                     throw new IllegalArgumentException("test");
                 });
         try {
             a.foo();
-            fail("Exception not thrown");
+            fail("Exception not caught");
         } catch (IllegalArgumentException e) {
             assertEquals("test", e.getMessage());
         }
@@ -370,9 +372,44 @@ public class ProxyTest {
                 });
         try {
             a.foo();
-            fail("Error not thrown");
+            fail("Error not caught");
         } catch (AssertionError e) {
             assertEquals("test error", e.getMessage());
+        }
+        
+        var h = (H) Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { H.class }, (_, _, _) -> {
+            throw new IOException();
+        });
+        try {
+            h.foo();
+            fail("Checked exception not caught");
+        } catch (IOException e) {
+            // caught, as expected
+        }
+        try {
+            h.bar();
+            fail("Checked exception not wrapped");
+        } catch (UndeclaredThrowableException e) {
+            // caught, as expected
+            assertTrue(e.getUndeclaredThrowable() instanceof IOException);
+        }
+
+        h = (H) Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { H.class }, (_, _, _) -> {
+            throw new InterruptedException();
+        });
+        try {
+            h.foo();
+            fail("Unsupported checked exception not wrapped");
+        } catch (UndeclaredThrowableException e) {
+            // caught, as expected
+            assertTrue(e.getUndeclaredThrowable() instanceof InterruptedException);
+        }
+        try {
+            h.bar();
+            fail("Checked exception not wrapped");
+        } catch (UndeclaredThrowableException e) {
+            // caught, as expected
+            assertTrue(e.getUndeclaredThrowable() instanceof InterruptedException);
         }
     }
 
@@ -475,6 +512,13 @@ public class ProxyTest {
 
     public interface G {
         void something();
+    }
+
+    @Proxiable
+    public interface H {
+        void foo() throws IOException;
+        
+        void bar();
     }
 
     public static class NonInterface {
