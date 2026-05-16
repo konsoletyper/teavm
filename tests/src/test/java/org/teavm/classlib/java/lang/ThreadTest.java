@@ -24,13 +24,10 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@SkipPlatform(TestPlatform.WASI)
 public class ThreadTest {
     @Test
     public void sleeps() throws InterruptedException {
@@ -98,6 +95,52 @@ public class ThreadTest {
             sum += a.foo();
         }
         assertEquals(8, sum);
+    }
+    
+    @Test
+    public void join() throws InterruptedException {
+        var runnable = new Runnable() {
+            boolean finished;
+            
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(750);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                finished = true;
+            }
+        };
+        var other = new Thread(runnable);
+        other.start();
+        Thread.sleep(150);
+        assertFalse(runnable.finished);
+        other.join();
+        assertTrue(runnable.finished);
+    }
+
+    @Test
+    public void joinAlreadyFinished() throws InterruptedException {
+        var runnable = new Runnable() {
+            boolean finished;
+
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                finished = true;
+            }
+        };
+        var other = new Thread(runnable);
+        other.start();
+        Thread.sleep(750);
+        assertTrue(runnable.finished);
+        other.join();
+        assertTrue(runnable.finished);
     }
 
     abstract class A {
