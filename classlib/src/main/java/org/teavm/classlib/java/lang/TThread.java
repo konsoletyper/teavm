@@ -132,7 +132,7 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public final void join(long millis, int nanos) throws InterruptedException {
-        if (currentThread() == this) {
+        if (currentThread() == this || !alive) {
             return;
         }
         synchronized (finishedLock) {
