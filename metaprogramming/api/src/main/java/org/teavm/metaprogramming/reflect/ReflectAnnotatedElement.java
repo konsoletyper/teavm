@@ -17,6 +17,7 @@ package org.teavm.metaprogramming.reflect;
 
 import java.lang.annotation.Annotation;
 
+@Deprecated
 public interface ReflectAnnotatedElement {
     <T extends Annotation> T getAnnotation(Class<T> type);
 }

@@ -15,8 +15,8 @@
  */
 package org.teavm.metaprogramming;
 
-import org.teavm.metaprogramming.reflect.ReflectMethodDescriptor;
+import org.teavm.extension.introspect.IntrospectMethod;
 
 public interface MetaprogrammingProvider {
-    MethodGenerator provide(ReflectMethodDescriptor method);
+    MethodGenerator provide(IntrospectMethod method);
 }

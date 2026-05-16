@@ -31,6 +31,7 @@ rootProject.name = "teavm"
 
 include("core")
 include("interop:core")
+include("extension:apis", "extension:spi", "extension:processor")
 include("metaprogramming:api", "metaprogramming:impl")
 include("jso:core", "jso:apis", "jso:impl")
 include("platform")

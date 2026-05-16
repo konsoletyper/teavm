@@ -24,13 +24,16 @@ public class MethodModel {
     private MethodReference method;
     private MethodReference metaMethod;
     private int classParameterIndex;
+    private boolean classParamIntrospect;
     private boolean isStatic;
     private Map<ValueType, MethodReference> usages = new HashMap<>();
 
-    MethodModel(MethodReference method, MethodReference metaMethod, int classParameterIndex, boolean isStatic) {
+    MethodModel(MethodReference method, MethodReference metaMethod, int classParameterIndex,
+            boolean classParamIntrospect, boolean isStatic) {
         this.method = method;
         this.metaMethod = metaMethod;
         this.classParameterIndex = classParameterIndex;
+        this.classParamIntrospect = classParamIntrospect;
         this.isStatic = isStatic;
     }
 
@@ -48,6 +51,10 @@ public class MethodModel {
 
     public int getClassParameterIndex() {
         return classParameterIndex;
+    }
+
+    public boolean isClassParamIntrospect() {
+        return classParamIntrospect;
     }
 
     public Map<ValueType, MethodReference> getUsages() {

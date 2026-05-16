@@ -19,7 +19,6 @@ import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import org.teavm.metaprogramming.MetaprogrammingProvider;
 import org.teavm.metaprogramming.MethodGenerator;
-import org.teavm.metaprogramming.impl.reflect.ReflectMethodImpl;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
@@ -28,10 +27,9 @@ import org.teavm.model.ElementModifier;
 public class MetaprogrammingClassTransformer implements ClassHolderTransformer {
     private MetaprogrammingGeneratorContextImpl genContext = new MetaprogrammingGeneratorContextImpl();
 
-
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
-        if (MetaprogrammingImpl.reflectContext == null) {
+        if (MetaprogrammingImpl.environment == null) {
             return;
         }
 
@@ -49,18 +47,19 @@ public class MetaprogrammingClassTransformer implements ClassHolderTransformer {
             if (method.hasModifier(ElementModifier.ABSTRACT)) {
                 continue;
             }
-            var reflectMethod = new ReflectMethodImpl(MetaprogrammingImpl.reflectContext.findClass(cls.getName()),
-                    method);
+            var env = MetaprogrammingImpl.environment;
+            var introspectClass = env.underlyingEnv.findClass(cls.getName());
+            var introspectMethod = introspectClass.declaredMethod(method.getDescriptor());
             MethodGenerator generator = null;
             for (var provider : providers) {
-                generator = provider.provide(reflectMethod);
+                generator = provider.provide(introspectMethod);
                 if (generator != null) {
                     break;
                 }
             }
             if (generator != null) {
-                genContext.init(reflectMethod, currentIndex);
-                generator.generate(genContext);
+                genContext.init(introspectMethod, currentIndex);
+                generator.generate(null);
                 method.setProgram(MetaprogrammingImpl.generator.getProgram());
                 method.getModifiers().remove(ElementModifier.NATIVE);
                 genContext.cleanup();

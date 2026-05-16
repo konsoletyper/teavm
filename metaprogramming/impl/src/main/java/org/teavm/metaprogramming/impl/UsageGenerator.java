@@ -146,7 +146,9 @@ class UsageGenerator {
         Object[] proxyArgs = new Object[model.getMetaParameterCount()];
         for (int i = 0; i < proxyArgs.length; ++i) {
             if (i == model.getMetaClassParameterIndex()) {
-                proxyArgs[i] = MetaprogrammingImpl.findClass(type);
+                proxyArgs[i] = model.isClassParamIntrospect()
+                    ? MetaprogrammingImpl.environment.underlyingEnv.introspection().getClass(type)
+                    : MetaprogrammingImpl.findClass(type);
             } else {
                 proxyArgs[i] = new ValueImpl<>(getParameterVar(i), MetaprogrammingImpl.varContext,
                         model.getMetaParameterType(i));
@@ -161,7 +163,7 @@ class UsageGenerator {
         } catch (IllegalAccessException | InvocationTargetException e) {
             StringWriter writer = new StringWriter();
             e.printStackTrace(new PrintWriter(writer));
-            diagnostics.error(location, "Error calling proxy method {{m0}}: " + writer.toString(),
+            diagnostics.error(location, "Error calling proxy method {{m0}}: " + writer,
                     model.getMetaMethod());
             MetaprogrammingImpl.error = true;
         }

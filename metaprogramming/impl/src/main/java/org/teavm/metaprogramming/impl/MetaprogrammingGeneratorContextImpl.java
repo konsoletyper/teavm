@@ -17,19 +17,19 @@ package org.teavm.metaprogramming.impl;
 
 import java.util.AbstractList;
 import java.util.List;
+import org.teavm.extension.introspect.IntrospectMethod;
+import org.teavm.extension.introspect.IntrospectMethodImpl;
 import org.teavm.metaprogramming.MethodGeneratorContext;
 import org.teavm.metaprogramming.Value;
-import org.teavm.metaprogramming.impl.reflect.ReflectMethodImpl;
-import org.teavm.metaprogramming.reflect.ReflectMethodDescriptor;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ValueType;
 
 class MetaprogrammingGeneratorContextImpl implements MethodGeneratorContext {
-    private ReflectMethodImpl method;
+    private IntrospectMethodImpl method;
     private Value<?> callReceiverCache;
     private Value<?>[] parameterCache;
 
-    void init(ReflectMethodImpl method, int index) {
+    void init(IntrospectMethodImpl method, int index) {
         this.method = method;
         var varContext = new TopLevelVariableContext(MetaprogrammingImpl.createDiagnostics());
         MetaprogrammingImpl.generator = new CompositeMethodGenerator(varContext);
@@ -40,11 +40,11 @@ class MetaprogrammingGeneratorContextImpl implements MethodGeneratorContext {
         MetaprogrammingImpl.suffix = "gen_" + index;
         MetaprogrammingImpl.templateMethod = method.method.getReference();
 
-        for (int i = 0; i <= method.getParameterCount(); ++i) {
+        for (int i = 0; i <= method.parameters().size(); ++i) {
             MetaprogrammingImpl.generator.getProgram().createVariable();
         }
         parameterCache = new Value<?>[method.method.parameterCount()];
-        for (int i = 0; i < method.getParameterCount(); ++i) {
+        for (int i = 0; i < method.parameters().size(); ++i) {
             var type = method.method.parameterType(i);
             var param = new ValueImpl<>(UsageGenerator.getParameterVar(i, type),
                     MetaprogrammingImpl.varContext, type);
@@ -82,7 +82,7 @@ class MetaprogrammingGeneratorContextImpl implements MethodGeneratorContext {
     }
 
     @Override
-    public ReflectMethodDescriptor method() {
+    public IntrospectMethod method() {
         return method;
     }
 
@@ -94,7 +94,7 @@ class MetaprogrammingGeneratorContextImpl implements MethodGeneratorContext {
 
         @Override
         public int size() {
-            return method.getParameterCount();
+            return method.parameters().size();
         }
     };
 }

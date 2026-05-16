@@ -47,6 +47,7 @@ scala {
 
 dependencies {
     testImplementation(project(":core"))
+    testImplementation(project(":extension:spi"))
     testImplementation(project(":classlib"))
     testImplementation(project(":jso:apis"))
     testImplementation(project(":platform"))
@@ -59,6 +60,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.testng)
     testImplementation(libs.kotlin.serialization.json)
+    testAnnotationProcessor(project(":extension:processor"))
 }
 
 tasks.test {

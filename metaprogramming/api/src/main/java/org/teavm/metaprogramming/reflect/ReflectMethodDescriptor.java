@@ -17,6 +17,7 @@ package org.teavm.metaprogramming.reflect;
 
 import org.teavm.metaprogramming.ReflectClass;
 
+@Deprecated
 public interface ReflectMethodDescriptor extends ReflectMember {
     boolean isConstructor();
 

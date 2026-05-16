@@ -15,6 +15,7 @@
  */
 package org.teavm.metaprogramming.reflect;
 
+@Deprecated
 public interface ReflectMethod extends ReflectMethodDescriptor {
     Object invoke(Object obj, Object... args);
 

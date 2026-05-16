@@ -19,6 +19,7 @@ import org.teavm.metaprogramming.reflect.ReflectAnnotatedElement;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 
+@Deprecated
 public interface ReflectClass<T> extends ReflectAnnotatedElement {
     boolean isPrimitive();
 

@@ -27,6 +27,7 @@ configurations {
 }
 
 dependencies {
+    api(project(":extension:apis"))
     "teavm"(project(":metaprogramming:impl"))
 }
 

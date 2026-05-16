@@ -41,6 +41,7 @@ import org.teavm.callgraph.CallGraph;
 import org.teavm.common.CachedFunction;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.extension.ExtensionEnvironmentImpl;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.CallLocation;
@@ -111,6 +112,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     DependencyType classType;
     private List<ClassFilter> classFilters = new ArrayList<>();
     boolean merging;
+    private ExtensionEnvironmentImpl extensionEnv;
 
     DependencyAnalyzer(ClassReaderSource classSource, ResourceProvider resourceProvider, ClassLoader classLoader,
             ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache,
@@ -140,6 +142,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classCache = new CachedFunction<>(this::createClassDependency);
 
         classType = getClassType("java.lang.Class");
+        extensionEnv = new ExtensionEnvironmentImpl(resourceProvider, classHierarchy, classLoader, diagnostics);
     }
 
     public void addClassFilter(ClassFilter filter) {
@@ -860,6 +863,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     @Override
     public CallGraph getCallGraph() {
         return callGraph;
+    }
+
+    public ExtensionEnvironmentImpl extensionEnvironment() {
+        return extensionEnv;
     }
 
     public void addBootstrapMethodSubstitutor(MethodReference method, BootstrapMethodSubstitutor substitutor) {

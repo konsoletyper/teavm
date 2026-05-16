@@ -15,6 +15,7 @@
  */
 package org.teavm.metaprogramming;
 
+@Deprecated
 public interface Diagnostics {
     void error(SourceLocation location, String error, Object... params);
 

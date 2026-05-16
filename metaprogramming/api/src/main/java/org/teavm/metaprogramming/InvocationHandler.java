@@ -17,6 +17,7 @@ package org.teavm.metaprogramming;
 
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 
+@Deprecated
 public interface InvocationHandler<T> {
     void invoke(Value<T> proxy, ReflectMethod method, Value<Object>[] args);
 }

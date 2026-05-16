@@ -20,7 +20,15 @@ import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.*;
+import org.teavm.extension.ExtensionEnvironmentImpl;
+import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.ValueType;
 import org.teavm.parsing.resource.ResourceProvider;
 
 public class DependencyAgent implements DependencyInfo, ServiceRepository {
@@ -157,6 +165,10 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
     @Override
     public boolean isPrecise() {
         return analyzer.isPrecise();
+    }
+
+    public ExtensionEnvironmentImpl extensionEnvironment() {
+        return analyzer.extensionEnvironment();
     }
 
     void cleanup() {

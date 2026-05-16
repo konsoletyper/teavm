@@ -18,6 +18,7 @@ package org.teavm.metaprogramming;
 import java.util.Objects;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 
+@Deprecated
 public class SourceLocation {
     private ReflectMethod method;
     private String fileName;

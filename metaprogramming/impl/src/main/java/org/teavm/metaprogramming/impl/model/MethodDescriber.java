@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.metaprogramming.Meta;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.Value;
@@ -102,11 +103,13 @@ public class MethodDescriber {
             }
 
             int classParamIndex = -1;
+            var classParamIntrospect = false;
             for (int i = 0; i < method.parameterCount(); ++i) {
                 ValueType proxyParam = meta.parameterType(i + paramOffset);
-                if (proxyParam.isObject(ReflectClass.class)) {
+                if (proxyParam.isObject(ReflectClass.class) || proxyParam.isObject(IntrospectClass.class)) {
                     if (classParamIndex == -1) {
                         classParamIndex = i;
+                        classParamIntrospect = proxyParam.isObject(IntrospectClass.class);
                     } else {
                         return null;
                     }
@@ -115,7 +118,8 @@ public class MethodDescriber {
                 }
             }
 
-            return new MethodModel(method.getReference(), meta.getReference(), classParamIndex, isStatic);
+            return new MethodModel(method.getReference(), meta.getReference(), classParamIndex, classParamIntrospect,
+                    isStatic);
         }
         return null;
     }

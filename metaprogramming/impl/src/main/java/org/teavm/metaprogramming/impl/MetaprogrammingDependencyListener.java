@@ -52,6 +52,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
         MetaprogrammingImpl.incrementalDependencies = agent.getIncrementalCache();
         MetaprogrammingImpl.agent = agent;
         MetaprogrammingImpl.reflectContext = new ReflectContext(agent.getClassHierarchy(), proxyClassLoader);
+        MetaprogrammingImpl.environment = new MetaprogrammingEnvironmentImpl(agent.extensionEnvironment(), agent);
     }
 
     @Override
@@ -63,6 +64,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
         MetaprogrammingImpl.incrementalDependencies = null;
         MetaprogrammingImpl.agent = null;
         MetaprogrammingImpl.reflectContext = null;
+        MetaprogrammingImpl.environment = null;
     }
 
     @Override

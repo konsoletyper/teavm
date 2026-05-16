@@ -17,6 +17,7 @@ package org.teavm.metaprogramming.reflect;
 
 import org.teavm.metaprogramming.ReflectClass;
 
+@Deprecated
 public interface ReflectField extends ReflectMember {
     boolean isEnumConstant();
 

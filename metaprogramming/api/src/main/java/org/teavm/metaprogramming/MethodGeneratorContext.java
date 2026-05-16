@@ -16,10 +16,10 @@
 package org.teavm.metaprogramming;
 
 import java.util.List;
-import org.teavm.metaprogramming.reflect.ReflectMethodDescriptor;
+import org.teavm.extension.introspect.IntrospectMethod;
 
 public interface MethodGeneratorContext {
-    ReflectMethodDescriptor method();
+    IntrospectMethod method();
 
     List<? extends Value<?>> parameters();
 

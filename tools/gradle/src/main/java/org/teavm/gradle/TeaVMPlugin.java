@@ -313,8 +313,11 @@ public class TeaVMPlugin implements Plugin<Project> {
 
     private void addDependencies(Project project) {
         project.getDependencies().add(CONFIGURATION_NAME, ArtifactCoordinates.CLASSLIB);
+        project.getDependencies().add(CONFIGURATION_NAME, ArtifactCoordinates.SPI);
         project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, ArtifactCoordinates.JUNIT);
         project.getDependencies().add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, ArtifactCoordinates.CLASSLIB);
+        project.getDependencies().add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME,
+                ArtifactCoordinates.EXTENSION_PROCESSOR);
     }
 
     private void setupWarTask(Project project) {

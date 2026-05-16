@@ -15,8 +15,6 @@
  */
 package org.teavm.metaprogramming;
 
-import java.io.InputStream;
-
-public interface Resource {
-    InputStream open();
+@Deprecated
+public interface Resource extends org.teavm.extension.resource.Resource {
 }

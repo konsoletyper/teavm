@@ -17,17 +17,17 @@ package org.teavm.metaprogramming.test;
 
 import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
+import org.teavm.extension.introspect.IntrospectMethod;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.MetaprogrammingProvider;
 import org.teavm.metaprogramming.MethodGenerator;
 import org.teavm.metaprogramming.MethodGeneratorContext;
-import org.teavm.metaprogramming.reflect.ReflectMethodDescriptor;
 
 @CompileTime
 public class TestProvider implements MetaprogrammingProvider {
     @Override
-    public MethodGenerator provide(ReflectMethodDescriptor method) {
-        if (method.getAnnotation(ArgWithType.class) != null) {
+    public MethodGenerator provide(IntrospectMethod method) {
+        if (method.hasAnnotation(ArgWithType.class)) {
             return this::generateArgWithName;
         }
         return null;
@@ -35,8 +35,8 @@ public class TestProvider implements MetaprogrammingProvider {
 
     private void generateArgWithName(MethodGeneratorContext context) {
         var result = emit(() -> new StringBuilder());
-        for (var i = 0; i < context.method().getParameterCount(); ++i) {
-            var param = context.method().getParameterType(i).toString();
+        for (var i = 0; i < context.method().parameters().size(); ++i) {
+            var param = context.method().parameters().get(i).type().toString();
             var paramValue = context.parameters().get(i);
             emit(() -> result.get().append(param).append(": ").append(paramValue.get()).append("\n"));
         }

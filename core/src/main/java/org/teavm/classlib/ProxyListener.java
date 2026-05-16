@@ -16,5 +16,5 @@
 package org.teavm.classlib;
 
 public interface ProxyListener {
-    void onClassAdded(String className);
+    void onClassAdded(String cls);
 }

@@ -35,6 +35,8 @@ dependencies {
     api(project(":interop:core"))
     api(project(":metaprogramming:api"))
 
+    implementation(project(":extension:apis"))
+    implementation(project(":extension:spi"))
     implementation(libs.asm.commons)
     implementation(libs.asm.util)
     implementation(libs.hppc)
