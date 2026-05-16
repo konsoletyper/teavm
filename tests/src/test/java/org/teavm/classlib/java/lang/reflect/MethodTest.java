@@ -268,6 +268,18 @@ public class MethodTest {
         assertEquals(1, paramAnnotations[0].length);
         assertEquals(TestAnnot.class, paramAnnotations[0][0].annotationType());
     }
+    
+    @Test
+    public void asyncReflection() throws Exception {
+        var method = ClassWithAsyncMethod.class.getMethod("foo", int.class);
+        var result = method.invoke(null, 23);
+        assertEquals(25, result);
+        
+        var instance = new ClassWithAsyncMethod();
+        method = ClassWithAsyncMethod.class.getMethod("bar", int.class);
+        result = method.invoke(instance, 23);
+        assertEquals(25, result);
+    }
 
     private void callMethods() {
         new Foo().bar(null);
@@ -489,6 +501,34 @@ public class MethodTest {
 
         @Reflectable
         public void paramAnnotationsWithExceptions(@TestAnnot int x) throws IOException {
+        }
+    }
+    
+    static class ClassWithAsyncMethod {
+        static {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        
+        @Reflectable
+        public static int foo(int x) throws InterruptedException {
+            Thread.sleep(1);
+            ++x;
+            Thread.sleep(1);
+            ++x;
+            return x;
+        }
+        
+        @Reflectable
+        public int bar(int x) throws InterruptedException {
+            Thread.sleep(1);
+            ++x;
+            Thread.sleep(1);
+            ++x;
+            return x;
         }
     }
 }

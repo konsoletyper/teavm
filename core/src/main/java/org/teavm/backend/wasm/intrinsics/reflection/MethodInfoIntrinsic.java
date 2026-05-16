@@ -15,12 +15,15 @@
  */
 package org.teavm.backend.wasm.intrinsics.reflection;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.model.MethodReference;
 
 public class MethodInfoIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -74,13 +77,18 @@ public class MethodInfoIntrinsic implements WasmGCInlineIntrinsic {
                 builder.arrayGet(exceptionTypesArray);
                 break;
             }
-            case "call":
+            case "call": {
+                var isAsync = context.isAsyncMethod(new MethodReference(Method.class, "invoke", Object.class,
+                        Object[].class, Object.class));
+                isAsync |= context.isAsyncMethod(new MethodReference(Constructor.class, "newInstance",
+                        Object[].class, Object.class));
                 context.generate(builder, invocation.getArguments().get(1));
                 context.generate(builder, invocation.getArguments().get(2));
                 context.generate(builder, invocation.getArguments().get(0));
                 builder.structGet(infoStruct.structure(), infoStruct.callerIndex())
-                        .callReference(infoStruct.callerType());
+                        .callReference(infoStruct.callerType(), isAsync);
                 break;
+            }
             case "reflection":
                 context.generate(builder, invocation.getArguments().get(0));
                 builder.structGet(infoStruct.structure(), infoStruct.reflectionIndex());

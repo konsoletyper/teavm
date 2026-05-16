@@ -102,6 +102,13 @@ public class ConstructorTest {
         constructor = ReflectableType.class.getDeclaredConstructor(int.class);
         assertNull(constructor.getAnnotation(TestAnnot.class));
     }
+    
+    @Test
+    public void asyncConstructor() throws Exception {
+        var constructor = ClassWithAsyncConstructor.class.getDeclaredConstructor(int.class);
+        var instance = constructor.newInstance(23);
+        assertEquals(25, instance.x);
+    }
 
     static class ReflectableType {
         public int a;
@@ -135,5 +142,18 @@ public class ConstructorTest {
     
     @Retention(RetentionPolicy.RUNTIME)
     @interface TestAnnot {
+    }
+    
+    public static class ClassWithAsyncConstructor {
+        int x;
+        
+        @Reflectable    
+        public ClassWithAsyncConstructor(int x) throws InterruptedException { 
+            Thread.sleep(1);
+            ++x;
+            Thread.sleep(1);
+            ++x;
+            this.x = x;
+        }
     }
 }

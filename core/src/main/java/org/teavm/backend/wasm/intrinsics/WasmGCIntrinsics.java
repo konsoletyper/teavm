@@ -114,7 +114,8 @@ public class WasmGCIntrinsics {
         var classInfoProvider = ctx.classInfoProvider();
         var metadataGen = new ReflectionMetadataGenerator(ctx.names(), ctx.module(), ctx.functionTypes(),
                 ctx.dependency(), reflection, ctx.classes(), classInfoProvider, ctx.functions(),
-                ctx.typeMapper(), ctx.strings(), ctx.classInitInfo(), ctx.virtualTables());
+                ctx.typeMapper(), ctx.strings(), ctx.classInitInfo(), ctx.virtualTables(),
+                ctx::isAsyncMethod);
         metadataGen.generate();
         ctx.initializerRegistry().register(fn -> fn.getBody().builder().call(metadataGen.initFunction()));
         reg.registerIntrinsic(ClassInfo.class, new ClassInfoIntrinsic(classInfoProvider, ctx.functionTypes(),

@@ -71,6 +71,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.runtime.StringInfo;
 import org.teavm.runtime.reflect.ClassInfo;
+import org.teavm.runtime.reflect.MethodInfo;
 
 public class ReflectionDependencyListener extends AbstractDependencyListener {
     private List<ReflectionSupplier> reflectionSuppliers;
@@ -618,6 +619,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 .addLocation(location)
                 .getVariable(0).getClassValueNode();
         callReached = true;
+        var infoLocation = new CallLocation(new MethodReference(MethodInfo.class, "call", Object.class,
+                Object[].class, Object.class));
+        agent.linkMethod(infoLocation.getMethod()).addLocation(location).use();
         classValueNode.addConsumer(reflectedType -> {
             if (!(reflectedType.getValueType() instanceof ValueType.Object)) {
                 return;
@@ -638,11 +642,12 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     continue;
                 }
                 MethodReader calledMethod = cls.getMethod(methodDescriptor);
-                MethodDependency calledMethodDep = agent.linkMethod(calledMethod.getReference()).addLocation(location);
+                MethodDependency calledMethodDep = agent.linkMethod(calledMethod.getReference())
+                        .addLocation(infoLocation);
                 calledMethodDep.use();
                 for (int i = 0; i < calledMethod.parameterCount(); ++i) {
                     propagateSet(agent, methodDescriptor.parameterType(i), method.getVariable(1).getArrayItem(),
-                            calledMethodDep.getVariable(i + 1), location);
+                            calledMethodDep.getVariable(i + 1), infoLocation);
                 }
                 calledMethodDep.getVariable(0).propagate(reflectedType);
                 calledMethods.add(calledMethod.getReference());
@@ -690,6 +695,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 .addLocation(location)
                 .getVariable(0).getClassValueNode();
         callReached = true;
+        var infoLocation = new CallLocation(new MethodReference(MethodInfo.class, "call", Object.class,
+                Object[].class, Object.class));
+        agent.linkMethod(infoLocation.getMethod()).addLocation(location).use();
         classValueNode.addConsumer(reflectedType -> {
             if (!(reflectedType.getValueType() instanceof ValueType.Object)) {
                 return;
@@ -704,23 +712,23 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 }
                 MethodReader calledMethod = cls.getMethod(methodDescriptor);
                 if (calledMethod.hasModifier(ElementModifier.STATIC)) {
-                    var calledMethodDep = agent.linkMethod(calledMethod.getReference()).addLocation(location);
+                    var calledMethodDep = agent.linkMethod(calledMethod.getReference()).addLocation(infoLocation);
                     calledMethodDep.use();
                     for (int i = 0; i < calledMethod.parameterCount(); ++i) {
                         propagateSet(agent, methodDescriptor.parameterType(i), method.getVariable(2).getArrayItem(),
-                                calledMethodDep.getVariable(i + 1), location);
+                                calledMethodDep.getVariable(i + 1), infoLocation);
                     }
                     propagateSet(agent, ValueType.object(className), method.getVariable(1),
-                            calledMethodDep.getVariable(0), location);
+                            calledMethodDep.getVariable(0), infoLocation);
                     propagateGet(agent, calledMethod.getResultType(), calledMethodDep.getResult(),
-                            method.getResult(), location);
-                    linkClassIfNecessary(agent, calledMethod, location);
+                            method.getResult(), infoLocation);
+                    linkClassIfNecessary(agent, calledMethod, infoLocation);
                     calledMethods.add(calledMethod.getReference());
                 } else {
                     var virtual = !calledMethod.hasModifier(ElementModifier.FINAL)
                             && calledMethod.getLevel() != AccessLevel.PRIVATE;
                     method.getVariable(1).addConsumer(new InstanceCallConsumer(agent, calledMethod.getReference(),
-                            method, location, virtual));
+                            method, infoLocation, virtual));
                 }
             }
         });

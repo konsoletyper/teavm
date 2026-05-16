@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
@@ -42,6 +43,7 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
+import org.teavm.backend.wasm.transformation.CoroutineTransformation;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.AccessLevel;
@@ -76,6 +78,7 @@ public class ReflectionMetadataGenerator {
     private WasmGCStringProvider strings;
     private ClassInitializerInfo classInitInfo;
     private WasmGCVirtualTableProvider virtualTables;
+    private Predicate<MethodReference> asyncMethods;
     private boolean innerClassesRequired;
     private Set<String> innerClassesAccessed = new HashSet<>();
 
@@ -85,7 +88,7 @@ public class ReflectionMetadataGenerator {
             DependencyInfo dependencies, ReflectionDependencyListener reflection, ListableClassReaderSource classes,
             WasmGCClassInfoProvider classInfoProvider, BaseWasmFunctionRepository functions,
             WasmGCTypeMapper typeMapper, WasmGCStringProvider strings, ClassInitializerInfo classInitInfo,
-            WasmGCVirtualTableProvider virtualTables) {
+            WasmGCVirtualTableProvider virtualTables, Predicate<MethodReference> asyncMethods) {
         this.names = names;
         this.module = module;
         this.functionTypes = functionTypes;
@@ -98,6 +101,7 @@ public class ReflectionMetadataGenerator {
         this.strings = strings;
         this.classInitInfo = classInitInfo;
         this.virtualTables = virtualTables;
+        this.asyncMethods = asyncMethods;
 
         var fn = new WasmFunction(functionTypes.of(null));
         fn.setName(names.topLevel("teavm@initReflection"));
@@ -720,6 +724,7 @@ public class ReflectionMetadataGenerator {
         function.setName(names.topLevel(names.suggestForMethod(method.getReference()) + "@caller"));
         module.functions.add(function);
         function.setReferenced(true);
+        var async = asyncMethods.test(method.getReference());
 
         var dataField = objectArrayClass.getStructure().getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
@@ -729,14 +734,7 @@ public class ReflectionMetadataGenerator {
         var argsVar = new WasmLocal(objectArrayClass.getType(), "args");
         function.add(argsVar);
         var argsDataVar = new WasmLocal(dataField.getUnpackedType(), "argsData");
-        function.add(argsDataVar);
-
         var body = function.getBody().builder();
-        body
-                .getLocal(argsVar)
-                .structGet(objectArrayClass.getStructure(), dataField.getIndex())
-                .setLocal(argsDataVar);
-
         var args = new WasmInstructionList().builder();
 
         var classInfo = classInfoProvider.getClassInfo(method.getOwnerName());
@@ -754,10 +752,23 @@ public class ReflectionMetadataGenerator {
             }
         }
 
+        if (method.parameterCount() > 0) {
+            args
+                    .getLocal(argsVar)
+                    .structGet(objectArrayClass.getStructure(), dataField.getIndex());
+            if (method.parameterCount() > 1) {
+                function.add(argsDataVar);
+                args.teeLocal(argsDataVar);
+            }
+        }
+
         var dataType = (WasmType.CompositeReference) dataField.getUnpackedType();
         var dataArray = (WasmArray) dataType.composite;
         for (var i = 0; i < method.parameterCount(); ++i) {
-            args.getLocal(argsDataVar).i32Const(i).arrayGet(dataArray);
+            if (i > 0) {
+                args.getLocal(argsDataVar);
+            }
+            args.i32Const(i).arrayGet(dataArray);
             unboxIfNecessary(args, method.parameterType(i));
         }
 
@@ -765,15 +776,20 @@ public class ReflectionMetadataGenerator {
             var callGen = new WasmGCVirtualCallGenerator(virtualTables, classInfoProvider);
             var tempVars = new TemporaryVariablePool(function);
             var valueCache = new ValueCache(tempVars);
-            callGen.generate(body, method.getReference(), false, valueCache, classInfo.getStructure().getReference(),
+            callGen.generate(body, method.getReference(), async, valueCache, classInfo.getStructure().getReference(),
                     b -> b.transferFrom(args));
         } else {
-            body.transferFrom(args).call(callee);
+            body.transferFrom(args).call(callee, async);
         }
         if (method.getResultType() == ValueType.VOID) {
             body.nullConst(objectClass.getType());
         } else {
             boxIfNecessary(body, method.getResultType());
+        }
+
+        if (async) {
+            var transformation = new CoroutineTransformation(functionTypes, functions, classInfoProvider);
+            transformation.transform(function);
         }
 
         return function;
