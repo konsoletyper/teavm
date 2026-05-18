@@ -59,7 +59,7 @@ public class MetaprogrammingClassTransformer implements ClassHolderTransformer {
             }
             if (generator != null) {
                 genContext.init(introspectMethod, currentIndex);
-                generator.generate(null);
+                generator.generate(genContext);
                 method.setProgram(MetaprogrammingImpl.generator.getProgram());
                 method.getModifiers().remove(ElementModifier.NATIVE);
                 genContext.cleanup();

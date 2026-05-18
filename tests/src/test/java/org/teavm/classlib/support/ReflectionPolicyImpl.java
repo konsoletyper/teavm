@@ -32,12 +32,12 @@ public class ReflectionPolicyImpl implements ReflectionPolicy {
     @Override
     public Collection<IntrospectMember> classAccessibleMembers(ExtensionEnvironment env, IntrospectClass<?> cls) {
         var members = new ArrayList<IntrospectMember>();
-        for (var field : cls.fields()) {
+        for (var field : cls.declaredFields()) {
             if (field.hasAnnotation(Reflectable.class)) {
                 members.add(field);
             }
         }
-        for (var method : cls.methods()) {
+        for (var method : cls.declaredMethods()) {
             if (method.hasAnnotation(Reflectable.class)) {
                 members.add(method);
             } else if (method.returnType().equals(env.findClass(SerializedLambda.class))
@@ -60,7 +60,10 @@ public class ReflectionPolicyImpl implements ReflectionPolicy {
                 consumer.accept(List.of(cls));
                 for (var proxyConfig : cls.annotations(ProxyConfiguration.class)) {
                     var classes = (IntrospectClass<?>[]) proxyConfig.value("value");
-                    consumer.accept(List.of(classes));
+                    var allClasses = new ArrayList<IntrospectClass<?>>();
+                    allClasses.add(cls);
+                    allClasses.addAll(List.of(classes));
+                    consumer.accept(allClasses);
                 }
             }
         };

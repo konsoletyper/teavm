@@ -53,8 +53,7 @@ public abstract class IntrospectAnnotatedElementImpl implements IntrospectAnnota
 
     @SuppressWarnings("unchecked")
     @Override
-    public <A extends Annotation> List<? extends IntrospectAnnotation<A>> annotations(
-            IntrospectClass<A> type) {
+    public <A extends Annotation> List<? extends IntrospectAnnotation<A>> annotations(IntrospectClass<A> type) {
         if (annotationListsByType == null) {
             var result = new HashMap<IntrospectClass<?>, List<IntrospectAnnotation<?>>>();
             for (var annotation : allAnnotations()) {
@@ -66,7 +65,8 @@ public abstract class IntrospectAnnotatedElementImpl implements IntrospectAnnota
             }
             annotationListsByType = unmodifiableResult;
         }
-        return (List<? extends IntrospectAnnotation<A>>) annotationListsByType.get(type);
+        var list = (List<? extends IntrospectAnnotation<A>>) annotationListsByType.get(type);
+        return list != null ? list : Collections.emptyList();
     }
 
     @Override
