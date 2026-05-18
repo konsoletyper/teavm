@@ -26,10 +26,10 @@ import java.util.stream.Stream;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.extension.introspect.IntrospectClassImpl;
-import org.teavm.extension.introspect.IntrospectField;
 import org.teavm.extension.introspect.IntrospectFieldImpl;
-import org.teavm.extension.introspect.IntrospectMethod;
 import org.teavm.extension.introspect.IntrospectMethodImpl;
+import org.teavm.metaprogramming.FieldAccessor;
+import org.teavm.metaprogramming.MethodCaller;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.Value;
 import org.teavm.metaprogramming.impl.reflect.ReflectClassImpl;
@@ -862,16 +862,16 @@ public class CompositeMethodGenerator {
                     if (replaceFieldGetSet(receiver, instance, method, arguments)) {
                         return;
                     }
-                } else if (method.getClassName().equals(IntrospectField.class.getName())) {
-                    if (replaceFieldGetSetIntrospect(receiver, instance, method, arguments)) {
+                } else if (method.getClassName().equals(FieldAccessor.class.getName())) {
+                    if (replaceFieldAccessorCall(receiver, instance, method, arguments)) {
                         return;
                     }
                 } else if (method.getClassName().equals(ReflectMethod.class.getName())) {
                     if (replaceMethodInvocation(receiver, instance, method, arguments)) {
                         return;
                     }
-                } else if (method.getClassName().equals(IntrospectMethod.class.getName())) {
-                    if (replaceMethodInvocationIntrospect(receiver, instance, method, arguments)) {
+                } else if (method.getClassName().equals(MethodCaller.class.getName())) {
+                    if (replaceMethodCallInvocation(receiver, instance, method, arguments)) {
                         return;
                     }
                 } else if (method.getClassName().equals(ReflectClass.class.getName())) {
@@ -961,7 +961,7 @@ public class CompositeMethodGenerator {
             }
         }
 
-        private boolean replaceFieldGetSetIntrospect(VariableReader receiver, VariableReader instance,
+        private boolean replaceFieldAccessorCall(VariableReader receiver, VariableReader instance,
                 MethodReference method, List<? extends VariableReader> arguments) {
             int instanceIndex = variableMapping[instance.getIndex()];
             if (capturedValues[instanceIndex] == null) {
@@ -971,13 +971,13 @@ public class CompositeMethodGenerator {
             }
 
             Object value = capturedValues[instanceIndex].obj;
-            if (!(value instanceof IntrospectFieldImpl)) {
+            if (!(value instanceof FieldAccessorImpl)) {
                 diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
                         "Wrong call to {{m0}} method ", method);
                 return false;
             }
 
-            var field = (IntrospectFieldImpl) value;
+            var field = ((FieldAccessorImpl) value).field;
             switch (method.getName()) {
                 case "get": {
                     Variable var = program.createVariable();
@@ -1106,7 +1106,7 @@ public class CompositeMethodGenerator {
             }
         }
 
-        private boolean replaceMethodInvocationIntrospect(VariableReader receiver, VariableReader instance,
+        private boolean replaceMethodCallInvocation(VariableReader receiver, VariableReader instance,
                 MethodReference method, List<? extends VariableReader> arguments) {
             int instanceIndex = variableMapping[instance.getIndex()];
             if (capturedValues[instanceIndex] == null) {
@@ -1117,15 +1117,16 @@ public class CompositeMethodGenerator {
             }
 
             Object value = capturedValues[instanceIndex].obj;
-            if (!(value instanceof IntrospectMethodImpl)) {
+            if (!(value instanceof MethodCallerImpl)) {
                 diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
                         "Wrong call to {{m0}} method ", method);
                 return false;
             }
 
-            var reflectMethod = (IntrospectMethodImpl) value;
+            var caller = (MethodCallerImpl) value;
+            var reflectMethod = caller.method;
             switch (method.getName()) {
-                case "invoke": {
+                case "call": {
                     var insn = new InvokeInstruction();
                     if (!Modifier.isStatic(reflectMethod.modifiers())) {
                         var cast = new CastInstruction();
@@ -1176,10 +1177,11 @@ public class CompositeMethodGenerator {
 
                     return true;
                 }
-                default:
+                default: {
                     diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
                             "Can only call {{m0}} method from runtime domain", method);
                     return false;
+                }
             }
         }
 

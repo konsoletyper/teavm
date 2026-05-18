@@ -17,6 +17,8 @@ package org.teavm.metaprogramming;
 
 import java.util.Iterator;
 import org.teavm.extension.introspect.IntrospectClass;
+import org.teavm.extension.introspect.IntrospectField;
+import org.teavm.extension.introspect.IntrospectMethod;
 
 @SuppressWarnings("unused")
 public final class Metaprogramming {
@@ -114,6 +116,14 @@ public final class Metaprogramming {
 
     @Deprecated
     public static Iterator<Resource> getResources(String name) {
+        throw unsupported();
+    }
+
+    public static MethodCaller caller(IntrospectMethod method) {
+        throw unsupported();
+    }
+
+    public static FieldAccessor accessor(IntrospectField field) {
         throw unsupported();
     }
 

@@ -68,16 +68,6 @@ public class IntrospectFieldImpl extends IntrospectAnnotatedElementImpl implemen
         return genericType;
     }
 
-    @Override
-    public Object get(Object target) {
-        throw new IllegalStateException("Don't call this method from compile domain");
-    }
-
-    @Override
-    public void set(Object target, Object value) {
-        throw new IllegalStateException("Don't call this method from compile domain");
-    }
-
     public FieldReader getBackingField() {
         return field;
     }

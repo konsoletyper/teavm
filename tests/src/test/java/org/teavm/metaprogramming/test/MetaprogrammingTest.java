@@ -19,6 +19,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.teavm.metaprogramming.Metaprogramming.accessor;
+import static org.teavm.metaprogramming.Metaprogramming.caller;
 import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.environment;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
@@ -75,7 +77,7 @@ public class MetaprogrammingTest {
             unsupportedCase();
             return;
         }
-        var field = cls.field("a");
+        var field = accessor(cls.field("a"));
         exit(() -> field.get(obj));
     }
     @Test
@@ -93,7 +95,7 @@ public class MetaprogrammingTest {
             unsupportedCase();
             return;
         }
-        var field = cls.field("a");
+        var field = accessor(cls.field("a"));
         emit(() -> field.set(obj, value));
     }
 
@@ -116,7 +118,8 @@ public class MetaprogrammingTest {
         if (method == null) {
             exit(() -> "missing");
         } else {
-            exit(() -> method.invoke(obj.get()));
+            var caller = caller(method);
+            exit(() -> caller.call(obj.get()));
         }
     }
 
@@ -133,7 +136,8 @@ public class MetaprogrammingTest {
         if (method == null) {
             exit(() -> "missing");
         } else {
-            exit(() -> method.invoke(obj.get(), a.get(), b.get()));
+            var caller = caller(method);
+            exit(() -> caller.call(obj.get(), a.get(), b.get()));
         }
     }
 
@@ -159,7 +163,8 @@ public class MetaprogrammingTest {
         }
         var ctor = type.method("<init>");
         if (ctor != null) {
-            exit(() -> ctor.construct());
+            var caller = caller(ctor);
+            exit(() -> caller.construct());
         } else {
             exit(() -> null);
         }
@@ -176,7 +181,8 @@ public class MetaprogrammingTest {
         var intClass = environment().findClass(int.class);
         var ctor = type.method("<init>", stringClass, intClass);
         if (ctor != null) {
-            exit(() -> ctor.construct(a, b));
+            var caller = caller(ctor);
+            exit(() -> caller.construct(a, b));
         } else {
             exit(() -> null);
         }

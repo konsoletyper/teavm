@@ -23,12 +23,12 @@ import static org.teavm.metaprogramming.Metaprogramming.proxy;
 import static org.teavm.metaprogramming.Metaprogramming.unsupportedCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
-import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.Value;
 
 @CompileTime
@@ -45,13 +45,13 @@ public class ProxyTest {
 
     @Meta
     private static native <T> T createProxy(Class<T> proxyType, String add);
-    private static <T> void createProxy(ReflectClass<T> proxyType, Value<String> add) {
-        if (proxyType.getAnnotation(MetaprogrammingClass.class) == null) {
+    private static <T> void createProxy(IntrospectClass<T> proxyType, Value<String> add) {
+        if (!proxyType.hasAnnotation(MetaprogrammingClass.class)) {
             unsupportedCase();
             return;
         }
         Value<T> proxy = proxy(proxyType, (instance, method, args) -> {
-            String name = method.getName();
+            String name = method.name();
             exit(() -> name + add.get());
         });
         exit(() -> proxy.get());
@@ -70,13 +70,13 @@ public class ProxyTest {
 
     @Meta
     private static native <T> T createProxyWithDefaultReturnValue(Class<T> proxyType, StringBuilder sb);
-    private static <T> void createProxyWithDefaultReturnValue(ReflectClass<T> proxyType, Value<StringBuilder> sb) {
-        if (proxyType.getAnnotation(MetaprogrammingClass.class) == null) {
+    private static <T> void createProxyWithDefaultReturnValue(IntrospectClass<T> proxyType, Value<StringBuilder> sb) {
+        if (!proxyType.hasAnnotation(MetaprogrammingClass.class)) {
             unsupportedCase();
             return;
         }
         Value<T> proxy = proxy(proxyType, (instance, method, args) -> {
-            String name = method.getName();
+            String name = method.name();
             emit(() -> sb.get().append(name + ";"));
         });
         exit(() -> proxy.get());
@@ -90,8 +90,8 @@ public class ProxyTest {
 
     @Meta
     private static native <T> T createProxyWithBoxedParameters(Class<T> proxyType);
-    private static <T> void createProxyWithBoxedParameters(ReflectClass<T> proxyType) {
-        if (proxyType.getAnnotation(MetaprogrammingClass.class) == null) {
+    private static <T> void createProxyWithBoxedParameters(IntrospectClass<T> proxyType) {
+        if (!proxyType.hasAnnotation(MetaprogrammingClass.class)) {
             unsupportedCase();
             return;
         }
@@ -99,7 +99,7 @@ public class ProxyTest {
         Value<T> proxy = proxy(proxyType, (instance, method, args) -> {
             Value<StringBuilder> result = emit(() -> new StringBuilder());
 
-            String name = method.getName();
+            String name = method.name();
             emit(() -> result.get().append(name).append('('));
             if (args.length > 0) {
                 emit(() -> result.get().append(args[0].get().toString()));

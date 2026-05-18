@@ -22,13 +22,18 @@ import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.extension.introspect.IntrospectClassImpl;
+import org.teavm.extension.introspect.IntrospectField;
+import org.teavm.extension.introspect.IntrospectFieldImpl;
+import org.teavm.extension.introspect.IntrospectMethod;
 import org.teavm.extension.introspect.IntrospectMethodImpl;
 import org.teavm.metaprogramming.Action;
 import org.teavm.metaprogramming.Computation;
 import org.teavm.metaprogramming.Diagnostics;
+import org.teavm.metaprogramming.FieldAccessor;
 import org.teavm.metaprogramming.InvocationHandler;
 import org.teavm.metaprogramming.LazyComputation;
 import org.teavm.metaprogramming.MetaprogrammingEnvironment;
+import org.teavm.metaprogramming.MethodCaller;
 import org.teavm.metaprogramming.ProxyHandler;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.Resource;
@@ -599,5 +604,13 @@ public final class MetaprogrammingImpl {
                 return resource::open;
             }
         };
+    }
+
+    public static MethodCaller caller(IntrospectMethod method) {
+        return new MethodCallerImpl((IntrospectMethodImpl) method);
+    }
+
+    public static FieldAccessor accessor(IntrospectField field) {
+        return new FieldAccessorImpl((IntrospectFieldImpl) field);
     }
 }

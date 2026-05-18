@@ -124,16 +124,6 @@ public class IntrospectMethodImpl extends IntrospectAnnotatedElementImpl impleme
     }
 
     @Override
-    public Object invoke(Object obj, Object... args) {
-        throw new IllegalStateException("Don't call this method from compile domain");
-    }
-
-    @Override
-    public Object construct(Object... args) {
-        throw new IllegalStateException("Don't call this method from compile domain");
-    }
-
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(returnType()).append(' ').append(name()).append('(');

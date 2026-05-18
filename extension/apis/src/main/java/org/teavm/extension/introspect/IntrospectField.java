@@ -21,8 +21,4 @@ public interface IntrospectField extends IntrospectMember {
     IntrospectClass<?> type();
 
     IntrospectType genericType();
-
-    Object get(Object target);
-
-    void set(Object target, Object value);
 }

@@ -13,16 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.extension.introspect;
+package org.teavm.metaprogramming;
 
-import java.util.List;
+public interface MethodCaller {
+    Object call(Object obj, Object... args);
 
-public interface IntrospectMethod extends IntrospectMember, IntrospectGenericDeclaration {
-    boolean isConstructor();
-
-    IntrospectClass<?> returnType();
-
-    List<? extends IntrospectParameter> parameters();
-
-    List<? extends IntrospectClass<? extends Throwable>> exceptionTypes();
+    Object construct(Object... args);
 }
