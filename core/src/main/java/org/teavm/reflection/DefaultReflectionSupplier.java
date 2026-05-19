@@ -47,6 +47,9 @@ public class DefaultReflectionSupplier implements ReflectionSupplier {
                 .stream()
                 .map(ServiceLoader.Provider::get)
                 .collect(Collectors.toList());
+        for (var policy : policies) {
+            policy.initialize(env);
+        }
     }
 
     @Override
@@ -79,7 +82,7 @@ public class DefaultReflectionSupplier implements ReflectionSupplier {
     public boolean isClassFoundByName(ReflectionContext context, String name) {
         var introspectClass = env.findClass(name);
         for (var policy : policies) {
-            if (policy.isClassFoundByName(env, introspectClass)) {
+            if (policy.isClassFoundByName(introspectClass)) {
                 return true;
             }
         }
@@ -90,7 +93,7 @@ public class DefaultReflectionSupplier implements ReflectionSupplier {
     public ProxyListener getProxyInterfaces(ReflectionContext context, ProxyInterfaceConsumer consumer) {
         var policyListeners = new ArrayList<org.teavm.extension.spi.reflection.ProxyListener>();
         for (var policy : policies) {
-            var listener = policy.getProxyInterfaces(env, itfList -> {
+            var listener = policy.getProxyInterfaces(itfList -> {
                 consumer.accept(itfList.stream().map(IntrospectClass::name).collect(Collectors.toList()));
             });
             if (listener != null) {
@@ -107,7 +110,7 @@ public class DefaultReflectionSupplier implements ReflectionSupplier {
     private void fillMembers(String className, Collection<String> fields, Collection<MethodDescriptor> methods) {
         var introspectClass = env.findClass(className);
         for (var policy : policies) {
-            var members = policy.classAccessibleMembers(env, introspectClass);
+            var members = policy.classAccessibleMembers(introspectClass);
             for (var member : members) {
                 if (member instanceof IntrospectFieldImpl) {
                     fields.add(member.name());

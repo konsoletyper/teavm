@@ -22,15 +22,18 @@ import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.extension.introspect.IntrospectMember;
 
 public interface ReflectionPolicy {
-    default Collection<IntrospectMember> classAccessibleMembers(ExtensionEnvironment env, IntrospectClass<?> cls) {
+    default void initialize(ExtensionEnvironment env) {
+    }
+    
+    default Collection<IntrospectMember> classAccessibleMembers(IntrospectClass<?> cls) {
         return Collections.emptyList();
     }
 
-    default boolean isClassFoundByName(ExtensionEnvironment env, IntrospectClass<?> cls) {
+    default boolean isClassFoundByName(IntrospectClass<?> cls) {
         return false;
     }
 
-    default ProxyListener getProxyInterfaces(ExtensionEnvironment env, ProxyInterfaceConsumer consumer) {
+    default ProxyListener getProxyInterfaces(ProxyInterfaceConsumer consumer) {
         return null;
     }
 }

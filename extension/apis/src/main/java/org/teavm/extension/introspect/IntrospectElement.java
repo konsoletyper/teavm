@@ -13,19 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.extension.introspect;
 
-plugins {
-    `java-library`
-    `teavm-publish`
-}
+public interface IntrospectElement {
+    int modifiers();
 
-description = "Declaration of TeaVM compiler extension PI"
+    default IntrospectAccess access() {
+        return IntrospectAccess.fromModifiers(modifiers());
+    }
 
-dependencies {
-    api(project(":extension:apis"))
-    testImplementation(libs.junit)
-}
-
-teavmPublish {
-    artifactId = "teavm-extension-spi"
+    String name();
 }

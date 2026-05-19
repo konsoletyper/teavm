@@ -15,10 +15,6 @@
  */
 package org.teavm.extension.introspect;
 
-public interface IntrospectMember extends IntrospectAnnotatedElement {
+public interface IntrospectMember extends IntrospectAnnotatedElement, IntrospectElement {
     IntrospectClass<?> declaringClass();
-
-    String name();
-
-    int modifiers();
 }

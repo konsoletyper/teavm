@@ -17,7 +17,8 @@ package org.teavm.extension.introspect;
 
 import java.util.List;
 
-public interface IntrospectClass<T> extends IntrospectAnnotatedElement, IntrospectType, IntrospectGenericDeclaration {
+public interface IntrospectClass<T> extends IntrospectAnnotatedElement, IntrospectType, IntrospectGenericDeclaration,
+        IntrospectElement {
     boolean isPrimitive();
 
     boolean isInterface();
@@ -32,11 +33,7 @@ public interface IntrospectClass<T> extends IntrospectAnnotatedElement, Introspe
 
     List<? extends IntrospectField> enumConstants();
 
-    int modifiers();
-
     IntrospectClass<?> componentType();
-
-    String name();
 
     String simpleName();
 
@@ -53,7 +50,7 @@ public interface IntrospectClass<T> extends IntrospectAnnotatedElement, Introspe
     <U> IntrospectClass<U> asSubclass(IntrospectClass<U> cls);
 
     @SuppressWarnings("unchecked")
-    default <U extends T> IntrospectClass<U> asSubclassUnchecked() {
+    default <U> IntrospectClass<U> asSubclassUnchecked() {
         return (IntrospectClass<U>) this;
     }
 

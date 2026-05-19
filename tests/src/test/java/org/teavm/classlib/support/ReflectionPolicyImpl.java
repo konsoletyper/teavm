@@ -29,8 +29,15 @@ import org.teavm.extension.spi.reflection.ReflectionPolicy;
 
 @Autoregistered
 public class ReflectionPolicyImpl implements ReflectionPolicy {
+    private ExtensionEnvironment env;
+
     @Override
-    public Collection<IntrospectMember> classAccessibleMembers(ExtensionEnvironment env, IntrospectClass<?> cls) {
+    public void initialize(ExtensionEnvironment env) {
+        this.env = env;
+    }
+
+    @Override
+    public Collection<IntrospectMember> classAccessibleMembers(IntrospectClass<?> cls) {
         var members = new ArrayList<IntrospectMember>();
         for (var field : cls.declaredFields()) {
             if (field.hasAnnotation(Reflectable.class)) {
@@ -49,12 +56,12 @@ public class ReflectionPolicyImpl implements ReflectionPolicy {
     }
 
     @Override
-    public boolean isClassFoundByName(ExtensionEnvironment env, IntrospectClass<?> cls) {
+    public boolean isClassFoundByName(IntrospectClass<?> cls) {
         return cls.name().equals("org.teavm.classlib.java.lang.TestObject");
     }
 
     @Override
-    public ProxyListener getProxyInterfaces(ExtensionEnvironment env, ProxyInterfaceConsumer consumer) {
+    public ProxyListener getProxyInterfaces(ProxyInterfaceConsumer consumer) {
         return cls -> {
             if (cls.hasAnnotation(Proxiable.class)) {
                 consumer.accept(List.of(cls));
