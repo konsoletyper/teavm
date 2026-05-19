@@ -16,63 +16,28 @@
 package org.teavm.classlib.support;
 
 import java.lang.invoke.SerializedLambda;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.teavm.extension.Autoregistered;
-import org.teavm.extension.ExtensionEnvironment;
 import org.teavm.extension.introspect.IntrospectClass;
-import org.teavm.extension.introspect.IntrospectMember;
-import org.teavm.extension.spi.reflection.ProxyInterfaceConsumer;
-import org.teavm.extension.spi.reflection.ProxyListener;
-import org.teavm.extension.spi.reflection.ReflectionPolicy;
+import org.teavm.extension.spi.reflection.SimpleReflectionPolicy;
 
 @Autoregistered
-public class ReflectionPolicyImpl implements ReflectionPolicy {
-    private ExtensionEnvironment env;
-
+public class ReflectionPolicyImpl extends SimpleReflectionPolicy {
     @Override
-    public void initialize(ExtensionEnvironment env) {
-        this.env = env;
-    }
+    protected void setup() {
+        allClasses()
+                .reflectableMembers(withAnnotation(Reflectable.class))
+                .reflectableMethods(withReturnType(SerializedLambda.class).and(named("writeReplace")));
 
-    @Override
-    public Collection<IntrospectMember> classAccessibleMembers(IntrospectClass<?> cls) {
-        var members = new ArrayList<IntrospectMember>();
-        for (var field : cls.declaredFields()) {
-            if (field.hasAnnotation(Reflectable.class)) {
-                members.add(field);
-            }
-        }
-        for (var method : cls.declaredMethods()) {
-            if (method.hasAnnotation(Reflectable.class)) {
-                members.add(method);
-            } else if (method.returnType().equals(env.findClass(SerializedLambda.class))
-                    && method.name().equals("writeReplace")) {
-                members.add(method);
-            }
-        }
-        return members;
-    }
+        selectClass("org.teavm.classlib.java.lang.TestObject").foundByName();
 
-    @Override
-    public boolean isClassFoundByName(IntrospectClass<?> cls) {
-        return cls.name().equals("org.teavm.classlib.java.lang.TestObject");
-    }
-
-    @Override
-    public ProxyListener getProxyInterfaces(ProxyInterfaceConsumer consumer) {
-        return cls -> {
-            if (cls.hasAnnotation(Proxiable.class)) {
-                consumer.accept(List.of(cls));
-                for (var proxyConfig : cls.annotations(ProxyConfiguration.class)) {
-                    var classes = (IntrospectClass<?>[]) proxyConfig.value("value");
-                    var allClasses = new ArrayList<IntrospectClass<?>>();
-                    allClasses.add(cls);
-                    allClasses.addAll(List.of(classes));
-                    consumer.accept(allClasses);
-                }
-            }
-        };
+        selectClasses(withAnnotation(Proxiable.class))
+                .proxyable()
+                .proxyableWith(cls ->
+                    cls.annotations(ProxyConfiguration.class).stream()
+                            .map(a -> List.of((IntrospectClass<?>[]) a.value("value")))
+                            .collect(Collectors.toList())
+                );
     }
 }
