@@ -747,6 +747,164 @@ public class IntrospectionTest {
         assertSame(e, paramGt);
     }
 
+    // ===== toString =====
+
+    @Test
+    public void classToString() {
+        assertEquals("int", world.findClass(int.class).toString());
+        assertEquals("void", world.findClass(void.class).toString());
+        assertEquals(String.class.getName(), world.findClass(String.class).toString());
+        assertEquals("int[]", world.findClass(int[].class).toString());
+        assertEquals(String.class.getName() + "[]", world.findClass(String[].class).toString());
+    }
+
+    @Test
+    public void classWithSingleTypeParamToString() {
+        assertEquals(Box.class.getName() + "<T>",
+                world.findClass(Box.class.getName()).toString());
+    }
+
+    @Test
+    public void classWithMultipleTypeParamsToString() {
+        assertEquals(Pair.class.getName() + "<A, B>",
+                world.findClass(Pair.class.getName()).toString());
+    }
+
+    @Test
+    public void classWithBoundedTypeParamToString() {
+        assertEquals(BoundedBox.class.getName() + "<T extends java.lang.Comparable<T>>",
+                world.findClass(BoundedBox.class.getName()).toString());
+    }
+
+    @Test
+    public void fieldRawTypeToString() {
+        assertEquals("int f", world.findClass(A.class.getName()).field("f").toString());
+    }
+
+    @Test
+    public void fieldGenericTypeVariableToString() {
+        assertEquals("T value", world.findClass(Box.class.getName()).declaredField("value").toString());
+    }
+
+    @Test
+    public void fieldParameterizedTypeToString() {
+        assertEquals("java.util.List<T> items",
+                world.findClass(Box.class.getName()).declaredField("items").toString());
+    }
+
+    @Test
+    public void fieldGenericArrayToString() {
+        assertEquals("T[] array", world.findClass(Box.class.getName()).declaredField("array").toString());
+    }
+
+    @Test
+    public void methodNoGenericToString() {
+        var base = world.findClass(Base.class.getName());
+        assertEquals("void helper()", base.declaredJavaMethod("helper").toString());
+        assertEquals("int doubled(int)", base.declaredJavaMethod("doubled", int.class).toString());
+    }
+
+    @Test
+    public void methodGenericReturnToString() {
+        var gm = world.findClass(GenericMethods.class.getName());
+        assertEquals("T produce()", gm.declaredJavaMethod("produce").toString());
+    }
+
+    @Test
+    public void methodGenericParamToString() {
+        var gm = world.findClass(GenericMethods.class.getName());
+        assertEquals("void consume(java.util.List<T>)", gm.declaredJavaMethod("consume", List.class).toString());
+    }
+
+    @Test
+    public void methodWithTypeParamToString() {
+        var mtp = world.findClass(MethodTypeParams.class.getName());
+        assertEquals("<E> java.util.List<E> wrap(E)",
+                mtp.declaredJavaMethod("wrap", Object.class).toString());
+    }
+
+    @Test
+    public void methodWithBoundedTypeParamToString() {
+        var mtp = world.findClass(MethodTypeParams.class.getName());
+        assertEquals("<E extends java.lang.Comparable<E>> E bounded(E)",
+                mtp.declaredJavaMethod("bounded", Comparable.class).toString());
+    }
+
+    @Test
+    public void parameterRawTypeToString() {
+        var base = world.findClass(Base.class.getName());
+        var param = base.declaredJavaMethod("doubled", int.class).parameters().get(0);
+        assertEquals("int", param.toString());
+    }
+
+    @Test
+    public void parameterGenericTypeToString() {
+        var mtp = world.findClass(MethodTypeParams.class.getName());
+        var param = mtp.declaredJavaMethod("wrap", Object.class).parameters().get(0);
+        assertEquals("E", param.toString());
+    }
+
+    @Test
+    public void typeVariableToString() {
+        var box = world.findClass(Box.class.getName());
+        assertEquals("T", box.typeParameters().get(0).toString());
+    }
+
+    @Test
+    public void typeVariableWithBoundToString() {
+        var box = world.findClass(BoundedBox.class.getName());
+        assertEquals("T", box.typeParameters().get(0).toString());
+    }
+
+    @Test
+    public void parameterizedTypeToString() {
+        var box = world.findClass(Box.class.getName());
+        var paramType = (IntrospectParameterizedType) box.declaredField("items").genericType();
+        assertEquals("java.util.List<T>", paramType.toString());
+    }
+
+    @Test
+    public void parameterizedTypeBoundToString() {
+        var box = world.findClass(BoundedBox.class.getName());
+        var bound = (IntrospectParameterizedType) box.typeParameters().get(0).superTypes().get(0);
+        assertEquals("java.lang.Comparable<T>", bound.toString());
+    }
+
+    @Test
+    public void typeArgumentExactToString() {
+        var box = world.findClass(Box.class.getName());
+        var paramType = (IntrospectParameterizedType) box.declaredField("items").genericType();
+        assertEquals("T", paramType.typeArguments().get(0).toString());
+    }
+
+    @Test
+    public void typeArgumentExtendsToString() {
+        var box = world.findClass(Box.class.getName());
+        var paramType = (IntrospectParameterizedType) box.declaredField("covariantItems").genericType();
+        assertEquals("? extends T", paramType.typeArguments().get(0).toString());
+    }
+
+    @Test
+    public void typeArgumentSuperToString() {
+        var box = world.findClass(Box.class.getName());
+        var paramType = (IntrospectParameterizedType) box.declaredField("contravariantItems").genericType();
+        assertEquals("? super T", paramType.typeArguments().get(0).toString());
+    }
+
+    @Test
+    public void typeArgumentUnboundedWildcardToString() {
+        var box = world.findClass(Box.class.getName());
+        var paramType = (IntrospectParameterizedType) box.declaredField("wildcardItems").genericType();
+        assertEquals("?", paramType.typeArguments().get(0).toString());
+    }
+
+    @Test
+    public void genericArrayToString() {
+        var box = world.findClass(Box.class.getName());
+        var gtype = box.declaredField("array").genericType();
+        assertEquals("T[]", gtype.toString());
+    }
+
     // ===== Fixtures =====
 
     public static class A {

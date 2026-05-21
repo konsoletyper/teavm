@@ -29,7 +29,7 @@ public class IntrospectMethodImpl extends IntrospectAnnotatedElementImpl impleme
     public final MethodReader method;
     private IntrospectClassImpl<?> returnType;
     private List<? extends IntrospectParameter> parameters;
-    private List<? extends IntrospectTypeVariable> typeParameters;
+    private List<? extends IntrospectTypeVariableImpl> typeParameters;
     private List<? extends IntrospectClass<? extends Throwable>> exceptionTypes;
 
     IntrospectMethodImpl(IntrospectClassImpl<?> declaringClass, MethodReader method) {
@@ -125,9 +125,23 @@ public class IntrospectMethodImpl extends IntrospectAnnotatedElementImpl impleme
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(returnType()).append(' ').append(name()).append('(');
-        sb.append(parameters().stream().map(p -> p.type().toString()).collect(Collectors.joining(", ")));
+        var sb = new StringBuilder();
+        typeParameters();
+        if (!typeParameters.isEmpty()) {
+            sb.append('<');
+            sb.append(typeParameters.stream()
+                    .map(IntrospectTypeVariableImpl::toTypeParameterString)
+                    .collect(Collectors.joining(", ")));
+            sb.append("> ");
+        }
+        var genericResultType = method.getGenericResultType();
+        if (genericResultType != null) {
+            sb.append(introspection.convertGenericType(genericResultType, declaringClass, this));
+        } else {
+            sb.append(returnType());
+        }
+        sb.append(' ').append(name()).append('(');
+        sb.append(parameters().stream().map(Object::toString).collect(Collectors.joining(", ")));
         sb.append(')');
         return sb.toString();
     }

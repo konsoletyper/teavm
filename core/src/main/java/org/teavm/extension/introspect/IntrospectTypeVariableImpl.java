@@ -71,4 +71,25 @@ public class IntrospectTypeVariableImpl implements IntrospectTypeVariable {
     public IntrospectGenericDeclaration genericDeclaration() {
         return declaringMethod != null ? declaringMethod : declaringClass;
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    String toTypeParameterString() {
+        var supers = superTypes();
+        if (supers.isEmpty()) {
+            return name;
+        }
+        var sb = new StringBuilder(name);
+        sb.append(" extends ");
+        for (int i = 0; i < supers.size(); i++) {
+            if (i > 0) {
+                sb.append(" & ");
+            }
+            sb.append(supers.get(i));
+        }
+        return sb.toString();
+    }
 }

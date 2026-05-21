@@ -60,6 +60,32 @@ public class IntrospectParameterizedTypeImpl implements IntrospectParameterizedT
     }
 
     @Override
+    public String toString() {
+        var sb = new StringBuilder();
+        var owner = ownerType();
+        if (owner != null) {
+            sb.append(owner).append('.');
+            var rawName = rawType().name();
+            var dollar = rawName.lastIndexOf('$');
+            sb.append(dollar >= 0 ? rawName.substring(dollar + 1) : rawName);
+        } else {
+            sb.append(rawType().name());
+        }
+        var args = typeArguments();
+        if (!args.isEmpty()) {
+            sb.append('<');
+            for (int i = 0; i < args.size(); i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(args.get(i));
+            }
+            sb.append('>');
+        }
+        return sb.toString();
+    }
+
+    @Override
     public List<? extends IntrospectTypeArgument> typeArguments() {
         if (typeArguments == null) {
             var args = type.getArguments();

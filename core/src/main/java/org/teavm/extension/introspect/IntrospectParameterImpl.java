@@ -49,6 +49,11 @@ public class IntrospectParameterImpl extends IntrospectAnnotatedElementImpl impl
     }
 
     @Override
+    public String toString() {
+        return genericType().toString();
+    }
+
+    @Override
     protected AnnotationContainerReader annotationContainer() {
         return declaringMethod.method.parameterAnnotation(index);
     }

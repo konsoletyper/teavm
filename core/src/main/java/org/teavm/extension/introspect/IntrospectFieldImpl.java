@@ -73,6 +73,11 @@ public class IntrospectFieldImpl extends IntrospectAnnotatedElementImpl implemen
     }
 
     @Override
+    public String toString() {
+        return genericType() + " " + name();
+    }
+
+    @Override
     protected AnnotationContainerReader annotationContainer() {
         return field.getAnnotations();
     }

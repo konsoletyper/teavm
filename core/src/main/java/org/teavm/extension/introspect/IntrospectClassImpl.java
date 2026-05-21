@@ -53,7 +53,7 @@ public class IntrospectClassImpl<T> extends IntrospectAnnotatedElementImpl imple
     private Map<String, IntrospectMethodImpl> declaredMethodsBySignature;
     private List<? extends IntrospectMethod> methodsCache;
     private List<? extends IntrospectField> enumConstants;
-    private List<? extends IntrospectTypeVariable> typeParameters;
+    private List<? extends IntrospectTypeVariableImpl> typeParameters;
     private int flags;
 
     IntrospectClassImpl(ValueType type, Introspection introspection) {
@@ -502,9 +502,21 @@ public class IntrospectClassImpl<T> extends IntrospectAnnotatedElementImpl imple
     public String toString() {
         if (isArray()) {
             return componentType().toString() + "[]";
-        } else {
+        }
+        typeParameters();
+        if (typeParameters.isEmpty()) {
             return name();
         }
+        var sb = new StringBuilder(name());
+        sb.append('<');
+        for (int i = 0; i < typeParameters.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(typeParameters.get(i).toTypeParameterString());
+        }
+        sb.append('>');
+        return sb.toString();
     }
 
     @Override

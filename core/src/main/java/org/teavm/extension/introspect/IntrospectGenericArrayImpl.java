@@ -33,6 +33,11 @@ public class IntrospectGenericArrayImpl implements IntrospectGenericArray {
     }
 
     @Override
+    public String toString() {
+        return componentType().toString() + "[]";
+    }
+
+    @Override
     public IntrospectType componentType() {
         if (componentType == null) {
             componentType = introspection.convertGenericType(type.getItemType(), declaringClass, declaringMethod);

@@ -49,6 +49,23 @@ public class IntrospectTypeArgumentImpl implements IntrospectTypeArgument {
     }
 
     @Override
+    public String toString() {
+        if (argument.getValue() == null) {
+            return "?";
+        }
+        switch (projection()) {
+            case EXACT:
+                return type().toString();
+            case EXTENDS:
+                return "? extends " + type();
+            case SUPER:
+                return "? super " + type();
+            default:
+                throw new AssertionError("Unknown projection: " + projection());
+        }
+    }
+
+    @Override
     public IntrospectType type() {
         if (type == null) {
             if (argument.getValue() == null) {
