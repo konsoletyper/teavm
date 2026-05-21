@@ -358,7 +358,7 @@ public class MetaprogrammingTest {
             unsupportedCase();
             return;
         }
-        var arrayClass = environment().arrayClass(cls);
+        var arrayClass = cls.arrayType();
         exit(() -> arrayClass.asJavaClass().getName());
     }
 

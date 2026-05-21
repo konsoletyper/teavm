@@ -35,6 +35,8 @@ public interface IntrospectClass<T> extends IntrospectAnnotatedElement, Introspe
 
     IntrospectClass<?> componentType();
 
+    IntrospectClass<T[]> arrayType();
+
     String simpleName();
 
     IntrospectClass<? super T> superclass();

@@ -19,7 +19,5 @@ import org.teavm.extension.ExtensionEnvironment;
 import org.teavm.extension.introspect.IntrospectClass;
 
 public interface MetaprogrammingEnvironment extends ExtensionEnvironment {
-    <T> IntrospectClass<T[]> arrayClass(IntrospectClass<T> componentType);
-
     IntrospectClass<?> createClass(byte[] bytecode);
 }

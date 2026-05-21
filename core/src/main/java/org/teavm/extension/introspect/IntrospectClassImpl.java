@@ -138,6 +138,12 @@ public class IntrospectClassImpl<T> extends IntrospectAnnotatedElementImpl imple
         return introspection.getClass(componentType);
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public IntrospectClass<T[]> arrayType() {
+        return (IntrospectClass<T[]>) introspection.getClass(ValueType.arrayOf(type));
+    }
+
     @Override
     public String name() {
         if (type instanceof ValueType.Object) {

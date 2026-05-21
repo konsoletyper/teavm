@@ -20,10 +20,8 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.extension.ExtensionEnvironmentImpl;
 import org.teavm.extension.diagnostics.Diagnostics;
 import org.teavm.extension.introspect.IntrospectClass;
-import org.teavm.extension.introspect.IntrospectClassImpl;
 import org.teavm.extension.resource.Resource;
 import org.teavm.metaprogramming.MetaprogrammingEnvironment;
-import org.teavm.model.ValueType;
 
 public class MetaprogrammingEnvironmentImpl implements MetaprogrammingEnvironment {
     public final ExtensionEnvironmentImpl underlyingEnv;
@@ -32,14 +30,6 @@ public class MetaprogrammingEnvironmentImpl implements MetaprogrammingEnvironmen
     public MetaprogrammingEnvironmentImpl(ExtensionEnvironmentImpl underlyingEnv, DependencyAgent dependency) {
         this.underlyingEnv = underlyingEnv;
         this.dependency = dependency;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> IntrospectClass<T[]> arrayClass(IntrospectClass<T> componentType) {
-        var componentTypeImpl = (IntrospectClassImpl<T>) componentType;
-        return (IntrospectClass<T[]>) underlyingEnv.introspection().getClass(
-                ValueType.arrayOf(componentTypeImpl.type));
     }
 
     @Override
