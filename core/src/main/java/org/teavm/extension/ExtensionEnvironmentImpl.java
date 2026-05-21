@@ -16,6 +16,8 @@
 package org.teavm.extension;
 
 import java.util.Iterator;
+import java.util.Properties;
+import java.util.function.Supplier;
 import org.teavm.extension.diagnostics.Diagnostics;
 import org.teavm.extension.diagnostics.SourceLocation;
 import org.teavm.extension.introspect.IntrospectClass;
@@ -35,14 +37,18 @@ public class ExtensionEnvironmentImpl implements ExtensionEnvironment {
     private Introspection introspection;
     private ClassLoader classLoader;
     private org.teavm.diagnostics.Diagnostics underlyingDiagnostics;
+    private Supplier<Properties> propertiesSupplier;
+    private Properties properties;
     private boolean error;
 
     public ExtensionEnvironmentImpl(ResourceProvider resourceProvider, ClassHierarchy hierarchy,
-            ClassLoader classLoader, org.teavm.diagnostics.Diagnostics underlyingDiagnostics) {
+            ClassLoader classLoader, org.teavm.diagnostics.Diagnostics underlyingDiagnostics,
+            Supplier<Properties> propertiesSupplier) {
         this.resourceProvider = resourceProvider;
         introspection = new Introspection(hierarchy, classLoader);
         this.classLoader = classLoader;
         this.underlyingDiagnostics = underlyingDiagnostics;
+        this.propertiesSupplier = propertiesSupplier;
     }
 
     public Introspection introspection() {
@@ -90,6 +96,13 @@ public class ExtensionEnvironmentImpl implements ExtensionEnvironment {
         return classLoader;
     }
 
+    @Override
+    public String property(String name) {
+        if (properties == null) {
+            properties = propertiesSupplier.get();
+        }
+        return properties.getProperty(name);
+    }
 
     private Diagnostics diagnostics = new Diagnostics() {
         @Override

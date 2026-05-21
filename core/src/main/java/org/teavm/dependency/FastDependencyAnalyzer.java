@@ -21,6 +21,8 @@ import static org.teavm.dependency.AbstractInstructionAnalyzer.MONITOR_EXIT_METH
 import static org.teavm.dependency.AbstractInstructionAnalyzer.MONITOR_EXIT_SYNC_METHOD;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.function.Supplier;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReader;
@@ -42,8 +44,9 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
 
     public FastDependencyAnalyzer(ClassReaderSource classSource, ResourceProvider resourceProvider,
             ClassLoader classLoader, ServiceRepository services, Diagnostics diagnostics,
-            ReferenceCache referenceCache, String[] platformTags) {
-        super(classSource, resourceProvider, classLoader, services, diagnostics, referenceCache, platformTags);
+            ReferenceCache referenceCache, String[] platformTags, Supplier<Properties> properties) {
+        super(classSource, resourceProvider, classLoader, services, diagnostics, referenceCache, platformTags,
+                properties);
 
         instancesNode = new DependencyNode(this, null);
         classesNode = new DependencyNode(this, null);

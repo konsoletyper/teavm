@@ -26,4 +26,6 @@ public interface ExtensionEnvironment extends IntrospectWorld {
     Diagnostics diagnostics();
 
     ClassLoader classLoader();
+
+    String property(String name);
 }

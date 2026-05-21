@@ -32,8 +32,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.objectweb.asm.tree.ClassNode;
 import org.teavm.cache.IncrementalDependencyProvider;
 import org.teavm.cache.IncrementalDependencyRegistration;
@@ -116,7 +118,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     DependencyAnalyzer(ClassReaderSource classSource, ResourceProvider resourceProvider, ClassLoader classLoader,
             ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache,
-            String[] platformTags) {
+            String[] platformTags, Supplier<Properties> properties) {
         this.unprocessedClassSource = classSource;
         this.resourceProvider = resourceProvider;
         this.diagnostics = diagnostics;
@@ -142,7 +144,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classCache = new CachedFunction<>(this::createClassDependency);
 
         classType = getClassType("java.lang.Class");
-        extensionEnv = new ExtensionEnvironmentImpl(resourceProvider, classHierarchy, classLoader, diagnostics);
+        extensionEnv = new ExtensionEnvironmentImpl(resourceProvider, classHierarchy, classLoader, diagnostics,
+                properties);
     }
 
     public void addClassFilter(ClassFilter filter) {

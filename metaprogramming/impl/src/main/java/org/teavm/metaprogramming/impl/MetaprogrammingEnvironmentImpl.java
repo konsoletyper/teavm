@@ -71,4 +71,9 @@ public class MetaprogrammingEnvironmentImpl implements MetaprogrammingEnvironmen
     public <T> IntrospectClass<T> findClass(Class<T> cls) {
         return underlyingEnv.findClass(cls);
     }
+
+    @Override
+    public String property(String name) {
+        return underlyingEnv.property(name);
+    }
 }

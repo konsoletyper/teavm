@@ -15,6 +15,8 @@
  */
 package org.teavm.dependency;
 
+import java.util.Properties;
+import java.util.function.Supplier;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
@@ -24,5 +26,5 @@ import org.teavm.parsing.resource.ResourceProvider;
 public interface DependencyAnalyzerFactory {
     DependencyAnalyzer create(ClassReaderSource classSource, ResourceProvider resourceProvider,
             ClassLoader classLoader, ServiceRepository services, Diagnostics diagnostics,
-            ReferenceCache referenceCache, String[] platformTags);
+            ReferenceCache referenceCache, String[] platformTags, Supplier<Properties> properties);
 }
