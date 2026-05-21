@@ -27,6 +27,7 @@ import org.teavm.extension.introspect.IntrospectFieldImpl;
 import org.teavm.extension.introspect.IntrospectMethod;
 import org.teavm.extension.introspect.IntrospectMethodImpl;
 import org.teavm.metaprogramming.Action;
+import org.teavm.metaprogramming.ClassHandle;
 import org.teavm.metaprogramming.Computation;
 import org.teavm.metaprogramming.Diagnostics;
 import org.teavm.metaprogramming.FieldAccessor;
@@ -612,5 +613,9 @@ public final class MetaprogrammingImpl {
 
     public static FieldAccessor accessor(IntrospectField field) {
         return new FieldAccessorImpl((IntrospectFieldImpl) field);
+    }
+
+    public static <T> ClassHandle<T> handle(IntrospectClass<T> cls) {
+        return new ClassHandleImpl<>((IntrospectClassImpl<T>) cls);
     }
 }

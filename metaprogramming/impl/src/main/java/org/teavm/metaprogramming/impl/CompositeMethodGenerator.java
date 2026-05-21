@@ -28,6 +28,7 @@ import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.extension.introspect.IntrospectClassImpl;
 import org.teavm.extension.introspect.IntrospectFieldImpl;
 import org.teavm.extension.introspect.IntrospectMethodImpl;
+import org.teavm.metaprogramming.ClassHandle;
 import org.teavm.metaprogramming.FieldAccessor;
 import org.teavm.metaprogramming.MethodCaller;
 import org.teavm.metaprogramming.ReflectClass;
@@ -352,6 +353,13 @@ public class CompositeMethodGenerator {
             diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
                     "Can't reference this IntrospectMethod {{m0}} directly except for calling special methods on it",
                     reflectMethod.method.getReference());
+            var insn = new NullConstantInstruction();
+            insn.setReceiver(program.createVariable());
+            add(insn);
+            return insn.getReceiver();
+        } else if (value instanceof ClassHandleImpl) {
+            diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
+                    "Can't reference this ClassHandle directly except for calling special methods on it");
             var insn = new NullConstantInstruction();
             insn.setReceiver(program.createVariable());
             add(insn);
@@ -882,6 +890,10 @@ public class CompositeMethodGenerator {
                     if (replaceClassInvocationIntrospect(receiver, instance, method, arguments)) {
                         return;
                     }
+                } else if (method.getClassName().equals(ClassHandle.class.getName())) {
+                    if (replaceClassHandleInvocation(receiver, instance, method, arguments)) {
+                        return;
+                    }
                 }
             }
             InvokeInstruction insn = new InvokeInstruction();
@@ -1332,6 +1344,79 @@ public class CompositeMethodGenerator {
                     assign.setReceiver(receiver != null ? var(receiver) : program.createVariable());
                     add(assign);
 
+                    return true;
+                }
+                default:
+                    diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
+                            "Can only call {{m0}} method from runtime domain", method);
+                    return false;
+            }
+        }
+
+        private boolean replaceClassHandleInvocation(VariableReader receiver, VariableReader instance,
+                MethodReference method, List<? extends VariableReader> arguments) {
+            int instanceIndex = variableMapping[instance.getIndex()];
+            if (capturedValues[instanceIndex] == null) {
+                diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
+                        "Can call {{m0}} method only on a class handle captured by lambda from outer context", method);
+                return false;
+            }
+
+            Object value = capturedValues[instanceIndex].obj;
+            if (!(value instanceof ClassHandleImpl)) {
+                diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
+                        "Wrong call to {{m0}} method ", method);
+                return false;
+            }
+
+            var classHandle = (ClassHandleImpl<?>) value;
+            var type = classHandle.cls.type;
+
+            switch (method.getName()) {
+                case "isInstance": {
+                    var insn = new IsInstanceInstruction();
+                    insn.setReceiver(receiver != null ? var(receiver) : program.createVariable());
+                    insn.setValue(var(arguments.get(0)));
+                    insn.setType(type);
+                    add(insn);
+                    return true;
+                }
+                case "cast": {
+                    var insn = new CastInstruction();
+                    insn.setReceiver(receiver != null ? var(receiver) : program.createVariable());
+                    insn.setValue(var(arguments.get(0)));
+                    insn.setTargetType(type);
+                    add(insn);
+                    return true;
+                }
+                case "getArrayLength": {
+                    var arrayType = ValueType.arrayOf(type);
+                    var insn = new ArrayLengthInstruction();
+                    insn.setArray(unwrapArray(arrayType, var(arguments.get(0))));
+                    insn.setReceiver(receiver != null ? var(receiver) : program.createVariable());
+                    add(insn);
+                    return true;
+                }
+                case "getArrayElement": {
+                    var arrayType = ValueType.arrayOf(type);
+                    var insn = new GetElementInstruction(asArrayType(type));
+                    insn.setArray(unwrapArray(arrayType, var(arguments.get(0))));
+                    insn.setIndex(var(arguments.get(1)));
+                    insn.setReceiver(program.createVariable());
+                    add(insn);
+
+                    var assign = new AssignInstruction();
+                    assign.setAssignee(box(insn.getReceiver(), type));
+                    assign.setReceiver(receiver != null ? var(receiver) : program.createVariable());
+                    add(assign);
+                    return true;
+                }
+                case "createArray": {
+                    var insn = new ConstructArrayInstruction();
+                    insn.setItemType(type);
+                    insn.setSize(var(arguments.get(0)));
+                    insn.setReceiver(receiver != null ? var(receiver) : program.createVariable());
+                    add(insn);
                     return true;
                 }
                 default:

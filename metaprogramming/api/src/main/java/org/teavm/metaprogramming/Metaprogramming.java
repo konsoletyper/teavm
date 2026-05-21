@@ -127,6 +127,10 @@ public final class Metaprogramming {
         throw unsupported();
     }
 
+    public static <T> ClassHandle<T> handle(IntrospectClass<T> cls) {
+        throw unsupported();
+    }
+
     public static void unsupportedCase() {
         throw unsupported();
     }

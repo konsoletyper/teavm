@@ -41,10 +41,6 @@ public interface IntrospectClass<T> extends IntrospectAnnotatedElement, Introspe
 
     List<? extends IntrospectClass<? super T>> interfaces();
 
-    boolean isInstance(Object obj);
-
-    T cast(Object obj);
-
     <U> IntrospectClass<U> asSubclass(Class<U> cls);
 
     <U> IntrospectClass<U> asSubclass(IntrospectClass<U> cls);
@@ -77,12 +73,6 @@ public interface IntrospectClass<T> extends IntrospectAnnotatedElement, Introspe
     IntrospectField declaredField(String name);
 
     IntrospectField field(String name);
-
-    T[] createArray(int size);
-
-    T getArrayElement(Object array, int index);
-
-    int getArrayLength(Object array);
 
     Class<T> asJavaClass();
 }

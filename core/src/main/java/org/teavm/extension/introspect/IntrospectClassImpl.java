@@ -253,16 +253,6 @@ public class IntrospectClassImpl<T> extends IntrospectAnnotatedElementImpl imple
         return result;
     }
 
-    @Override
-    public boolean isInstance(Object obj) {
-        throw new IllegalStateException("Don't call this method from compile domain");
-    }
-
-    @Override
-    public T cast(Object obj) {
-        throw new IllegalStateException("Don't call this method from compile domain");
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public <U> IntrospectClass<U> asSubclass(IntrospectClass<U> cls) {
@@ -546,21 +536,6 @@ public class IntrospectClassImpl<T> extends IntrospectAnnotatedElementImpl imple
             }
         }
         return null;
-    }
-
-    @Override
-    public T[] createArray(int size) {
-        throw new IllegalStateException("Don't call this method from compile domain");
-    }
-
-    @Override
-    public T getArrayElement(Object array, int index) {
-        throw new IllegalStateException("Don't call this method from compile domain");
-    }
-
-    @Override
-    public int getArrayLength(Object array) {
-        throw new IllegalStateException("Don't call this method from compile domain");
     }
 
     @Override

@@ -24,6 +24,7 @@ import static org.teavm.metaprogramming.Metaprogramming.caller;
 import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.environment;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
+import static org.teavm.metaprogramming.Metaprogramming.handle;
 import static org.teavm.metaprogramming.Metaprogramming.lazy;
 import static org.teavm.metaprogramming.Metaprogramming.unsupportedCase;
 import java.util.function.Consumer;
@@ -213,7 +214,41 @@ public class MetaprogrammingTest {
             unsupportedCase();
             return;
         }
-        exit(() -> type.isInstance(obj.get()));
+        var classHandle = handle(type);
+        exit(() -> classHandle.isInstance(obj.get()));
+    }
+
+    @Test
+    public void getsArrayLengthViaHandle() {
+        assertEquals(3, getArrayLength(String.class, new String[] { "a", "b", "c" }));
+    }
+
+    @Meta
+    private static native int getArrayLength(Class<?> type, Object array);
+    private static void getArrayLength(IntrospectClass<?> type, Value<Object> array) {
+        if (!type.isAssignableFrom(String.class)) {
+            unsupportedCase();
+            return;
+        }
+        var classHandle = handle(type);
+        exit(() -> classHandle.getArrayLength(array.get()));
+    }
+
+    @Test
+    public void castsViaHandle() {
+        assertEquals("hello", castToType(String.class, "hello"));
+        assertNull(castToType(String.class, null));
+    }
+
+    @Meta
+    private static native Object castToType(Class<?> type, Object obj);
+    private static void castToType(IntrospectClass<?> type, Value<Object> obj) {
+        if (!type.isAssignableFrom(String.class)) {
+            unsupportedCase();
+            return;
+        }
+        var classHandle = handle(type);
+        exit(() -> classHandle.cast(obj.get()));
     }
 
     @Test
@@ -341,22 +376,24 @@ public class MetaprogrammingTest {
             unsupportedCase();
             return;
         }
-        exit(() -> cls.createArray(size.get()));
+        var classHandle = handle(cls);
+        exit(() -> classHandle.createArray(size.get()));
     }
 
     @Test
     public void getsArrayElementViaReflection() {
-        assertEquals("foo", getArrayElement(String[].class, new String[] { "foo" }, 0));
+        assertEquals("foo", getArrayElement(String.class, new String[] { "foo" }, 0));
     }
 
     @Meta
     private static native Object getArrayElement(Class<?> type, Object array, int index);
     private static void getArrayElement(IntrospectClass<?> type, Value<Object> array, Value<Integer> index) {
-        if (!type.isAssignableFrom(String[].class)) {
+        if (!type.isAssignableFrom(String.class)) {
             unsupportedCase();
             return;
         }
-        exit(() -> type.getArrayElement(array.get(), index.get()));
+        var classHandle = handle(type);
+        exit(() -> classHandle.getArrayElement(array.get(), index.get()));
     }
 
     @Test
@@ -500,7 +537,8 @@ public class MetaprogrammingTest {
             unsupportedCase();
             return;
         }
-        exit(() -> cls.createArray(size.get()));
+        var classHandle = handle(cls);
+        exit(() -> classHandle.createArray(size.get()));
     }
 
     @MetaprogrammingClass
