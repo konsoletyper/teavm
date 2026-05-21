@@ -37,6 +37,8 @@ import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.runtime.WasmGCResources;
 import org.teavm.classlib.ResourceSupplier;
 import org.teavm.classlib.ResourceSupplierContext;
+import org.teavm.extension.ExtensionEnvironment;
+import org.teavm.extension.spi.resources.ResourcesPolicy;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -47,10 +49,13 @@ public class WasmGCResourcesIntrinsic implements WasmGCInlineIntrinsic {
     private ByteArrayOutputStream resources = new ByteArrayOutputStream();
     private WasmGlobal baseGlobal;
     private WasmGCCodeGenContext genContext;
+    private ExtensionEnvironment extensionEnv;
 
-    public WasmGCResourcesIntrinsic(Properties properties, WasmGCCodeGenContext genContext) {
+    public WasmGCResourcesIntrinsic(Properties properties, WasmGCCodeGenContext genContext,
+            ExtensionEnvironment extensionEnv) {
         this.properties = properties;
         this.genContext = genContext;
+        this.extensionEnv = extensionEnv;
     }
 
     public void writeModule(WasmModule module) {
@@ -87,6 +92,13 @@ public class WasmGCResourcesIntrinsic implements WasmGCInlineIntrinsic {
         var resourceSet = new LinkedHashSet<String>();
         for (var supplier : ServiceLoader.load(ResourceSupplier.class, genContext.classLoader())) {
             var resources = supplier.supplyResources(supplierContext);
+            if (resources != null) {
+                resourceSet.addAll(Arrays.asList(resources));
+            }
+        }
+        for (var policy : ServiceLoader.load(ResourcesPolicy.class, genContext.classLoader())) {
+            policy.initialize(extensionEnv);
+            var resources = policy.supplyResources(genContext.classes().getClassNames());
             if (resources != null) {
                 resourceSet.addAll(Arrays.asList(resources));
             }

@@ -49,6 +49,7 @@ import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.diagnostics.ProblemProvider;
+import org.teavm.extension.ExtensionEnvironment;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
@@ -178,6 +179,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(builder.classSource, resourceProvider,
                 classLoader, this, diagnostics, builder.referenceCache, target.getPlatformTags(),
                 this::getProperties);
+        services.put(ExtensionEnvironment.class, dependencyAnalyzer.extensionEnvironment());
         dependencyAnalyzer.setObfuscated(builder.obfuscated);
         dependencyAnalyzer.setStrict(builder.strict);
         progressListener = new TeaVMProgressListener() {
@@ -1014,6 +1016,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         @Override
         public TeaVMOptimizationLevel getOptimizationLevel() {
             return optimizationLevel;
+        }
+
+        @Override
+        public ExtensionEnvironment extensionEnvironment() {
+            return dependencyAnalyzer.extensionEnvironment();
         }
     };
 

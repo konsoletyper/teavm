@@ -34,6 +34,7 @@ import javax.tools.StandardLocation;
 public class SPIAnnotationProcessor extends AbstractProcessor {
     private static final String[] SUPPORTED_SERVICES = {
         "org.teavm.extension.spi.reflection.ReflectionPolicy",
+        "org.teavm.extension.spi.resources.ResourcesPolicy",
         "org.teavm.metaprogramming.MetaprogrammingProvider"
     };
 

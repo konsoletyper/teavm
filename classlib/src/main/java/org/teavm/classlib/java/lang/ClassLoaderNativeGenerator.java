@@ -30,6 +30,8 @@ import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.classlib.ResourceSupplier;
 import org.teavm.classlib.ResourceSupplierContext;
 import org.teavm.classlib.impl.Base64Impl;
+import org.teavm.extension.ExtensionEnvironment;
+import org.teavm.extension.spi.resources.ResourcesPolicy;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 
@@ -52,6 +54,14 @@ public class ClassLoaderNativeGenerator implements Injector {
         SupplierContextImpl supplierContext = new SupplierContextImpl(context);
         for (ResourceSupplier supplier : ServiceLoader.load(ResourceSupplier.class, classLoader)) {
             String[] resources = supplier.supplyResources(supplierContext);
+            if (resources != null) {
+                resourceSet.addAll(Arrays.asList(resources));
+            }
+        }
+        var extensionEnv = context.getService(ExtensionEnvironment.class);
+        for (var policy : ServiceLoader.load(ResourcesPolicy.class, classLoader)) {
+            policy.initialize(extensionEnv);
+            var resources = policy.supplyResources(context.getClassSource().getClassNames());
             if (resources != null) {
                 resourceSet.addAll(Arrays.asList(resources));
             }

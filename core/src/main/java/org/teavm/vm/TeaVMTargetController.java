@@ -22,6 +22,7 @@ import org.teavm.cache.CacheStatus;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.extension.ExtensionEnvironment;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
@@ -63,4 +64,6 @@ public interface TeaVMTargetController {
     void addVirtualMethods(Predicate<MethodReference> methods);
 
     ClassInitializerInfo getClassInitializerInfo();
+    
+    ExtensionEnvironment extensionEnvironment();
 }

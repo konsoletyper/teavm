@@ -15,12 +15,14 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.ResourceSupplier;
-import org.teavm.classlib.ResourceSupplierContext;
+import java.util.Collection;
+import org.teavm.extension.Autoregistered;
+import org.teavm.extension.spi.resources.DefaultResourcesPolicy;
 
-public class TestResourcesSupplier implements ResourceSupplier {
+@Autoregistered
+public class TestResourcesPolicy extends DefaultResourcesPolicy {
     @Override
-    public String[] supplyResources(ResourceSupplierContext context) {
+    public String[] supplyResources(Collection<? extends String> availableClassNames) {
         String[] result = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
         for (int i = 0; i < result.length; ++i) {
             result[i] = "resources-for-test/" + result[i];

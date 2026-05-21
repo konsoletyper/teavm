@@ -17,6 +17,7 @@ package org.teavm.metaprogramming.test;
 
 import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
+import org.teavm.extension.Autoregistered;
 import org.teavm.extension.introspect.IntrospectMethod;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.MetaprogrammingProvider;
@@ -24,6 +25,7 @@ import org.teavm.metaprogramming.MethodGenerator;
 import org.teavm.metaprogramming.MethodGeneratorContext;
 
 @CompileTime
+@Autoregistered
 public class TestProvider implements MetaprogrammingProvider {
     @Override
     public MethodGenerator provide(IntrospectMethod method) {
