@@ -19,14 +19,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
-@WebSocket
-public class ProxyWsClient {
+public class ProxyWsClient implements Session.Listener.AutoDemanding {
     private Session session;
     private ProxyWsClient target;
     private boolean closed;
@@ -41,10 +37,8 @@ public class ProxyWsClient {
         target.flush();
     }
 
-    @OnWebSocketConnect
-    public void connect(Session session) {
-        session.getPolicy().setMaxBinaryMessageSize(100_000_000);
-        session.getPolicy().setMaxTextMessageSize(100_000_000);
+    @Override
+    public void onWebSocketOpen(Session session) {
         this.session = session;
         flush();
         if (target != null) {
@@ -52,23 +46,28 @@ public class ProxyWsClient {
         }
     }
 
-    @OnWebSocketClose
-    public void close(int code, String reason) {
+    @Override
+    public void onWebSocketClose(int statusCode, String reason, Callback callback) {
         closed = true;
         if (!target.closed) {
             target.closed = true;
-            session.close(code, reason);
+            target.session.close(statusCode, reason, Callback.NOOP);
         }
+        callback.succeed();
     }
 
-    @OnWebSocketMessage
-    public void onMessage(byte[] buf, int offset, int length) {
-        send(t -> t.session.getRemote().sendBytesByFuture(ByteBuffer.wrap(buf, offset, length)));
+    @Override
+    public void onWebSocketBinary(ByteBuffer payload, Callback callback) {
+        byte[] data = new byte[payload.remaining()];
+        payload.get(data);
+        ByteBuffer copy = ByteBuffer.wrap(data);
+        send(t -> t.session.sendBinary(copy, Callback.NOOP));
+        callback.succeed();
     }
 
-    @OnWebSocketMessage
-    public void onMessage(String text) {
-        send(t -> t.session.getRemote().sendStringByFuture(text));
+    @Override
+    public void onWebSocketText(String text) {
+        send(t -> t.session.sendText(text, Callback.NOOP));
     }
 
     private void send(Consumer<ProxyWsClient> message) {

@@ -60,13 +60,12 @@ public final class TJSBufferHelper {
     }
 
     static ArrayBufferView getArrayBufferView(Buffer buffer) {
-        if (!(buffer instanceof TArrayBufferViewProvider)) {
+        if (!(((Object) buffer) instanceof TArrayBufferViewProvider)) {
             throw new IllegalArgumentException("This buffer is not allocated in linear memory and does not "
                     + "wrap native JS buffer");
         }
-        var provider = (TArrayBufferViewProvider) buffer;
-        var result = provider.getArrayBufferView();
-        return result;
+        var provider = (TArrayBufferViewProvider) (Object) buffer;
+        return provider.getArrayBufferView();
     }
 
     static Int8Array toInt8Array(ArrayBufferView view) {

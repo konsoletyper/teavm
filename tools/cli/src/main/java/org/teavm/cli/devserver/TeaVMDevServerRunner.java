@@ -29,7 +29,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.eclipse.jetty.util.log.Log;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.common.json.JsonParser;
 import org.teavm.devserver.DevServer;
@@ -253,7 +252,7 @@ public final class TeaVMDevServerRunner {
         devServer.addListener(jsonWriter);
         devServer.setCompileOnStartup(false);
         devServer.setLogBuildErrors(false);
-        Log.setLog(jsonWriter);
+        JsonLoggerFactory.setWriter(jsonWriter);
     }
 
     private void readStdinCommands() {

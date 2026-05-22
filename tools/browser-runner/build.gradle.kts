@@ -28,10 +28,10 @@ configurations {
 dependencies {
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.databind)
-    implementation(libs.javax.servlet)
+    implementation(libs.jakarta.servlet)
     implementation(libs.jetty.server)
-    implementation(libs.jetty.websocket.server)
-    implementation(libs.jetty.websocket.client)
+    implementation(libs.jetty.servlet)
+    implementation(libs.jetty.ee10.websocket.server)
     implementation(libs.jetty.websocket.client)
 
     "js"(project(":tools:deobfuscator-js", "js"))

@@ -15,20 +15,13 @@
  */
 package org.teavm.chromerdp;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.websocket.Decoder;
-import javax.websocket.Encoder;
-import javax.websocket.Extension;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServlet;
+import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServletFactory;
+import org.eclipse.jetty.ee10.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.websocket.jsr356.server.ContainerDefaultConfigurator;
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 
 public class ChromeRDPServer {
     private int port = 2357;
@@ -63,8 +56,8 @@ public class ChromeRDPServer {
         server.setHandler(context);
 
         try {
-            ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
-            wscontainer.addEndpoint(new RPDEndpointConfig());
+            JettyWebSocketServletContainerInitializer.configure(context, (ctx, container) -> { });
+            context.addServlet(new ServletHolder(new RDPWsServlet()), "/*");
             server.start();
             server.join();
         } catch (Exception e) {
@@ -80,52 +73,10 @@ public class ChromeRDPServer {
         }
     }
 
-    private class RPDEndpointConfig implements ServerEndpointConfig {
-        private Map<String, Object> userProperties = new HashMap<>();
-        private ContainerDefaultConfigurator configurator = new ContainerDefaultConfigurator();
-
-        public RPDEndpointConfig() {
-            userProperties.put("chrome.rdp", exchangeConsumer);
-        }
-
+    class RDPWsServlet extends JettyWebSocketServlet {
         @Override
-        public List<Class<? extends Decoder>> getDecoders() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Class<? extends Encoder>> getEncoders() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public Map<String, Object> getUserProperties() {
-            return userProperties;
-        }
-
-        @Override
-        public Configurator getConfigurator() {
-            return configurator;
-        }
-
-        @Override
-        public Class<?> getEndpointClass() {
-            return ChromeRDPDebuggerEndpoint.class;
-        }
-
-        @Override
-        public List<Extension> getExtensions() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public String getPath() {
-            return "/";
-        }
-
-        @Override
-        public List<String> getSubprotocols() {
-            return Collections.emptyList();
+        protected void configure(JettyWebSocketServletFactory factory) {
+            factory.setCreator((req, resp) -> new ChromeRDPDebuggerEndpoint(exchangeConsumer));
         }
     }
 }

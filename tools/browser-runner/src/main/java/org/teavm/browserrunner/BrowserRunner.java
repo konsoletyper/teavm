@@ -17,6 +17,9 @@ package org.teavm.browserrunner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -41,20 +44,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServlet;
+import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServletFactory;
+import org.eclipse.jetty.ee10.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.WebSocketAdapter;
-import org.eclipse.jetty.websocket.api.WebSocketBehavior;
-import org.eclipse.jetty.websocket.api.WebSocketPolicy;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
 public class BrowserRunner {
     private static final boolean logBrowserOutput = System.getenv().getOrDefault("TEAVM_TEST_BROWSER_LOG", "0")
@@ -143,6 +141,9 @@ public class BrowserRunner {
         var context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         server.setHandler(context);
+
+        JettyWebSocketServletContainerInitializer.configure(context, (ctx, container) -> { });
+        context.addServlet(new ServletHolder(new TestWsServlet()), "/ws");
 
         var servlet = new TestCodeServlet();
 
@@ -241,7 +242,7 @@ public class BrowserRunner {
         array.add(testNode);
 
         var message = node.toString();
-        ws.getRemote().sendStringByFuture(message);
+        ws.sendText(message, Callback.NOOP);
 
         try {
             latch.await();
@@ -275,25 +276,11 @@ public class BrowserRunner {
         node.set("command", nf.textNode("cleanup"));
 
         var message = node.toString();
-        ws.getRemote().sendStringByFuture(message);
+        ws.sendText(message, Callback.NOOP);
     }
 
     class TestCodeServlet extends HttpServlet {
-        private WebSocketServletFactory wsFactory;
         private Map<String, String> contentCache = new ConcurrentHashMap<>();
-
-        @Override
-        public void init(ServletConfig config) throws ServletException {
-            super.init(config);
-            var wsPolicy = new WebSocketPolicy(WebSocketBehavior.SERVER);
-            wsFactory = WebSocketServletFactory.Loader.load(config.getServletContext(), wsPolicy);
-            wsFactory.setCreator((req, resp) -> new TestCodeSocket());
-            try {
-                wsFactory.start();
-            } catch (Exception e) {
-                throw new ServletException(e);
-            }
-        }
 
         @Override
         protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -371,10 +358,6 @@ public class BrowserRunner {
                         }
                     }
                 }
-                if (path.equals("/ws") && wsFactory.isUpgradeRequest(req, resp)
-                        && (wsFactory.acceptWebSocket(req, resp) || resp.isCommitted())) {
-                    return;
-                }
             }
 
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -406,17 +389,25 @@ public class BrowserRunner {
         }
     }
 
-    class TestCodeSocket extends WebSocketAdapter {
+    public class TestWsServlet extends JettyWebSocketServlet {
         @Override
-        public void onWebSocketConnect(Session sess) {
+        protected void configure(JettyWebSocketServletFactory factory) {
+            factory.setCreator((req, resp) -> new TestCodeSocket());
+        }
+    }
+
+    public class TestCodeSocket implements Session.Listener.AutoDemanding {
+        @Override
+        public void onWebSocketOpen(Session sess) {
             wsSessionQueue.offer(sess);
         }
 
         @Override
-        public void onWebSocketClose(int statusCode, String reason) {
+        public void onWebSocketClose(int statusCode, String reason, Callback callback) {
             for (CallbackWrapper run : awaitingRuns.values()) {
                 run.repeat();
             }
+            callback.succeed();
         }
 
         @Override

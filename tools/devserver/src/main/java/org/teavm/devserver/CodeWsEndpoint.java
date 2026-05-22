@@ -15,33 +15,27 @@
  */
 package org.teavm.devserver;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
-@WebSocket
-public class CodeWsEndpoint {
-    private Map<Session, ProgressHandlerImpl> progressHandlerMap = new HashMap<>();
+public class CodeWsEndpoint implements Session.Listener.AutoDemanding {
+    private ProgressHandlerImpl progressHandler;
     private CodeServlet servlet;
 
     public CodeWsEndpoint(CodeServlet servlet) {
         this.servlet = servlet;
     }
 
-    @OnWebSocketConnect
-    public void open(Session session) {
-        ProgressHandlerImpl progressHandler = new ProgressHandlerImpl(session);
-        progressHandlerMap.put(session, progressHandler);
+    @Override
+    public void onWebSocketOpen(Session session) {
+        progressHandler = new ProgressHandlerImpl(session);
         servlet.addProgressHandler(progressHandler);
     }
 
-    @OnWebSocketClose
-    public void close(Session session, int code, String reason) {
-        ProgressHandlerImpl handler = progressHandlerMap.remove(session);
-        servlet.removeProgressHandler(handler);
+    @Override
+    public void onWebSocketClose(int statusCode, String reason, Callback callback) {
+        servlet.removeProgressHandler(progressHandler);
+        callback.succeed();
     }
 
     static class ProgressHandlerImpl implements ProgressHandler {
@@ -53,12 +47,12 @@ public class CodeWsEndpoint {
 
         @Override
         public void progress(double value) {
-            session.getRemote().sendStringByFuture("{ \"command\": \"compiling\", \"progress\": " + value + " }");
+            session.sendText("{ \"command\": \"compiling\", \"progress\": " + value + " }", Callback.NOOP);
         }
 
         @Override
         public void complete(boolean success) {
-            session.getRemote().sendStringByFuture("{ \"command\": \"complete\", \"success\": " + success + " }");
+            session.sendText("{ \"command\": \"complete\", \"success\": " + success + " }", Callback.NOOP);
         }
     }
 }

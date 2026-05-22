@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.cli.devserver;
 
-plugins {
-    `java-library`
-    `teavm-publish`
-}
+import org.slf4j.ILoggerFactory;
+import org.slf4j.Logger;
 
-description = "Debugging backend for Google Chrome RDP"
+class JsonLoggerFactory implements ILoggerFactory {
+    private static volatile JsonCommandWriter writer;
 
-dependencies {
-    implementation(project(":core"))
-    implementation(libs.jetty.server)
-    implementation(libs.jetty.servlet)
-    implementation(libs.jetty.ee10.websocket.server)
-    implementation(libs.slf4j)
-    implementation(libs.hppc)
-    implementation(libs.jackson.databind)
-}
+    static void setWriter(JsonCommandWriter w) {
+        writer = w;
+    }
 
-teavmPublish {
-    artifactId = "teavm-chrome-rdp"
+    static JsonCommandWriter getWriter() {
+        return writer;
+    }
+
+    @Override
+    public Logger getLogger(String name) {
+        return new JsonLogger(name);
+    }
 }

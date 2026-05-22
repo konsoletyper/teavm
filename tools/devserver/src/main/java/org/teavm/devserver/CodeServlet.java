@@ -15,6 +15,11 @@
  */
 package org.teavm.devserver;
 
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -49,26 +54,16 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.client.util.InputStreamContentProvider;
+import org.eclipse.jetty.client.InputStreamRequestContent;
+import org.eclipse.jetty.client.Request;
+import org.eclipse.jetty.client.Response;
+import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServlet;
+import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServletFactory;
 import org.eclipse.jetty.http.HttpField;
-import org.eclipse.jetty.websocket.api.UpgradeRequest;
-import org.eclipse.jetty.websocket.api.UpgradeResponse;
-import org.eclipse.jetty.websocket.api.WebSocketBehavior;
-import org.eclipse.jetty.websocket.api.WebSocketPolicy;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
-import org.eclipse.jetty.websocket.client.io.UpgradeListener;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.cache.InMemoryMethodNodeCache;
@@ -100,9 +95,8 @@ import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
-public class CodeServlet extends HttpServlet {
+public class CodeServlet extends JettyWebSocketServlet {
     private static final Supplier<InputStream> EMPTY_CONTENT = () -> null;
-    private WebSocketServletFactory wsFactory;
 
     private String mainClass;
     private String[] classPath;
@@ -165,6 +159,21 @@ public class CodeServlet extends HttpServlet {
 
         httpClient = new HttpClient();
         httpClient.setFollowRedirects(false);
+    }
+
+    @Override
+    protected void configure(JettyWebSocketServletFactory factory) {
+        factory.setCreator((req, resp) -> {
+            ProxyWsClient proxyClient = (ProxyWsClient) req.getHttpServletRequest().getAttribute("teavm.ws.client");
+            if (proxyClient == null) {
+                return new CodeWsEndpoint(this);
+            } else {
+                ProxyWsClient proxy = new ProxyWsClient();
+                proxy.setTarget(proxyClient);
+                proxyClient.setTarget(proxy);
+                return proxy;
+            }
+        });
     }
 
     public void setFileName(String fileName) {
@@ -322,28 +331,10 @@ public class CodeServlet extends HttpServlet {
 
         indicatorWsPath = pathToFile + fileName + ".ws";
         deobfuscatorPath = pathToFile + fileName + ".deobfuscator.js";
-        WebSocketPolicy wsPolicy = new WebSocketPolicy(WebSocketBehavior.SERVER);
-        wsFactory = WebSocketServletFactory.Loader.load(config.getServletContext(), wsPolicy);
-        wsFactory.setCreator((req, resp) -> {
-            ProxyWsClient proxyClient = (ProxyWsClient) req.getHttpServletRequest().getAttribute("teavm.ws.client");
-            if (proxyClient == null) {
-                return new CodeWsEndpoint(this);
-            } else {
-                ProxyWsClient proxy = new ProxyWsClient();
-                proxy.setTarget(proxyClient);
-                proxyClient.setTarget(proxy);
-                return proxy;
-            }
-        });
-        try {
-            wsFactory.start();
-        } catch (Exception e) {
-            throw new ServletException(e);
-        }
     }
 
     @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         String path = req.getRequestURI();
         if (path != null) {
             log.debug("Serving " + path);
@@ -360,10 +351,9 @@ public class CodeServlet extends HttpServlet {
                         return;
                     }
                 } else if (path.equals(indicatorWsPath)) {
-                    if (wsFactory.isUpgradeRequest(req, resp)) {
-                        if (wsFactory.acceptWebSocket(req, resp) || resp.isCommitted()) {
-                            return;
-                        }
+                    if ("websocket".equalsIgnoreCase(req.getHeader("Upgrade"))) {
+                        super.service(req, resp);
+                        return;
                     }
                 } else if (path.equals(deobfuscatorPath)) {
                     serveDeobfuscator(req, resp, hasBody);
@@ -397,7 +387,7 @@ public class CodeServlet extends HttpServlet {
             }
 
             if (proxyUrl != null && path.startsWith(proxyPath)) {
-                if (wsFactory.isUpgradeRequest(req, resp)) {
+                if ("websocket".equalsIgnoreCase(req.getHeader("Upgrade"))) {
                     proxyWebSocket(req, resp, path);
                 } else {
                     proxy(req, resp, path);
@@ -457,9 +447,9 @@ public class CodeServlet extends HttpServlet {
 
         Request proxyReq = httpClient.newRequest(sb.toString());
         proxyReq.method(req.getMethod());
-        copyRequestHeaders(req, proxyReq::header);
+        proxyReq.headers(fields -> copyRequestHeaders(req, fields::add));
 
-        proxyReq.content(new InputStreamContentProvider(req.getInputStream()));
+        proxyReq.body(new InputStreamRequestContent(req.getInputStream()));
         HeaderSender headerSender = new HeaderSender(resp);
 
         proxyReq.onResponseContent((response, responseContent) -> {
@@ -527,9 +517,8 @@ public class CodeServlet extends HttpServlet {
         }
     }
 
-    private void proxyWebSocket(HttpServletRequest req, HttpServletResponse resp, String path) throws IOException {
-        AsyncContext async = req.startAsync();
-
+    private void proxyWebSocket(HttpServletRequest req, HttpServletResponse resp, String path)
+            throws IOException, ServletException {
         String relPath = path.substring(proxyPath.length());
         StringBuilder sb = new StringBuilder(proxyProtocol.equals("http") ? "ws" : "wss").append("://");
         sb.append(proxyHost);
@@ -549,41 +538,18 @@ public class CodeServlet extends HttpServlet {
 
         ProxyWsClient client = new ProxyWsClient();
         req.setAttribute("teavm.ws.client", client);
-        ClientUpgradeRequest proxyReq = new ClientUpgradeRequest();
-        proxyReq.setMethod(req.getMethod());
+        ClientUpgradeRequest proxyReq = new ClientUpgradeRequest(uri);
         Map<String, List<String>> headers = new LinkedHashMap<>();
         copyRequestHeaders(req, (key, value) -> headers.computeIfAbsent(key, k -> new ArrayList<>()).add(value));
-        proxyReq.setHeaders(headers);
+        headers.forEach(proxyReq::setHeader);
 
-        wsClient.connect(client, uri, proxyReq, new UpgradeListener() {
-            @Override
-            public void onHandshakeRequest(UpgradeRequest request) {
-            }
+        try {
+            wsClient.connect(client, proxyReq);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-            @Override
-            public void onHandshakeResponse(UpgradeResponse response) {
-                resp.setStatus(response.getStatusCode());
-                for (String header : response.getHeaderNames()) {
-                    switch (header.toLowerCase()) {
-                        case "connection":
-                        case "date":
-                        case "sec-websocket-accept":
-                        case "upgrade":
-                            continue;
-                    }
-                    for (String value : response.getHeaders(header)) {
-                        resp.addHeader(header, value);
-                    }
-                }
-
-                try {
-                    wsFactory.acceptWebSocket(req, resp);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                async.complete();
-            }
-        });
+        super.service(req, resp);
     }
 
     private void copyRequestHeaders(HttpServletRequest req, HeaderConsumer proxyReq) {
@@ -636,11 +602,6 @@ public class CodeServlet extends HttpServlet {
     @Override
     public void destroy() {
         super.destroy();
-        try {
-            wsFactory.stop();
-        } catch (Exception e) {
-            log.warning("Error stopping WebSocket server", e);
-        }
         if (proxyUrl != null) {
             try {
                 httpClient.stop();

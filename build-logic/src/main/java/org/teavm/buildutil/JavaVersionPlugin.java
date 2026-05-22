@@ -37,7 +37,7 @@ public class JavaVersionPlugin implements Plugin<Project> {
     }
 
     private static class ExtensionImpl implements JavaVersionExtension {
-        private JavaVersion version = JavaVersion.VERSION_11;
+        private JavaVersion version = JavaVersion.VERSION_17;
 
         @Override
         public JavaVersion getVersion() {

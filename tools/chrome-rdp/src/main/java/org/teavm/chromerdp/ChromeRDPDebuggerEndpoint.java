@@ -18,53 +18,53 @@ package org.teavm.chromerdp;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
+import org.eclipse.jetty.websocket.api.Callback;
+import org.eclipse.jetty.websocket.api.Session;
 
-@ServerEndpoint("/")
-public class ChromeRDPDebuggerEndpoint implements ChromeRDPExchange {
+public class ChromeRDPDebuggerEndpoint implements Session.Listener.AutoDemanding, ChromeRDPExchange {
     public static final int MAX_MESSAGE_SIZE = 65534;
+    private final ChromeRDPExchangeConsumer consumer;
     private Session session;
-    private ChromeRDPExchangeConsumer debugger;
     private List<ChromeRDPExchangeListener> listeners = new ArrayList<>();
     private StringBuilder messageBuffer = new StringBuilder();
 
-    @OnOpen
-    public void open(Session session) {
-        this.session = session;
-        session.setMaxIdleTimeout(0);
-        Object debugger = session.getUserProperties().get("chrome.rdp");
-        if (debugger instanceof ChromeRDPExchangeConsumer) {
-            this.debugger = (ChromeRDPExchangeConsumer) debugger;
-            this.debugger.setExchange(this);
-        }
+    public ChromeRDPDebuggerEndpoint(ChromeRDPExchangeConsumer consumer) {
+        this.consumer = consumer;
     }
 
-    @OnClose
-    public void close() {
-        if (this.debugger != null) {
-            this.debugger.setExchange(null);
-            this.debugger = null;
+    @Override
+    public void onWebSocketOpen(Session session) {
+        this.session = session;
+        if (consumer != null) {
+            consumer.setExchange(this);
         }
     }
 
     @Override
-    public void disconnect() {
-        try {
-            session.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public void onWebSocketClose(int statusCode, String reason, Callback callback) {
+        if (consumer != null) {
+            consumer.setExchange(null);
         }
+        callback.succeed();
     }
 
-    @OnMessage
-    public void receive(String message) throws IOException {
+    @Override
+    public void disconnect() {
+        session.close();
+    }
+
+    @Override
+    public void onWebSocketText(String message) {
         char ctl = message.charAt(0);
         messageBuffer.append(message.substring(1));
         if (ctl == '.') {
             message = messageBuffer.toString();
             for (ChromeRDPExchangeListener listener : listeners) {
-                listener.received(message);
+                try {
+                    listener.received(message);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
             messageBuffer = new StringBuilder();
         }
@@ -75,10 +75,10 @@ public class ChromeRDPDebuggerEndpoint implements ChromeRDPExchange {
         int index = 0;
         while (message.length() - index > MAX_MESSAGE_SIZE) {
             int next = index + MAX_MESSAGE_SIZE;
-            session.getAsyncRemote().sendText("," + message.substring(index, next));
+            session.sendText("," + message.substring(index, next), Callback.NOOP);
             index = next;
         }
-        session.getAsyncRemote().sendText("." + message.substring(index));
+        session.sendText("." + message.substring(index), Callback.NOOP);
     }
 
     @Override

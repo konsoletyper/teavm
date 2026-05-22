@@ -2,7 +2,7 @@
 
 asm = "9.8"
 jackson = "2.18.2"
-jetty = "9.4.56.v20240826"
+jetty = "12.1.9"
 shadow = "9.1.0"
 checkstyle = "10.21.0"
 idea = "2024.1"
@@ -20,8 +20,8 @@ commons-io = "commons-io:commons-io:2.20.0"
 commons-cli = "commons-cli:commons-cli:1.10.0"
 rhino = "org.mozilla:rhino:1.7.15"
 slf4j = "org.slf4j:slf4j-api:2.0.16"
-javax-servlet = "javax.servlet:javax.servlet-api:3.1.0"
-javax-websocket = "javax.websocket:javax.websocket-api:1.0"
+jakarta-servlet = "jakarta.servlet:jakarta.servlet-api:6.1.0"
+jakarta-websocket = "jakarta.websocket:jakarta.websocket-api:2.2.0"
 
 asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
@@ -37,8 +37,10 @@ jodaTime = "joda-time:joda-time:2.12.2"
 httpclient = "org.apache.httpcomponents:httpclient:4.5.14"
 
 jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref = "jetty" }
-jetty-websocket-server = { module = "org.eclipse.jetty.websocket:javax-websocket-server-impl", version.ref = "jetty" }
-jetty-websocket-client = { module = "org.eclipse.jetty.websocket:websocket-client", version.ref = "jetty" }
+jetty-servlet = { module = "org.eclipse.jetty.ee10:jetty-ee10-servlet", version.ref = "jetty" }
+jetty-websocket-server = { module = "org.eclipse.jetty.websocket:jetty-websocket-jetty-server ", version.ref = "jetty" }
+jetty-websocket-client = { module = "org.eclipse.jetty.websocket:jetty-websocket-jetty-client ", version.ref = "jetty" }
+jetty-ee10-websocket-server = { module = "org.eclipse.jetty.ee10.websocket:jetty-ee10-websocket-jetty-server", version.ref = "jetty" }
 
 junit = "junit:junit:4.13.2"
 testng = "org.testng:testng:7.7.0"

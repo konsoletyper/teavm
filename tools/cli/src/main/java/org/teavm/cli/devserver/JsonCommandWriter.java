@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import org.eclipse.jetty.util.log.Logger;
 import org.teavm.common.JsonUtil;
 import org.teavm.devserver.DevServerListener;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
@@ -27,7 +26,7 @@ import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
 import org.teavm.tooling.builder.BuildResult;
 
-public class JsonCommandWriter implements TeaVMToolLog, DevServerListener, Logger {
+public class JsonCommandWriter implements TeaVMToolLog, DevServerListener {
     private PrintWriter writer = new PrintWriter(System.out, false, StandardCharsets.UTF_8);
 
     @Override
@@ -68,85 +67,6 @@ public class JsonCommandWriter implements TeaVMToolLog, DevServerListener, Logge
     @Override
     public void error(String text, Throwable e) {
         writeMessage("error", text, e);
-    }
-
-    @Override
-    public String getName() {
-        return "dev-server";
-    }
-
-    @Override
-    public void warn(String s, Object... objects) {
-        writeMessage("warning", format(s, objects), null);
-    }
-
-    @Override
-    public void warn(Throwable throwable) {
-        writeMessage("warning", "", throwable);
-    }
-
-    @Override
-    public void warn(String s, Throwable throwable) {
-        writeMessage("warning", s, throwable);
-    }
-
-    @Override
-    public void info(String s, Object... objects) {
-        writeMessage("info", format(s, objects), null);
-    }
-
-    @Override
-    public void info(Throwable throwable) {
-        writeMessage("info", "", throwable);
-    }
-
-    @Override
-    public boolean isDebugEnabled() {
-        return true;
-    }
-
-    @Override
-    public void setDebugEnabled(boolean b) {
-    }
-
-    @Override
-    public void debug(String s, Object... objects) {
-        writeMessage("debug", format(s, objects), null);
-    }
-
-    @Override
-    public void debug(String s, long l) {
-        writeMessage("debug", format(s, new Object[] { l }), null);
-    }
-
-    @Override
-    public void debug(Throwable throwable) {
-        writeMessage("debug", "", null);
-    }
-
-    @Override
-    public Logger getLogger(String s) {
-        return this;
-    }
-
-    @Override
-    public void ignore(Throwable throwable) {
-    }
-
-    private String format(String message, Object[] args) {
-        var index = 0;
-        var sb = new StringBuilder();
-        for (var i = 0; i < args.length; ++i) {
-            var next = message.indexOf("{}", index);
-            if (next < 0) {
-                break;
-            }
-            sb.append(message, index, next);
-            sb.append(args[i]);
-            index = next + 2;
-        }
-        sb.append(message, index, message.length());
-        return sb.toString();
     }
 
     private synchronized void writeMessage(String level, String message, Throwable throwable) {

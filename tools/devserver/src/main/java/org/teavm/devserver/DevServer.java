@@ -19,10 +19,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.tooling.TeaVMToolLog;
 
@@ -182,9 +183,10 @@ public class DevServer {
         }
         ServletHolder servletHolder = new ServletHolder(servlet);
         servletHolder.setAsyncSupported(true);
-        context.addServlet(servletHolder, "/*");
 
         try {
+            JettyWebSocketServletContainerInitializer.configure(context, (ctx, container) -> { });
+            context.addServlet(servletHolder, "/*");
             server.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
