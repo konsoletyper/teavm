@@ -53,6 +53,7 @@ include("tools:maven:webapp")
 include("tools:maven:webapp-wasm-gc")
 include("tools:classlib-comparison-gen")
 include("tools:wasm-disassembly")
+include("tools:devserver-client")
 include("tests")
 include("extras-slf4j")
 

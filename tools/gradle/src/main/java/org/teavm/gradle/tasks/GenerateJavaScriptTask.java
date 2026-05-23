@@ -74,20 +74,7 @@ public abstract class GenerateJavaScriptTask extends TeaVMTask {
         if (getMaxTopLevelNames().isPresent()) {
             builder.setMaxTopLevelNames(getMaxTopLevelNames().get());
         }
-        switch (getModuleType().get()) {
-            case UMD:
-                builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.UMD);
-                break;
-            case COMMON_JS:
-                builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.COMMON_JS);
-                break;
-            case NONE:
-                builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.NONE);
-                break;
-            case ES2015:
-                builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.ES2015);
-                break;
-        }
+        builder.setJsModuleType(TaskUtils.mapJsModuleType(getModuleType().get()));
         builder.setSourceMapsFileGenerated(getSourceMap().get());
         builder.setEntryPointName(getEntryPointName().get());
         TaskUtils.applySourceFiles(getSourceFiles(), builder);

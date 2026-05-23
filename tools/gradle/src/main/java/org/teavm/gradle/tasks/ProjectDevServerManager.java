@@ -15,77 +15,30 @@
  */
 package org.teavm.gradle.tasks;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Collectors;
 import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.internal.logging.progress.ProgressLogger;
-import org.teavm.common.json.JsonArrayValue;
-import org.teavm.common.json.JsonObjectValue;
-import org.teavm.common.json.JsonParser;
-import org.teavm.common.json.JsonValue;
+import org.teavm.devserver.client.DevServerClient;
 import org.teavm.gradle.api.JSModuleType;
 
 public class ProjectDevServerManager {
-    private Set<File> serverClasspath = new LinkedHashSet<>();
-    private Set<File> classpath = new LinkedHashSet<>();
-    private String targetFileName;
-    private String targetFilePath;
-    private Map<String, String> properties = new LinkedHashMap<>();
-    private Set<String> preservedClasses = new LinkedHashSet<>();
-    private JSModuleType jsModuleType;
-    private String mainClass;
-    private boolean stackDeobfuscated;
-    private boolean indicator;
-    private int port;
-    private Set<File> sources = new HashSet<>();
-    private boolean autoReload;
-    private String proxyUrl;
-    private String proxyPath;
-    private List<String> staticDirs = new ArrayList<>();
-    private String staticServePath = "";
-    private List<String> resourcePaths = new ArrayList<>();
-    private String resourceServePath = "";
-    private int processMemory;
-    private int debugPort;
-
-    private Process process;
-    private Thread processKillHook;
-    private Thread commandInputThread;
-    private Thread stderrThread;
-    private BufferedWriter commandOutput;
-    private JsonParser jsonParser;
-    private BlockingQueue<Runnable> eventQueue = new LinkedBlockingQueue<>();
-    private boolean eventQueueDone;
-    private Logger logger;
-    private ProgressLogger progressLogger;
-
     private Set<File> runningServerClasspath = new HashSet<>();
     private Set<File> runningClasspath = new HashSet<>();
     private String runningTargetFileName;
     private String runningTargetFilePath;
     private Map<String, String> runningProperties = new HashMap<>();
     private Set<String> runningPreservedClasses = new HashSet<>();
-    private JSModuleType runningJsModuleType;
+    private org.teavm.backend.javascript.JSModuleType runningJsModuleType;
     private String runningMainClass;
     private boolean runningStackDeobfuscated;
     private boolean runningIndicator;
@@ -101,552 +54,248 @@ public class ProjectDevServerManager {
     private int runningProcessMemory;
     private int runningDebugPort;
 
-    ProjectDevServerManager() {
-        jsonParser = JsonParser.ofValue(this::parseCommand);
-    }
+    private final DevServerClient client = new DevServerClient();
 
     public void setServerClasspath(Set<File> serverClasspath) {
-        this.serverClasspath.clear();
-        this.serverClasspath.addAll(serverClasspath);
+        client.setServerClasspath(serverClasspath);
     }
 
     public void setClasspath(Set<File> classpath) {
-        this.classpath.clear();
-        this.classpath.addAll(classpath);
+        client.setClasspath(classpath);
     }
 
     public void setProperties(Map<String, String> properties) {
-        this.properties.clear();
-        this.properties.putAll(properties);
+        client.setProperties(properties);
     }
 
     public void setPreservedClasses(Collection<String> preservedClasses) {
-        this.preservedClasses.clear();
-        this.preservedClasses.addAll(preservedClasses);
+        client.setPreservedClasses(preservedClasses);
     }
 
     public void setJsModuleType(JSModuleType jsModuleType) {
-        this.jsModuleType = jsModuleType;
+        client.setJsModuleType(jsModuleType != null ? TaskUtils.mapJsModuleType(jsModuleType) : null);
     }
 
     public void setTargetFileName(String targetFileName) {
-        this.targetFileName = targetFileName;
+        client.setTargetFileName(targetFileName);
     }
 
     public void setTargetFilePath(String targetFilePath) {
-        this.targetFilePath = targetFilePath;
+        client.setTargetFilePath(targetFilePath);
     }
 
     public void setMainClass(String mainClass) {
-        this.mainClass = mainClass;
+        client.setMainClass(mainClass);
     }
 
     public void setStackDeobfuscated(boolean stackDeobfuscated) {
-        this.stackDeobfuscated = stackDeobfuscated;
+        client.setStackDeobfuscated(stackDeobfuscated);
     }
 
     public void setIndicator(boolean indicator) {
-        this.indicator = indicator;
+        client.setIndicator(indicator);
     }
 
     public void setPort(int port) {
-        this.port = port;
+        client.setPort(port);
     }
 
     public void setSources(Set<File> sources) {
-        this.sources.clear();
-        this.sources.addAll(sources);
+        client.setSources(sources);
     }
 
     public void setAutoReload(boolean autoReload) {
-        this.autoReload = autoReload;
+        client.setAutoReload(autoReload);
     }
 
     public void setProxyUrl(String proxyUrl) {
-        this.proxyUrl = proxyUrl;
+        client.setProxyUrl(proxyUrl);
     }
 
     public void setProxyPath(String proxyPath) {
-        this.proxyPath = proxyPath;
+        client.setProxyPath(proxyPath);
     }
 
     public void setStaticDirs(List<String> staticDirs) {
-        this.staticDirs.clear();
-        this.staticDirs.addAll(staticDirs);
+        client.setStaticDirs(staticDirs);
     }
 
     public void setStaticServePath(String staticServePath) {
-        this.staticServePath = staticServePath;
+        client.setStaticServePath(staticServePath);
     }
 
     public void setResourcePaths(List<String> resourcePaths) {
-        this.resourcePaths.clear();
-        this.resourcePaths.addAll(resourcePaths);
+        client.setResourcePaths(resourcePaths);
     }
 
     public void setResourceServePath(String resourceServePath) {
-        this.resourceServePath = resourceServePath;
+        client.setResourceServePath(resourceServePath);
     }
 
     public void setProcessMemory(int processMemory) {
-        this.processMemory = processMemory;
+        client.setProcessMemory(processMemory);
     }
 
     public void setDebugPort(int debugPort) {
-        this.debugPort = debugPort;
+        client.setDebugPort(debugPort);
     }
 
     public void runBuild(Logger logger, ProgressLogger progressLogger) throws IOException {
         restartIfNecessary(logger);
-        try {
-            schedule(() -> {
-                try {
-                    commandOutput.write("{\"type\":\"build\"}\n");
-                    commandOutput.flush();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } catch (InterruptedException e) {
-            return;
-        }
-        processQueue(logger, progressLogger);
-    }
-
-    private void processQueue(Logger logger, ProgressLogger progressLogger) {
-        eventQueueDone = false;
-        this.logger = logger;
-        this.progressLogger = progressLogger;
-        var stoppedUnexpectedly = new boolean[1];
-        var processMonitorThread = new Thread(() -> {
-            try {
-                process.waitFor();
-                schedule(() -> {
-                    stoppedUnexpectedly[0] = true;
-                });
-                stopEventQueue();
-            } catch (InterruptedException e) {
-                // do nothing
-            }
-        });
-        processMonitorThread.setDaemon(true);
-        processMonitorThread.setName("Dev server process crash monitor");
-        processMonitorThread.start();
-        try {
-            while (!eventQueueDone || !eventQueue.isEmpty()) {
-                Runnable command;
-                try {
-                    command = eventQueue.take();
-                } catch (InterruptedException e) {
-                    break;
-                }
-                command.run();
-            }
-            if (stoppedUnexpectedly[0]) {
-                logger.error("Dev server process stopped unexpectedly");
-                throw new GradleException();
-            }
-        } finally {
-            this.logger = null;
-            this.progressLogger = null;
-            processMonitorThread.interrupt();
-        }
-    }
-
-    private void restartIfNecessary(Logger logger) throws IOException {
-        if (process != null && !checkProcess()) {
-            logger.info("Changes detected in TeaVM development server config, restarting server");
-            stop(logger);
-        }
-        if (process == null || !process.isAlive()) {
-            start(logger);
-        }
+        client.build(new GradleBuildListener(logger, progressLogger));
     }
 
     public void stop(Logger logger) {
-        if (process != null) {
-            logger.info("Stopping TeaVM development server, PID = {}", process.pid());
-            if (process.isAlive()) {
-                try {
-                    commandOutput.write("{\"type\":\"stop\"}\n");
-                    commandOutput.flush();
-                } catch (IOException e) {
-                    process.destroy();
-                }
-                try {
-                    process.waitFor();
-                } catch (InterruptedException e) {
-                    // do nothing
-                }
-            } else {
+        if (client.isStarted()) {
+            logger.info("Stopping TeaVM development server, PID = {}", client.getPid());
+            if (!client.isRunning()) {
                 logger.info("Process was dead");
             }
-            process = null;
-            Runtime.getRuntime().removeShutdownHook(processKillHook);
-            processKillHook = null;
-            commandInputThread.interrupt();
-            commandInputThread = null;
-            stderrThread.interrupt();
-            stderrThread = null;
-            commandOutput = null;
+            client.stop();
         } else {
             logger.info("No development server running, doing nothing");
         }
     }
 
+    private void restartIfNecessary(Logger logger) throws IOException {
+        if (client.isStarted() && !checkProcess()) {
+            logger.info("Changes detected in TeaVM development server config, restarting server");
+            stop(logger);
+        }
+        if (!client.isStarted() || !client.isRunning()) {
+            start(logger);
+        }
+    }
+
     private void start(Logger logger) throws IOException {
         logger.info("Starting TeaVM development server");
-
-        var pb = new ProcessBuilder();
-        pb.command(getBuilderCommand().toArray(new String[0]));
-
-        process = pb.start();
-        processKillHook = new Thread(() -> process.destroy());
-        Runtime.getRuntime().addShutdownHook(processKillHook);
-        commandOutput = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8));
-
-        commandInputThread = new Thread(this::readCommandsFromProcess);
-        commandInputThread.setName("TeaVM development server command reader");
-        commandInputThread.setDaemon(true);
-        commandInputThread.start();
-
-        stderrThread = new Thread(this::readStderrFromProcess);
-        stderrThread.setName("TeaVM development server stderr reader");
-        stderrThread.setDaemon(true);
-        stderrThread.start();
-
+        client.start();
+        snapshotRunningConfig();
         logger.info("Development server started");
     }
 
-    private void readCommandsFromProcess() {
-        try (var input = new BufferedReader(new InputStreamReader(process.getInputStream(),
-                StandardCharsets.UTF_8))) {
-            while (!Thread.currentThread().isInterrupted()) {
-                var command = input.readLine();
-                if (command == null) {
-                    break;
-                }
-                schedule(() -> readCommand(command));
-            }
-        } catch (IOException e) {
-            try {
-                stopEventQueue();
-                if (logger != null) {
-                    logger.error("IO error occurred reading stdout of development server process", e);
-                }
-            } catch (InterruptedException e2) {
-                if (logger != null) {
-                    logger.info("Development server process input thread interrupted");
-                }
-            }
-        } catch (InterruptedException e) {
-            if (logger != null) {
-                logger.info("Development server process input thread interrupted");
-            }
-        }
-    }
-
-    private void readStderrFromProcess() {
-        try (var input = new BufferedReader(new InputStreamReader(process.getErrorStream(),
-                StandardCharsets.UTF_8))) {
-            while (!Thread.currentThread().isInterrupted()) {
-                var line = input.readLine();
-                if (line == null) {
-                    break;
-                }
-                schedule(() -> logger.warn("server stderr: {}", line));
-            }
-        } catch (IOException e) {
-            if (logger != null) {
-                logger.error("IO error occurred reading stderr of development server process", e);
-            }
-        } catch (InterruptedException e) {
-            if (logger != null) {
-                logger.info("Development server process input thread interrupted");
-            }
-        }
-    }
-
-    private void stopEventQueue() throws InterruptedException {
-        schedule(() -> eventQueueDone = true);
-    }
-
-    private void schedule(Runnable command) throws InterruptedException {
-        eventQueue.put(command);
-    }
-
-    private void readCommand(String command) {
-        try {
-            jsonParser.parse(new StringReader(command));
-        } catch (IOException e) {
-            // This should not happen
-            throw new RuntimeException(e);
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Error reading command: " + command, e);
-        }
-    }
-
-    private void parseCommand(JsonValue command) {
-        var obj = (JsonObjectValue) command;
-        var type = obj.get("type").asString();
-        try {
-            switch (type) {
-                case "log":
-                    logCommand(obj);
-                    break;
-                case "compilation-started":
-                    // do nothing
-                    break;
-                case "compilation-progress":
-                    progressCommand(obj);
-                    break;
-                case "compilation-complete":
-                    completeCommand(obj);
-                    break;
-                case "compilation-cancelled":
-                    stopEventQueue();
-                    break;
-            }
-        } catch (InterruptedException e) {
-            // do nothing
-        }
-    }
-
-    private void logCommand(JsonObjectValue command) throws InterruptedException {
-        var level = command.get("level").asString();
-        var message = command.get("message").asString();
-        var throwable = command.get("throwable");
-        if (throwable != null) {
-            message += "\n" + throwable.asString();
-        }
-        var messageToReport = message;
-        switch (level) {
-            case "debug":
-                schedule(() -> logger.debug(messageToReport));
-                break;
-            case "info":
-                schedule(() -> logger.info(messageToReport));
-                break;
-            case "warning":
-                schedule(() -> logger.warn(messageToReport));
-                break;
-            case "error":
-                schedule(() -> logger.error(messageToReport));
-                break;
-        }
-    }
-
-    private void progressCommand(JsonObjectValue command) throws InterruptedException {
-        if (progressLogger == null) {
-            return;
-        }
-        var progress = command.get("progress").asNumber();
-        var roundedResult = (int) (progress * 1000 + 5) / 10;
-        var result = Math.min(100, roundedResult / 10.0);
-        schedule(() -> progressLogger.progress(result + " %"));
-    }
-
-    private void completeCommand(JsonObjectValue command) throws InterruptedException {
-        var problemsJson = command.get("problems");
-        if (problemsJson != null) {
-            reportProblems((JsonArrayValue) problemsJson);
-        }
-        stopEventQueue();
-    }
-
-    private void reportProblems(JsonArrayValue json) throws InterruptedException {
-        var hasSevere = false;
-        for (var i = 0; i < json.size(); ++i) {
-            var problem = json.get(i).asObject();
-            var severity = problem.get("severity").asString();
-            var sb = new StringBuilder();
-            sb.append(problem.get("message").asString());
-            sb.append(problem.get("location").asString());
-            var message = sb.toString();
-            switch (severity) {
-                case "error":
-                    hasSevere = true;
-                    schedule(() -> logger.error(message));
-                    break;
-                case "warning":
-                    schedule(() -> logger.warn(message));
-                    break;
-            }
-        }
-        if (hasSevere) {
-            schedule(() -> {
-                throw new GradleException("Errors occurred during TeaVM build");
-            });
-        }
-    }
-
-    private List<String> getBuilderCommand() {
-        var command = new ArrayList<String>();
-
-        var javaHome = System.getProperty("java.home");
-        var javaExec = javaHome + "/bin/java";
-        if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
-            javaExec += ".exe";
-        }
-        command.add(javaExec);
-
-        if (!serverClasspath.isEmpty()) {
-            command.add("-cp");
-            command.add(serverClasspath.stream()
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.joining(File.pathSeparator)));
-        }
+    private void snapshotRunningConfig() {
         runningServerClasspath.clear();
-        runningServerClasspath.addAll(serverClasspath);
-
-        if (processMemory != 0) {
-            command.add("-Xmx" + processMemory + "m");
-        }
-        runningProcessMemory = processMemory;
-
-        if (debugPort != 0) {
-            command.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,quiet=y,address=*:" + debugPort);
-        }
-        runningDebugPort = debugPort;
-
-        command.add("org.teavm.cli.devserver.TeaVMDevServerRunner");
-        command.add("--json-interface");
-        command.add("--no-watch");
-
-        if (targetFileName != null) {
-            command.add("--targetfile");
-            command.add(targetFileName);
-        }
-        runningTargetFileName = targetFileName;
-
-        if (targetFilePath != null) {
-            command.add("--targetdir");
-            command.add(targetFilePath);
-        }
-        runningTargetFilePath = targetFilePath;
-
-        if (!classpath.isEmpty()) {
-            command.add("--classpath");
-            command.addAll(classpath.stream()
-                    .map(File::getAbsolutePath)
-                    .toList());
-        }
+        runningServerClasspath.addAll(client.getServerClasspath());
         runningClasspath.clear();
-        runningClasspath.addAll(classpath);
-
-        if (!sources.isEmpty()) {
-            command.add("--sourcepath");
-            command.addAll(sources.stream()
-                    .map(File::getAbsolutePath)
-                    .toList());
-        }
-        runningSources.clear();
-        runningSources.addAll(sources);
-
-        if (port != 0) {
-            command.add("--port");
-            command.add(String.valueOf(port));
-        }
-        runningPort = port;
-
-        if (indicator) {
-            command.add("--indicator");
-        }
-        runningIndicator = indicator;
-
-        if (stackDeobfuscated) {
-            command.add("--deobfuscate-stack");
-        }
-        runningStackDeobfuscated = stackDeobfuscated;
-
-        if (autoReload) {
-            command.add("--auto-reload");
-        }
-        runningAutoReload = autoReload;
-
-        if (proxyUrl != null) {
-            command.add("--proxy-url");
-            command.add(proxyUrl);
-        }
-        runningProxyUrl = proxyUrl;
-
-        if (proxyPath != null) {
-            command.add("--proxy-path");
-            command.add(proxyPath);
-        }
-        runningProxyPath = proxyPath;
-
-        if (!staticDirs.isEmpty()) {
-            command.add("--static-dirs");
-            command.addAll(staticDirs);
-        }
-        runningStaticDirs.clear();
-        runningStaticDirs.addAll(staticDirs);
-        if (!staticServePath.isEmpty()) {
-            command.add("--static-serve-path");
-            command.add(staticServePath);
-        }
-        runningStaticServePath = staticServePath;
-        if (!resourcePaths.isEmpty()) {
-            command.add("--resources");
-            command.addAll(resourcePaths);
-        }
-        runningResourcePaths.clear();
-        runningResourcePaths.addAll(resourcePaths);
-        if (!resourceServePath.isEmpty()) {
-            command.add("--resource-serve-path");
-            command.add(resourceServePath);
-        }
-        runningResourceServePath = resourceServePath;
-
-        for (var entry : properties.entrySet()) {
-            command.add("--property");
-            command.add(entry.getKey() + "=" + entry.getValue());
-        }
+        runningClasspath.addAll(client.getClasspath());
+        runningTargetFileName = client.getTargetFileName();
+        runningTargetFilePath = client.getTargetFilePath();
         runningProperties.clear();
-        runningProperties.putAll(properties);
-
-        if (!preservedClasses.isEmpty()) {
-            command.add("--preserved-classes");
-            command.addAll(preservedClasses);
-        }
+        runningProperties.putAll(client.getProperties());
         runningPreservedClasses.clear();
-        runningPreservedClasses.addAll(preservedClasses);
-
-        if (jsModuleType != null) {
-            command.add("--js-module-type");
-            command.add(jsModuleType.name().toLowerCase().replace('_', '-'));
-        }
-        runningJsModuleType = jsModuleType;
-
-        command.add("--");
-        command.add(mainClass);
-        runningMainClass = mainClass;
-
-        return command;
+        runningPreservedClasses.addAll(client.getPreservedClasses());
+        runningJsModuleType = client.getJsModuleType();
+        runningMainClass = client.getMainClass();
+        runningStackDeobfuscated = client.isStackDeobfuscated();
+        runningIndicator = client.isIndicator();
+        runningPort = client.getPort();
+        runningSources.clear();
+        runningSources.addAll(client.getSources());
+        runningAutoReload = client.isAutoReload();
+        runningProxyUrl = client.getProxyUrl();
+        runningProxyPath = client.getProxyPath();
+        runningStaticDirs.clear();
+        runningStaticDirs.addAll(client.getStaticDirs());
+        runningStaticServePath = client.getStaticServePath();
+        runningResourcePaths.clear();
+        runningResourcePaths.addAll(client.getResourcePaths());
+        runningResourceServePath = client.getResourceServePath();
+        runningProcessMemory = client.getProcessMemory();
+        runningDebugPort = client.getDebugPort();
     }
 
     private boolean checkProcess() {
-        return Objects.equals(serverClasspath, runningServerClasspath)
-                && Objects.equals(classpath, runningClasspath)
-                && Objects.equals(targetFileName, runningTargetFileName)
-                && Objects.equals(targetFilePath, runningTargetFilePath)
-                && Objects.equals(properties, runningProperties)
-                && Objects.equals(preservedClasses, runningPreservedClasses)
-                && Objects.equals(jsModuleType, runningJsModuleType)
-                && Objects.equals(mainClass, runningMainClass)
-                && stackDeobfuscated == runningStackDeobfuscated
-                && indicator == runningIndicator
-                && port == runningPort
-                && Objects.equals(sources, runningSources)
-                && autoReload == runningAutoReload
-                && Objects.equals(proxyUrl, runningProxyUrl)
-                && Objects.equals(proxyPath, runningProxyPath)
-                && Objects.equals(staticDirs, runningStaticDirs)
-                && Objects.equals(staticServePath, runningStaticServePath)
-                && Objects.equals(resourcePaths, runningResourcePaths)
-                && Objects.equals(resourceServePath, runningResourceServePath)
-                && processMemory == runningProcessMemory
-                && debugPort == runningDebugPort;
+        return Objects.equals(client.getServerClasspath(), runningServerClasspath)
+                && Objects.equals(client.getClasspath(), runningClasspath)
+                && Objects.equals(client.getTargetFileName(), runningTargetFileName)
+                && Objects.equals(client.getTargetFilePath(), runningTargetFilePath)
+                && Objects.equals(client.getProperties(), runningProperties)
+                && Objects.equals(client.getPreservedClasses(), runningPreservedClasses)
+                && Objects.equals(client.getJsModuleType(), runningJsModuleType)
+                && Objects.equals(client.getMainClass(), runningMainClass)
+                && client.isStackDeobfuscated() == runningStackDeobfuscated
+                && client.isIndicator() == runningIndicator
+                && client.getPort() == runningPort
+                && Objects.equals(client.getSources(), runningSources)
+                && client.isAutoReload() == runningAutoReload
+                && Objects.equals(client.getProxyUrl(), runningProxyUrl)
+                && Objects.equals(client.getProxyPath(), runningProxyPath)
+                && Objects.equals(client.getStaticDirs(), runningStaticDirs)
+                && Objects.equals(client.getStaticServePath(), runningStaticServePath)
+                && Objects.equals(client.getResourcePaths(), runningResourcePaths)
+                && Objects.equals(client.getResourceServePath(), runningResourceServePath)
+                && client.getProcessMemory() == runningProcessMemory
+                && client.getDebugPort() == runningDebugPort;
+    }
+
+    private static final class GradleBuildListener implements DevServerClient.BuildListener {
+        private final Logger logger;
+        private final ProgressLogger progressLogger;
+        private boolean hasSevere;
+
+        GradleBuildListener(Logger logger, ProgressLogger progressLogger) {
+            this.logger = logger;
+            this.progressLogger = progressLogger;
+        }
+
+        @Override
+        public void onLog(String level, String message) {
+            switch (level) {
+                case "debug":
+                    logger.debug(message);
+                    break;
+                case "info":
+                    logger.info(message);
+                    break;
+                case "warning":
+                    logger.warn(message);
+                    break;
+                case "error":
+                    logger.error(message);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        @Override
+        public void onProgress(double progress) {
+            if (progressLogger == null) {
+                return;
+            }
+            var roundedResult = (int) (progress * 1000 + 5) / 10;
+            var result = Math.min(100, roundedResult / 10.0);
+            progressLogger.progress(result + " %");
+        }
+
+        @Override
+        public void onComplete(List<DevServerClient.Problem> problems) {
+            for (var problem : problems) {
+                switch (problem.getSeverity()) {
+                    case ERROR:
+                        hasSevere = true;
+                        logger.error(problem.getMessage());
+                        break;
+                    case WARNING:
+                        logger.warn(problem.getMessage());
+                        break;
+                }
+            }
+            if (hasSevere) {
+                throw new GradleException("Errors occurred during TeaVM build");
+            }
+        }
+
+        @Override
+        public void onStderr(String line) {
+            logger.warn("server stderr: {}", line);
+        }
+
+        @Override
+        public void onUnexpectedStop() {
+            logger.error("Dev server process stopped unexpectedly");
+            throw new GradleException();
+        }
     }
 }

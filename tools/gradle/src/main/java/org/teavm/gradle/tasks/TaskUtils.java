@@ -17,6 +17,7 @@ package org.teavm.gradle.tasks;
 
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.Property;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.gradle.api.SourceFilePolicy;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.builder.BuildStrategy;
@@ -34,6 +35,21 @@ final class TaskUtils {
             } else if (file.isDirectory()) {
                 builder.addSourcesDirectory(file.getAbsolutePath());
             }
+        }
+    }
+
+    static JSModuleType mapJsModuleType(org.teavm.gradle.api.JSModuleType moduleType) {
+        switch (moduleType) {
+            case UMD:
+                return JSModuleType.UMD;
+            case COMMON_JS:
+                return JSModuleType.COMMON_JS;
+            case NONE:
+                return JSModuleType.NONE;
+            case ES2015:
+                return JSModuleType.ES2015;
+            default:
+                throw new IllegalArgumentException("Unknown JS module type: " + moduleType);
         }
     }
 
