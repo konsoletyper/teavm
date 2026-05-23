@@ -1,5 +1,3 @@
-import org.teavm.buildutil.DependencyRelocationExtension
-
 /*
  *  Copyright 2023 Alexey Andreev.
  *
@@ -127,7 +125,7 @@ fun MavenPom.setupPom(project: Project) {
     url = "https://teavm.org"
 }
 
-extensions.configure<DependencyRelocationExtension> {
+dependencyRelocation {
     for (commonsLib in listOf("commons-io", "commons-cli")) {
         library("libs", commonsLib) {
             relocate("org.apache.commons", "org.teavm.apachecommons")
