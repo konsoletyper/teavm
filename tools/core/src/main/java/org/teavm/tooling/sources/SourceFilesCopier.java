@@ -15,12 +15,15 @@
  */
 package org.teavm.tooling.sources;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.apache.commons.io.IOUtils;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
@@ -80,7 +83,7 @@ public class SourceFilesCopier {
                 try (InputStream input = sourceFile.open()) {
                     outputFile.getParentFile().mkdirs();
                     try (OutputStream output = new FileOutputStream(outputFile)) {
-                        IOUtils.copy(input, output);
+                        input.transferTo(output);
                     }
                 }
                 copiesConsumer.accept(outputFile);

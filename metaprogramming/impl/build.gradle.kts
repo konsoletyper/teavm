@@ -24,7 +24,6 @@ description = "Implementation of metaprogramming API"
 dependencies {
     compileOnly(project(":core"))
 
-    implementation(libs.commons.io)
     implementation(libs.asm)
     implementation(project(":metaprogramming:api"))
 }

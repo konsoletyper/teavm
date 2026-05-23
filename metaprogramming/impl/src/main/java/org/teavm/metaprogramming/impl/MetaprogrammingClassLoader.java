@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -43,7 +42,7 @@ public class MetaprogrammingClassLoader extends ClassLoader {
             return super.loadClass(name, resolve);
         } else {
             try (InputStream input = getResourceAsStream(name.replace('.', '/') + ".class")) {
-                byte[] array = instrumentation.instrument(IOUtils.toByteArray(new BufferedInputStream(input)));
+                var array = instrumentation.instrument(new BufferedInputStream(input).readAllBytes());
                 return defineClass(name, array, 0, array.length);
             } catch (IOException e) {
                 throw new ClassNotFoundException("Error reading bytecode of class " + name, e);

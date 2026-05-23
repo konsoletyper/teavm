@@ -817,7 +817,7 @@ public class CodeServlet extends JettyWebSocketServlet {
             } else {
                 resp.setContentType("text/plain");
                 noCache(resp);
-                IOUtils.copy(stream, resp.getOutputStream());
+                stream.transferTo(resp.getOutputStream());
             }
             resp.getOutputStream().flush();
             return true;
