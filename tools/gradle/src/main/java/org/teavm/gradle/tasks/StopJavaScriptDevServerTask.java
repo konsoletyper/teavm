@@ -16,14 +16,23 @@
 package org.teavm.gradle.tasks;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.provider.Property;
+import org.gradle.api.provider.SetProperty;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.TaskAction;
 
 public abstract class StopJavaScriptDevServerTask extends DefaultTask {
+    @Internal
+    public abstract SetProperty<String> getAllProjectPaths();
+
+    @Internal
+    public abstract Property<String> getProjectPath();
+
     @TaskAction
     public void stopServer() {
         var codeServerManager = DevServerManager.instance();
-        codeServerManager.cleanup(getProject().getGradle());
-        var pm = codeServerManager.getProjectManager(getProject().getPath());
+        codeServerManager.cleanup(getAllProjectPaths().get(), getLogger());
+        var pm = codeServerManager.getProjectManager(getProjectPath().get());
         pm.stop(getLogger());
     }
 }

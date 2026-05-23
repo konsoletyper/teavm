@@ -25,10 +25,10 @@ import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.common.json.JsonParser;
 import org.teavm.devserver.DevServer;
@@ -50,84 +50,107 @@ public final class TeaVMDevServerRunner {
                 .hasArg()
                 .desc("a directory, relative to server's root, which serves generated files")
                 .longOpt("targetdir")
-                .build());
+                .get());
         options.addOption(Option.builder("f")
                 .argName("file")
                 .hasArg()
                 .desc("a file where to put decompiled classes (classes.js by default)")
                 .longOpt("targetfile")
-                .build());
+                .get());
         options.addOption(Option.builder("p")
                 .argName("classpath")
                 .hasArgs()
                 .desc("classpath element (either directory or jar file)")
                 .longOpt("classpath")
-                .build());
+                .get());
         options.addOption(Option.builder("s")
                 .argName("sourcepath")
                 .hasArgs()
                 .desc("source path (either directory or jar file which contains source code)")
                 .longOpt("sourcepath")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .argName("classnames")
                 .hasArgs()
                 .desc("list of classes that should be preserved during the build (e.g. to use with reflection)")
                 .longOpt("preserved-classes")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .valueSeparator()
                 .hasArgs()
                 .longOpt("property")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .argName("module_type")
                 .hasArg()
                 .longOpt("js-module-type")
                 .desc("JS module type (umd, common-js, es2015 or none)")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .argName("number")
                 .hasArg()
                 .desc("port (default is 9090)")
                 .longOpt("port")
-                .build());
+                .get());
         options.addOption(Option.builder("i")
                 .desc("display indicator on web page")
                 .longOpt("indicator")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .desc("deobfuscate stack traces")
                 .longOpt("deobfuscate-stack")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .desc("automatically reload page when compilation completes")
                 .longOpt("auto-reload")
-                .build());
+                .get());
         options.addOption(Option.builder("v")
                 .desc("display more messages on server log")
                 .longOpt("verbose")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .argName("URL")
                 .hasArg()
                 .desc("delegate requests to URL")
                 .longOpt("proxy-url")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .argName("path")
                 .hasArg()
                 .desc("delegate requests from path")
                 .longOpt("proxy-path")
-                .build());
+                .get());
+        options.addOption(Option.builder()
+                .argName("paths")
+                .hasArgs()
+                .desc("paths to directories from which static content will be served")
+                .longOpt("static-dirs")
+                .get());
+        options.addOption(Option.builder()
+                .argName("path")
+                .hasArg()
+                .desc("path on the server from which static content will be served")
+                .longOpt("static-serve-path")
+                .get());
+        options.addOption(Option.builder()
+                .argName("paths")
+                .hasArgs()
+                .desc("path to resources which which will be served")
+                .longOpt("resources")
+                .get());
+        options.addOption(Option.builder()
+                .hasArg()
+                .desc("path on the server from which resources will be served")
+                .longOpt("resources-serve-path")
+                .get());
         options.addOption(Option.builder()
                 .desc("don't watch file system changes")
                 .longOpt("no-watch")
-                .build());
+                .get());
         options.addOption(Option.builder()
                 .desc("JSON interface over stdout")
                 .longOpt("json-interface")
-                .build());
+                .get());
     }
 
     private TeaVMDevServerRunner(CommandLine commandLine) {
@@ -210,6 +233,22 @@ public final class TeaVMDevServerRunner {
         if (commandLine.hasOption("no-watch")) {
             devServer.setFileSystemWatched(false);
         }
+        if (commandLine.hasOption("static-dirs")) {
+            for (var dir : commandLine.getOptionValues("static-dirs")) {
+                devServer.addStaticFileRoot(dir);
+            }
+        }
+        if (commandLine.hasOption("static-serve-path")) {
+            devServer.setStaticFilesPath(commandLine.getOptionValue("static-serve-path"));
+        }
+        if (commandLine.hasOption("resources")) {
+            for (var dir : commandLine.getOptionValues("resources")) {
+                devServer.addResourcesRoot(dir);
+            }
+        }
+        if (commandLine.hasOption("resources-serve-path")) {
+            devServer.setResourcesPath(commandLine.getOptionValue("resources-serve-path"));
+        }
         if (commandLine.hasOption("json-interface")) {
             setupJsonInterface(devServer);
         } else {
@@ -272,9 +311,13 @@ public final class TeaVMDevServerRunner {
     }
 
     private static void printUsage() {
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("java " + TeaVMDevServerRunner.class.getName() + " [OPTIONS] [qualified.main.Class]",
-                options);
+        var formatter = HelpFormatter.builder().get();
+        try {
+            formatter.printHelp("java " + TeaVMDevServerRunner.class.getName(),
+                    "", options, "", true);
+        } catch (IOException e) {
+            // Ignore IOException during help printing
+        }
         System.exit(-1);
     }
 }

@@ -51,6 +51,10 @@ public class DevServer {
     private int debugPort;
     private String proxyUrl;
     private String proxyPath = "/";
+    private List<String> staticFileRoots = new ArrayList<>();
+    private String staticFilesPath = "/";
+    private List<String> resourcesRoots = new ArrayList<>();
+    private String resourcesPath = "/";
 
     public void setMainClass(String mainClass) {
         this.mainClass = mainClass;
@@ -108,6 +112,22 @@ public class DevServer {
 
     public void setProxyPath(String proxyPath) {
         this.proxyPath = proxyPath;
+    }
+
+    public void addStaticFileRoot(String root) {
+        this.staticFileRoots.add(root);
+    }
+
+    public void setStaticFilesPath(String staticFilesPath) {
+        this.staticFilesPath = staticFilesPath;
+    }
+
+    public void addResourcesRoot(String root) {
+        this.resourcesRoots.add(root);
+    }
+
+    public void setResourcesPath(String resourcesPath) {
+        this.resourcesPath = resourcesPath;
     }
 
     public List<String> getSourcePath() {
@@ -172,6 +192,10 @@ public class DevServer {
         servlet.setDebugPort(debugPort);
         servlet.setProxyUrl(proxyUrl);
         servlet.setProxyPath(proxyPath);
+        servlet.setStaticFileRoots(staticFileRoots);
+        servlet.setStaticFilesPath(staticFilesPath);
+        servlet.setResourcesRoots(resourcesRoots);
+        servlet.setResourcesPath(resourcesPath);
         servlet.setFileSystemWatched(fileSystemWatched);
         servlet.setCompileOnStartup(compileOnStartup);
         servlet.setLogBuildErrors(logBuildErrors);

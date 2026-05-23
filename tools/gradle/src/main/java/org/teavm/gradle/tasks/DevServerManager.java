@@ -19,8 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.gradle.api.Project;
-import org.gradle.api.invocation.Gradle;
+import org.gradle.api.logging.Logger;
 
 public final class DevServerManager {
     private static DevServerManager instance;
@@ -37,15 +36,13 @@ public final class DevServerManager {
         return new ProjectDevServerManager();
     }
 
-    public void cleanup(Gradle gradle) {
-        var allProjectPaths = new HashSet<String>();
-        collectProjects(gradle.getRootProject(), allProjectPaths);
+    public void cleanup(Set<? extends String> allProjectPaths, Logger logger) {
         var keysToRemove = new HashSet<>(projectManagers.keySet());
         keysToRemove.removeAll(allProjectPaths);
         for (var path : keysToRemove) {
             var pm = projectManagers.remove(path);
             if (pm != null) {
-                pm.stop(gradle.getRootProject().getLogger());
+                pm.stop(logger);
             }
         }
     }
@@ -55,14 +52,5 @@ public final class DevServerManager {
             instance = new DevServerManager();
         }
         return instance;
-    }
-
-    private static void collectProjects(Project project, Set<String> collector) {
-        if (!collector.add(project.getPath())) {
-            return;
-        }
-        for (var child : project.getChildProjects().values()) {
-            collectProjects(child, collector);
-        }
     }
 }

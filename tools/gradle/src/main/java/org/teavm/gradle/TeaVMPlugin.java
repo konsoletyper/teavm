@@ -18,8 +18,10 @@ package org.teavm.gradle;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.gradle.api.Plugin;
@@ -125,15 +127,14 @@ public class TeaVMPlugin implements Plugin<Project> {
         var cliConfig = project.getConfigurations().detachedConfiguration(
                 project.getDependencies().create(ArtifactCoordinates.CLI));
         registerJsTask(project, compilerConfig);
-        registerJsDevServerTask(project, cliConfig);
-        registerStopJsDevServerTask(project);
+        registerJsDevServerTasks(project, cliConfig);
         registerWasmGCTask(project, compilerConfig);
         registerCTask(project, compilerConfig);
     }
 
     private void registerJsTask(Project project, Configuration configuration) {
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
-        project.getTasks().create(JS_TASK_NAME, GenerateJavaScriptTask.class, task -> {
+        project.getTasks().register(JS_TASK_NAME, GenerateJavaScriptTask.class, task -> {
             var js = extension.getJs();
             applyToTask(js, task, configuration);
             task.getObfuscated().convention(js.getObfuscated());
@@ -149,11 +150,15 @@ public class TeaVMPlugin implements Plugin<Project> {
         });
     }
 
-    private void registerJsDevServerTask(Project project, Configuration configuration) {
+    private void registerJsDevServerTasks(Project project, Configuration configuration) {
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
-        project.getTasks().create(JS_DEV_SERVER_TASK_NAME, JavaScriptDevServerTask.class, task -> {
+        var allProjects = new HashSet<String>();
+        collectProjects(project.getRootProject(), allProjects);
+        project.getTasks().register(JS_DEV_SERVER_TASK_NAME, JavaScriptDevServerTask.class, task -> {
             var js = extension.getJs();
             task.setGroup(TASK_GROUP);
+            task.getAllProjectPaths().addAll(allProjects);
+            task.getProjectPath().set(project.getPath());
             task.getMainClass().convention(js.getMainClass());
             task.getClasspath().from(task.getProject().getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME));
             task.getPreservedClasses().addAll(js.getPreservedClasses());
@@ -169,6 +174,10 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getPort().convention(js.getDevServer().getPort());
             task.getProxyUrl().convention(js.getDevServer().getProxyUrl());
             task.getProxyPath().convention(js.getDevServer().getProxyPath());
+            task.getStaticDirs().from(js.getDevServer().getStaticDirs());
+            task.getStaticServePath().convention(js.getDevServer().getStaticServePath());
+            task.getResourceRoots().addAll(js.getDevServer().getResourceRoots());
+            task.getResourceServePath().convention(js.getDevServer().getResourceServePath());
             task.getProcessMemory().convention(js.getDevServer().getProcessMemory());
 
             var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
@@ -179,12 +188,21 @@ public class TeaVMPlugin implements Plugin<Project> {
 
             setupSources(task.getSourceFiles(), project);
         });
+
+        project.getTasks().register(STOP_JS_DEV_SERVER_TASK_NAME, StopJavaScriptDevServerTask.class, task -> {
+            task.setGroup(TASK_GROUP);
+            task.getAllProjectPaths().addAll(allProjects);
+            task.getProjectPath().set(project.getPath());
+        });
     }
 
-    private void registerStopJsDevServerTask(Project project) {
-        project.getTasks().create(STOP_JS_DEV_SERVER_TASK_NAME, StopJavaScriptDevServerTask.class, task -> {
-            task.setGroup(TASK_GROUP);
-        });
+    private static void collectProjects(Project project, Set<String> collector) {
+        if (!collector.add(project.getPath())) {
+            return;
+        }
+        for (var child : project.getChildProjects().values()) {
+            collectProjects(child, collector);
+        }
     }
 
     private void addSourceDirs(Project project, List<File> result) {

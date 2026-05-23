@@ -33,6 +33,10 @@ teavm {
     }
     js {
         addedToWebApp = true
+        devServer {
+            stackDeobfuscated = true
+            staticDirs.from(layout.projectDirectory.dir("src/main/webapp"))
+        }
     }
     wasmGC {
         addedToWebApp = true

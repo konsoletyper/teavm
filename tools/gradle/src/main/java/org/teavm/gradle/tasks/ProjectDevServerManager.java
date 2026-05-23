@@ -61,6 +61,10 @@ public class ProjectDevServerManager {
     private boolean autoReload;
     private String proxyUrl;
     private String proxyPath;
+    private List<String> staticDirs = new ArrayList<>();
+    private String staticServePath = "";
+    private List<String> resourcePaths = new ArrayList<>();
+    private String resourceServePath = "";
     private int processMemory;
     private int debugPort;
 
@@ -90,6 +94,10 @@ public class ProjectDevServerManager {
     private boolean runningAutoReload;
     private String runningProxyUrl;
     private String runningProxyPath;
+    private List<String> runningStaticDirs = new ArrayList<>();
+    private String runningStaticServePath;
+    private List<String> runningResourcePaths = new ArrayList<>();
+    private String runningResourceServePath;
     private int runningProcessMemory;
     private int runningDebugPort;
 
@@ -160,6 +168,24 @@ public class ProjectDevServerManager {
 
     public void setProxyPath(String proxyPath) {
         this.proxyPath = proxyPath;
+    }
+
+    public void setStaticDirs(List<String> staticDirs) {
+        this.staticDirs.clear();
+        this.staticDirs.addAll(staticDirs);
+    }
+
+    public void setStaticServePath(String staticServePath) {
+        this.staticServePath = staticServePath;
+    }
+
+    public void setResourcePaths(List<String> resourcePaths) {
+        this.resourcePaths.clear();
+        this.resourcePaths.addAll(resourcePaths);
+    }
+
+    public void setResourceServePath(String resourceServePath) {
+        this.resourceServePath = resourceServePath;
     }
 
     public void setProcessMemory(int processMemory) {
@@ -387,10 +413,6 @@ public class ProjectDevServerManager {
     }
 
     private void logCommand(JsonObjectValue command) throws InterruptedException {
-        if (logger == null) {
-            return;
-        }
-
         var level = command.get("level").asString();
         var message = command.get("message").asString();
         var throwable = command.get("throwable");
@@ -426,7 +448,7 @@ public class ProjectDevServerManager {
 
     private void completeCommand(JsonObjectValue command) throws InterruptedException {
         var problemsJson = command.get("problems");
-        if (problemsJson != null && logger != null) {
+        if (problemsJson != null) {
             reportProblems((JsonArrayValue) problemsJson);
         }
         stopEventQueue();
@@ -507,7 +529,7 @@ public class ProjectDevServerManager {
             command.add("--classpath");
             command.addAll(classpath.stream()
                     .map(File::getAbsolutePath)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         runningClasspath.clear();
         runningClasspath.addAll(classpath);
@@ -516,7 +538,7 @@ public class ProjectDevServerManager {
             command.add("--sourcepath");
             command.addAll(sources.stream()
                     .map(File::getAbsolutePath)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         runningSources.clear();
         runningSources.addAll(sources);
@@ -553,6 +575,29 @@ public class ProjectDevServerManager {
             command.add(proxyPath);
         }
         runningProxyPath = proxyPath;
+
+        if (!staticDirs.isEmpty()) {
+            command.add("--static-dirs");
+            command.addAll(staticDirs);
+        }
+        runningStaticDirs.clear();
+        runningStaticDirs.addAll(staticDirs);
+        if (!staticServePath.isEmpty()) {
+            command.add("--static-serve-path");
+            command.add(staticServePath);
+        }
+        runningStaticServePath = staticServePath;
+        if (!resourcePaths.isEmpty()) {
+            command.add("--resources");
+            command.addAll(resourcePaths);
+        }
+        runningResourcePaths.clear();
+        runningResourcePaths.addAll(resourcePaths);
+        if (!resourceServePath.isEmpty()) {
+            command.add("--resource-serve-path");
+            command.add(resourceServePath);
+        }
+        runningResourceServePath = resourceServePath;
 
         for (var entry : properties.entrySet()) {
             command.add("--property");
@@ -597,6 +642,10 @@ public class ProjectDevServerManager {
                 && autoReload == runningAutoReload
                 && Objects.equals(proxyUrl, runningProxyUrl)
                 && Objects.equals(proxyPath, runningProxyPath)
+                && Objects.equals(staticDirs, runningStaticDirs)
+                && Objects.equals(staticServePath, runningStaticServePath)
+                && Objects.equals(resourcePaths, runningResourcePaths)
+                && Objects.equals(resourceServePath, runningResourceServePath)
                 && processMemory == runningProcessMemory
                 && debugPort == runningDebugPort;
     }

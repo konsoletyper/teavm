@@ -20,6 +20,7 @@ import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -117,6 +118,12 @@ public class CodeServlet extends JettyWebSocketServlet {
     private String proxyProtocol;
     private int proxyPort;
     private String proxyBaseUrl;
+    private List<String> staticFileRoots = new ArrayList<>();
+    private String staticFilesPath = "";
+    private List<String> resourcesRoots = new ArrayList<>();
+    private String resourcesPath = "";
+    private List<ZipFile> resourceZipFiles;
+    private List<File> resourceDirs;
     private Map<String, String> properties = new LinkedHashMap<>();
     private List<String> preservedClasses = new ArrayList<>();
     private JSModuleType jsModuleType;
@@ -152,6 +159,9 @@ public class CodeServlet extends JettyWebSocketServlet {
     private boolean fileSystemWatched = true;
     private boolean compileOnStartup = true;
     private boolean logBuildErrors = true;
+
+    private Map<String, CachedEntry> fileCache = new HashMap<>();
+    private Map<String, CachedEntry> resourceCache = new HashMap<>();
 
     public CodeServlet(String mainClass, String[] classPath) {
         this.mainClass = mainClass;
@@ -218,6 +228,34 @@ public class CodeServlet extends JettyWebSocketServlet {
 
     public void setProxyPath(String proxyPath) {
         this.proxyPath = normalizePath(proxyPath);
+    }
+
+    public void setStaticFileRoots(List<String> staticFileRoots) {
+        this.staticFileRoots = List.copyOf(staticFileRoots);
+    }
+
+    public void setStaticFilesPath(String staticFilesPath) {
+        if (staticFilesPath.startsWith("/")) {
+            staticFilesPath = staticFilesPath.substring(1);
+        }
+        if (staticFilesPath.endsWith("/")) {
+            staticFilesPath = staticFilesPath.substring(0, staticFilesPath.length() - 1);
+        }
+        this.staticFilesPath = staticFilesPath;
+    }
+
+    public void setResourcesRoots(List<String> resourcesRoots) {
+        this.resourcesRoots = List.copyOf(resourcesRoots);
+    }
+
+    public void setResourcesPath(String resourcesPath) {
+        if (resourcesPath.startsWith("/")) {
+            resourcesPath = resourcesPath.substring(1);
+        }
+        if (resourcesPath.endsWith("/")) {
+            resourcesPath = resourcesPath.substring(0, resourcesPath.length() - 1);
+        }
+        this.resourcesPath = resourcesPath;
     }
 
     public void setFileSystemWatched(boolean fileSystemWatched) {
@@ -386,6 +424,20 @@ public class CodeServlet extends JettyWebSocketServlet {
                 }
             }
 
+            if (!staticFileRoots.isEmpty() && path.startsWith(staticFilesPath)
+                    && path.length() > staticFilesPath.length() + 1) {
+                if (serveFile(resp, path.substring(staticFilesPath.length() + 1))) {
+                    log.debug("File " + path + " served as static file");
+                    return;
+                }
+            }
+            if (resourcesRoots.isEmpty() && path.startsWith(resourcesPath)
+                    && path.length() > resourcesPath.length() + 1) {
+                if (serveResource(resp, path.substring(resourcesPath.length() + 1))) {
+                    log.debug("File " + path + " served as resource");
+                    return;
+                }
+            }
             if (proxyUrl != null && path.startsWith(proxyPath)) {
                 if ("websocket".equalsIgnoreCase(req.getHeader("Upgrade"))) {
                     proxyWebSocket(req, resp, path);
@@ -423,11 +475,124 @@ public class CodeServlet extends JettyWebSocketServlet {
             resp.setCharacterEncoding("UTF-8");
             resp.setContentType("application/javascript");
             noCache(resp);
-            try (InputStream input = loader.getResourceAsStream("teavm/devserver/deobfuscator.js")) {
-                IOUtils.copy(input, resp.getOutputStream());
+            try (var input = loader.getResourceAsStream("teavm/devserver/deobfuscator.js")) {
+                input.transferTo(resp.getOutputStream());
             }
         }
         resp.getOutputStream().flush();
+    }
+
+    private boolean serveFile(HttpServletResponse resp, String path) throws IOException {
+        var cacheResult = tryFromCache(resp, fileCache, path);
+        if (cacheResult != CacheServeResult.MISSING) {
+            return cacheResult == CacheServeResult.HIT_SERVED;
+        }
+        var entry = new CachedEntry();
+        var found = false;
+        for (var root : staticFileRoots) {
+            var file = new File(root, path);
+            if (file.isFile()) {
+                serveAndCache(resp, () -> new FileInputStream(file), entry, path);
+                found = true;
+                break;
+            }
+        }
+        fileCache.put(path, entry);
+        return found;
+    }
+
+    private boolean serveResource(HttpServletResponse resp, String path) throws IOException {
+        var cacheResult = tryFromCache(resp, resourceCache, path);
+        if (cacheResult != CacheServeResult.MISSING) {
+            return cacheResult == CacheServeResult.HIT_SERVED;
+        }
+        prepareResources();
+        var entry = new CachedEntry();
+        var found = false;
+        outer:
+        for (var root : resourcesRoots) {
+            var relPath = root.endsWith("/") ? root + path : root + "/" + path;
+            for (var dir : resourceDirs) {
+                var candidate = new File(dir, relPath);
+                if (candidate.isFile()) {
+                    serveAndCache(resp, () -> new FileInputStream(candidate), entry, path);
+                    found = true;
+                    break outer;
+                }
+            }
+            for (var zip : resourceZipFiles) {
+                var zipEntry = zip.getEntry(relPath);
+                if (zipEntry != null) {
+                    serveAndCache(resp, () -> zip.getInputStream(zipEntry), entry, path);
+                    found = true;
+                    break outer;
+                }
+            }
+        }
+        fileCache.put(path, entry);
+        return found;
+    }
+
+    private void prepareResources() {
+        if (resourceZipFiles != null) {
+            return;
+        }
+        resourceZipFiles = new ArrayList<>();
+        resourceDirs = new ArrayList<>();
+        for (var classPathEntry : classPath) {
+            var file = new File(classPathEntry);
+            if (file.isFile()) {
+                try {
+                    resourceZipFiles.add(new ZipFile(file));
+                } catch (IOException e) {
+                    // apparently not a zip file
+                }
+            } else if (file.isDirectory()) {
+                resourceDirs.add(file);
+            }
+        }
+    }
+
+    private void serveAndCache(HttpServletResponse resp, ContentProvider provider, CachedEntry entry, String name)
+            throws IOException {
+        try (var input = provider.open()) {
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.setContentType(getServletContext().getMimeType(name));
+            noCache(resp);
+            var bytes = input.readNBytes(16384);
+            resp.getOutputStream().write(bytes);
+            if (bytes.length < 16384) {
+                entry.provider = new DataContentProvider(bytes);
+            } else {
+                input.transferTo(resp.getOutputStream());
+                entry.provider = provider;
+            }
+        }
+    }
+
+    private CacheServeResult tryFromCache(HttpServletResponse resp, Map<String, CachedEntry> cache, String path)
+            throws IOException {
+        var cachedEntry = fileCache.get(path);
+        if (cachedEntry != null) {
+            if (cachedEntry.provider != null) {
+                resp.setStatus(HttpServletResponse.SC_OK);
+                resp.setContentType(getServletContext().getMimeType(path));
+                noCache(resp);
+                try (var input = cachedEntry.provider.open()) {
+                    input.transferTo(resp.getOutputStream());
+                }
+                return CacheServeResult.HIT_SERVED;
+            } else {
+                return CacheServeResult.HIT_NO_CONTENT;
+            }
+        }
+        return CacheServeResult.MISSING;
+    }
+
+    enum CacheServeResult {
+        HIT_SERVED,
+        HIT_NO_CONTENT,
+        MISSING
     }
 
     private void proxy(HttpServletRequest req, HttpServletResponse resp, String path) throws IOException {
@@ -1193,5 +1358,26 @@ public class CodeServlet extends JettyWebSocketServlet {
         }
         resp.setHeader("Access-Control-Allow-Credentials", "true");
         resp.setHeader("Access-Control-Allow-Private-Network", "true");
+    }
+
+    private static class CachedEntry {
+        ContentProvider provider;
+    }
+
+    private interface ContentProvider {
+        InputStream open() throws IOException;
+    }
+
+    private static class DataContentProvider implements ContentProvider {
+        private final byte[] data;
+
+        DataContentProvider(byte[] data) {
+            this.data = data;
+        }
+
+        @Override
+        public InputStream open() {
+            return new ByteArrayInputStream(data);
+        }
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.gradle.tasks;
 
+import java.io.File;
 import java.io.IOException;
 import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
@@ -22,6 +23,7 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
@@ -32,6 +34,12 @@ import org.gradle.internal.logging.progress.ProgressLoggerFactory;
 import org.teavm.gradle.api.JSModuleType;
 
 public abstract class JavaScriptDevServerTask extends DefaultTask {
+    @Internal
+    public abstract SetProperty<String> getAllProjectPaths();
+
+    @Internal
+    public abstract Property<String> getProjectPath();
+
     @Classpath
     public abstract ConfigurableFileCollection getClasspath();
 
@@ -95,14 +103,28 @@ public abstract class JavaScriptDevServerTask extends DefaultTask {
     @Internal
     public abstract Property<Integer> getServerDebugPort();
 
+    @InputFiles
+    public abstract ConfigurableFileCollection getStaticDirs();
+
+    @Input
+    @Optional
+    public abstract Property<String> getStaticServePath();
+
+    @Input
+    public abstract ListProperty<String> getResourceRoots();
+
+    @Input
+    @Optional
+    public abstract Property<String> getResourceServePath();
+
     @Inject
     protected abstract ProgressLoggerFactory getProgressLoggerFactory();
 
     @TaskAction
     public void compileInCodeServer() throws IOException {
         var codeServerManager = DevServerManager.instance();
-        codeServerManager.cleanup(getProject().getGradle());
-        var pm = codeServerManager.getProjectManager(getProject().getPath());
+        codeServerManager.cleanup(getAllProjectPaths().get(), getLogger());
+        var pm = codeServerManager.getProjectManager(getProjectPath().get());
 
         pm.setClasspath(getClasspath().getFiles());
         pm.setSources(getSourceFiles().getFiles());
@@ -135,6 +157,14 @@ public abstract class JavaScriptDevServerTask extends DefaultTask {
         }
         if (getProxyPath().isPresent()) {
             pm.setProxyPath(getProxyPath().get());
+        }
+        pm.setStaticDirs(getStaticDirs().getFiles().stream().map(File::getAbsolutePath).toList());
+        if (getStaticServePath().isPresent()) {
+            pm.setStaticServePath(getStaticServePath().get());
+        }
+        pm.setResourcePaths(getResourceRoots().get());
+        if (getResourceServePath().isPresent()) {
+            pm.setResourceServePath(getResourceServePath().get());
         }
 
         if (getProcessMemory().isPresent()) {

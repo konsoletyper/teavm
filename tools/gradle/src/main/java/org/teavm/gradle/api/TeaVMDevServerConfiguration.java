@@ -15,6 +15,8 @@
  */
 package org.teavm.gradle.api;
 
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 
 public interface TeaVMDevServerConfiguration {
@@ -29,6 +31,14 @@ public interface TeaVMDevServerConfiguration {
     Property<String> getProxyUrl();
 
     Property<String> getProxyPath();
+
+    ConfigurableFileCollection getStaticDirs();
+
+    Property<String> getStaticServePath();
+
+    ListProperty<String> getResourceRoots();
+
+    Property<String> getResourceServePath();
 
     Property<Integer> getProcessMemory();
 }
