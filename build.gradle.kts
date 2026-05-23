@@ -24,7 +24,9 @@ group = "org.teavm"
 idea.module.excludeDirs.add(File(rootDir, "build-dir"))
 
 tasks.register("clean") {
+    group = "build"
+    val buildDir = project.layout.buildDirectory
     doLast {
-        project.layout.buildDirectory.get().asFile.deleteRecursively()
+        buildDir.get().asFile.deleteRecursively()
     }
 }
