@@ -30,7 +30,6 @@ dependencies {
     api(project(":jso:apis"))
     api(project(":jso:impl"))
     api(project(":metaprogramming:impl"))
-    api(libs.commons.io)
     api(libs.jzlib)
     api(libs.jodaTime)
     implementation(project(":extension:spi"))

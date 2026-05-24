@@ -26,8 +26,6 @@ dependencies {
     compileOnly(project(":jso:apis"))
 
     api(project(":core"))
-
-    implementation(libs.commons.io)
 }
 
 teavmPublish {

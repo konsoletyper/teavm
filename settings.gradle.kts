@@ -127,11 +127,6 @@ fun MavenPom.setupPom(project: Project) {
 }
 
 dependencyRelocation {
-    for (commonsLib in listOf("commons-io", "commons-cli")) {
-        library("libs", commonsLib) {
-            relocate("org.apache.commons", "org.teavm.apachecommons")
-        }
-    }
     for (asmLib in listOf("asm", "asm-tree", "asm-analysis", "asm-commons", "asm-util")) {
         library("libs", asmLib) {
             relocate("org.objectweb.asm", "org.teavm.asm")

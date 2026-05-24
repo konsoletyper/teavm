@@ -34,7 +34,6 @@ dependencies {
     implementation(libs.jetty.websocket.client)
     implementation(libs.jakarta.servlet)
     implementation(libs.jackson.databind)
-    implementation(libs.commons.io)
 
     "js"(project(":tools:deobfuscator-js", "js"))
 }

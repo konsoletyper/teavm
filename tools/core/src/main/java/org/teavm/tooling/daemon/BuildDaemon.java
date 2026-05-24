@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
@@ -91,12 +89,8 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
         try {
             incrementalCache = Files.createTempDirectory("teavm-cache").toFile();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    if (incrementalCache != null) {
-                        FileUtils.deleteDirectory(incrementalCache);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (incrementalCache != null) {
+                    deleteDirectory(incrementalCache);
                 }
                 try {
                     mainThread.join();
@@ -109,6 +103,15 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
             e.printStackTrace(System.err);
             incremental = false;
         }
+    }
+
+    private static void deleteDirectory(File directory)  {
+        if (directory.isDirectory()) {
+            for (File child : directory.listFiles()) {
+                deleteDirectory(child);
+            }
+        }
+        directory.delete();
     }
 
     public static void main(String[] args) throws RemoteException {
@@ -308,8 +311,16 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
                 }
                 sb.append(line).append('\n');
             }
-            IOUtils.closeQuietly(stderrReader);
-            IOUtils.closeQuietly(stdoutReader);
+            try {
+                stderrReader.close();
+            } catch (IOException e) {
+                // Ignore
+            }
+            try {
+                stdoutReader.close();
+            } catch (IOException e) {
+                // Ignore
+            }
             process.destroy();
             throw new IllegalStateException("Could not start daemon. Stderr: " + sb);
         }

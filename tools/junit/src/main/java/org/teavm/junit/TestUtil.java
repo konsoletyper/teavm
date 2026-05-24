@@ -17,15 +17,17 @@ package org.teavm.junit;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
+import java.util.stream.Collectors;
 
 final class TestUtil {
     private TestUtil() {
@@ -59,8 +61,9 @@ final class TestUtil {
             }
         } else {
             String content;
-            try (InputStream input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource)) {
-                content = IOUtils.toString(input, UTF_8);
+            try (var input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource);
+                    var reader = new BufferedReader(new InputStreamReader(input, UTF_8))) {
+                content = reader.lines().collect(Collectors.joining("\n"));
             }
             content = replaceProperties(content, properties);
             try (OutputStream output = new BufferedOutputStream(new FileOutputStream(file));

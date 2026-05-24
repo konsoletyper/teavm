@@ -20,6 +20,7 @@ import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -55,7 +55,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.InputStreamRequestContent;
 import org.eclipse.jetty.client.Request;
@@ -1073,9 +1072,9 @@ public class CodeServlet extends JettyWebSocketServlet {
     }
 
     private String getIndicatorScript(boolean boot) {
-        try (Reader reader = new InputStreamReader(CodeServlet.class.getResourceAsStream("indicator.js"),
-                StandardCharsets.UTF_8)) {
-            String script = IOUtils.toString(reader);
+        try (var reader = new BufferedReader(new InputStreamReader(CodeServlet.class
+                .getResourceAsStream("indicator.js"), StandardCharsets.UTF_8))) {
+            var script = reader.lines().collect(Collectors.joining("\n"));
             script = script.substring(script.indexOf("*/") + 2);
             script = script.replace("WS_PATH", "localhost:" + port + pathToFile + fileName + ".ws");
             script = script.replace("BOOT_FLAG", Boolean.toString(boot));
