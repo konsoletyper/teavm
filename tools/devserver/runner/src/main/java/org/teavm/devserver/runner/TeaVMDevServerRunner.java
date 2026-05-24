@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.cli.devserver;
+package org.teavm.devserver.runner;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -151,6 +151,12 @@ public final class TeaVMDevServerRunner {
                 .desc("JSON interface over stdout")
                 .longOpt("json-interface")
                 .get());
+        options.addOption(Option.builder()
+                .hasArg()
+                .argName("port")
+                .desc("Debug port")
+                .longOpt("debug-port")
+                .get());
     }
 
     private TeaVMDevServerRunner(CommandLine commandLine) {
@@ -253,6 +259,9 @@ public final class TeaVMDevServerRunner {
             setupJsonInterface(devServer);
         } else {
             devServer.setLog(new ConsoleTeaVMToolLog(commandLine.hasOption('v')));
+        }
+        if (commandLine.hasOption("debug-port")) {
+            devServer.setDebugPort(Integer.parseInt(commandLine.getOptionValue("debug-port")));
         }
 
         String[] args = commandLine.getArgs();

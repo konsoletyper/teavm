@@ -30,8 +30,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.common.json.JsonArrayValue;
@@ -41,6 +39,7 @@ import org.teavm.common.json.JsonValue;
 import org.teavm.diagnostics.ProblemSeverity;
 
 public class DevServerClient {
+    private String javaHome;
     private Set<File> serverClasspath = new LinkedHashSet<>();
     private Set<File> classpath = new LinkedHashSet<>();
     private String targetFileName;
@@ -62,6 +61,8 @@ public class DevServerClient {
     private String resourceServePath = "";
     private int processMemory;
     private int debugPort;
+    private int jsDebugPort;
+    private boolean noWatch;
 
     private Process process;
     private Thread processKillHook;
@@ -69,12 +70,25 @@ public class DevServerClient {
     private Thread stderrThread;
     private BufferedWriter commandOutput;
     private JsonParser jsonParser;
-    private BlockingQueue<Runnable> eventQueue = new LinkedBlockingQueue<>();
-    private boolean eventQueueDone;
-    private BuildListener currentListener;
+    private List<DevServerListener> listeners = new ArrayList<>();
+    private boolean expectingProcessStop;
+    private DevServerEventQueue eventQueue;
 
-    public DevServerClient() {
+    public DevServerClient(DevServerEventQueue eventQueue) {
+        this.eventQueue = eventQueue;
         jsonParser = JsonParser.ofValue(this::parseCommand);
+    }
+
+    public void addListener(DevServerListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(DevServerListener listener) {
+        listeners.remove(listener);
+    }
+
+    public void setJavaHome(String javaHome) {
+        this.javaHome = javaHome;
     }
 
     public void setServerClasspath(Set<File> serverClasspath) {
@@ -252,6 +266,22 @@ public class DevServerClient {
         return debugPort;
     }
 
+    public int getJsDebugPort() {
+        return jsDebugPort;
+    }
+
+    public void setJsDebugPort(int jsDebugPort) {
+        this.jsDebugPort = jsDebugPort;
+    }
+
+    public boolean isNoWatch() {
+        return noWatch;
+    }
+
+    public void setNoWatch(boolean noWatch) {
+        this.noWatch = noWatch;
+    }
+
     public boolean isStarted() {
         return process != null;
     }
@@ -265,6 +295,7 @@ public class DevServerClient {
     }
 
     public void start() throws IOException {
+        expectingProcessStop = false;
         var pb = new ProcessBuilder();
         pb.command(buildCommand().toArray(new String[0]));
 
@@ -282,10 +313,17 @@ public class DevServerClient {
         stderrThread.setName("TeaVM development server stderr reader");
         stderrThread.setDaemon(true);
         stderrThread.start();
+
+        process.onExit().thenRun(() -> eventQueue.schedule(() -> {
+            if (!expectingProcessStop) {
+                listeners.forEach(DevServerListener::onUnexpectedStop);
+            }
+        }));
     }
 
     public void stop() {
         if (process != null) {
+            expectingProcessStop = true;
             if (process.isAlive()) {
                 try {
                     commandOutput.write("{\"type\":\"stop\"}\n");
@@ -310,55 +348,37 @@ public class DevServerClient {
         }
     }
 
-    public void build(BuildListener listener) {
-        try {
-            schedule(() -> {
-                try {
-                    commandOutput.write("{\"type\":\"build\"}\n");
-                    commandOutput.flush();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } catch (InterruptedException e) {
-            return;
-        }
-        runEventQueue(listener);
-    }
-
-    private void runEventQueue(BuildListener listener) {
-        eventQueueDone = false;
-        currentListener = listener;
-        var stoppedUnexpectedly = new boolean[1];
-        var processMonitorThread = new Thread(() -> {
+    public void build() {
+        eventQueue.schedule(() -> {
             try {
-                process.waitFor();
-                schedule(() -> stoppedUnexpectedly[0] = true);
-                stopEventQueue();
-            } catch (InterruptedException e) {
-                // do nothing
+                commandOutput.write("{\"type\":\"build\"}\n");
+                commandOutput.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         });
-        processMonitorThread.setDaemon(true);
-        processMonitorThread.setName("Dev server process crash monitor");
-        processMonitorThread.start();
-        try {
-            while (!eventQueueDone || !eventQueue.isEmpty()) {
-                Runnable command;
-                try {
-                    command = eventQueue.take();
-                } catch (InterruptedException e) {
-                    break;
-                }
-                command.run();
+    }
+
+    public void cancel() {
+        eventQueue.schedule(() -> {
+            try {
+                commandOutput.write("{\"type\":\"cancel\"}\n");
+                commandOutput.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            if (stoppedUnexpectedly[0]) {
-                listener.onUnexpectedStop();
+        });
+    }
+
+    public void invalidateCache() {
+        eventQueue.schedule(() -> {
+            try {
+                commandOutput.write("{\"type\":\"invalidate-cache\"}\n");
+                commandOutput.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } finally {
-            currentListener = null;
-            processMonitorThread.interrupt();
-        }
+        });
     }
 
     private void readCommandsFromProcess() {
@@ -368,16 +388,12 @@ public class DevServerClient {
                 if (command == null) {
                     break;
                 }
-                schedule(() -> readCommand(command));
+                eventQueue.schedule(() -> readCommand(command));
             }
         } catch (IOException e) {
-            try {
-                stopEventQueue();
-            } catch (InterruptedException e2) {
-                // do nothing
+            for (var listener : listeners) {
+                listener.onUnexpectedStop();
             }
-        } catch (InterruptedException e) {
-            // do nothing
         }
     }
 
@@ -388,24 +404,15 @@ public class DevServerClient {
                 if (line == null) {
                     break;
                 }
-                var listener = currentListener;
-                schedule(() -> {
-                    if (listener != null) {
+                eventQueue.schedule(() -> {
+                    for (var listener : listeners) {
                         listener.onStderr(line);
                     }
                 });
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             // do nothing
         }
-    }
-
-    private void stopEventQueue() throws InterruptedException {
-        schedule(() -> eventQueueDone = true);
-    }
-
-    private void schedule(Runnable command) throws InterruptedException {
-        eventQueue.put(command);
     }
 
     private void readCommand(String command) {
@@ -421,59 +428,72 @@ public class DevServerClient {
     private void parseCommand(JsonValue command) {
         var obj = (JsonObjectValue) command;
         var type = obj.get("type").asString();
-        try {
-            switch (type) {
-                case "log":
-                    logCommand(obj);
-                    break;
-                case "compilation-started":
-                    break;
-                case "compilation-progress":
-                    progressCommand(obj);
-                    break;
-                case "compilation-complete":
-                    completeCommand(obj);
-                    break;
-                case "compilation-cancelled":
-                    stopEventQueue();
-                    break;
-                default:
-                    break;
-            }
-        } catch (InterruptedException e) {
-            // do nothing
+        switch (type) {
+            case "log":
+                logCommand(obj);
+                break;
+            case "compilation-started":
+                startedCommand();
+                break;
+            case "compilation-progress":
+                progressCommand(obj);
+                break;
+            case "compilation-complete":
+                completeCommand(obj);
+                break;
+            case "compilation-cancelled":
+                cancelCommand();
+                break;
+            default:
+                break;
         }
     }
 
     private void logCommand(JsonObjectValue command) {
-        var level = command.get("level").asString();
+        var level = switch (command.get("level").asString()) {
+            case "warning" -> LogLevel.WARNING;
+            case "error" -> LogLevel.ERROR;
+            case "info" -> LogLevel.INFO;
+            default -> LogLevel.DEBUG;
+        };
         var message = command.get("message").asString();
         var throwable = command.get("throwable");
         if (throwable != null) {
             message += "\n" + throwable.asString();
         }
-        if (currentListener != null) {
-            currentListener.onLog(level, message);
+        for (var listener : listeners) {
+            listener.onLog(level, message);
+        }
+    }
+
+    private void startedCommand() {
+        for (var listener : listeners) {
+            listener.onStarted();
         }
     }
 
     private void progressCommand(JsonObjectValue command) {
         var progress = command.get("progress").asNumber();
-        if (currentListener != null) {
-            currentListener.onProgress(progress);
+        for (var listener : listeners) {
+            listener.onProgress(progress);
         }
     }
 
-    private void completeCommand(JsonObjectValue command) throws InterruptedException {
+    private void completeCommand(JsonObjectValue command) {
         var problemsJson = command.get("problems");
         var problems = new ArrayList<Problem>();
         if (problemsJson != null) {
             problems.addAll(parseProblems((JsonArrayValue) problemsJson));
         }
-        if (currentListener != null) {
-            currentListener.onComplete(problems);
+        for (var listener : listeners) {
+            listener.onComplete(problems);
         }
-        stopEventQueue();
+    }
+
+    private void cancelCommand() {
+        for (var listener : listeners) {
+            listener.onCancelled();
+        }
     }
 
     private List<Problem> parseProblems(JsonArrayValue json) {
@@ -503,7 +523,10 @@ public class DevServerClient {
     private List<String> buildCommand() {
         var command = new ArrayList<String>();
 
-        var javaHome = System.getProperty("java.home");
+        var javaHome = this.javaHome;
+        if (javaHome == null) {
+            javaHome = System.getProperty("java.home");
+        }
         var javaExec = javaHome + "/bin/java";
         if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
             javaExec += ".exe";
@@ -525,16 +548,18 @@ public class DevServerClient {
             command.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,quiet=y,address=*:" + debugPort);
         }
 
-        command.add("org.teavm.cli.devserver.TeaVMDevServerRunner");
+        command.add("org.teavm.devserver.runner.TeaVMDevServerRunner");
         command.add("--json-interface");
-        command.add("--no-watch");
+        if (isNoWatch()) {
+            command.add("--no-watch");
+        }
 
-        if (targetFileName != null) {
+        if (targetFileName != null && !targetFileName.isEmpty()) {
             command.add("--targetfile");
             command.add(targetFileName);
         }
 
-        if (targetFilePath != null) {
+        if (targetFilePath != null && !targetFilePath.isEmpty()) {
             command.add("--targetdir");
             command.add(targetFilePath);
         }
@@ -566,12 +591,12 @@ public class DevServerClient {
             command.add("--auto-reload");
         }
 
-        if (proxyUrl != null) {
+        if (proxyUrl != null && !proxyUrl.isEmpty()) {
             command.add("--proxy-url");
             command.add(proxyUrl);
         }
 
-        if (proxyPath != null) {
+        if (proxyPath != null && !proxyPath.isEmpty()) {
             command.add("--proxy-path");
             command.add(proxyPath);
         }
@@ -609,27 +634,19 @@ public class DevServerClient {
             command.add(jsModuleType.name().toLowerCase().replace('_', '-'));
         }
 
+        if (jsDebugPort != 0) {
+            command.add("--debug-port");
+            command.add(String.valueOf(jsDebugPort));
+        }
+
         command.add("--");
         command.add(mainClass);
 
         return command;
     }
 
-    public interface BuildListener {
-        default void onLog(String level, String message) {
-        }
-
-        default void onProgress(double progress) {
-        }
-
-        default void onComplete(List<Problem> problems) {
-        }
-
-        default void onStderr(String line) {
-        }
-
-        default void onUnexpectedStop() {
-        }
+    public enum LogLevel {
+        DEBUG, INFO, WARNING, ERROR
     }
 
     public static final class Problem {

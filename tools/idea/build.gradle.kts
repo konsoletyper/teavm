@@ -70,3 +70,35 @@ tasks.whenTaskAdded {
     }
 }
 
+val configPath = project.layout.buildDirectory.dir("generated/sources/config")
+
+val createConfig by tasks.registering {
+    outputs.dir(configPath)
+    inputs.property("version", project.version)
+    val basePath = configPath
+    val version = project.version
+    doLast {
+        val file = File(basePath.get().asFile, "org/teavm/idea/BuildConfig.java")
+        file.parentFile.mkdirs()
+        file.writeText("""
+            package org.teavm.idea;
+            
+            public final class BuildConfig {
+                public static final String VERSION = "$version";
+            
+                private BuildConfig() {
+                }
+            }
+        """.trimIndent())
+    }
+}
+
+tasks.compileJava.configure {
+    dependsOn(createConfig)
+    options.forkOptions.memoryMaximumSize = "1g"
+}
+sourceSets.main.configure { java.srcDir(configPath) }
+
+tasks.withType<Checkstyle> {
+    exclude("org/teavm/idea/BuildConfig.java")
+}

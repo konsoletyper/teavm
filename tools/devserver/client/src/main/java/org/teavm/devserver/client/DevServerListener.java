@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.devserver;
+package org.teavm.devserver.client;
 
-public class DevServerInfo {
-    public final int port;
-    public final DevServerManager server;
-    public final Process process;
+import java.util.List;
 
-    DevServerInfo(int port, DevServerManager server, Process process) {
-        this.port = port;
-        this.server = server;
-        this.process = process;
+public interface DevServerListener {
+    default void onLog(DevServerClient.LogLevel level, String message) {
+    }
+
+    default void onProgress(double progress) {
+    }
+
+    default void onStarted() {
+    }
+
+    default void onCancelled() {
+    }
+
+    default void onComplete(List<DevServerClient.Problem> problems) {
+    }
+
+    default void onStderr(String line) {
+    }
+
+    default void onUnexpectedStop() {
     }
 }

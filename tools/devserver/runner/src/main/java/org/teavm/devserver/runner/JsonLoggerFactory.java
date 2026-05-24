@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,13 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.devserver;
+package org.teavm.devserver.runner;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import org.teavm.diagnostics.Problem;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.Logger;
 
-public class DevServerBuildResult implements Serializable {
-    public final List<Problem> problems = new ArrayList<>();
+class JsonLoggerFactory implements ILoggerFactory {
+    private static volatile JsonCommandWriter writer;
+
+    static void setWriter(JsonCommandWriter w) {
+        writer = w;
+    }
+
+    static JsonCommandWriter getWriter() {
+        return writer;
+    }
+
+    @Override
+    public Logger getLogger(String name) {
+        return new JsonLogger(name);
+    }
 }

@@ -25,25 +25,32 @@ import com.intellij.execution.filters.TextConsoleBuilder;
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ProgramRunner;
+import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.util.JavaParametersUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.OrderEnumerator;
+import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.GlobalSearchScopes;
+import com.intellij.util.Processor;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.teavm.devserver.client.DevServerClient;
+import org.teavm.idea.BuildConfig;
 import org.teavm.idea.devserver.ui.TeaVMDevServerConsole;
 
 public class TeaVMDevServerRunState implements RunProfileState {
+    private static final String MARKER_ARTIFACT = "org.teavm:teavm-classlib:";
     private final TeaVMDevServerConfiguration configuration;
     private final TextConsoleBuilder consoleBuilder;
     private final Project project;
@@ -53,53 +60,73 @@ public class TeaVMDevServerRunState implements RunProfileState {
         this.configuration = configuration;
 
         project = environment.getProject();
-        GlobalSearchScope searchScope = GlobalSearchScopes.executionScope(project, environment.getRunProfile());
+        var searchScope = GlobalSearchScopes.projectProductionScope(project);
         consoleBuilder = TextConsoleBuilderFactory.getInstance().createBuilder(project, searchScope);
     }
 
     @Nullable
     @Override
     public ExecutionResult execute(Executor executor, @NotNull ProgramRunner runner) throws ExecutionException {
-        DevServerConfiguration config = new DevServerConfiguration();
         Module module = configuration.getConfigurationModule().getModule();
 
-        Sdk moduleSdk = JavaParametersUtil.createModuleJdk(module, true, configuration.getJdkPath());
-        config.javaHome = moduleSdk.getHomePath();
-        OrderEnumerator enumerator = OrderEnumerator.orderEntries(module).withoutSdk().recursively();
-        config.classPath = Arrays.stream(enumerator.getClassesRoots())
+        var teavmVersion = detectTeaVMVersion(module);
+        var app = ApplicationManager.getApplication();
+        var client = new DevServerClient(app::invokeLater);
+        var moduleSdk = JavaParametersUtil.createModuleJdk(module, true, configuration.getJdkPath());
+        client.setJavaHome(moduleSdk.getHomePath());
+        var enumerator = OrderEnumerator.orderEntries(module).withoutSdk().recursively();
+
+        client.setClasspath(Arrays.stream(enumerator.getClassesRoots())
                 .map(this::path)
                 .filter(Objects::nonNull)
-                .toArray(String[]::new);
-        config.sourcePath = Arrays.stream(enumerator.getSourceRoots())
+                .map(File::new)
+                .collect(Collectors.toSet()));
+        client.setSources(Arrays.stream(enumerator.getSourceRoots())
                 .map(this::path)
                 .filter(Objects::nonNull)
-                .toArray(String[]::new);
-        config.pathToFile = configuration.getPathToFile();
-        config.fileName = configuration.getFileName();
-        config.port = configuration.getPort();
-        config.indicator = configuration.isIndicator();
-        config.deobfuscateStack = configuration.isDeobfuscateStack();
-        config.autoReload = configuration.isAutomaticallyReloaded();
-        config.mainClass = configuration.getMainClass();
-        config.maxHeap = configuration.getMaxHeap();
-        config.proxyUrl = configuration.getProxyUrl();
-        config.proxyPath = configuration.getProxyPath();
+                .map(File::new)
+                .collect(Collectors.toSet()));
+        client.setTargetFilePath(configuration.getPathToFile());
+        client.setTargetFileName(configuration.getFileName());
+        client.setPort(configuration.getPort());
+        client.setIndicator(configuration.isIndicator());
+        client.setStackDeobfuscated(configuration.isDeobfuscateStack());
+        client.setAutoReload(configuration.isAutomaticallyReloaded());
+        client.setMainClass(configuration.getMainClass());
+        client.setProcessMemory(configuration.getMaxHeap());
+        client.setProxyUrl(configuration.getProxyUrl());
+        client.setProxyPath(configuration.getProxyPath());
 
         if (executor.getId().equals(DefaultDebugExecutor.EXECUTOR_ID)) {
-            config.debugPort = choosePort();
+            client.setJsDebugPort(choosePort());
         }
 
         TeaVMProcessHandler processHandler;
         ExecutionResult executionResult;
-        try {
-            TeaVMDevServerConsole console = new TeaVMDevServerConsole(consoleBuilder.getConsole());
-            processHandler = new TeaVMProcessHandler(config, console);
-            console.getUnderlyingConsole().attachToProcess(processHandler);
-            processHandler.start();
-            executionResult = new DefaultExecutionResult(console, processHandler);
-        } catch (IOException e) {
-            throw new ExecutionException(e);
-        }
+        var console = new TeaVMDevServerConsole(consoleBuilder.getConsole());
+        var downloader = new TeaVMDownloader(teavmVersion, console, app);
+        processHandler = new TeaVMProcessHandler(client.getJsDebugPort(), console, downloader, client);
+        console.setClient(client);
+        console.getUnderlyingConsole().attachToProcess(processHandler);
+        executionResult = new DefaultExecutionResult(console, processHandler);
+        downloader.downloadAndStart(success -> {
+            if (success) {
+                var classpath = Arrays.stream(downloader.localPath().listFiles())
+                        .filter(File::isFile)
+                        .filter(file -> file.getName().endsWith(".jar"))
+                        .collect(Collectors.toSet());
+                client.setServerClasspath(classpath);
+                try {
+                    client.start();
+                } catch (IOException e) {
+                    console.getUnderlyingConsole().print("Failed to start TeaVM dev server: " + e.getMessage(),
+                            ConsoleViewContentType.ERROR_OUTPUT);
+                }
+                client.build();
+            } else {
+                processHandler.notifyProcessTerminated(1);
+            }
+        });
 
         return executionResult;
     }
@@ -133,5 +160,27 @@ public class TeaVMDevServerRunState implements RunProfileState {
             }
         }
         return file.getCanonicalPath();
+    }
+
+    private String detectTeaVMVersion(Module module) {
+        var enumerator = OrderEnumerator.orderEntries(module).withoutSdk().recursively();
+        var libProcessor = new Processor<Library>() {
+            String version;
+
+            @Override
+            public boolean process(Library lib) {
+                if (lib.getName() == null) {
+                    return true;
+                }
+                var index = lib.getName().indexOf(MARKER_ARTIFACT);
+                if (index < 0) {
+                    return true;
+                }
+                version = lib.getName().substring(index + MARKER_ARTIFACT.length()).trim();
+                return false;
+            }
+        };
+        enumerator.forEachLibrary(libProcessor);
+        return libProcessor.version != null ? libProcessor.version : BuildConfig.VERSION;
     }
 }

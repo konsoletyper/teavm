@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.cli.devserver;
+package org.teavm.devserver.client;
 
-import org.slf4j.ILoggerFactory;
-import org.slf4j.Logger;
-
-class JsonLoggerFactory implements ILoggerFactory {
-    private static volatile JsonCommandWriter writer;
-
-    static void setWriter(JsonCommandWriter w) {
-        writer = w;
-    }
-
-    static JsonCommandWriter getWriter() {
-        return writer;
-    }
-
-    @Override
-    public Logger getLogger(String name) {
-        return new JsonLogger(name);
-    }
+public interface DevServerEventQueue {
+    void schedule(Runnable runnable);
 }

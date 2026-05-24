@@ -28,7 +28,9 @@ import java.util.Set;
 import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.internal.logging.progress.ProgressLogger;
+import org.teavm.devserver.client.DefaultDevServerEventQueue;
 import org.teavm.devserver.client.DevServerClient;
+import org.teavm.devserver.client.DevServerListener;
 import org.teavm.gradle.api.JSModuleType;
 
 public class ProjectDevServerManager {
@@ -54,7 +56,28 @@ public class ProjectDevServerManager {
     private int runningProcessMemory;
     private int runningDebugPort;
 
-    private final DevServerClient client = new DevServerClient();
+    private final DefaultDevServerEventQueue edt = new DefaultDevServerEventQueue();
+    private final DevServerClient client = new DevServerClient(edt);
+
+    public ProjectDevServerManager() {
+        client.addListener(new DevServerListener() {
+            @Override
+            public void onCancelled() {
+                edt.stopEventQueue();
+            }
+
+            @Override
+            public void onComplete(List<DevServerClient.Problem> problems) {
+                edt.stopEventQueue();
+            }
+
+            @Override
+            public void onUnexpectedStop() {
+                edt.stopEventQueue();
+            }
+        });
+        client.setNoWatch(true);
+    }
 
     public void setServerClasspath(Set<File> serverClasspath) {
         client.setServerClasspath(serverClasspath);
@@ -142,7 +165,11 @@ public class ProjectDevServerManager {
 
     public void runBuild(Logger logger, ProgressLogger progressLogger) throws IOException {
         restartIfNecessary(logger);
-        client.build(new GradleBuildListener(logger, progressLogger));
+        var listener = new GradleBuildListener(logger, progressLogger);
+        client.addListener(listener);
+        client.build();
+        client.removeListener(listener);
+        edt.runEventQueue();
     }
 
     public void stop(Logger logger) {
@@ -229,7 +256,7 @@ public class ProjectDevServerManager {
                 && client.getDebugPort() == runningDebugPort;
     }
 
-    private static final class GradleBuildListener implements DevServerClient.BuildListener {
+    private static final class GradleBuildListener implements DevServerListener {
         private final Logger logger;
         private final ProgressLogger progressLogger;
         private boolean hasSevere;
@@ -240,18 +267,18 @@ public class ProjectDevServerManager {
         }
 
         @Override
-        public void onLog(String level, String message) {
+        public void onLog(DevServerClient.LogLevel level, String message) {
             switch (level) {
-                case "debug":
+                case DEBUG:
                     logger.debug(message);
                     break;
-                case "info":
+                case INFO:
                     logger.info(message);
                     break;
-                case "warning":
+                case WARNING:
                     logger.warn(message);
                     break;
-                case "error":
+                case ERROR:
                     logger.error(message);
                     break;
                 default:

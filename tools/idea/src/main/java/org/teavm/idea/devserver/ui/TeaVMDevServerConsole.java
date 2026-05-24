@@ -23,22 +23,20 @@ import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.actionSystem.AnAction;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.text.NumberFormat;
+import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.teavm.idea.devserver.DevServerBuildResult;
-import org.teavm.idea.devserver.DevServerManager;
-import org.teavm.idea.devserver.DevServerManagerListener;
+import org.teavm.devserver.client.DevServerClient;
+import org.teavm.devserver.client.DevServerListener;
 
 public class TeaVMDevServerConsole extends JPanel implements ConsoleView {
     private ConsoleView underlyingConsole;
-    private DevServerManager serverManager;
+    private DevServerClient client;
     private ServerListenerImpl serverListener;
     private JButton rebuildButton = new JButton("Clean and rebuild");
     private JProgressBar progressBar = new JProgressBar(0, 1000);
@@ -90,29 +88,13 @@ public class TeaVMDevServerConsole extends JPanel implements ConsoleView {
 
     @Override
     public void dispose() {
-        if (serverListener != null) {
-            try {
-                UnicastRemoteObject.unexportObject(serverListener, true);
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
-            }
-            serverListener = null;
-        }
         underlyingConsole.dispose();
     }
 
-    public void setServerManager(DevServerManager serverManager) {
-        this.serverManager = serverManager;
-        try {
-            serverListener = new ServerListenerImpl();
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            serverManager.addListener(serverListener);
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+    public void setClient(DevServerClient client) {
+        this.client = client;
+        serverListener = new ServerListenerImpl();
+        client.addListener(serverListener);
     }
 
     private void rebuildProject() {
@@ -120,21 +102,13 @@ public class TeaVMDevServerConsole extends JPanel implements ConsoleView {
             invalidateAndBuild();
         } else if (!rebuildPending) {
             rebuildPending = true;
-            try {
-                serverManager.cancelBuild();
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
-            }
+            client.cancel();
         }
     }
 
     private void invalidateAndBuild() {
-        try {
-            serverManager.invalidateCache();
-            serverManager.buildProject();
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        client.invalidateCache();
+        client.build();
     }
 
     public void stop() {
@@ -218,21 +192,18 @@ public class TeaVMDevServerConsole extends JPanel implements ConsoleView {
         underlyingConsole.allowHeavyFilters();
     }
 
-    class ServerListenerImpl extends UnicastRemoteObject implements DevServerManagerListener {
+    class ServerListenerImpl implements DevServerListener {
         private NumberFormat percentFormat = NumberFormat.getPercentInstance();
 
-        ServerListenerImpl() throws RemoteException {
-        }
-
         @Override
-        public void compilationStarted() {
+        public void onStarted() {
             building = true;
             progressBar.setValue(0);
             progressBar.setVisible(true);
         }
 
         @Override
-        public void compilationProgress(double progress) {
+        public void onProgress(double progress) {
             building = true;
             progressBar.setValue((int) (progress * 10));
             progressBar.setString(percentFormat.format(progress / 100));
@@ -240,13 +211,13 @@ public class TeaVMDevServerConsole extends JPanel implements ConsoleView {
         }
 
         @Override
-        public void compilationComplete(DevServerBuildResult result) {
+        public void onComplete(List<DevServerClient.Problem> problems) {
             progressBar.setVisible(false);
             building = false;
         }
 
         @Override
-        public void compilationCancelled() {
+        public void onCancelled() {
             progressBar.setVisible(false);
             building = false;
             if (rebuildPending) {

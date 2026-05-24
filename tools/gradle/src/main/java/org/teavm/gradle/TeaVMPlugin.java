@@ -125,7 +125,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         var compilerConfig = project.getConfigurations().detachedConfiguration(
                 project.getDependencies().create(ArtifactCoordinates.TOOLS));
         var cliConfig = project.getConfigurations().detachedConfiguration(
-                project.getDependencies().create(ArtifactCoordinates.CLI));
+                project.getDependencies().create(ArtifactCoordinates.DEV_SERVER_RUNNER));
         registerJsTask(project, compilerConfig);
         registerJsDevServerTasks(project, cliConfig);
         registerWasmGCTask(project, compilerConfig);

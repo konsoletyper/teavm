@@ -23,8 +23,7 @@ description = "All-in one JAR file that used by IDE plugins"
 
 dependencies {
     api(project(":tools:core"))
-    api(project(":tools:devserver"))
-    api(project(":classlib"))
+    api(project(":tools:devserver:client"))
     api(project(":tools:chrome-rdp"))
 }
 

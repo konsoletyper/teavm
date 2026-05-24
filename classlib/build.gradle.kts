@@ -24,7 +24,7 @@ plugins {
 description = "Java class library emulation"
 
 dependencies {
-    implementation(project(":core"))
+    api(project(":core"))
 
     api(project(":platform"))
     api(project(":jso:apis"))

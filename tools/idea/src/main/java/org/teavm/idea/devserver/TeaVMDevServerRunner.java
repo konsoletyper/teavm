@@ -58,7 +58,7 @@ public class TeaVMDevServerRunner extends GenericProgramRunner<RunnerSettings> {
         }
 
         RunContentDescriptor runContent = new RunContentBuilder(executionResult, environment).showRunContent(null);
-        int debugPort = ((TeaVMProcessHandler) executionResult.getProcessHandler()).config.debugPort;
+        int debugPort = ((TeaVMProcessHandler) executionResult.getProcessHandler()).debugPort;
         ExecutionConsole console = runContent.getExecutionConsole();
         ProcessHandler processHandler = runContent.getProcessHandler();
         if (debugPort > 0) {
