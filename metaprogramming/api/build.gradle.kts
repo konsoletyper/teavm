@@ -34,3 +34,7 @@ dependencies {
 teavmPublish {
     artifactId = "teavm-metaprogramming-api"
 }
+
+javaVersion {
+    version = JavaVersion.VERSION_11
+}

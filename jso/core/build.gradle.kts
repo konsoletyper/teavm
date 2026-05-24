@@ -41,3 +41,7 @@ tasks.withType<Jar> {
         attributes["Automatic-Module-Name"] = "org.teavm.jso"
     }
 }
+
+javaVersion {
+    version = JavaVersion.VERSION_11
+}

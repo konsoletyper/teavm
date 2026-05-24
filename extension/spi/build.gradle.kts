@@ -29,3 +29,7 @@ dependencies {
 teavmPublish {
     artifactId = "teavm-extension-spi"
 }
+
+javaVersion {
+    version = JavaVersion.VERSION_11
+}

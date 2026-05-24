@@ -24,3 +24,7 @@ description = "Declaration of interfaces and annotations use by TeaVM extensions
 teavmPublish {
     artifactId = "teavm-extension-apis"
 }
+
+javaVersion {
+    version = JavaVersion.VERSION_11
+}

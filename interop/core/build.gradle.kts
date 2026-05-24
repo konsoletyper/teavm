@@ -24,3 +24,7 @@ description = "Runtime interoperability API"
 teavmPublish {
     artifactId = "teavm-interop"
 }
+
+javaVersion {
+    version = JavaVersion.VERSION_11
+}
