@@ -73,4 +73,16 @@ public class EnumTest {
     public void valueOfReturnsConstant() {
         assertEquals("A", Enum.valueOf(Foo.class, "A").name());
     }
+    
+    @Test
+    public void singleClinitCallWithReflection() {
+        var x = Foo.A;
+        var n = 0;
+        for (var cst : Foo.class.getEnumConstants()) {
+            if (cst == x) {
+                n++;
+            }
+        }
+        assertEquals(1, n);
+    }
 }
