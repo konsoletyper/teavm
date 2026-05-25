@@ -35,7 +35,4 @@ dependencies {
 teavm.js {
     addedToWebApp = true
     mainClass = "org.teavm.samples.hello.Client"
-    sourceMap = true
-    debugInformation = true
-    sourceFilePolicy = SourceFilePolicy.LINK_LOCAL_FILES
 }

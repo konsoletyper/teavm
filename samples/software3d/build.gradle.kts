@@ -25,7 +25,6 @@ plugins {
 teavm {
     js {
         addedToWebApp = true
-        obfuscated = false
         mainClass = "org.teavm.samples.software3d.teavm.MainKt"
     }
     wasmGC {

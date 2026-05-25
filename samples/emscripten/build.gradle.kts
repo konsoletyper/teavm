@@ -30,8 +30,6 @@ dependencies {
 teavm.wasmGC {
     addedToWebApp = true
     mainClass = "org.teavm.samples.emscripten.Main"
-    optimization = OptimizationLevel.BALANCED
-    obfuscated = true
     emscripten {
         enabled = true
         exportedFunctions.add("_addInBuffer")

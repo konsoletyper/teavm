@@ -31,6 +31,4 @@ teavm.js {
     addedToWebApp = true
     mainClass = "org.teavm.samples.modules.SimpleModule"
     moduleType = JSModuleType.ES2015
-    obfuscated = false
-    outOfProcess = true
 }

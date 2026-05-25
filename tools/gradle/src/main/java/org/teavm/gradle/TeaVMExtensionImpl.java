@@ -60,21 +60,23 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     private void setupJsDefaults() {
+        var isDebug = property("debug").map(Boolean::parseBoolean).orElse(false);
+        var isNotDebug = isDebug.map(x -> !x);
         js.getRelativePathInOutputDir().convention("js");
-        js.getObfuscated().convention(property("js.obfuscated").map(Boolean::parseBoolean).orElse(true));
-        js.getSourceMap().convention(property("js.sourceMap").map(Boolean::parseBoolean).orElse(false));
+        js.getObfuscated().convention(property("js.obfuscated").map(Boolean::parseBoolean).orElse(isNotDebug));
+        js.getSourceMap().convention(property("js.sourceMap").map(Boolean::parseBoolean).orElse(isDebug));
         js.getStrict().convention(property("js.strict").map(Boolean::parseBoolean).orElse(false));
         js.getModuleType().convention(property("js.moduleType").map(JSModuleType::valueOf).orElse(JSModuleType.UMD));
         js.getEntryPointName().convention("main");
         js.getTargetFileName().convention(project.provider(() -> project.getName() + ".js"));
         js.getAddedToWebApp().convention(property("js.addedToWebApp").map(Boolean::parseBoolean).orElse(false));
         js.getOptimization().convention(property("js.optimization").map(OptimizationLevel::valueOf)
-                .orElse(OptimizationLevel.BALANCED));
+                .orElse(isDebug.map(x -> x ? OptimizationLevel.NONE : OptimizationLevel.BALANCED)));
         js.getSourceFilePolicy().convention(property("js.sourceFilePolicy")
                 .map(SourceFilePolicy::valueOf)
                 .orElse(SourceFilePolicy.LINK_LOCAL_FILES));
         js.getDevServer().getStackDeobfuscated().convention(property("js.devServer.stackDeobfuscated")
-                .map(Boolean::parseBoolean));
+                .map(Boolean::parseBoolean).orElse(isDebug));
         js.getDevServer().getIndicator().convention(property("js.devServer.indicator").map(Boolean::parseBoolean));
         js.getDevServer().getAutoReload().convention(property("js.devServer.autoReload").map(Boolean::parseBoolean));
         js.getDevServer().getPort().convention(property("js.devServer.port").map(Integer::parseInt));
@@ -84,23 +86,24 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     private void setupWasmGCDefaults() {
+        var isDebug = property("debug").map(Boolean::parseBoolean).orElse(false);
+        var isNotDebug = isDebug.map(x -> !x);
         wasmGC.getRelativePathInOutputDir().convention("wasm-gc");
         wasmGC.getOptimization().convention(property("wasm-gc.optimization").map(OptimizationLevel::valueOf)
-                .orElse(OptimizationLevel.AGGRESSIVE));
+                .orElse(isDebug.map(x -> x ? OptimizationLevel.NONE : OptimizationLevel.AGGRESSIVE)));
         wasmGC.getTargetFileName().convention(project.provider(() -> project.getName() + ".wasm"));
         wasmGC.getAddedToWebApp().convention(property("wasm-gc.addedToWebApp")
                 .map(Boolean::parseBoolean).orElse(false));
         wasmGC.getStrict().convention(property("wasm-gc.strict").map(Boolean::parseBoolean).orElse(true));
         wasmGC.getCopyRuntime().convention(property("wasm-gc.copyRuntime").map(Boolean::parseBoolean).orElse(true));
-        wasmGC.getObfuscated().convention(property("wasm-gc.obfuscated").map(Boolean::parseBoolean).orElse(true));
+        wasmGC.getObfuscated().convention(property("wasm-gc.obfuscated").map(Boolean::parseBoolean)
+                .orElse(isNotDebug));
         wasmGC.getDisassembly().convention(property("wasm-gc.disassembly").map(Boolean::parseBoolean).orElse(false));
-        wasmGC.getDebugInformation().convention(property("wasm-gc.debugInformation").map(Boolean::parseBoolean)
-                .orElse(false));
         wasmGC.getDebugInfoLocation().convention(property("wasm-gc.debugInformation.location")
                 .map(v -> WasmDebugInfoLocation.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLocation.EXTERNAL));
         wasmGC.getDebugInfoLevel().convention(property("wasm-gc.debugInformation.level")
                 .map(v -> WasmDebugInfoLevel.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLevel.DEOBFUSCATION));
-        wasmGC.getSourceMap().convention(property("wasm-gc.sourceMap").map(Boolean::parseBoolean).orElse(false));
+        wasmGC.getSourceMap().convention(property("wasm-gc.sourceMap").map(Boolean::parseBoolean).orElse(isDebug));
         wasmGC.getSourceFilePolicy().convention(property("wasm-gc.sourceFilePolicy")
                 .map(SourceFilePolicy::valueOf)
                 .orElse(SourceFilePolicy.LINK_LOCAL_FILES));
@@ -126,19 +129,22 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     private void setupCDefaults() {
+        var isDebug = property("debug").map(Boolean::parseBoolean).orElse(false);
         c.getRelativePathInOutputDir().convention("c");
         c.getMinHeapSize().convention(1);
         c.getMaxHeapSize().convention(16);
         c.getHeapDump().convention(property("c.heapDump").map(Boolean::parseBoolean).orElse(false));
         c.getShortFileNames().convention(property("c.shortFileName").map(Boolean::parseBoolean).orElse(true));
         c.getOptimization().convention(property("c.optimization").map(OptimizationLevel::valueOf)
-                .orElse(OptimizationLevel.AGGRESSIVE));
+                .orElse(isDebug.map(x -> x ? OptimizationLevel.NONE : OptimizationLevel.AGGRESSIVE)));
         c.getObfuscated().convention(true);
     }
 
     private void setupAllDefaults() {
+        var isDebug = property("debug").map(Boolean::parseBoolean).orElse(false);
         all.getOutputDir().convention(project.getLayout().getBuildDirectory().dir("generated/teavm"));
-        all.getDebugInformation().convention(property("debugInformation").map(Boolean::parseBoolean).orElse(false));
+        all.getDebugInformation().convention(property("debugInformation").map(Boolean::parseBoolean)
+                .orElse(isDebug));
         all.getOptimization().convention(OptimizationLevel.BALANCED);
         all.getFastGlobalAnalysis().convention(property("fastGlobalAnalysis").map(Boolean::parseBoolean).orElse(false));
         all.getOutOfProcess().convention(property("outOfProcess").map(Boolean::parseBoolean).orElse(false));
@@ -210,7 +216,6 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         target.getOutputDir().convention(source.getOutputDir());
         target.getDebugInformation().convention(source.getDebugInformation());
         target.getFastGlobalAnalysis().convention(source.getFastGlobalAnalysis());
-        target.getOptimization().convention(source.getOptimization());
         target.getProperties().putAll(source.getProperties());
 
         target.getOutOfProcess().convention(source.getOutOfProcess());

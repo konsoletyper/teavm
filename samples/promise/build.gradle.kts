@@ -31,7 +31,6 @@ dependencies {
 
 teavm.js {
     addedToWebApp = true
-    obfuscated = false
     mainClass = "org.teavm.samples.promise.PromiseExample"
 }
 
