@@ -854,7 +854,7 @@ function jsoImports(imports: Record<string, any>, context: Context, stringBuilti
             } else if (typeof obj === "number") {
                 return obj | 0;
             } else if (typeof obj === "bigint") {
-                return BigInt.asIntN(32, obj);
+                return Number(BigInt.asIntN(32, obj));
             } else if (typeof obj === "boolean") {
                 return obj ? 1 : 0;
             } else {
