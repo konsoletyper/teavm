@@ -350,8 +350,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             method.getVariable(0).getClassValueNode().addConsumer(type -> {
                 if (type.getValueType() instanceof ValueType.Object) {
                     var cls = agent.getClassSource().get(((ValueType.Object) type.getValueType()).getClassName());
-                    annotHelper.propagateAnnotationImplementations(agent, cls.getAnnotations().all(),
-                            method.getResult().getArrayItem());
+                    if (cls != null) {
+                        annotHelper.propagateAnnotationImplementations(agent, cls.getAnnotations().all(),
+                                method.getResult().getArrayItem());
+                    }
                 }
             });
         } else if (method.getReference().equals(forName) || method.getReference().equals(forNameShort)) {

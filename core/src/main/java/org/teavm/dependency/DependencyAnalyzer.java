@@ -433,11 +433,19 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
                 ClassReader cls = dep.getClassReader();
                 if (cls.getParent() != null && !classCache.caches(cls.getParent())) {
-                    linkClass(cls.getParent());
+                    var parentDep = linkClass(cls.getParent());
+                    if (parentDep.isMissing()) {
+                        diagnostics.error(null, "Class {{c0}} extends {{c1}}, which is missing in the classpath",
+                                cls.getName(), cls.getParent());
+                    }
                 }
                 for (String iface : cls.getInterfaces()) {
                     if (!classCache.caches(iface)) {
-                        linkClass(iface);
+                        var itfDep = linkClass(iface);
+                        if (itfDep.isMissing()) {
+                            diagnostics.error(null, "Class {{c0}} implements {{c1}}, "
+                                    + "which is missing in the classpath", cls.getName(), iface);
+                        }
                     }
                 }
             }

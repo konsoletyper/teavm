@@ -122,6 +122,9 @@ public class ClassGenerator implements DependencyPlugin {
                 return;
             }
             var cls = agent.getClassSource().get(((ValueType.Object) t.getValueType()).getClassName());
+            if (cls == null) {
+                return;
+            }
             if (!cls.hasModifier(ElementModifier.ENUM)) {
                 return;
             }
