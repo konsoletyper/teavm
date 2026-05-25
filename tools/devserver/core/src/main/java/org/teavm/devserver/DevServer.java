@@ -43,8 +43,11 @@ public class DevServer {
     private Map<String, String> properties = new LinkedHashMap<>();
     private List<String> preservedClasses = new ArrayList<>();
     private JSModuleType jsModuleType;
+    private boolean wasmSharedBuffer;
+    private boolean wasmModularRuntime;
     private boolean compileOnStartup;
     private boolean logBuildErrors = true;
+    private CodeServletBackend<?> backend = new CodeServletJavaScriptBackend();
 
     private Server server;
     private int port = 9090;
@@ -170,6 +173,18 @@ public class DevServer {
         this.logBuildErrors = logBuildErrors;
     }
 
+    public void setWasmSharedBuffer(boolean wasmSharedBuffer) {
+        this.wasmSharedBuffer = wasmSharedBuffer;
+    }
+
+    public void setWasmModularRuntime(boolean wasmModularRuntime) {
+        this.wasmModularRuntime = wasmModularRuntime;
+    }
+
+    public void setBackend(CodeServletBackend<?> backend) {
+        this.backend = backend;
+    }
+
     public void start() {
         server = new Server();
         ServerConnector connector = new ServerConnector(server);
@@ -202,6 +217,8 @@ public class DevServer {
         servlet.getProperties().putAll(properties);
         servlet.getPreservedClasses().addAll(preservedClasses);
         servlet.setJsModuleType(jsModuleType);
+        servlet.setWasmSharedBuffer(wasmSharedBuffer);
+        servlet.setBackend(backend);
         for (DevServerListener listener : listeners) {
             servlet.addListener(listener);
         }

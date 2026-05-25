@@ -31,16 +31,20 @@ import org.gradle.internal.logging.progress.ProgressLogger;
 import org.teavm.devserver.client.DefaultDevServerEventQueue;
 import org.teavm.devserver.client.DevServerClient;
 import org.teavm.devserver.client.DevServerListener;
+import org.teavm.devserver.client.DevServerTarget;
 import org.teavm.gradle.api.JSModuleType;
 
 public class ProjectDevServerManager {
     private Set<File> runningServerClasspath = new HashSet<>();
     private Set<File> runningClasspath = new HashSet<>();
+    private DevServerTarget runningTarget;
     private String runningTargetFileName;
     private String runningTargetFilePath;
     private Map<String, String> runningProperties = new HashMap<>();
     private Set<String> runningPreservedClasses = new HashSet<>();
     private org.teavm.backend.javascript.JSModuleType runningJsModuleType;
+    private boolean runningWasmSharedBuffer;
+    private boolean runningWasmModularRuntime;
     private String runningMainClass;
     private boolean runningStackDeobfuscated;
     private boolean runningIndicator;
@@ -87,6 +91,10 @@ public class ProjectDevServerManager {
         client.setClasspath(classpath);
     }
 
+    public void setTarget(DevServerTarget target) {
+        client.setTarget(target);
+    }
+
     public void setProperties(Map<String, String> properties) {
         client.setProperties(properties);
     }
@@ -97,6 +105,14 @@ public class ProjectDevServerManager {
 
     public void setJsModuleType(JSModuleType jsModuleType) {
         client.setJsModuleType(jsModuleType != null ? TaskUtils.mapJsModuleType(jsModuleType) : null);
+    }
+
+    public void setWasmSharedBuffer(boolean wasmSharedBuffer) {
+        client.setWasmSharedBuffer(wasmSharedBuffer);
+    }
+
+    public void setWasmModularRuntime(boolean wasmModularRuntime) {
+        client.setWasmModularRuntime(wasmModularRuntime);
     }
 
     public void setTargetFileName(String targetFileName) {
@@ -168,8 +184,8 @@ public class ProjectDevServerManager {
         var listener = new GradleBuildListener(logger, progressLogger);
         client.addListener(listener);
         client.build();
-        client.removeListener(listener);
         edt.runEventQueue();
+        client.removeListener(listener);
     }
 
     public void stop(Logger logger) {
@@ -204,6 +220,7 @@ public class ProjectDevServerManager {
     private void snapshotRunningConfig() {
         runningServerClasspath.clear();
         runningServerClasspath.addAll(client.getServerClasspath());
+        runningTarget = client.getTarget();
         runningClasspath.clear();
         runningClasspath.addAll(client.getClasspath());
         runningTargetFileName = client.getTargetFileName();
@@ -213,6 +230,8 @@ public class ProjectDevServerManager {
         runningPreservedClasses.clear();
         runningPreservedClasses.addAll(client.getPreservedClasses());
         runningJsModuleType = client.getJsModuleType();
+        runningWasmSharedBuffer = client.isWasmSharedBuffer();
+        runningWasmModularRuntime = client.isWasmModularRuntime();
         runningMainClass = client.getMainClass();
         runningStackDeobfuscated = client.isStackDeobfuscated();
         runningIndicator = client.isIndicator();
@@ -235,11 +254,14 @@ public class ProjectDevServerManager {
     private boolean checkProcess() {
         return Objects.equals(client.getServerClasspath(), runningServerClasspath)
                 && Objects.equals(client.getClasspath(), runningClasspath)
+                && client.getTarget() == runningTarget
                 && Objects.equals(client.getTargetFileName(), runningTargetFileName)
                 && Objects.equals(client.getTargetFilePath(), runningTargetFilePath)
                 && Objects.equals(client.getProperties(), runningProperties)
                 && Objects.equals(client.getPreservedClasses(), runningPreservedClasses)
-                && Objects.equals(client.getJsModuleType(), runningJsModuleType)
+                && client.getJsModuleType() == runningJsModuleType
+                && client.isWasmSharedBuffer() == runningWasmSharedBuffer
+                && client.isWasmModularRuntime() == runningWasmModularRuntime
                 && Objects.equals(client.getMainClass(), runningMainClass)
                 && client.isStackDeobfuscated() == runningStackDeobfuscated
                 && client.isIndicator() == runningIndicator

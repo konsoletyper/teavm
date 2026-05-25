@@ -19,6 +19,7 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.gradle.api.Action;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Nested;
 
 public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
     Property<Boolean> getObfuscated();
@@ -31,15 +32,18 @@ public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
 
     Property<String> getEntryPointName();
 
-    Property<String> getTargetFileName();
-
     Property<SourceFilePolicy> getSourceFilePolicy();
 
     Property<Integer> getMaxTopLevelNames();
 
-    TeaVMDevServerConfiguration getDevServer();
+    @Nested
+    TeaVMJSDevServerConfiguration getDevServer();
 
-    void devServer(Action<TeaVMDevServerConfiguration> action);
+    default void devServer(Action<TeaVMJSDevServerConfiguration> action) {
+        action.execute(getDevServer());
+    }
 
-    void devServer(@DelegatesTo(TeaVMDevServerConfiguration.class) Closure<?> action);
+    default void devServer(@DelegatesTo(TeaVMJSDevServerConfiguration.class) Closure<?> action) {
+        action.rehydrate(getDevServer(), action.getOwner(), action.getThisObject()).call();
+    }
 }

@@ -34,7 +34,7 @@ public class DefaultDevServerEventQueue implements DevServerEventQueue {
     public void runEventQueue() {
         eventQueueDone = false;
 
-        while (!eventQueueDone || !eventQueue.isEmpty()) {
+        while (!eventQueueDone) {
             Runnable command;
             try {
                 command = eventQueue.take();

@@ -65,13 +65,10 @@ import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.teavm.backend.javascript.JSModuleType;
-import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
 import org.teavm.cache.InMemorySymbolTable;
 import org.teavm.cache.MemoryCachedClassReaderSource;
-import org.teavm.debugging.information.DebugInformation;
-import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.FastDependencyAnalyzer;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
@@ -94,6 +91,7 @@ import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
+import org.teavm.vm.TeaVMTarget;
 
 public class CodeServlet extends JettyWebSocketServlet {
     private static final Supplier<InputStream> EMPTY_CONTENT = () -> null;
@@ -126,6 +124,8 @@ public class CodeServlet extends JettyWebSocketServlet {
     private Map<String, String> properties = new LinkedHashMap<>();
     private List<String> preservedClasses = new ArrayList<>();
     private JSModuleType jsModuleType;
+    private boolean wasmSharedBuffer;
+    private boolean wasmModularRuntime;
 
     private Map<String, Supplier<InputStream>> sourceFileCache = new HashMap<>();
 
@@ -161,6 +161,8 @@ public class CodeServlet extends JettyWebSocketServlet {
 
     private Map<String, CachedEntry> fileCache = new HashMap<>();
     private Map<String, CachedEntry> resourceCache = new HashMap<>();
+
+    private CodeServletBackend<?> backend = new CodeServletJavaScriptBackend();
 
     public CodeServlet(String mainClass, String[] classPath) {
         this.mainClass = mainClass;
@@ -273,12 +275,24 @@ public class CodeServlet extends JettyWebSocketServlet {
         return properties;
     }
 
+    public void setWasmSharedBuffer(boolean wasmSharedBuffer) {
+        this.wasmSharedBuffer = wasmSharedBuffer;
+    }
+
+    public void setWasmModularRuntime(boolean wasmModularRuntime) {
+        this.wasmModularRuntime = wasmModularRuntime;
+    }
+
     public void setJsModuleType(JSModuleType jsModuleType) {
         this.jsModuleType = jsModuleType;
     }
 
     public void setLogBuildErrors(boolean logBuildErrors) {
         this.logBuildErrors = logBuildErrors;
+    }
+
+    public void setBackend(CodeServletBackend<?> backend) {
+        this.backend = backend;
     }
 
     public void addProgressHandler(ProgressHandler handler) {
@@ -404,7 +418,10 @@ public class CodeServlet extends JettyWebSocketServlet {
                     }
                     if (fileContent != null) {
                         resp.setStatus(hasBody ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NO_CONTENT);
-                        resp.setCharacterEncoding("UTF-8");
+                        if (fileName.endsWith(".js") || fileName.endsWith(".js.map")
+                                || fileName.endsWith(".wasm.map")) {
+                            resp.setCharacterEncoding("UTF-8");
+                        }
                         allowOrigin(req, resp);
                         if (!hasBody) {
                             resp.setHeader("Access-Control-Allow-Methods", "GET");
@@ -454,8 +471,10 @@ public class CodeServlet extends JettyWebSocketServlet {
     private String chooseContentType(String name) {
         if (name.endsWith(".js")) {
             return "application/javascript";
-        } else if (name.endsWith(".js.map")) {
+        } else if (name.endsWith(".js.map") || name.endsWith(".wasm.map")) {
             return "application/json";
+        } else if (name.endsWith(".wasm")) {
+            return "application/wasm";
         } else if (name.endsWith(".teavmdbg")) {
             return "application/octet-stream";
         } else {
@@ -986,11 +1005,11 @@ public class CodeServlet extends JettyWebSocketServlet {
         log.info("Build thread complete");
     }
 
+
     private void buildOnce() {
         fireBuildStarted();
         reportProgress(0);
 
-        DebugInformationBuilder debugInformationBuilder = new DebugInformationBuilder(referenceCache);
         ClassLoader classLoader = initClassLoader();
         var reader = ResourceProvider.ofClassPath(Stream.of(classPath).map(File::new).collect(Collectors.toList()));
         ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
@@ -999,9 +1018,11 @@ public class CodeServlet extends JettyWebSocketServlet {
         classSource.setProvider(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
 
         long startTime = System.currentTimeMillis();
-        JavaScriptTarget jsTarget = new JavaScriptTarget();
 
-        TeaVM vm = new TeaVMBuilder(jsTarget)
+        @SuppressWarnings("unchecked")
+        var backend = (CodeServletBackend<TeaVMTarget>) this.backend;
+        var target = backend.createTarget();
+        TeaVM vm = new TeaVMBuilder(target)
                 .setReferenceCache(referenceCache)
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
@@ -1012,14 +1033,28 @@ public class CodeServlet extends JettyWebSocketServlet {
                 .setObfuscated(false)
                 .build();
 
-        jsTarget.setStackTraceIncluded(true);
-        jsTarget.setObfuscated(false);
-        jsTarget.setAstCache(astCache);
-        jsTarget.setDebugEmitter(debugInformationBuilder);
-        if (jsModuleType != null) {
-            jsTarget.setModuleType(jsModuleType);
-        }
-        jsTarget.setStrict(true);
+        var settings = new CodeServletSettings() {
+            @Override
+            public JSModuleType jsModuleType() {
+                return jsModuleType;
+            }
+
+            @Override
+            public boolean wasmSharedBuffer() {
+                return wasmSharedBuffer;
+            }
+
+            @Override
+            public boolean wasmModularRuntime() {
+                return wasmModularRuntime;
+            }
+
+            @Override
+            public String fileName() {
+                return fileName;
+            }
+        };
+        backend.setup(target, astCache, referenceCache, settings);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         vm.setCacheStatus(classSource);
         vm.addVirtualMethods(m -> true);
@@ -1038,8 +1073,10 @@ public class CodeServlet extends JettyWebSocketServlet {
         progressListener.last = 0;
         progressListener.lastTime = System.currentTimeMillis();
         vm.build(buildTarget, fileName);
-        addIndicator();
-        generateDebug(debugInformationBuilder);
+        if (backend.isIndicatorSupported()) {
+            addIndicator();
+        }
+        backend.afterBuild(buildTarget, settings);
 
         postBuild(vm, startTime);
         reader.close();
@@ -1085,26 +1122,6 @@ public class CodeServlet extends JettyWebSocketServlet {
             script = script.replace("PATH_TO_FILE", "\"http://localhost:" + port + pathToFile + "\"");
             script = script.replace("DEOBFUSCATE_FLAG", String.valueOf(deobfuscateStack));
             return script;
-        } catch (IOException e) {
-            throw new RuntimeException("IO error occurred writing debug information", e);
-        }
-    }
-
-    private void generateDebug(DebugInformationBuilder debugInformationBuilder) {
-        try {
-            DebugInformation debugInformation = debugInformationBuilder.getDebugInformation();
-            String sourceMapName = fileName + ".map";
-
-            try (Writer writer = new OutputStreamWriter(buildTarget.appendToResource(fileName),
-                    StandardCharsets.UTF_8)) {
-                writer.append("\n//# sourceMappingURL=" + sourceMapName);
-            }
-
-            try (Writer writer = new OutputStreamWriter(buildTarget.createResource(sourceMapName),
-                    StandardCharsets.UTF_8)) {
-                debugInformation.writeAsSourceMaps(writer, "src", fileName);
-            }
-            debugInformation.write(buildTarget.createResource(fileName + ".teavmdbg"));
         } catch (IOException e) {
             throw new RuntimeException("IO error occurred writing debug information", e);
         }

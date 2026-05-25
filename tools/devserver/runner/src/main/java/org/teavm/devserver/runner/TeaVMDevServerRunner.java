@@ -31,6 +31,8 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.help.HelpFormatter;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.common.json.JsonParser;
+import org.teavm.devserver.CodeServletJavaScriptBackend;
+import org.teavm.devserver.CodeServletWasmGCBackend;
 import org.teavm.devserver.DevServer;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
 
@@ -45,6 +47,12 @@ public final class TeaVMDevServerRunner {
     }
 
     private static void setupOptions() {
+        options.addOption(Option.builder("t")
+                .argName("js|wasm-gc")
+                .hasArg()
+                .longOpt("target")
+                .desc("What to emit")
+                .get());
         options.addOption(Option.builder("d")
                 .argName("directory")
                 .hasArg()
@@ -85,6 +93,14 @@ public final class TeaVMDevServerRunner {
                 .hasArg()
                 .longOpt("js-module-type")
                 .desc("JS module type (umd, common-js, es2015 or none)")
+                .get());
+        options.addOption(Option.builder()
+                .longOpt("wasm-shared-buffer")
+                .desc("Use shared buffer for WebAssembly module")
+                .get());
+        options.addOption(Option.builder()
+                .longOpt("wasm-modular-runtime")
+                .desc("Use modular WebAssembly runtime")
                 .get());
         options.addOption(Option.builder()
                 .argName("number")
@@ -214,6 +230,18 @@ public final class TeaVMDevServerRunner {
             devServer.getProperties().put(property, properties.getProperty(property));
         }
 
+        if (commandLine.hasOption("target")) {
+            switch (commandLine.getOptionValue("target")) {
+                case "js" -> devServer.setBackend(new CodeServletJavaScriptBackend());
+                case "wasm-gc" -> devServer.setBackend(new CodeServletWasmGCBackend());
+                default -> {
+                    System.err.println("Invalid value for --target: " + commandLine.getOptionValue("target"));
+                    printUsage();
+                    return;
+                }
+            }
+        }
+
         if (commandLine.hasOption("preserved-classes")) {
             devServer.getPreservedClasses().addAll(List.of(commandLine.getOptionValues("preserved-classes")));
         }
@@ -228,6 +256,12 @@ public final class TeaVMDevServerRunner {
                 type = null;
             }
             devServer.setJsModuleType(type);
+        }
+        if (commandLine.hasOption("wasm-shared-buffer")) {
+            devServer.setWasmSharedBuffer(true);
+        }
+        if (commandLine.hasOption("wasm-modular-runtime")) {
+            devServer.setWasmModularRuntime(true);
         }
 
         if (commandLine.hasOption("proxy-url")) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle.api;
+package org.teavm.devserver;
 
-import org.gradle.api.provider.Property;
+import org.teavm.backend.javascript.JSModuleType;
 
-public interface TeaVMWebConfiguration extends TeaVMConfiguration {
-    Property<Boolean> getAddedToWebApp();
+public interface CodeServletSettings {
+    JSModuleType jsModuleType();
 
-    Property<String> getTargetFileName();
+    boolean wasmSharedBuffer();
+
+    boolean wasmModularRuntime();
+
+    String fileName();
 }

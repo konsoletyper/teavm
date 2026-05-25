@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -40,17 +39,20 @@ import org.gradle.api.plugins.WarPlugin;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.bundling.War;
+import org.teavm.gradle.api.DevServerTargetType;
 import org.teavm.gradle.api.TeaVMConfiguration;
+import org.teavm.gradle.api.TeaVMDevServerConfiguration;
 import org.teavm.gradle.api.TeaVMExtension;
+import org.teavm.gradle.api.TeaVMWebConfiguration;
 import org.teavm.gradle.config.ArtifactCoordinates;
 import org.teavm.gradle.tasks.CopyEmscriptenStubTask;
 import org.teavm.gradle.tasks.CopyWasmGCRuntimeTask;
+import org.teavm.gradle.tasks.DevServerTask;
 import org.teavm.gradle.tasks.DisasmWebAssemblyTask;
 import org.teavm.gradle.tasks.EmscriptenTask;
 import org.teavm.gradle.tasks.GenerateCTask;
 import org.teavm.gradle.tasks.GenerateJavaScriptTask;
 import org.teavm.gradle.tasks.GenerateWasmGCTask;
-import org.teavm.gradle.tasks.JavaScriptDevServerTask;
 import org.teavm.gradle.tasks.StopJavaScriptDevServerTask;
 import org.teavm.gradle.tasks.TeaVMTask;
 
@@ -59,7 +61,8 @@ public class TeaVMPlugin implements Plugin<Project> {
     public static final String SOURCE_SET_NAME = "teavm";
     public static final String JS_TASK_NAME = "generateJavaScript";
     public static final String JS_DEV_SERVER_TASK_NAME = "javaScriptDevServer";
-    public static final String STOP_JS_DEV_SERVER_TASK_NAME = "stopJavaScriptDevServer";
+    public static final String WASM_GC_DEV_SERVER_TASK_NAME = "wasmGCDevServer";
+    public static final String STOP_DEV_SERVER_TASK_NAME = "stopDevServer";
     public static final String WASM_GC_TASK_NAME = "generateWasmGC";
     public static final String BUILD_WASM_GC_TASK_NAME = "buildWasmGC";
     public static final String WASM_GC_COPY_RUNTIME_TASK_NAME = "copyWasmGCRuntime";
@@ -154,31 +157,17 @@ public class TeaVMPlugin implements Plugin<Project> {
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
         var allProjects = new HashSet<String>();
         collectProjects(project.getRootProject(), allProjects);
-        project.getTasks().register(JS_DEV_SERVER_TASK_NAME, JavaScriptDevServerTask.class, task -> {
+        project.getTasks().register(JS_DEV_SERVER_TASK_NAME, DevServerTask.class, task -> {
             var js = extension.getJs();
             task.setGroup(TASK_GROUP);
             task.getAllProjectPaths().addAll(allProjects);
             task.getProjectPath().set(project.getPath());
-            task.getMainClass().convention(js.getMainClass());
-            task.getClasspath().from(task.getProject().getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME));
-            task.getPreservedClasses().addAll(js.getPreservedClasses());
+            task.getTargetType().set(DevServerTargetType.JS);
+            applyCommonDevServerProperties(task, js, js.getDevServer());
             task.getJsModuleType().convention(js.getModuleType());
-            task.getProcessMemory().convention(js.getDevServer().getProcessMemory());
-            task.getProperties().putAll(js.getProperties());
             task.getServerClasspath().from(configuration);
-            task.getTargetFilePath().convention(js.getRelativePathInOutputDir());
-            task.getTargetFileName().convention(js.getTargetFileName());
             task.getStackDeobfuscated().convention(js.getDevServer().getStackDeobfuscated());
             task.getIndicator().convention(js.getDevServer().getIndicator());
-            task.getAutoReload().convention(js.getDevServer().getAutoReload());
-            task.getPort().convention(js.getDevServer().getPort());
-            task.getProxyUrl().convention(js.getDevServer().getProxyUrl());
-            task.getProxyPath().convention(js.getDevServer().getProxyPath());
-            task.getStaticDirs().from(js.getDevServer().getStaticDirs());
-            task.getStaticServePath().convention(js.getDevServer().getStaticServePath());
-            task.getResourceRoots().addAll(js.getDevServer().getResourceRoots());
-            task.getResourceServePath().convention(js.getDevServer().getResourceServePath());
-            task.getProcessMemory().convention(js.getDevServer().getProcessMemory());
 
             var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
             if (sourceSets != null) {
@@ -189,11 +178,51 @@ public class TeaVMPlugin implements Plugin<Project> {
             setupSources(task.getSourceFiles(), project);
         });
 
-        project.getTasks().register(STOP_JS_DEV_SERVER_TASK_NAME, StopJavaScriptDevServerTask.class, task -> {
+        project.getTasks().register(WASM_GC_DEV_SERVER_TASK_NAME, DevServerTask.class, task -> {
+            var wasmGC = extension.getWasmGC();
+            task.setGroup(TASK_GROUP);
+            task.getAllProjectPaths().addAll(allProjects);
+            task.getProjectPath().set(project.getPath());
+            task.getTargetType().set(DevServerTargetType.WASM_GC);
+            applyCommonDevServerProperties(task, wasmGC, wasmGC.getDevServer());
+            task.getWasmSharedBuffer().convention(wasmGC.getSharedBuffer());
+            task.getWasmModularRuntime().convention(wasmGC.getModularRuntime());
+            task.getServerClasspath().from(configuration);
+
+            var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+            if (sourceSets != null) {
+                task.getClasspath().from(sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput());
+                task.getClasspath().from(sourceSets.getByName(SOURCE_SET_NAME).getOutput());
+            }
+
+            setupSources(task.getSourceFiles(), project);
+        });
+
+        project.getTasks().register(STOP_DEV_SERVER_TASK_NAME, StopJavaScriptDevServerTask.class, task -> {
             task.setGroup(TASK_GROUP);
             task.getAllProjectPaths().addAll(allProjects);
             task.getProjectPath().set(project.getPath());
         });
+    }
+
+    private static void applyCommonDevServerProperties(DevServerTask task, TeaVMWebConfiguration config,
+            TeaVMDevServerConfiguration devServer) {
+        task.getMainClass().convention(config.getMainClass());
+        task.getClasspath().from(task.getProject().getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME));
+        task.getPreservedClasses().addAll(config.getPreservedClasses());
+        task.getProcessMemory().convention(devServer.getProcessMemory());
+        task.getProperties().putAll(config.getProperties());
+        task.getTargetFilePath().convention(config.getRelativePathInOutputDir());
+        task.getTargetFileName().convention(config.getTargetFileName());
+        task.getAutoReload().convention(devServer.getAutoReload());
+        task.getPort().convention(devServer.getPort());
+        task.getProxyUrl().convention(devServer.getProxyUrl());
+        task.getProxyPath().convention(devServer.getProxyPath());
+        task.getStaticDirs().from(devServer.getStaticDirs());
+        task.getStaticServePath().convention(devServer.getStaticServePath());
+        task.getResourceRoots().addAll(devServer.getResourceRoots());
+        task.getResourceServePath().convention(devServer.getResourceServePath());
+        task.getProcessMemory().convention(devServer.getProcessMemory());
     }
 
     private static void collectProjects(Project project, Set<String> collector) {
@@ -419,8 +448,7 @@ public class TeaVMPlugin implements Plugin<Project> {
                     if (refProject != null) {
                         addSourceDirs(refProject, result);
                     }
-                } else if (id instanceof ModuleComponentIdentifier) {
-                    var moduleId = (ModuleComponentIdentifier) id;
+                } else if (id instanceof ModuleComponentIdentifier moduleId) {
                     var sourcesDep = project.getDependencies().create(Map.of(
                             "group", moduleId.getGroup(),
                             "name", moduleId.getModuleIdentifier().getName(),
@@ -432,7 +460,8 @@ public class TeaVMPlugin implements Plugin<Project> {
                     if (!tmpConfig.getResolvedConfiguration().hasError()) {
                         result.addAll(tmpConfig.getResolvedConfiguration().getLenientConfiguration().getArtifacts()
                                 .stream()
-                                .map(ResolvedArtifact::getFile).collect(Collectors.toList()));
+                                .map(ResolvedArtifact::getFile)
+                                .toList());
                     }
                 }
             }

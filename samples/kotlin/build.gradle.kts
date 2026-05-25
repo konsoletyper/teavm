@@ -40,6 +40,9 @@ teavm {
     }
     wasmGC {
         addedToWebApp = true
+        devServer {
+            staticDirs.from(layout.projectDirectory.dir("src/main/webapp"))
+        }
     }
 }
 

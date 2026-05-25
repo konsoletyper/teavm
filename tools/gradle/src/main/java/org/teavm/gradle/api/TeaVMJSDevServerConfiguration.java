@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,26 +15,10 @@
  */
 package org.teavm.gradle.api;
 
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 
-public interface TeaVMDevServerConfiguration {
-    Property<Boolean> getAutoReload();
+public interface TeaVMJSDevServerConfiguration extends TeaVMDevServerConfiguration {
+    Property<Boolean> getStackDeobfuscated();
 
-    Property<Integer> getPort();
-
-    Property<String> getProxyUrl();
-
-    Property<String> getProxyPath();
-
-    ConfigurableFileCollection getStaticDirs();
-
-    Property<String> getStaticServePath();
-
-    ListProperty<String> getResourceRoots();
-
-    Property<String> getResourceServePath();
-
-    Property<Integer> getProcessMemory();
+    Property<Boolean> getIndicator();
 }

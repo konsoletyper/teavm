@@ -42,11 +42,14 @@ public class DevServerClient {
     private String javaHome;
     private Set<File> serverClasspath = new LinkedHashSet<>();
     private Set<File> classpath = new LinkedHashSet<>();
+    private DevServerTarget target = DevServerTarget.JS;
     private String targetFileName;
     private String targetFilePath;
     private Map<String, String> properties = new LinkedHashMap<>();
     private Set<String> preservedClasses = new LinkedHashSet<>();
     private JSModuleType jsModuleType;
+    private boolean wasmSharedBuffer;
+    private boolean wasmModularRuntime;
     private String mainClass;
     private boolean stackDeobfuscated;
     private boolean indicator;
@@ -94,6 +97,14 @@ public class DevServerClient {
     public void setServerClasspath(Set<File> serverClasspath) {
         this.serverClasspath.clear();
         this.serverClasspath.addAll(serverClasspath);
+    }
+
+    public DevServerTarget getTarget() {
+        return target;
+    }
+
+    public void setTarget(DevServerTarget target) {
+        this.target = target;
     }
 
     public void setClasspath(Set<File> classpath) {
@@ -292,6 +303,22 @@ public class DevServerClient {
 
     public long getPid() {
         return process != null ? process.pid() : -1;
+    }
+
+    public boolean isWasmSharedBuffer() {
+        return wasmSharedBuffer;
+    }
+
+    public void setWasmSharedBuffer(boolean wasmSharedBuffer) {
+        this.wasmSharedBuffer = wasmSharedBuffer;
+    }
+
+    public boolean isWasmModularRuntime() {
+        return wasmModularRuntime;
+    }
+
+    public void setWasmModularRuntime(boolean wasmModularRuntime) {
+        this.wasmModularRuntime = wasmModularRuntime;
     }
 
     public void start() throws IOException {
@@ -554,6 +581,12 @@ public class DevServerClient {
             command.add("--no-watch");
         }
 
+        command.add("--target");
+        switch (target) {
+            case JS -> command.add("js");
+            case WASM_GC -> command.add("wasm-gc");
+        }
+
         if (targetFileName != null && !targetFileName.isEmpty()) {
             command.add("--targetfile");
             command.add(targetFileName);
@@ -632,6 +665,12 @@ public class DevServerClient {
         if (jsModuleType != null) {
             command.add("--js-module-type");
             command.add(jsModuleType.name().toLowerCase().replace('_', '-'));
+        }
+        if (wasmSharedBuffer) {
+            command.add("--wasm-shared-buffer");
+        }
+        if (wasmModularRuntime) {
+            command.add("--wasm-modular-runtime");
         }
 
         if (jsDebugPort != 0) {

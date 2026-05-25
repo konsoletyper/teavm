@@ -31,14 +31,20 @@ import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
+import org.teavm.devserver.client.DevServerTarget;
+import org.teavm.gradle.api.DevServerTargetType;
 import org.teavm.gradle.api.JSModuleType;
 
-public abstract class JavaScriptDevServerTask extends DefaultTask {
+public abstract class DevServerTask extends DefaultTask {
     @Internal
     public abstract SetProperty<String> getAllProjectPaths();
 
     @Internal
     public abstract Property<String> getProjectPath();
+
+    @Input
+    @Optional
+    public abstract Property<DevServerTargetType> getTargetType();
 
     @Classpath
     public abstract ConfigurableFileCollection getClasspath();
@@ -62,6 +68,14 @@ public abstract class JavaScriptDevServerTask extends DefaultTask {
     @Input
     @Optional
     public abstract Property<JSModuleType> getJsModuleType();
+
+    @Input
+    @Optional
+    public abstract Property<Boolean> getWasmSharedBuffer();
+
+    @Input
+    @Optional
+    public abstract Property<Boolean> getWasmModularRuntime();
 
     @Input
     public abstract Property<String> getMainClass();
@@ -128,6 +142,14 @@ public abstract class JavaScriptDevServerTask extends DefaultTask {
 
         pm.setClasspath(getClasspath().getFiles());
         pm.setSources(getSourceFiles().getFiles());
+
+        if (getTargetType().isPresent()) {
+            pm.setTarget(switch (getTargetType().get()) {
+                case JS -> DevServerTarget.JS;
+                case WASM_GC -> DevServerTarget.WASM_GC;
+            });
+        }
+
         if (getTargetFileName().isPresent()) {
             pm.setTargetFileName(getTargetFileName().get());
         }
@@ -140,6 +162,12 @@ public abstract class JavaScriptDevServerTask extends DefaultTask {
         pm.setPreservedClasses(getPreservedClasses().get());
         if (getJsModuleType().isPresent()) {
             pm.setJsModuleType(getJsModuleType().get());
+        }
+        if (getWasmSharedBuffer().isPresent()) {
+            pm.setWasmSharedBuffer(getWasmSharedBuffer().get());
+        }
+        if (getWasmModularRuntime().isPresent()) {
+            pm.setWasmModularRuntime(getWasmModularRuntime().get());
         }
 
         pm.setServerClasspath(getServerClasspath().getFiles());

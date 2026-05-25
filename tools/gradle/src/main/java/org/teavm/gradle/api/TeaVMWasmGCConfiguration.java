@@ -30,8 +30,6 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
 
     Property<Boolean> getDisassembly();
 
-    Property<String> getTargetFileName();
-
     Property<WasmDebugInfoLocation> getDebugInfoLocation();
 
     Property<WasmDebugInfoLevel> getDebugInfoLevel();
@@ -61,5 +59,16 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
 
     default void emscripten(@DelegatesTo(TeaVMEmscriptenConfiguration.class) Closure<?> action) {
         action.rehydrate(getEmscripten(), action.getOwner(), action.getThisObject()).call();
+    }
+
+    @Nested
+    TeaVMDevServerConfiguration getDevServer();
+
+    default void devServer(Action<TeaVMDevServerConfiguration> action) {
+        action.execute(getDevServer());
+    }
+
+    default void devServer(@DelegatesTo(TeaVMDevServerConfiguration.class) Closure<?> action) {
+        action.rehydrate(getDevServer(), action.getOwner(), action.getThisObject()).call();
     }
 }
