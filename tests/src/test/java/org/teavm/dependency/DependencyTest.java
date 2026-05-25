@@ -65,8 +65,7 @@ public class DependencyTest {
 
     @BeforeClass
     public static void prepare() {
-        classSource = new ClasspathClassHolderSource(new ClasspathResourceProvider(
-                DependencyTest.class.getClassLoader()), new ReferenceCache());
+        classSource = new ClasspathClassHolderSource(new ReferenceCache());
     }
 
     @AfterClass

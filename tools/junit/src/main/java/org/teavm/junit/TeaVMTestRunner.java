@@ -908,7 +908,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private static ClassHolderSource getClassSource(ClassLoader classLoader) {
         var resourceProvider = new ClasspathResourceProvider(classLoader);
-        return new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(resourceProvider, referenceCache));
+        return new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(resourceProvider, referenceCache,
+                classLoader));
     }
 
     @Override

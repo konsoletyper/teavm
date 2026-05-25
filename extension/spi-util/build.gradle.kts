@@ -19,15 +19,14 @@ plugins {
     `teavm-publish`
 }
 
-description = "Declaration of TeaVM compiler extension SPI"
+description = "Helper for TeaVM compiler extension SPI"
 
 dependencies {
-    api(project(":extension:apis"))
-    implementation(project(":extension:spi-util"))
+    testImplementation(libs.junit)
 }
 
 teavmPublish {
-    artifactId = "teavm-extension-spi"
+    artifactId = "teavm-extension-spi-util"
 }
 
 javaVersion {

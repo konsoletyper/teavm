@@ -19,13 +19,14 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public abstract class ValueType implements Serializable {
+public abstract sealed class ValueType implements Serializable
+        permits ValueType.Object, ValueType.Array, ValueType.Primitive, ValueType.Void {
     private static final Map<Class<?>, ValueType> primitiveMap = new HashMap<>();
 
     private ValueType() {
     }
 
-    public static class Object extends ValueType {
+    public static final class Object extends ValueType {
         private String className;
         private transient int hash;
 
@@ -52,10 +53,9 @@ public abstract class ValueType implements Serializable {
             if (obj == this) {
                 return true;
             }
-            if (!(obj instanceof Object)) {
+            if (!(obj instanceof Object that)) {
                 return false;
             }
-            Object that = (Object) obj;
             return that.className.equals(className);
         }
 
@@ -71,7 +71,7 @@ public abstract class ValueType implements Serializable {
         }
     }
 
-    public static class Primitive extends ValueType {
+    public static final class Primitive extends ValueType {
         private PrimitiveType kind;
         private final ValueType.Object boxedType;
         private int hash;
@@ -92,26 +92,16 @@ public abstract class ValueType implements Serializable {
 
         @Override
         public String toString() {
-            switch (kind) {
-                case BOOLEAN:
-                    return "Z";
-                case BYTE:
-                    return "B";
-                case SHORT:
-                    return "S";
-                case INTEGER:
-                    return "I";
-                case LONG:
-                    return "J";
-                case FLOAT:
-                    return "F";
-                case CHARACTER:
-                    return "C";
-                case DOUBLE:
-                    return "D";
-                default:
-                    throw new IllegalStateException();
-            }
+            return switch (kind) {
+                case BOOLEAN -> "Z";
+                case BYTE -> "B";
+                case SHORT -> "S";
+                case INTEGER -> "I";
+                case LONG -> "J";
+                case FLOAT -> "F";
+                case CHARACTER -> "C";
+                case DOUBLE -> "D";
+            };
         }
 
         @Override
@@ -119,10 +109,6 @@ public abstract class ValueType implements Serializable {
             return false;
         }
 
-        @Override
-        public boolean equals(java.lang.Object obj) {
-            return this == obj;
-        }
 
         @Override
         public int hashCode() {
@@ -130,7 +116,7 @@ public abstract class ValueType implements Serializable {
         }
     }
 
-    public static class Array extends ValueType {
+    public static final class Array extends ValueType {
         private ValueType itemType;
         private transient int hash;
 
@@ -157,11 +143,10 @@ public abstract class ValueType implements Serializable {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof Array)) {
+            if (!(obj instanceof Array that)) {
                 return false;
             }
 
-            Array that = (Array) obj;
             return itemType.equals(that.itemType);
         }
 
@@ -177,7 +162,7 @@ public abstract class ValueType implements Serializable {
         }
     }
 
-    public static class Void extends ValueType {
+    public static final class Void extends ValueType {
         private Void() {
         }
 
@@ -189,11 +174,6 @@ public abstract class ValueType implements Serializable {
         @Override
         public boolean isObject(String cls) {
             return false;
-        }
-
-        @Override
-        public boolean equals(java.lang.Object obj) {
-            return this == obj;
         }
 
         @Override
@@ -245,26 +225,16 @@ public abstract class ValueType implements Serializable {
     }
 
     public static ValueType primitive(PrimitiveType type) {
-        switch (type) {
-            case BOOLEAN:
-                return BOOLEAN;
-            case BYTE:
-                return BYTE;
-            case CHARACTER:
-                return CHARACTER;
-            case SHORT:
-                return SHORT;
-            case INTEGER:
-                return INTEGER;
-            case LONG:
-                return LONG;
-            case FLOAT:
-                return FLOAT;
-            case DOUBLE:
-                return DOUBLE;
-            default:
-                throw new AssertionError("Unknown primitive type " + type);
-        }
+        return switch (type) {
+            case BOOLEAN -> BOOLEAN;
+            case BYTE -> BYTE;
+            case CHARACTER -> CHARACTER;
+            case SHORT -> SHORT;
+            case INTEGER -> INTEGER;
+            case LONG -> LONG;
+            case FLOAT -> FLOAT;
+            case DOUBLE -> DOUBLE;
+        };
     }
 
     public static ValueType[] parseMany(String text) {
@@ -356,33 +326,24 @@ public abstract class ValueType implements Serializable {
     }
 
     private static ValueType parseImpl(String string) {
-        switch (string.charAt(0)) {
-            case 'Z':
-                return primitive(PrimitiveType.BOOLEAN);
-            case 'B':
-                return primitive(PrimitiveType.BYTE);
-            case 'S':
-                return primitive(PrimitiveType.SHORT);
-            case 'I':
-                return primitive(PrimitiveType.INTEGER);
-            case 'J':
-                return primitive(PrimitiveType.LONG);
-            case 'F':
-                return primitive(PrimitiveType.FLOAT);
-            case 'D':
-                return primitive(PrimitiveType.DOUBLE);
-            case 'C':
-                return primitive(PrimitiveType.CHARACTER);
-            case 'V':
-                return VOID;
-            case 'L':
+        return switch (string.charAt(0)) {
+            case 'Z' -> primitive(PrimitiveType.BOOLEAN);
+            case 'B' -> primitive(PrimitiveType.BYTE);
+            case 'S' -> primitive(PrimitiveType.SHORT);
+            case 'I' -> primitive(PrimitiveType.INTEGER);
+            case 'J' -> primitive(PrimitiveType.LONG);
+            case 'F' -> primitive(PrimitiveType.FLOAT);
+            case 'D' -> primitive(PrimitiveType.DOUBLE);
+            case 'C' -> primitive(PrimitiveType.CHARACTER);
+            case 'V' -> VOID;
+            case 'L' -> {
                 if (!string.endsWith(";")) {
-                    return null;
+                    yield null;
                 }
-                return object(string.substring(1, string.length() - 1).replace('/', '.'));
-            default:
-                return null;
-        }
+                yield object(string.substring(1, string.length() - 1).replace('/', '.'));
+            }
+            default -> null;
+        };
     }
 
     public boolean isSubtypeOf(ValueType supertype) {

@@ -48,7 +48,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -70,14 +69,14 @@ import org.teavm.cache.InMemoryProgramCache;
 import org.teavm.cache.InMemorySymbolTable;
 import org.teavm.cache.MemoryCachedClassReaderSource;
 import org.teavm.dependency.FastDependencyAnalyzer;
-import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
-import org.teavm.parsing.RenamingResourceMapper;
-import org.teavm.parsing.resource.ResourceClassHolderMapper;
+import org.teavm.parsing.RenamingClassHolderSource;
+import org.teavm.parsing.resource.ResourceBytecodeClassHolderSource;
 import org.teavm.parsing.resource.ResourceProvider;
+import org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
@@ -1012,9 +1011,9 @@ public class CodeServlet extends JettyWebSocketServlet {
 
         ClassLoader classLoader = initClassLoader();
         var reader = ResourceProvider.ofClassPath(Stream.of(classPath).map(File::new).collect(Collectors.toList()));
-        ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
-        Function<String, ClassHolder> classPathMapper = new RenamingResourceMapper(reader, referenceCache,
-                rawMapper);
+        ResourceBytecodeClassHolderSource rawMapper = new ResourceBytecodeClassHolderSource(reader, referenceCache);
+        var classPathMapper = new RenamingClassHolderSource(reader, referenceCache,
+                rawMapper, DefaultSubstituteClassNameMapping.createWithSPI(classLoader));
         classSource.setProvider(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
 
         long startTime = System.currentTimeMillis();

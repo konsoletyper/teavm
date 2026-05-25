@@ -13,23 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.extension.spi.substitution;
 
-plugins {
-    `java-library`
-    `teavm-publish`
-}
-
-description = "Declaration of TeaVM compiler extension SPI"
-
-dependencies {
-    api(project(":extension:apis"))
-    implementation(project(":extension:spi-util"))
-}
-
-teavmPublish {
-    artifactId = "teavm-extension-spi"
-}
-
-javaVersion {
-    version = JavaVersion.VERSION_11
+public interface SubstitutionPolicy {
+    void contribute(SubstitutionSink sink);
 }

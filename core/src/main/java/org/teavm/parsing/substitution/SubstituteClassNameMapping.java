@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.vm.spi;
+package org.teavm.parsing.substitution;
 
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
+import org.teavm.model.ClassReaderSource;
 
-public interface ElementFilter {
-    boolean acceptClass(String className);
+public interface SubstituteClassNameMapping {
+    String originalToSubstitute(ClassReaderSource classes, String original);
 
-    boolean acceptMethod(MethodReference method);
-
-    boolean acceptField(FieldReference field);
+    String substituteToOriginal(String substitute);
 }

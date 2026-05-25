@@ -44,7 +44,8 @@ public class IntrospectionTest {
     public IntrospectionTest() {
         var classLoader = IntrospectionTest.class.getClassLoader();
         var resourceProvider = new ClasspathResourceProvider(classLoader);
-        var classHolderSource = new ClasspathClassHolderSource(resourceProvider, new ReferenceCache());
+        var classHolderSource = new ClasspathClassHolderSource(resourceProvider, new ReferenceCache(),
+                classLoader);
         world = new Introspection(new ClassHierarchy(classHolderSource), classLoader);
     }
 

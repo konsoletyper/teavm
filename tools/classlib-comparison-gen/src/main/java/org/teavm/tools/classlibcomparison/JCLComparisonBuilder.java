@@ -121,7 +121,7 @@ public class JCLComparisonBuilder {
     private List<JCLPackage> buildModel() throws IOException {
         var packageMap = new HashMap<String, JCLPackage>();
         var resourceProvider = new ClasspathResourceProvider(classLoader);
-        var classSource = new ClasspathClassHolderSource(resourceProvider, new ReferenceCache());
+        var classSource = new ClasspathClassHolderSource(resourceProvider, new ReferenceCache(), classLoader);
         visitor = new JCLComparisonVisitor(classSource, packageMap);
         for (var moduleName : List.of("java.base", "java.logging")) {
             try {

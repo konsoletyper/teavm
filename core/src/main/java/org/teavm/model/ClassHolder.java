@@ -102,6 +102,13 @@ public class ClassHolder extends ElementHolder implements ClassReader {
         method.setOwner(null);
     }
 
+    public void removeAllMethods() {
+        for (var method : methods.values()) {
+            method.setOwner(null);
+        }
+        methods.clear();
+    }
+
     @Override
     public FieldHolder getField(String name) {
         return fields.get(name);
@@ -131,6 +138,13 @@ public class ClassHolder extends ElementHolder implements ClassReader {
         }
         fields.remove(field.getName());
         field.setOwner(null);
+    }
+
+    public void removeAllFields() {
+        for (var field : fields.values()) {
+            field.setOwner(null);
+        }
+        fields.clear();
     }
 
     @Override

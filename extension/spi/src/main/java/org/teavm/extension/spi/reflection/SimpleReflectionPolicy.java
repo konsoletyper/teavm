@@ -33,6 +33,7 @@ import org.teavm.extension.introspect.IntrospectElement;
 import org.teavm.extension.introspect.IntrospectField;
 import org.teavm.extension.introspect.IntrospectMember;
 import org.teavm.extension.introspect.IntrospectMethod;
+import org.teavm.extension.spi.GlobMatch;
 
 public abstract class SimpleReflectionPolicy implements ReflectionPolicy {
     private ExtensionEnvironment env;
@@ -146,6 +147,7 @@ public abstract class SimpleReflectionPolicy implements ReflectionPolicy {
             elem -> elem.access() == IntrospectAccess.PACKAGE_PRIVATE;
     protected static final Predicate<IntrospectElement> ABSTRACT = elem -> Modifier.isAbstract(elem.modifiers());
     protected static final Predicate<IntrospectElement> STATIC = elem -> Modifier.isStatic(elem.modifiers());
+    protected static final Predicate<IntrospectElement> INSTANCE = elem -> !Modifier.isStatic(elem.modifiers());
     protected static final Predicate<IntrospectElement> FINAL = elem -> Modifier.isFinal(elem.modifiers());
     protected static final Predicate<IntrospectField> TRANSIENT = elem -> Modifier.isTransient(elem.modifiers());
     protected static final Predicate<IntrospectField> VOLATILE = elem -> Modifier.isVolatile(elem.modifiers());
@@ -168,7 +170,7 @@ public abstract class SimpleReflectionPolicy implements ReflectionPolicy {
     }
 
     protected static Predicate<IntrospectElement> namePattern(String pattern) {
-        return elem -> globMatch(pattern, elem.name());
+        return elem -> GlobMatch.match(pattern, elem.name());
     }
 
     protected static Predicate<IntrospectAnnotatedElement> withAnnotation(Class<? extends Annotation> type) {
@@ -243,59 +245,6 @@ public abstract class SimpleReflectionPolicy implements ReflectionPolicy {
     protected Predicate<IntrospectField> ofType(String typeName) {
         var introspectType = env.findClass(typeName);
         return elem -> elem.type() == introspectType;
-    }
-
-    static boolean globMatch(String pattern, String name) {
-        return globMatch(pattern, name, 0, 0);
-    }
-
-    private static boolean globMatch(String pattern, String name, int patternIndex, int nameIndex) {
-        if (patternIndex == pattern.length()) {
-            return nameIndex == name.length();
-        }
-        var starIndex = pattern.indexOf('*', patternIndex);
-        if (starIndex < 0) {
-            var remainingLen = pattern.length() - patternIndex;
-            return nameIndex + remainingLen == name.length()
-                    && pattern.regionMatches(patternIndex, name, nameIndex, remainingLen);
-        }
-        if (!pattern.regionMatches(patternIndex, name, nameIndex, starIndex - patternIndex)) {
-            return false;
-        }
-        nameIndex += starIndex - patternIndex;
-        if (starIndex == pattern.length() - 1) {
-            return name.indexOf('.', nameIndex) < 0;
-        } else if (pattern.charAt(starIndex + 1) == '*') {
-            if (starIndex + 2 == pattern.length()) {
-                return true;
-            }
-            var nextChar = pattern.charAt(starIndex + 2);
-            var index = nameIndex;
-            while (true) {
-                var next = name.indexOf(nextChar, index);
-                if (next < 0) {
-                    return false;
-                }
-                if (globMatch(pattern, name, starIndex + 3, next + 1)) {
-                    return true;
-                }
-                index = next + 1;
-            }
-        } else {
-            var nextChar = pattern.charAt(starIndex + 1);
-            var dotPos = name.indexOf('.', nameIndex);
-            var index = nameIndex;
-            while (true) {
-                var next = name.indexOf(nextChar, index);
-                if (next < 0 || (dotPos >= 0 && dotPos < next)) {
-                    return false;
-                }
-                if (globMatch(pattern, name, starIndex + 2, next + 1)) {
-                    return true;
-                }
-                index = next + 1;
-            }
-        }
     }
 
     public static class ClassPolicy {

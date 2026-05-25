@@ -41,7 +41,7 @@ public class TeaVMBuilder {
         classLoader = TeaVMBuilder.class.getClassLoader();
         resourceProvider = !isBootstrap() ? new ClasspathResourceProvider(classLoader) : null;
         classSource = !isBootstrap()
-                ? new ClasspathClassHolderSource(resourceProvider, referenceCache)
+                ? new ClasspathClassHolderSource(resourceProvider, referenceCache, classLoader)
                 : name -> null;
     }
 

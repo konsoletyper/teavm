@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,22 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.parsing.resource;
+package org.teavm.parsing.substitution;
 
-import java.util.function.Function;
-import org.teavm.common.CachedFunction;
-import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderSource;
+import java.util.function.Predicate;
 
-public class MapperClassHolderSource implements ClassHolderSource {
-    private Function<String, ClassHolder> mapper;
+class ClassNameMappingRule {
+    Predicate<String> predicate;
+    String packagePrefix;
+    String packageSuffix;
+    String packageRemove;
+    String simpleNamePrefix;
+    String simpleNameSuffix;
+    boolean dontFallback;
 
-    public MapperClassHolderSource(Function<String, ClassHolder> mapper) {
-        this.mapper = new CachedFunction<>(mapper);
-    }
-
-    @Override
-    public ClassHolder get(String name) {
-        return mapper.apply(name);
+    ClassNameMappingRule(Predicate<String> predicate) {
+        this.predicate = predicate;
     }
 }

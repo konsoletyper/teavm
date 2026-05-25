@@ -33,6 +33,7 @@ dependencies {
     api(libs.jzlib)
     api(libs.jodaTime)
     implementation(project(":extension:spi"))
+    annotationProcessor(project(":extension:processor"))
 
     testImplementation(libs.junit)
     testImplementation(project(":core"))

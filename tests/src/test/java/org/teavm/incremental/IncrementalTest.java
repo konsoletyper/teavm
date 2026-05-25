@@ -71,8 +71,7 @@ public class IncrementalTest {
     private static final String OLD_FILE = "classes-old.js";
     private static final String NEW_FILE = "classes-new.js";
     private static final String REFRESHED_FILE = "classes-refreshed.js";
-    private static ClassHolderSource oldClassSource = new ClasspathClassHolderSource(
-            new ClasspathResourceProvider(IncrementalTest.class.getClassLoader()), new ReferenceCache());
+    private static ClassHolderSource oldClassSource = new ClasspathClassHolderSource(new ReferenceCache());
     private static Context rhinoContext;
     private static ScriptableObject rhinoRootScope;
     private String[] updatedMethods;

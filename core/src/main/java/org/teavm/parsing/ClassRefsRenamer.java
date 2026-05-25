@@ -17,7 +17,6 @@ package org.teavm.parsing;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import org.teavm.interop.Remove;
@@ -64,11 +63,14 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
     }
 
     public ClassHolder rename(ClassHolder cls) {
-        ClassHolder renamedCls = new ClassHolder(classNameMapper.apply(cls.getName()));
-        renamedCls.getModifiers().addAll(cls.getModifiers());
-        renamedCls.setLevel(cls.getLevel());
+        var newName = classNameMapper.apply(cls.getName());
+        var renamedCls = !newName.equals(cls.getName()) ? new ClassHolder(newName) : cls;
+        if (renamedCls != cls) {
+            renamedCls.getModifiers().addAll(cls.getModifiers());
+            renamedCls.setLevel(cls.getLevel());
+        }
         String parent = cls.getParent();
-        AnnotationHolder superclassAnnot = cls.getAnnotations().get(Superclass.class.getName());
+        var superclassAnnot = cls.getAnnotations().get(Superclass.class.getName());
         if (superclassAnnot != null) {
             parent = superclassAnnot.getValues().get("value").getString();
             if (parent.isEmpty()) {
@@ -79,14 +81,41 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         if (renamedCls.getName().equals(renamedCls.getParent())) {
             renamedCls.setParent(null);
         }
-        for (MethodHolder method : cls.getMethods()) {
+
+        var methodsChanged = renamedCls != cls;
+        var newMethods = new ArrayList<MethodHolder>();
+        for (var method : cls.getMethods()) {
             if (method.getAnnotations().get(Remove.class.getName()) != null) {
+                methodsChanged = true;
                 continue;
             }
-            renamedCls.addMethod(rename(method));
+            var newMethod = rename(method);
+            if (newMethod != method) {
+                methodsChanged = true;
+            }
+            newMethods.add(newMethod);
         }
-        for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
-            renamedCls.addField(rename(field));
+        if (methodsChanged) {
+            cls.removeAllMethods();
+            for (var method : newMethods) {
+                renamedCls.addMethod(method);
+            }
+        }
+
+        var fieldsChanged = cls != renamedCls;
+        var newFields = new ArrayList<FieldHolder>();
+        for (var field : cls.getFields()) {
+            var newField = rename(field);
+            if (newField != field) {
+                fieldsChanged = true;
+            }
+            newFields.add(rename(field));
+        }
+        if (fieldsChanged) {
+            cls.removeAllFields();
+            for (var field : newFields) {
+                renamedCls.addField(field);
+            }
         }
         if (cls.getOwnerName() != null) {
             renamedCls.setOwnerName(classNameMapper.apply(cls.getOwnerName()));
@@ -95,28 +124,50 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
             renamedCls.setDeclaringClassName(classNameMapper.apply(cls.getDeclaringClassName()));
         }
         rename(cls.getAnnotations(), renamedCls.getAnnotations());
-        for (String iface : cls.getInterfaces()) {
-            String mappedIfaceName = classNameMapper.apply(iface);
-            if (!mappedIfaceName.equals(renamedCls.getName())) {
-                renamedCls.getInterfaces().add(mappedIfaceName);
+
+        var interfacesChanged = cls != renamedCls;
+        var newInterfaces = new ArrayList<String>();
+        for (var iface : cls.getInterfaces()) {
+            var mappedIfaceName = classNameMapper.apply(iface);
+            if (mappedIfaceName.equals(renamedCls.getName())) {
+                interfacesChanged = true;
+                continue;
             }
+            if (!mappedIfaceName.equals(iface)) {
+                interfacesChanged = true;
+            }
+            newInterfaces.add(mappedIfaceName);
+        }
+        if (interfacesChanged) {
+            renamedCls.getInterfaces().clear();
+            renamedCls.getInterfaces().addAll(newInterfaces);
         }
 
-        GenericValueType.Object genericParent = cls.getGenericParent();
+        var genericParent = cls.getGenericParent();
         if (genericParent != null) {
             renamedCls.setGenericParent((GenericValueType.Object) rename(genericParent));
         }
-        for (GenericValueType.Object genericInterface : cls.getGenericInterfaces()) {
-            renamedCls.getGenericInterfaces().add((GenericValueType.Object) rename(genericInterface));
+
+        var genericInterfacesChanged = cls != renamedCls;
+        var newGenericInterfaces = new ArrayList<GenericValueType.Object>();
+        for (var genericInterface : cls.getGenericInterfaces()) {
+            var newGenericInterface = (GenericValueType.Object) rename(genericInterface);
+            if (newGenericInterface != genericInterface) {
+                genericInterfacesChanged = true;
+            }
+            newGenericInterfaces.add(newGenericInterface);
+        }
+        if (genericInterfacesChanged) {
+            renamedCls.getGenericInterfaces().clear();
+            renamedCls.getGenericInterfaces().addAll(newGenericInterfaces);
         }
 
         if (cls.getGenericParameters() != null) {
             renamedCls.setGenericParameters(rename(cls.getGenericParameters()));
         }
 
-        for (var innerClass : cls.getInnerClasses()) {
-            renamedCls.getInnerClasses().add(classNameMapper.apply(innerClass));
-        }
+        renamedCls.getInnerClasses().addAll(cls.getInnerClasses());
+        renamedCls.getInnerClasses().replaceAll(classNameMapper::apply);
 
         return renamedCls;
     }
@@ -131,21 +182,33 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         for (int i = 0; i < signature.length; ++i) {
             signature[i] = rename(signature[i]);
         }
-        MethodHolder renamedMethod = new MethodHolder(referenceCache.getCached(
-                new MethodDescriptor(methodName, signature)));
-        renamedMethod.getModifiers().addAll(method.getModifiers());
-        renamedMethod.setLevel(method.getLevel());
-        renamedMethod.setProgram(method.getProgram());
+
+        var newDescriptor = new MethodDescriptor(methodName, signature);
+        var renamedMethod = newDescriptor.equals(method.getDescriptor())
+                ? method
+                : new MethodHolder(referenceCache.getCached(newDescriptor));
+
+        if (renamedMethod != method) {
+            renamedMethod.getModifiers().addAll(method.getModifiers());
+            renamedMethod.setLevel(method.getLevel());
+            renamedMethod.setProgram(method.getProgram());
+        }
         rename(method.getAnnotations(), renamedMethod.getAnnotations());
         for (int i = 0; i < method.parameterCount(); ++i) {
             rename(method.parameterAnnotation(i), renamedMethod.parameterAnnotation(i));
         }
 
-        if (!method.getThrownTypes().isEmpty()) {
-            var types = new ArrayList<String>(method.getThrownTypes());
-            for (var i = 0; i < types.size(); ++i) {
-                types.set(i, classNameMapper.apply(types.get(i)));
+        var thrownTypesChanged = renamedMethod != method;
+        var newThrownTypes = new ArrayList<String>();
+        for (var thrownType : method.getThrownTypes()) {
+            var mappedThrownType = classNameMapper.apply(thrownType);
+            if (!mappedThrownType.equals(thrownType)) {
+                thrownTypesChanged = true;
             }
+            newThrownTypes.add(mappedThrownType);
+        }
+        if (thrownTypesChanged) {
+            method.setThrownTypes(newThrownTypes);
         }
 
         if (renamedMethod.getProgram() != null) {
@@ -154,16 +217,27 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
 
         renamedMethod.setTypeParameters(rename(method.getTypeParameters()));
         GenericValueType genericResultType = method.getGenericResultType();
+        var genericSignatureChanged = renamedMethod != method;
         if (genericResultType != null) {
-            genericResultType = rename(method.getGenericResultType());
+            var newGenericResultType = rename(genericResultType);
+            if (newGenericResultType != genericResultType) {
+                genericSignatureChanged = true;
+            }
+            genericResultType = newGenericResultType;
         }
         var genericParameters = method.getGenericParameterTypes();
         if (genericParameters != null) {
+            var newGenericParameters = new GenericValueType[genericParameters.length];
             for (int i = 0; i < genericParameters.length; ++i) {
-                genericParameters[i] = rename(method.genericParameterType(i));
+                var newGenericParameter = rename(genericParameters[i]);
+                if (newGenericParameter != genericParameters[i]) {
+                    genericSignatureChanged = true;
+                }
+                newGenericParameters[i] = newGenericParameter;
             }
+            genericParameters = newGenericParameters;
         }
-        if (genericResultType != null || genericParameters != null) {
+        if (genericSignatureChanged) {
             renamedMethod.setGenericSignature(genericResultType, genericParameters);
         }
 
@@ -199,19 +273,16 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
     }
 
     public FieldHolder rename(FieldHolder field) {
-        FieldHolder renamedField = new FieldHolder(field.getName());
-        renamedField.getModifiers().addAll(field.getModifiers());
-        renamedField.setLevel(field.getLevel());
-        renamedField.setType(rename(field.getType()));
-        renamedField.setInitialValue(field.getInitialValue());
-        rename(field.getAnnotations(), renamedField.getAnnotations());
+        field.setType(rename(field.getType()));
+        field.setInitialValue(field.getInitialValue());
+        rename(field.getAnnotations(), field.getAnnotations());
 
-        GenericValueType genericType = field.getGenericType();
+        var genericType = field.getGenericType();
         if (genericType != null) {
-            renamedField.setGenericType(rename(genericType));
+            field.setGenericType(rename(genericType));
         }
 
-        return renamedField;
+        return field;
     }
 
     private ValueType rename(ValueType type) {
@@ -230,8 +301,7 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         if (type instanceof GenericValueType.Array) {
             GenericValueType itemType = ((GenericValueType.Array) type).getItemType();
             return referenceCache.getCached(new GenericValueType.Array(rename(itemType)));
-        } else if (type instanceof GenericValueType.Object) {
-            GenericValueType.Object object = (GenericValueType.Object) type;
+        } else if (type instanceof GenericValueType.Object object) {
             String className = classNameMapper.apply(object.getClassName());
             GenericValueType.Object parent = object.getParent();
             if (parent != null) {
@@ -270,68 +340,112 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
     }
 
     private RuntimeConstant rename(RuntimeConstant cst) {
-        switch (cst.getKind()) {
-            case RuntimeConstant.TYPE:
-                return new RuntimeConstant(rename(cst.getValueType()));
-            case RuntimeConstant.METHOD:
-                return new RuntimeConstant(rename(cst.getMethodType()));
-            case RuntimeConstant.METHOD_HANDLE:
-                return new RuntimeConstant(rename(cst.getMethodHandle()));
-            default:
-                return cst;
-        }
+        return switch (cst.getKind()) {
+            case RuntimeConstant.TYPE -> new RuntimeConstant(rename(cst.getValueType()));
+            case RuntimeConstant.METHOD -> new RuntimeConstant(rename(cst.getMethodType()));
+            case RuntimeConstant.METHOD_HANDLE -> new RuntimeConstant(rename(cst.getMethodHandle()));
+            default -> cst;
+        };
     }
 
     private MethodHandle rename(MethodHandle handle) {
-        switch (handle.getKind()) {
-            case GET_FIELD:
-                return MethodHandle.fieldGetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.getValueType()));
-            case GET_STATIC_FIELD:
-                return MethodHandle.staticFieldGetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.getValueType()));
-            case PUT_FIELD:
-                return MethodHandle.fieldSetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.getValueType()));
-            case PUT_STATIC_FIELD:
-                return MethodHandle.staticFieldSetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.getValueType()));
-            case INVOKE_VIRTUAL:
-                return MethodHandle.virtualCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.signature()));
-            case INVOKE_STATIC:
-                return MethodHandle.staticCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.signature()));
-            case INVOKE_SPECIAL:
-                return MethodHandle.specialCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.signature()));
-            case INVOKE_CONSTRUCTOR:
-                return MethodHandle.constructorCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.signature()));
-            case INVOKE_INTERFACE:
-                return MethodHandle.interfaceCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
-                        rename(handle.signature()));
-            default:
-                break;
-        }
-        throw new IllegalArgumentException("Unknown method handle type: " + handle.getKind());
+        return switch (handle.getKind()) {
+            case GET_FIELD -> MethodHandle.fieldGetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                    rename(handle.getValueType()));
+            case GET_STATIC_FIELD ->
+                    MethodHandle.staticFieldGetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                            rename(handle.getValueType()));
+            case PUT_FIELD -> MethodHandle.fieldSetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                    rename(handle.getValueType()));
+            case PUT_STATIC_FIELD ->
+                    MethodHandle.staticFieldSetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                            rename(handle.getValueType()));
+            case INVOKE_VIRTUAL ->
+                    MethodHandle.virtualCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                            rename(handle.signature()));
+            case INVOKE_STATIC ->
+                    MethodHandle.staticCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                            rename(handle.signature()));
+            case INVOKE_SPECIAL ->
+                    MethodHandle.specialCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                            rename(handle.signature()));
+            case INVOKE_CONSTRUCTOR ->
+                    MethodHandle.constructorCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                            rename(handle.signature()));
+            case INVOKE_INTERFACE ->
+                    MethodHandle.interfaceCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
+                            rename(handle.signature()));
+        };
     }
 
     private void rename(AnnotationContainer source, AnnotationContainer target) {
+        var newAnnotations = new ArrayList<AnnotationHolder>();
+        var annotationsChanged = target != source;
         for (AnnotationHolder annot : source.all()) {
-            if (!annot.getType().equals(Rename.class.getName())
-                    && !annot.getType().equals(Superclass.class.getName())) {
-                target.add(rename(annot));
+            if (annot.getType().equals(Rename.class.getName())
+                    || annot.getType().equals(Superclass.class.getName())) {
+                annotationsChanged = true;
+                continue;
+            }
+            var newAnnot = rename(annot);
+            if (newAnnot != annot) {
+                annotationsChanged = true;
+            }
+            newAnnotations.add(newAnnot);
+        }
+        if (annotationsChanged) {
+            target.removeAll();
+            for (var newAnnot : newAnnotations) {
+                target.add(newAnnot);
             }
         }
     }
 
     private AnnotationHolder rename(AnnotationHolder annot) {
-        AnnotationHolder renamedAnnot = new AnnotationHolder(classNameMapper.apply(annot.getType()));
-        for (Map.Entry<String, AnnotationValue> entry : annot.getValues().entrySet()) {
-            renamedAnnot.getValues().put(entry.getKey(), entry.getValue());
+        var newName = classNameMapper.apply(annot.getType());
+        var renamedAnnot = newName.equals(annot.getType())
+                ? annot
+                : new AnnotationHolder(classNameMapper.apply(annot.getType()));
+        if (renamedAnnot != annot) {
+            for (var entry : annot.getValues().entrySet()) {
+                renamedAnnot.getValues().put(entry.getKey(), rename(entry.getValue()));
+            }
+        } else {
+            for (var entry : annot.getValues().entrySet()) {
+                entry.setValue(rename(entry.getValue()));
+            }
         }
         return renamedAnnot;
+    }
+
+    private AnnotationValue rename(AnnotationValue value) {
+        return switch (value.getType()) {
+            case AnnotationValue.ANNOTATION -> {
+                var newAnnot = rename((AnnotationHolder) value.getAnnotation());
+                yield newAnnot != value.getAnnotation()
+                        ? new AnnotationValue(newAnnot)
+                        : value;
+            }
+            case AnnotationValue.LIST -> {
+                var newList = new ArrayList<AnnotationValue>();
+                var changed = false;
+                for (var item : value.getList()) {
+                    var newItem = rename(item);
+                    if (newItem != item) {
+                        changed = true;
+                    }
+                    newList.add(newItem);
+                }
+                yield changed ? new AnnotationValue(newList) : value;
+            }
+            case AnnotationValue.CLASS -> {
+                var newJavaClass = rename(value.getJavaClass());
+                yield newJavaClass.equals(value.getJavaClass())
+                        ? value
+                        : new AnnotationValue(newJavaClass);
+            }
+            default -> value;
+        };
     }
 
     public void rename(Program program) {

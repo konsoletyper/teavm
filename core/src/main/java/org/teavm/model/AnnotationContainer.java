@@ -60,6 +60,11 @@ public class AnnotationContainer implements AnnotationContainerReader {
         annotationsList.removeIf(a -> a.getType().equals(type));
     }
 
+    public void removeAll() {
+        annotations = null;
+        annotationsList = null;
+    }
+
     @Override
     public Iterable<AnnotationHolder> all() {
         return annotationsList != null ? annotationsList : Collections.emptyList();

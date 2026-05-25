@@ -423,7 +423,7 @@ public class TeaVMTool {
                 fileTable = new FileSymbolTable(new File(cacheDirectory, "files"));
                 variableTable = new FileSymbolTable(new File(cacheDirectory, "variables"));
                 ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(resourceProvider,
-                        referenceCache);
+                        referenceCache, classLoader);
                 ClassHolderSource classSource = new PreOptimizingClassHolderSource(innerClassSource);
                 cachedClassSource = new DiskCachedClassReaderSource(cacheDirectory, referenceCache, symbolTable,
                         fileTable, variableTable, classSource, innerClassSource);
@@ -445,7 +445,7 @@ public class TeaVMTool {
                 cacheStatus = cachedClassSource;
             } else {
                 vmBuilder.setClassLoader(classLoader).setClassSource(new PreOptimizingClassHolderSource(
-                        new ClasspathClassHolderSource(resourceProvider, referenceCache)));
+                        new ClasspathClassHolderSource(resourceProvider, referenceCache, classLoader)));
                 cacheStatus = AlwaysStaleCacheStatus.INSTANCE;
             }
 

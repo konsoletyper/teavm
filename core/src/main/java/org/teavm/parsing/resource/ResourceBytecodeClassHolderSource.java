@@ -16,24 +16,24 @@
 package org.teavm.parsing.resource;
 
 import java.io.IOException;
-import java.util.function.Function;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.Parser;
 
-public class ResourceClassHolderMapper implements Function<String, ClassHolder> {
+public class ResourceBytecodeClassHolderSource implements ClassHolderSource {
     private Parser parser;
     private ResourceProvider resourceProvider;
 
-    public ResourceClassHolderMapper(ResourceProvider resourceProvider, ReferenceCache referenceCache) {
+    public ResourceBytecodeClassHolderSource(ResourceProvider resourceProvider, ReferenceCache referenceCache) {
         this.resourceProvider = resourceProvider;
         parser = new Parser(referenceCache);
     }
 
     @Override
-    public ClassHolder apply(String name) {
+    public ClassHolder get(String name) {
         ClassNode clsNode = new ClassNode();
         String resourceName = name.replace('.', '/') + ".class";
         var resource = resourceProvider.getResource(resourceName);

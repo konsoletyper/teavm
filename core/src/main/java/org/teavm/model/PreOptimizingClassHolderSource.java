@@ -17,7 +17,6 @@ package org.teavm.model;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 import org.teavm.model.optimization.GlobalValueNumbering;
 import org.teavm.model.optimization.UnusedVariableElimination;
 import org.teavm.model.transformation.NoSuchFieldCatchElimination;
@@ -34,7 +33,7 @@ public class PreOptimizingClassHolderSource implements ClassHolderSource {
     public ClassHolder get(String name) {
         ClassHolder cls = cache.get(name);
         if (cls == null) {
-            cls = optimize(innerClassSource::get, name);
+            cls = optimize(innerClassSource, name);
             if (cls == null) {
                 return null;
             }
@@ -44,8 +43,8 @@ public class PreOptimizingClassHolderSource implements ClassHolderSource {
         return cls;
     }
 
-    public static ClassHolder optimize(Function<String, ClassHolder> innerSource, String name) {
-        ClassHolder cls = innerSource.apply(name);
+    public static ClassHolder optimize(ClassHolderSource innerSource, String name) {
+        ClassHolder cls = innerSource.get(name);
         if (cls == null) {
             return cls;
         }
