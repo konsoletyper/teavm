@@ -99,6 +99,11 @@ class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
         public Dependency getMetaprogramming() {
             return project.getDependencies().create(ArtifactCoordinates.METAPROGRAMMING);
         }
+
+        @Override
+        public Dependency getSpi() {
+            return project.getDependencies().create(ArtifactCoordinates.SPI);
+        }
     };
 
     @Override

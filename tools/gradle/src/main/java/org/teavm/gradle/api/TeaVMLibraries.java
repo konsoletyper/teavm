@@ -25,4 +25,6 @@ public interface TeaVMLibraries {
     Dependency getInterop();
 
     Dependency getMetaprogramming();
+
+    Dependency getSpi();
 }
