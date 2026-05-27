@@ -38,5 +38,7 @@ public class TeaVMLibraryPlugin implements Plugin<Project> {
         project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, ArtifactCoordinates.JUNIT);
         project.getDependencies().add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, ArtifactCoordinates.CLASSLIB);
         TeaVMTestConfigurator.configure(project, extension.getTests());
+        project.getDependencies().add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME,
+                ArtifactCoordinates.EXTENSION_PROCESSOR);
     }
 }
