@@ -128,9 +128,6 @@ public class FileOutputStreamTest {
         f = new File(fileName, "fos.tst");
         fileName = f.getAbsolutePath();
         fos = new FileOutputStream(fileName);
-
-        // Regression test for HARMONY-4012
-        new FileOutputStream("nul");
     }
 
     @Test
