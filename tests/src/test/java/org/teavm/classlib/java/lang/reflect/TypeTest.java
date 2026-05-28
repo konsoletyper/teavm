@@ -18,6 +18,8 @@ package org.teavm.classlib.java.lang.reflect;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -56,6 +58,18 @@ public class TypeTest {
         assertEquals("", s);
         
         assertEquals("T", A.class.getTypeParameters()[0].toString());
+    }
+    
+    @Test
+    public void classTypeParametersAndOtherMetadata() {
+        var s = Arrays.stream(A.class.getTypeParameters())
+                .map(TypeVariable::getName)
+                .collect(Collectors.joining(", "));
+        assertEquals("T", s);
+        assertEquals(0, A.class.getAnnotations().length);
+        
+        assertEquals(0, C.class.getTypeParameters().length);
+        assertEquals(1, C.class.getAnnotations().length);
     }
     
     @Test
@@ -252,6 +266,7 @@ public class TypeTest {
         Number c;
     }
     
+    @SomeAnnot
     static class C {
     }
     
@@ -267,5 +282,9 @@ public class TypeTest {
     static class Outer<T> {
         class Inner<S extends T> {
         }
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface SomeAnnot {
     }
 }

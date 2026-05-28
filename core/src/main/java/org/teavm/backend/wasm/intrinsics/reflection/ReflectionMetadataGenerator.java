@@ -424,11 +424,7 @@ public class ReflectionMetadataGenerator {
         }
 
         if (methodReflectionStruct.typeParametersIndex() >= 0) {
-            if (typeParameters == null || typeParameters.length == 0) {
-                builder.nullConst(reflectionTypes.typeVariableInfo().array().getReference());
-            } else {
-                generateTypeParameters(builder, typeParameters, cls, method);
-            }
+            generateTypeParameters(builder, typeParameters, cls, method);
         }
 
         builder.structNew(methodReflectionStruct.structure());
@@ -615,7 +611,7 @@ public class ReflectionMetadataGenerator {
             var className = ((ValueType.Object) type).getClassName();
             var cls = classes.get(className);
             if (cls == null) {
-                return null;
+                continue;
             }
             var annotations = AnnotationGenerationHelper.collectRuntimeAnnotations(classes,
                     cls.getAnnotations().all());
@@ -894,6 +890,10 @@ public class ReflectionMetadataGenerator {
     private void generateTypeParameters(WasmInstructionBuilder builder, GenericTypeParameter[] params, ClassReader cls,
             MethodReader method) {
         var struct = classInfoProvider.reflectionTypes().typeVariableInfo();
+        if (params == null || params.length == 0) {
+            builder.nullConst(struct.array().getReference());
+            return;
+        }
         for (var param : params) {
             if (struct.nameIndex() >= 0) {
                 builder.getGlobal(strings.getStringConstant(param.getName()).global);
