@@ -17,7 +17,9 @@ package org.teavm.backend.wasm.transformation;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
@@ -30,19 +32,23 @@ import org.teavm.backend.wasm.model.instruction.WasmBreak;
 import org.teavm.backend.wasm.model.instruction.WasmCall;
 import org.teavm.backend.wasm.model.instruction.WasmCallReference;
 import org.teavm.backend.wasm.model.instruction.WasmCast;
+import org.teavm.backend.wasm.model.instruction.WasmCastBranch;
 import org.teavm.backend.wasm.model.instruction.WasmConditional;
+import org.teavm.backend.wasm.model.instruction.WasmDefaultInstructionVisitor;
 import org.teavm.backend.wasm.model.instruction.WasmDrop;
 import org.teavm.backend.wasm.model.instruction.WasmFloat32Constant;
 import org.teavm.backend.wasm.model.instruction.WasmFloat64Constant;
 import org.teavm.backend.wasm.model.instruction.WasmGetLocal;
 import org.teavm.backend.wasm.model.instruction.WasmInstruction;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionUtil;
 import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 import org.teavm.backend.wasm.model.instruction.WasmInt64Constant;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmIntUnary;
 import org.teavm.backend.wasm.model.instruction.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmNullBranch;
 import org.teavm.backend.wasm.model.instruction.WasmNullConstant;
 import org.teavm.backend.wasm.model.instruction.WasmReturn;
 import org.teavm.backend.wasm.model.instruction.WasmSetLocal;
@@ -64,6 +70,7 @@ public class CoroutineTransformation {
     private WasmLocal stateLocal;
     private SuspensionPointCollector collector;
     private int currentStateOffset;
+    private Set<WasmInstruction> usedBreakTargets = new HashSet<>();
 
     public CoroutineTransformation(WasmFunctionTypes functionTypes, BaseWasmFunctionRepository functions,
             WasmGCClassInfoProvider classInfoProvider) {
@@ -82,6 +89,7 @@ public class CoroutineTransformation {
         function.add(fiberLocal);
         function.add(stateLocal);
 
+        new BreakTargetCollector().visitMany(function.getBody());
         var mainBlock = new WasmBlock(false);
         mainBlock.getBody().transferFrom(function.getBody());
 
@@ -100,6 +108,7 @@ public class CoroutineTransformation {
         currentStateOffset = 0;
         stateLocal = null;
         fiberLocal = null;
+        usedBreakTargets.clear();
     }
 
     private void generatePrologue(int localsCount) {
@@ -194,6 +203,15 @@ public class CoroutineTransformation {
             while (insn != null) {
                 var next = insn.getNext();
                 if (collector.isSuspending(insn)) {
+                    if (insn instanceof WasmBlock block && !block.isLoop() && block.getType() == null) {
+                        processOptimizedBlock(block);
+                        insn = next;
+                        continue;
+                    } else if (insn instanceof WasmConditional conditional && isOptimizableConditional(conditional)) {
+                        processOptimizedConditional(conditional);
+                        insn = next;
+                        continue;
+                    }
                     var block = new WasmBlock(false);
                     var jumpToInsn = block;
                     if (!inputTypes.isEmpty()) {
@@ -229,6 +247,90 @@ public class CoroutineTransformation {
                 }
                 insn = next;
             }
+        }
+
+        private void processOptimizedBlock(WasmBlock block) {
+            var start = block.getBody().getFirst();
+            moveAllPreviousTo(block, block.getBody());
+            process(start);
+            if (!typeInference.typeStack.isEmpty() || inputTypes.isEmpty()) {
+                block.setType(functionTypes.get(new WasmSignature(List.copyOf(typeInference.typeStack),
+                        List.copyOf(inputTypes))).asBlock());
+            }
+        }
+
+        private boolean isOptimizableConditional(WasmConditional conditional) {
+            return conditional.getType() == null
+                    || (conditional.getType().getInputTypes().isEmpty() && !usedBreakTargets.contains(conditional));
+        }
+
+        private void processOptimizedConditional(WasmConditional conditional) {
+            var outputTypes = new ArrayList<>(typeInference.typeStack);
+            outputTypes.remove(outputTypes.size() - 1);
+            var typesAfterConditionCheck = List.copyOf(outputTypes);
+            if (conditional.getType() != null) {
+                outputTypes.addAll(conditional.getType().getOutputTypes());
+            }
+            var wrapper = new WasmBlock(false);
+            if (!outputTypes.isEmpty() || inputTypes.isEmpty()) {
+                wrapper.setType(functionTypes.get(new WasmSignature(outputTypes, List.copyOf(inputTypes)))
+                        .asBlock());
+            }
+            typeInference.typeStack.remove(typeInference.typeStack.size() - 1);
+            minDepth = Math.min(minDepth, typeInference.typeStack.size());
+            if (conditional.getElseBlock().isEmpty()) {
+                moveAllPreviousTo(conditional, wrapper.getBody());
+                WasmInstructionUtil.negate(wrapper.getBody().getLast());
+                var branch = new WasmBranch(wrapper.getBody());
+                wrapper.getBody().add(branch);
+                wrapper.getBody().transferFrom(conditional.getThenBlock());
+                process(branch.getNext());
+                var replacement = new BreakTargetReplacement(target -> {
+                    if (target == conditional.getThenBlock()) {
+                        return wrapper.getBody();
+                    } else {
+                        return null;
+                    }
+                });
+                replacement.visit(wrapper);
+            } else {
+                var thenWrapper = new WasmBlock(false);
+                if (!inputTypes.isEmpty() || !typesAfterConditionCheck.isEmpty()) {
+                    thenWrapper.setType(functionTypes.get(new WasmSignature(typesAfterConditionCheck,
+                            List.copyOf(inputTypes))).asBlock());
+                }
+                moveAllPreviousTo(conditional, thenWrapper.getBody());
+                WasmInstructionUtil.negate(thenWrapper.getBody().getLast());
+                var branch = new WasmBranch(thenWrapper.getBody());
+                thenWrapper.getBody().add(branch);
+                thenWrapper.getBody().transferFrom(conditional.getThenBlock());
+                var backupTypes = List.copyOf(typeInference.typeStack);
+                var backupMinDepth = minDepth;
+                process(branch.getNext());
+                if (!thenWrapper.getBody().getLast().isTerminating()) {
+                    thenWrapper.getBody().add(new WasmBreak(wrapper.getBody()));
+                }
+                wrapper.getBody().add(thenWrapper);
+                wrapper.getBody().transferFrom(conditional.getElseBlock());
+                typeInference.typeStack.clear();
+                typeInference.typeStack.addAll(backupTypes);
+                minDepth = backupMinDepth;
+                process(thenWrapper.getNext());
+
+                var replacement = new BreakTargetReplacement(target -> {
+                    if (target == conditional.getThenBlock()) {
+                        return thenWrapper.getBody();
+                    } else if (target == conditional.getElseBlock()) {
+                        return wrapper.getBody();
+                    } else {
+                        return null;
+                    }
+                });
+                replacement.visit(wrapper);
+            }
+
+            conditional.insertPrevious(wrapper);
+            conditional.delete();
         }
 
         private void updateTypes(WasmInstruction insn) {
@@ -341,12 +443,10 @@ public class CoroutineTransformation {
     }
 
     private void handleSplitInstruction(WasmInstruction instruction, int stateIndex) {
-        if (instruction instanceof WasmCallReference) {
-            var callRef = (WasmCallReference) instruction;
+        if (instruction instanceof WasmCallReference callRef) {
             instruction.insertPrevious(new WasmTeeLocal(savedFunctionLocal()));
             instruction.insertPrevious(new WasmCast(callRef.getType().getReference()));
-        } else if (instruction instanceof WasmBlock) {
-            var block = (WasmBlock) instruction;
+        } else if (instruction instanceof WasmBlock block) {
             if (block.isLoop()) {
                 splitLoop(block, stateIndex);
             } else {
@@ -358,10 +458,9 @@ public class CoroutineTransformation {
                         : Collections.emptyList();
                 splitList(block.getBody(), inputTypes, outputTypes, block.getBody());
             }
-        } else if (instruction instanceof WasmConditional) {
-            splitConditional((WasmConditional) instruction);
-        } else if (instruction instanceof WasmTry) {
-            var tryInsn = (WasmTry) instruction;
+        } else if (instruction instanceof WasmConditional conditional) {
+            splitConditional(conditional);
+        } else if (instruction instanceof WasmTry tryInsn) {
             List<? extends WasmType> outTypes = tryInsn.getType() != null
                     ? List.of(tryInsn.getType())
                     : Collections.emptyList();
@@ -478,5 +577,41 @@ public class CoroutineTransformation {
     private void emitIsSuspending(WasmInstructionList list, TextLocation location) {
         list.add(new WasmGetLocal(fiberLocal), location);
         list.add(new WasmCall(coroutineFunctions.isSuspending()), location);
+    }
+
+    private class BreakTargetCollector extends WasmDefaultInstructionVisitor {
+        @Override
+        public void visit(WasmBreak instruction) {
+            usedBreakTargets.add(instruction.getTarget().getBreakTarget());
+            super.visit(instruction);
+        }
+
+        @Override
+        public void visit(WasmBranch instruction) {
+            usedBreakTargets.add(instruction.getTarget().getBreakTarget());
+            super.visit(instruction);
+        }
+
+        @Override
+        public void visit(WasmCastBranch instruction) {
+            usedBreakTargets.add(instruction.getTarget().getBreakTarget());
+            super.visit(instruction);
+        }
+
+        @Override
+        public void visit(WasmNullBranch instruction) {
+            usedBreakTargets.add(instruction.getTarget().getBreakTarget());
+            super.visit(instruction);
+        }
+
+        @Override
+        public void visit(WasmSwitch instruction) {
+            usedBreakTargets.add(instruction.getDefaultTarget().getBreakTarget());
+            for (var target : instruction.getTargets()) {
+                usedBreakTargets.add(target.getBreakTarget());
+            }
+            super.visit(instruction);
+        }
+
     }
 }
