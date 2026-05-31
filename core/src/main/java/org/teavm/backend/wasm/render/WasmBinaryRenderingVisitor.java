@@ -128,7 +128,6 @@ class WasmBinaryRenderingVisitor implements WasmInstructionVisitor {
 
     @Override
     public void visit(WasmBlock instruction) {
-        emitLocation(instruction);
         ++depth;
         blockDepths.put(instruction, depth);
         writer.writeByte(instruction.isLoop() ? 0x03 : 0x02);
@@ -141,7 +140,6 @@ class WasmBinaryRenderingVisitor implements WasmInstructionVisitor {
 
     @Override
     public void visit(WasmConditional instruction) {
-        emitLocation(instruction);
         writer.writeByte(0x04);
         writeBlockType(instruction.getType());
         ++depth;
@@ -938,7 +936,6 @@ class WasmBinaryRenderingVisitor implements WasmInstructionVisitor {
 
     @Override
     public void visit(WasmTry instruction) {
-        emitLocation(instruction);
         writer.writeByte(0x1F);
         writer.writeType(instruction.getType(), module);
         writer.writeLEB(instruction.getCatches().size());

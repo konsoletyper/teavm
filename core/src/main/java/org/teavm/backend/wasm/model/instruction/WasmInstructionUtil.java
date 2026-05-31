@@ -51,7 +51,9 @@ public final class WasmInstructionUtil {
             return;
         }
 
-        instruction.insertNext(new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ));
+        var newInsn = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ);
+        newInsn.setLocation(instruction.getLocation());
+        instruction.insertNext(newInsn);
     }
 
     private static WasmIntBinaryOperation negate(WasmIntBinaryOperation op) {

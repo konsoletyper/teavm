@@ -405,7 +405,7 @@ public class WasmBinaryRenderer {
                 .collect(Collectors.toList());
 
         section.writeLEB(functions.size());
-        var sectionOffset = output.getPosition() + 4;
+        var sectionOffset = output.getPosition() + 5;
         for (var function : functions) {
             var body = renderFunction(module, function, section.getPosition() + 4, sectionOffset);
             var startPos = section.getPosition();

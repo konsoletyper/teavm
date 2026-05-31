@@ -597,6 +597,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         if (builder.isTerminating()) {
             return;
         }
+        builder.pushLocation(expr.getLocation());
         if (expr.getValue() == null) {
             WasmType type = expectedType;
             if (type == WasmType.INT32) {
@@ -631,12 +632,15 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         } else {
             throw new IllegalArgumentException("Constant unsupported: " + expr.getValue());
         }
+        builder.popLocation();
     }
 
     @Override
     public void visit(VariableExpr expr) {
         var local = function.getLocalVariables().get(expr.getIndex() - firstVariable);
+        builder.pushLocation(expr.getLocation());
         builder.getLocal(local);
+        builder.popLocation();
     }
 
     @Override
@@ -1432,7 +1436,11 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         for (var s : statement.getBody()) {
             s.acceptVisitor(this);
         }
+        var lastLocation = builder.list.getLast() != null ? builder.list.getLast().getLocation() : null;
         builder.breakTo(loopBuilder.list);
+        if (lastLocation != null && builder.list.getLast().getLocation() == null) {
+            builder.list.getLast().setLocation(lastLocation);
+        }
         builder = oldBuilder;
 
         breakTargets.remove(statement);
@@ -1630,7 +1638,10 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         dispatchBlockBuilder.throw_(context.getExceptionTag());
 
         for (var i = 0; i < buildersToClose.size(); i++) {
-            buildersToClose.get(i).breakTo(innerInsnList);
+            var builderToClose = buildersToClose.get(i);
+            var location = builderToClose.list.getLast() != null ? builderToClose.list.getLast().getLocation() : null;
+            builderToClose.breakTo(innerInsnList);
+            builderToClose.list.getLast().setLocation(location);
         }
 
         builder = oldBuilder;
