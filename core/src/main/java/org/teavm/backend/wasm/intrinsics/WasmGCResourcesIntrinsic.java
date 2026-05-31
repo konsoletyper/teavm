@@ -60,6 +60,9 @@ public class WasmGCResourcesIntrinsic implements WasmGCInlineIntrinsic {
 
     public void writeModule(WasmModule module) {
         if (resources.size() == 0) {
+            if (baseGlobal != null) {
+                baseGlobal.getInitialValue().add(new WasmInt32Constant(0));
+            }
             return;
         }
 
