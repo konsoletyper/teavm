@@ -37,18 +37,15 @@ import org.teavm.model.MethodDescriptor;
 
 public class DefaultReflectionSupplier implements ReflectionSupplier {
     private ExtensionEnvironmentImpl env;
-    private List<ReflectionPolicy> policies;
+    private List<ReflectionPolicy> policies = new ArrayList<>();
     private Map<String, Set<String>> pendingAccessibleFields = new HashMap<>();
     private Map<String, Set<MethodDescriptor>> pendingAccessibleMethods = new HashMap<>();
 
     public DefaultReflectionSupplier(ExtensionEnvironmentImpl env) {
         this.env = env;
-        policies = ServiceLoader.load(ReflectionPolicy.class, env.classLoader())
-                .stream()
-                .map(ServiceLoader.Provider::get)
-                .collect(Collectors.toList());
-        for (var policy : policies) {
+        for (var policy : ServiceLoader.load(ReflectionPolicy.class, env.classLoader())) {
             policy.initialize(env);
+            policies.add(policy);
         }
     }
 
