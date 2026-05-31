@@ -1253,6 +1253,24 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             return;
         }
         accept(statement.getCondition());
+        if (statement.getConsequent().size() == 1 && statement.getAlternative().isEmpty()) {
+            var onlyStatement = statement.getConsequent().get(0);
+            if (onlyStatement instanceof BreakStatement br) {
+                builder.pushLocation(br.getLocation());
+                var target = br.getTarget();
+                if (target == null) {
+                    target = currentBreakTarget;
+                }
+                var wasmTarget = breakTargets.get(target);
+                if (wasmTarget != null) {
+                    builder.branch(wasmTarget);
+                } else {
+                    builder.unreachable();
+                }
+                builder.popLocation();
+                return;
+            }
+        }
         ++blockLevel;
         var cond = builder.conditional();
         var thenBuilder = cond.getThenBlock().builder();
