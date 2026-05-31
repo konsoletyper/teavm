@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.teavm.ast.ArrayFromDataExpr;
@@ -90,6 +91,8 @@ import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.instruction.WasmInt64Subtype;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
+import org.teavm.backend.wasm.model.instruction.WasmIntUnary;
+import org.teavm.backend.wasm.model.instruction.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 import org.teavm.backend.wasm.runtime.StringInternPool;
@@ -576,20 +579,48 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             }
         }
 
-        var cond = builder.conditional(resultType);
-        var thenBuilder = cond.getThenBlock().builder();
-        accept(expr.getConsequent(), thenBuilder, expectedType);
+        if (!tryOptimizedConditional(expr)) {
+            var consequent = expr.getConsequent();
+            var alternative = expr.getAlternative();
+            if (builder.list.getLast() instanceof WasmIntUnary unary
+                    && unary.getOperation() == WasmIntUnaryOperation.EQZ) {
+                builder.list.getLast().delete();
+                consequent = expr.getAlternative();
+                alternative = expr.getConsequent();
+            }
 
-        var elseBuilder = cond.getElseBlock().builder();
-        accept(expr.getAlternative(), elseBuilder, expectedType);
+            var cond = builder.conditional(resultType);
+            var thenBuilder = cond.getThenBlock().builder();
+            accept(consequent, thenBuilder, expectedType);
 
-        if (resultType == null && !thenBuilder.typeInference.typeStack.isEmpty()) {
-            var thenStack = thenBuilder.typeInference.typeStack;
-            resultType = thenStack.get(thenStack.size() - 1);
-            cond.setType(resultType != null ? resultType.asBlock() : null);
+            var elseBuilder = cond.getElseBlock().builder();
+            accept(alternative, elseBuilder, expectedType);
+
+            if (resultType == null && !thenBuilder.typeInference.typeStack.isEmpty()) {
+                var thenStack = thenBuilder.typeInference.typeStack;
+                resultType = thenStack.get(thenStack.size() - 1);
+                cond.setType(resultType != null ? resultType.asBlock() : null);
+            }
         }
 
         builder.popLocation();
+    }
+
+    private boolean tryOptimizedConditional(ConditionalExpr expr) {
+        if (!(expr.getConsequent() instanceof ConstantExpr cst1)
+                || !(expr.getAlternative() instanceof ConstantExpr cst2)) {
+            return false;
+        }
+        if (Objects.equals(cst1.getValue(), 1) && Objects.equals(cst2.getValue(), 0)) {
+            builder.intUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ);
+            builder.intUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ);
+            return true;
+        } else if (Objects.equals(cst1.getValue(), 0) && Objects.equals(cst2.getValue(), 1)) {
+            builder.intUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ);
+            return true;
+        }
+
+        return false;
     }
 
     @Override
