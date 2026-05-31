@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import org.teavm.model.MethodDescriptor;
 
+@Deprecated
 public interface ReflectionSupplier {
     default Collection<String> getAccessibleFields(ReflectionContext context, String className) {
         return Collections.emptyList();
