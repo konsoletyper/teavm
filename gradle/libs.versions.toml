@@ -1,7 +1,6 @@
 [versions]
 
-asm = "9.8"
-jackson = "2.18.2"
+asm = "9.10.1"
 jetty = "12.1.9"
 shadow = "9.1.0"
 checkstyle = "10.21.0"
@@ -16,8 +15,8 @@ jreleaser = "1.18.0"
 [libraries]
 
 hppc = "com.carrotsearch:hppc:0.10.0"
-commons-cli = "commons-cli:commons-cli:1.10.0"
-rhino = "org.mozilla:rhino:1.7.15"
+commons-cli = "commons-cli:commons-cli:1.11.0"
+rhino = "org.mozilla:rhino:1.9.1"
 slf4j = "org.slf4j:slf4j-api:2.0.16"
 jakarta-servlet = "jakarta.servlet:jakarta.servlet-api:6.1.0"
 
@@ -27,8 +26,8 @@ asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
 asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
 asm-analysis = { module = "org.ow2.asm:asm-analysis", version.ref = "asm" }
 
-jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
-jackson-databind =  { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version = "2.21" }
+jackson-databind =  { module = "tools.jackson.core:jackson-databind", version = "3.1.4" }
 
 jzlib = "com.jcraft:jzlib:1.1.3"
 jodaTime = "joda-time:joda-time:2.12.2"

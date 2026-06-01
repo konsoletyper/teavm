@@ -79,8 +79,7 @@ public class RemovablePartsFinder extends AstVisitor {
 
     @Override
     public void visit(ExpressionStatement node) {
-        if (topLevel && node.getExpression() instanceof Assignment) {
-            var assign = (Assignment) node.getExpression();
+        if (topLevel && node.getExpression() instanceof Assignment assign) {
             var name = extractName(assign.getLeft());
             removableDeclarations.computeIfAbsent(name.getIdentifier(), k -> new ArrayList<>())
                     .add(node.getExpression());

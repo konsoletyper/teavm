@@ -24,6 +24,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.mozilla.javascript.Token;
+import org.mozilla.javascript.ast.AbstractObjectProperty;
 import org.mozilla.javascript.ast.ArrayComprehension;
 import org.mozilla.javascript.ast.ArrayComprehensionLoop;
 import org.mozilla.javascript.ast.ArrayLiteral;
@@ -60,6 +61,8 @@ import org.mozilla.javascript.ast.PropertyGet;
 import org.mozilla.javascript.ast.RegExpLiteral;
 import org.mozilla.javascript.ast.ReturnStatement;
 import org.mozilla.javascript.ast.Scope;
+import org.mozilla.javascript.ast.Spread;
+import org.mozilla.javascript.ast.SpreadObjectProperty;
 import org.mozilla.javascript.ast.StringLiteral;
 import org.mozilla.javascript.ast.SwitchCase;
 import org.mozilla.javascript.ast.SwitchStatement;
@@ -439,9 +442,48 @@ public class AstVisitor {
         }
     }
 
+    public void visit(AbstractObjectProperty node) {
+        if (node instanceof ObjectProperty prop) {
+            visit(prop);
+        }
+    }
+
     public void visit(ObjectProperty node) {
-        visitProperty(node, ObjectProperty::getLeft, ObjectProperty::setLeft);
-        visitProperty(node, ObjectProperty::getRight, ObjectProperty::setRight);
+        var changed = false;
+        var key = node.getKey();
+        if (key != null) {
+            visit(node.getKey());
+            if (hasReplacement) {
+                if (replacement == null) {
+                    key = replacement;
+                    changed = true;
+                }
+            }
+            replacement = null;
+            hasReplacement = false;
+        }
+        var value = node.getValue();
+        if (value != null) {
+            visit(node.getValue());
+            if (hasReplacement) {
+                if (replacement == null) {
+                    value = replacement;
+                    changed = true;
+                }
+            }
+            replacement = null;
+        }
+        if (changed) {
+            node.setKeyAndValue(key, value);
+        }
+    }
+
+    public void visit(SpreadObjectProperty node) {
+        visit(node.getSpreadNode());
+    }
+
+    public void visit(Spread node) {
+        visitProperty(node, Spread::getExpression, Spread::setExpression);
     }
 
     public void visit(FunctionNode node) {

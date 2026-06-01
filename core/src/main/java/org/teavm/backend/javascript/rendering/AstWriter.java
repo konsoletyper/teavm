@@ -25,6 +25,7 @@ import java.util.function.Function;
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.ScriptRuntime;
 import org.mozilla.javascript.Token;
+import org.mozilla.javascript.ast.AbstractObjectProperty;
 import org.mozilla.javascript.ast.ArrayComprehension;
 import org.mozilla.javascript.ast.ArrayComprehensionLoop;
 import org.mozilla.javascript.ast.ArrayLiteral;
@@ -60,6 +61,7 @@ import org.mozilla.javascript.ast.PropertyGet;
 import org.mozilla.javascript.ast.RegExpLiteral;
 import org.mozilla.javascript.ast.ReturnStatement;
 import org.mozilla.javascript.ast.Scope;
+import org.mozilla.javascript.ast.SpreadObjectProperty;
 import org.mozilla.javascript.ast.StringLiteral;
 import org.mozilla.javascript.ast.SwitchCase;
 import org.mozilla.javascript.ast.SwitchStatement;
@@ -133,19 +135,16 @@ public class AstWriter {
     public void hoist(AstNode node) {
         declareName("arguments");
         node.visit(n -> {
-            if (n instanceof Scope) {
-                var scope = (Scope) n;
+            if (n instanceof Scope scope) {
                 if (scope.getSymbolTable() != null) {
                     for (var name : scope.getSymbolTable().keySet()) {
                         declareName(name);
                     }
                 }
-            } else if (n instanceof CatchClause) {
-                var clause = (CatchClause) n;
-                var name = clause.getVarName().getIdentifier();
+            } else if (n instanceof CatchClause clause) {
+                var name = clause.getVarName().shortName();
                 declareName(name);
-            } else if (n instanceof VariableInitializer) {
-                var initializer = (VariableInitializer) n;
+            } else if (n instanceof VariableInitializer initializer) {
                 if (initializer.getTarget() instanceof Name) {
                     var id = ((Name) initializer.getTarget()).getIdentifier();
                     declareName(id);
@@ -293,6 +292,9 @@ public class AstWriter {
                 break;
             case Token.DEBUGGER:
                 writer.append("debugger;");
+                break;
+            case Token.UNDEFINED:
+                writer.append("undefined");
                 break;
             default:
                 if (node instanceof InfixExpression) {
@@ -463,7 +465,7 @@ public class AstWriter {
         for (var cc : node.getCatchClauses()) {
             writer.ws().append("catch").ws().append('(');
             var scope = enterScope(false);
-            includeInScope(scope, cc.getVarName().getIdentifier());
+            includeInScope(scope, cc.getVarName().shortName());
             print(cc.getVarName());
             if (cc.getCatchCondition() != null) {
                 writer.append(" if ");
@@ -480,8 +482,7 @@ public class AstWriter {
     }
 
     private boolean print(VariableDeclaration node) {
-        if (isTopLevelOutput() && node.getVariables().get(0).getTarget() instanceof Name) {
-            var name = (Name) node.getVariables().get(0).getTarget();
+        if (isTopLevelOutput() && node.getVariables().get(0).getTarget() instanceof Name name) {
             if (isTopLevelIdentifier(name.getIdentifier())) {
                 printTopLevel(node);
                 return true;
@@ -576,8 +577,7 @@ public class AstWriter {
         writer.append('(');
         printList(node.getArguments());
         writer.append(')');
-        if (node instanceof NewExpression) {
-            NewExpression newExpr = (NewExpression) node;
+        if (node instanceof NewExpression newExpr) {
             if (newExpr.getInitializer() != null) {
                 writer.ws();
                 print(newExpr.getInitializer());
@@ -593,11 +593,10 @@ public class AstWriter {
     }
 
     private boolean tryJavaInvocation(FunctionCall node) {
-        if (!(node.getTarget() instanceof PropertyGet)) {
+        if (!(node.getTarget() instanceof PropertyGet propertyGet)) {
             return false;
         }
 
-        PropertyGet propertyGet = (PropertyGet) node.getTarget();
         String callMethod = getJavaMethod(propertyGet.getTarget());
         if (callMethod == null || !propertyGet.getProperty().getIdentifier().equals("invoke")) {
             return false;
@@ -738,20 +737,25 @@ public class AstWriter {
         writer.ws().append('}');
     }
 
-    private void print(ObjectProperty node) {
-        if (node.isGetterMethod()) {
-            writer.append("get ");
-        } else if (node.isSetterMethod()) {
-            writer.append("set ");
+    private void print(AbstractObjectProperty node) {
+        if (node instanceof ObjectProperty objectProperty) {
+            if (objectProperty.isGetterMethod()) {
+                writer.append("get ");
+            } else if (objectProperty.isSetterMethod()) {
+                writer.append("set ");
+            }
+            var oldRootScope = rootScope;
+            rootScope = false;
+            print(objectProperty.getKey());
+            rootScope = oldRootScope;
+            if (!objectProperty.isMethod()) {
+                writer.append(':').ws();
+            }
+            print(objectProperty.getValue());
+        } else if (node instanceof SpreadObjectProperty spreadProperty) {
+            writer.append("...");
+            print(spreadProperty.getSpreadNode().getExpression());
         }
-        var oldRootScope = rootScope;
-        rootScope = false;
-        print(node.getLeft());
-        rootScope = oldRootScope;
-        if (!node.isMethod()) {
-            writer.ws().append(':').ws();
-        }
-        print(node.getRight());
     }
 
     protected boolean print(FunctionNode node) {
@@ -890,25 +894,12 @@ public class AstWriter {
             writer.append('(');
         }
 
-        int leftPrecedence;
-        switch (node.getType()) {
-            case Token.ASSIGN:
-            case Token.ASSIGN_ADD:
-            case Token.ASSIGN_SUB:
-            case Token.ASSIGN_MUL:
-            case Token.ASSIGN_DIV:
-            case Token.ASSIGN_MOD:
-            case Token.ASSIGN_BITAND:
-            case Token.ASSIGN_BITXOR:
-            case Token.ASSIGN_BITOR:
-            case Token.ASSIGN_LSH:
-            case Token.ASSIGN_RSH:
-            case Token.ASSIGN_URSH:
-                leftPrecedence = innerPrecedence - 1;
-                break;
-            default:
-                leftPrecedence = innerPrecedence;
-        }
+        int leftPrecedence = switch (node.getType()) {
+            case Token.ASSIGN, Token.ASSIGN_ADD, Token.ASSIGN_SUB, Token.ASSIGN_MUL, Token.ASSIGN_DIV, Token.ASSIGN_MOD,
+                 Token.ASSIGN_BITAND, Token.ASSIGN_BITXOR, Token.ASSIGN_BITOR, Token.ASSIGN_LSH, Token.ASSIGN_RSH,
+                 Token.ASSIGN_URSH -> innerPrecedence - 1;
+            default -> innerPrecedence;
+        };
         print(node.getLeft(), leftPrecedence);
 
         String op = AstNode.operatorToString(node.getType());
@@ -925,29 +916,12 @@ public class AstWriter {
             writer.ws();
         }
 
-        int rightPrecedence;
-        switch (node.getType()) {
-            case Token.DIV:
-            case Token.MOD:
-            case Token.SUB:
-            case Token.LSH:
-            case Token.RSH:
-            case Token.URSH:
-            case Token.IN:
-            case Token.INSTANCEOF:
-            case Token.EQ:
-            case Token.NE:
-            case Token.SHEQ:
-            case Token.SHNE:
-            case Token.GT:
-            case Token.GE:
-            case Token.LT:
-            case Token.LE:
-                rightPrecedence = innerPrecedence - 1;
-                break;
-            default:
-                rightPrecedence = innerPrecedence;
-        }
+        int rightPrecedence = switch (node.getType()) {
+            case Token.DIV, Token.MOD, Token.SUB, Token.LSH, Token.RSH, Token.URSH, Token.IN, Token.INSTANCEOF,
+                 Token.EQ, Token.NE, Token.SHEQ, Token.SHNE, Token.GT, Token.GE, Token.LT, Token.LE ->
+                    innerPrecedence - 1;
+            default -> innerPrecedence;
+        };
         print(node.getRight(), rightPrecedence);
 
         if (innerPrecedence > precedence) {
@@ -956,70 +930,29 @@ public class AstWriter {
     }
 
     private int getPrecedence(int token) {
-        switch (token) {
-            case Token.MUL:
-            case Token.DIV:
-            case Token.MOD:
-                return PRECEDENCE_MUL;
-            case Token.ADD:
-            case Token.SUB:
-                return PRECEDENCE_ADD;
-            case Token.LSH:
-            case Token.RSH:
-            case Token.URSH:
-                return PRECEDENCE_SHIFT;
-            case Token.LT:
-            case Token.LE:
-            case Token.GT:
-            case Token.GE:
-            case Token.IN:
-            case Token.INSTANCEOF:
-                return PRECEDENCE_RELATION;
-            case Token.EQ:
-            case Token.NE:
-            case Token.SHEQ:
-            case Token.SHNE:
-                return PRECEDENCE_EQUALITY;
-            case Token.BITAND:
-                return PRECEDENCE_BITWISE_AND;
-            case Token.BITXOR:
-                return PRECEDENCE_BITWISE_XOR;
-            case Token.BITOR:
-                return PRECEDENCE_BITWISE_OR;
-            case Token.AND:
-                return PRECEDENCE_AND;
-            case Token.OR:
-                return PRECEDENCE_OR;
-            case Token.ASSIGN:
-            case Token.ASSIGN_ADD:
-            case Token.ASSIGN_SUB:
-            case Token.ASSIGN_MUL:
-            case Token.ASSIGN_DIV:
-            case Token.ASSIGN_MOD:
-            case Token.ASSIGN_BITAND:
-            case Token.ASSIGN_BITXOR:
-            case Token.ASSIGN_BITOR:
-            case Token.ASSIGN_LSH:
-            case Token.ASSIGN_RSH:
-            case Token.ASSIGN_URSH:
-                return PRECEDENCE_ASSIGN;
-            default:
-                return PRECEDENCE_COMMA;
-        }
+        return switch (token) {
+            case Token.MUL, Token.DIV, Token.MOD -> PRECEDENCE_MUL;
+            case Token.ADD, Token.SUB -> PRECEDENCE_ADD;
+            case Token.LSH, Token.RSH, Token.URSH -> PRECEDENCE_SHIFT;
+            case Token.LT, Token.LE, Token.GT, Token.GE, Token.IN, Token.INSTANCEOF -> PRECEDENCE_RELATION;
+            case Token.EQ, Token.NE, Token.SHEQ, Token.SHNE -> PRECEDENCE_EQUALITY;
+            case Token.BITAND -> PRECEDENCE_BITWISE_AND;
+            case Token.BITXOR -> PRECEDENCE_BITWISE_XOR;
+            case Token.BITOR -> PRECEDENCE_BITWISE_OR;
+            case Token.AND -> PRECEDENCE_AND;
+            case Token.OR -> PRECEDENCE_OR;
+            case Token.ASSIGN, Token.ASSIGN_ADD, Token.ASSIGN_SUB, Token.ASSIGN_MUL, Token.ASSIGN_DIV, Token.ASSIGN_MOD,
+                 Token.ASSIGN_BITAND, Token.ASSIGN_BITXOR, Token.ASSIGN_BITOR, Token.ASSIGN_LSH, Token.ASSIGN_RSH,
+                 Token.ASSIGN_URSH -> PRECEDENCE_ASSIGN;
+            default -> PRECEDENCE_COMMA;
+        };
     }
 
     private boolean requiresWhitespaces(int token) {
-        switch (token) {
-            case Token.IN:
-            case Token.TYPEOF:
-            case Token.INSTANCEOF:
-            case Token.VOID:
-            case Token.DEL_REF:
-            case Token.DELPROP:
-                return true;
-            default:
-                return false;
-        }
+        return switch (token) {
+            case Token.IN, Token.TYPEOF, Token.INSTANCEOF, Token.VOID, Token.DEL_REF, Token.DELPROP -> true;
+            default -> false;
+        };
     }
 
     private Set<String> enterScope(Scope scope, boolean nesting) {

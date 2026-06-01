@@ -15,8 +15,6 @@
  */
 package org.teavm.chromerdp;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -33,6 +31,8 @@ import org.teavm.chromerdp.data.Response;
 import org.teavm.common.CompletablePromise;
 import org.teavm.common.Promise;
 import org.teavm.debugging.javascript.JavaScriptDebuggerListener;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 public abstract class BaseChromeRDPDebugger implements ChromeRDPExchangeConsumer {
     protected static final Logger logger = LoggerFactory.getLogger(BaseChromeRDPDebugger.class);
@@ -153,11 +153,7 @@ public abstract class BaseChromeRDPDebugger implements ChromeRDPExchangeConsumer
         if (exchange == null) {
             return;
         }
-        try {
-            exchange.send(mapper.writer().writeValueAsString(message));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        exchange.send(mapper.writer().writeValueAsString(message));
     }
 
     protected <R> Promise<R> callMethodAsync(String method, Class<R> returnType, Object params) {

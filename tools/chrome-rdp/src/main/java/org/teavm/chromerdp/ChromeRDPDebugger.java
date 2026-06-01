@@ -15,8 +15,6 @@
  */
 package org.teavm.chromerdp;
 
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.NullNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +58,8 @@ import org.teavm.debugging.javascript.JavaScriptLanguage;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 import org.teavm.debugging.javascript.JavaScriptScript;
 import org.teavm.debugging.javascript.JavaScriptVariable;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.NullNode;
 
 public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScriptDebugger {
     private static final Promise<Map<String, ? extends JavaScriptVariable>> EMPTY_SCOPE =

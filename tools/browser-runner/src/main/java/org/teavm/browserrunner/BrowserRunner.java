@@ -15,8 +15,6 @@
  */
 package org.teavm.browserrunner;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -53,6 +51,8 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 public class BrowserRunner {
     private static final boolean logBrowserOutput = System.getenv().getOrDefault("TEAVM_TEST_BROWSER_LOG", "0")
@@ -412,12 +412,8 @@ public class BrowserRunner {
 
         @Override
         public void onWebSocketText(String message) {
-            JsonNode node;
-            try {
-                node = objectMapper.readTree(new StringReader(message));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            var node = objectMapper.readTree(new StringReader(message));
+
 
             int id = node.get("id").asInt();
             var run = awaitingRuns.remove(id);
