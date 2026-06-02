@@ -25,8 +25,10 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.classes.VirtualTable;
 import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
 
@@ -36,18 +38,29 @@ class ClassReflectionGenerator {
     private IncludeManager includes;
     private ReflectionDependencyListener reflection;
     private Collection<ValueType> types;
+    private MethodConvertersGenerator methodConvertersGenerator;
 
     ClassReflectionGenerator(GenerationContext context, ReflectionDependencyListener reflection,
-            Collection<ValueType> types) {
+            Collection<ValueType> types, MethodConvertersGenerator methodConvertersGenerator) {
         this.context = context;
         this.reflection = reflection;
         this.types = types;
+        this.methodConvertersGenerator = methodConvertersGenerator;
+    }
+
+    void prepare(CodeWriter writer, IncludeManager includes) {
+        methodConvertersGenerator.startForClass(writer, includes);
+    }
+
+    void finish() {
+        methodConvertersGenerator.endForClass();
     }
 
     void generate(CodeWriter writer, IncludeManager includes, ClassReader cls) {
         var annotations = extractAnnotations(cls);
         var fields = extractFields(cls);
-        if (annotations.isEmpty() && fields.isEmpty()) {
+        var methods = extractMethods(cls);
+        if (annotations.isEmpty() && fields.isEmpty() && methods.isEmpty()) {
             writer.print("NULL");
             return;
         }
@@ -70,6 +83,14 @@ class ClassReflectionGenerator {
             }
             writer.print(".fields = ");
             generateFields(cls, fields);
+            needComma = true;
+        }
+        if (!methods.isEmpty()) {
+            if (needComma) {
+                writer.println(",");
+            }
+            writer.print(".methods = ");
+            generateMethods(methods);
         }
 
         writer.println();
@@ -120,6 +141,93 @@ class ClassReflectionGenerator {
                     .print(")");
         }
         writer.println(" }");
+        writer.outdent().print("}");
+    }
+
+    private void generateMethods(List<MethodReader> methods) {
+        writer.print("(TeaVM_MethodInfoList*) &(struct { int32_t count; TeaVM_MethodInfo data[")
+                .print(String.valueOf(methods.size())).println("];}) {").indent();
+        writer.print(".count = ").print(String.valueOf(methods.size())).println(",");
+        writer.print(".data = ").println("{").indent();
+        generateMethod(methods.get(0));
+        for (var i = 1; i < methods.size(); ++i) {
+            writer.println(",");
+            generateMethod(methods.get(i));
+        }
+        writer.println().outdent().println("}");
+        writer.outdent().print("}");
+    }
+
+    private void generateMethod(MethodReader method) {
+        includes.addInclude("<stddef.h>");
+
+        writer.println("{").indent();
+
+        var nameIndex = context.getStringPool().getStringIndex(method.getName());
+        writer.print(".name = TEAVM_GET_STRING_ADDRESS(").print(String.valueOf(nameIndex)).println("),");
+
+        var modifiers = ElementModifier.asModifiersInfo(method.readModifiers(), method.getLevel());
+        writer.print(".modifiers = ").print(String.valueOf(modifiers)).println(",");
+
+        writer.print(".returnType = ");
+        writeType(method.getResultType());
+
+        if (method.parameterCount() > 0) {
+            writer.println(",");
+            writer.print(".parameterTypes = ");
+            writer.print("(TeaVM_ClassPtrList*) &(struct { int32_t count; TeaVM_ClassPtr data[")
+                    .print(String.valueOf(method.parameterCount())).println("];}) {").indent();
+            writer.print(".count = ").print(String.valueOf(method.parameterCount())).println(",");
+            writer.print(".data = ").println("{").indent();
+            for (var i = 0; i < method.parameterCount(); ++i) {
+                if (i > 0) {
+                    writer.println(",");
+                }
+                writeType(method.parameterType(i));
+            }
+            writer.println();
+            writer.outdent().println("}");
+            writer.outdent().print("}");
+        }
+
+        if (reflection.isCalled(method.getReference())) {
+            writer.println(",");
+            writer.println(".caller = &(TeaVM_MethodCaller) {").indent();
+            var conv = methodConvertersGenerator.getSignatureFunction(!method.hasModifier(ElementModifier.STATIC),
+                    method.getResultType(), method.getParameterTypes());
+            writer.println(".converter = &" + conv + ",");
+            writer.print(".functionRef = { ");
+            if (method.hasModifier(ElementModifier.STATIC) || method.getLevel() == AccessLevel.PRIVATE
+                    || method.getName().equals("<init>")) {
+                writer.print(".directFnRef = &" + context.getNames().forMethod(method.getReference()));
+            } else {
+                var vt = context.getVirtualTableProvider().lookup(method.getOwnerName());
+                String vtableClass = null;
+                if (vt != null) {
+                    VirtualTable containingVt = vt.findMethodContainer(method.getDescriptor());
+                    if (containingVt != null) {
+                        vtableClass = containingVt.getClassName();
+                    }
+                }
+                String offset;
+                if (vtableClass == null) {
+                    offset = "0";
+                } else {
+                    includes.addInclude("<stddef.h>");
+                    offset = "(int16_t) offsetof(" + context.getNames().forClassClass(vtableClass) + ","
+                            + context.getNames().forVirtualMethod(method.getDescriptor()) + ")";
+                }
+                writer.print(".vtOffset = " + offset);
+            }
+            writer.print(" }");
+            if (method.getName().equals("<init>")) {
+                writer.println(",");
+                writer.print(".forceDirect = true");
+            }
+            writer.println();
+            writer.outdent().print("}");
+        }
+        writer.println();
         writer.outdent().print("}");
     }
 
@@ -307,5 +415,26 @@ class ClassReflectionGenerator {
             fields.add(field);
         }
         return fields;
+    }
+
+    private List<MethodReader> extractMethods(ClassReader cls) {
+        var accessibleMethods = reflection.getAccessibleMethods(cls.getName());
+        if (accessibleMethods == null || accessibleMethods.isEmpty()) {
+            return List.of();
+        }
+        var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
+        var methods = new ArrayList<MethodReader>();
+        for (var method : cls.getMethods()) {
+            if (!accessibleMethods.contains(method.getDescriptor())) {
+                continue;
+            }
+            if (skipPrivates) {
+                if (method.getLevel() == AccessLevel.PRIVATE || method.getLevel() == AccessLevel.PACKAGE_PRIVATE) {
+                    continue;
+                }
+            }
+            methods.add(method);
+        }
+        return methods;
     }
 }

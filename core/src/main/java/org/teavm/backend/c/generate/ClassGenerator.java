@@ -103,13 +103,14 @@ public class ClassGenerator {
     private ClassReflectionGenerator reflectionGenerator;
 
     public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler,
-            CacheStatus cacheStatus, Set<ValueType> types, ReflectionDependencyListener reflection) {
+            CacheStatus cacheStatus, Set<ValueType> types, ReflectionDependencyListener reflection,
+            MethodConvertersGenerator methodConvertersGenerator) {
         this.context = context;
         this.tagRegistry = tagRegistry;
         this.decompiler = decompiler;
         this.cacheStatus = cacheStatus;
         this.types = types;
-        reflectionGenerator = new ClassReflectionGenerator(context, reflection, types);
+        reflectionGenerator = new ClassReflectionGenerator(context, reflection, types, methodConvertersGenerator);
     }
 
     public void setAstCache(MethodNodeCache astCache) {
@@ -927,8 +928,11 @@ public class ClassGenerator {
         if (context.getMetadataRequirements().hasClassInit()) {
             initializers.add(new FieldInitializer("init", initFunction));
         }
+        var reflectionGeneratorStarted = false;
         if (context.getDependencies().getMethod(new MethodReference(ClassInfo.class, "reflection",
                 ClassReflectionInfo.class)) != null) {
+            reflectionGeneratorStarted = true;
+            reflectionGenerator.prepare(codeWriter, includes);
             if (type instanceof ValueType.Object) {
                 var className = ((ValueType.Object) type).getClassName();
                 var cls = context.getClassSource().get(className);
@@ -964,6 +968,10 @@ public class ClassGenerator {
 
         if (!initMethod) {
             codeWriter.println();
+        }
+
+        if (reflectionGeneratorStarted) {
+            reflectionGenerator.finish();
         }
     }
 

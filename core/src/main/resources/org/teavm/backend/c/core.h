@@ -279,4 +279,5 @@ extern void* teavm_fillDoubleArray(void* array, ...);
 #define TEAVM_PRIMITIVE_FLOAT   7
 #define TEAVM_PRIMITIVE_DOUBLE  8
 
+#define TEAVM_MODIFIER_PRIVATE (1 << 1)
 #define TEAVM_MODIFIER_STATIC  (1 << 3)

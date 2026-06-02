@@ -28,6 +28,22 @@ void teavm_reflection_writeField(void* obj, TeaVM_FieldInfo* field, void* value)
     teavm_reflection_unbox(primitiveType, teavm_reflection_fieldPtr(obj, field), value);
 }
 
+inline void* teavm_reflection_callMethod(void* method, void* instance, void* args) {
+    TeaVM_MethodInfo* castMethod = (TeaVM_MethodInfo*) method;
+    TeaVM_Array* castArgs = (TeaVM_Array*) args;
+    TeaVM_Object* castInstance = (TeaVM_Object*) instance;
+    void* fn;
+    if (castMethod->caller->forceDirect 
+            || (castMethod->modifiers & (TEAVM_MODIFIER_STATIC | TEAVM_MODIFIER_PRIVATE)) != 0) {
+        fn = castMethod->caller->functionRef.directFnRef;
+    } else {
+        TeaVM_Class* cls = TEAVM_CLASS_OF(castInstance);
+        void* vtEntry = ((char*) (void*) cls) + castMethod->caller->functionRef.vtOffset;
+        fn = *((void**) vtEntry);
+    }
+    return castMethod->caller->converter(fn, castInstance, TEAVM_ARRAY_DATA(castArgs, TeaVM_Object*));
+}
+
 void* teavm_reflection_getItem(void* array, int32_t index) {
     TeaVM_Class* cls = TEAVM_CLASS_OF(array);
     int32_t size = cls->itemType->size;

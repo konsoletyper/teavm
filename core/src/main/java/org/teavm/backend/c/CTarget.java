@@ -47,6 +47,7 @@ import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.FileNameProvider;
 import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.IncludeManager;
+import org.teavm.backend.c.generate.MethodConvertersGenerator;
 import org.teavm.backend.c.generate.OutputFileUtil;
 import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.backend.c.generate.SimpleIncludeManager;
@@ -85,6 +86,7 @@ import org.teavm.backend.c.intrinsic.reflection.ClassInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.ClassReflectionInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.DerivedClassInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.FieldInfoIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.MethodInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic;
 import org.teavm.backend.c.transform.CFileSystemTransformer;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
@@ -425,6 +427,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new AnnotationValueArrayIntrinsic());
         intrinsics.add(new DerivedClassInfoIntrinsic());
         intrinsics.add(new FieldInfoIntrinsic());
+        intrinsics.add(new MethodInfoIntrinsic());
 
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());
@@ -469,8 +472,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             configHeaderWriter.println("#define TEAVM_GC_STATS 1");
         }
 
+        var methodConvertersGenerator = new MethodConvertersGenerator(context.isIncremental(), fileNames);
         ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler,
-                controller.getCacheStatus(), types, reflection);
+                controller.getCacheStatus(), types, reflection, methodConvertersGenerator);
         classGenerator.setAstCache(astCache);
         if (!context.isIncremental()) {
             classGenerator.setCallSites(callSites);
@@ -499,6 +503,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generateReflectionGen(buildTarget, context);
         generateCallSites(buildTarget, context, classes.getClassNames());
         generateStrings(buildTarget, context);
+        methodConvertersGenerator.endForBuild(buildTarget);
 
         List<ValueType> filteredTypes = types.stream()
                 .filter(c -> ClassGenerator.needsVirtualTable(characteristics, c))
@@ -623,6 +628,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (context.getDependencies().getMethod(new MethodReference(ClassReflectionInfo.class, "fieldCount",
                 int.class)) != null) {
             writer.println("#define TEAVM_CLASS_REFLECTION_FIELDS_USED 1");
+        }
+        if (context.getDependencies().getMethod(new MethodReference(ClassReflectionInfo.class, "methodCount",
+                int.class)) != null) {
+            writer.println("#define TEAVM_CLASS_REFLECTION_METHODS_USED 1");
         }
         if (context.getDependencies().getMethod(new MethodReference(ClassReflectionInfo.class, "annotationCount",
                 int.class)) != null) {
@@ -805,7 +814,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
         VirtualTableBuilder builder = new VirtualTableBuilder(classes);
-        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true));
+        var methodsOnCallSites = new LinkedHashSet<MethodReference>();
+        methodsOnCallSites.addAll(VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true));
+        methodsOnCallSites.addAll(reflection.getVirtualCallSites());
+        builder.setMethodsUsedAtCallSites(methodsOnCallSites);
         builder.setMethodCalledVirtually(controller::isVirtual);
         return builder.build();
     }
@@ -937,6 +949,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         files.add("virtcall.c");
         files.add("arrayclass.c");
         files.add("reflection.c");
+        files.add("reflection_signatures.c");
 
         for (String className : classes.getClassNames()) {
             if (!isSpecialClass(context, className)) {

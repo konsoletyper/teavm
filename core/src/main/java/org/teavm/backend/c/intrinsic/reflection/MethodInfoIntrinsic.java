@@ -19,58 +19,53 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.model.MethodReference;
-import org.teavm.runtime.reflect.ClassReflectionInfo;
+import org.teavm.runtime.reflect.MethodInfo;
 
-public class ClassReflectionInfoIntrinsic implements Intrinsic {
+public class MethodInfoIntrinsic implements Intrinsic {
     @Override
     public boolean canHandle(MethodReference method) {
-        return method.getClassName().equals(ClassReflectionInfo.class.getName());
+        return method.getClassName().equals(MethodInfo.class.getName());
     }
 
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
-            case "fieldCount":
+            case "name":
+            case "modifiers":
                 context.includes().includePath("reflection.h");
-                context.writer().print("teavm_reflection_fieldCount((TeaVM_ClassReflection*) (");
+                context.writer().print("((TeaVM_MethodInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))->").print(invocation.getMethod().getName());
+                break;
+            case "returnType":
+                context.includes().includePath("reflection.h");
+                context.writer().print("(&((TeaVM_MethodInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))->returnType)");
+                break;
+            case "parameterCount":
+                context.includes().includePath("reflection.h");
+                context.writer().print("teavm_reflection_methodParameterCount((TeaVM_MethodInfo*) (");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print("))");
                 break;
-            case "field":
+            case "parameterType":
                 context.includes().includePath("reflection.h");
-                context.writer().print("(&((TeaVM_ClassReflection*) (");
+                context.writer().print("(&((TeaVM_MethodInfo*) (");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print("))->fields->data[");
+                context.writer().print("))->parameterTypes->data[");
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print("])");
                 break;
-            case "methodCount":
+            case "call":
                 context.includes().includePath("reflection.h");
-                context.writer().print("teavm_reflection_methodCount((TeaVM_ClassReflection*) (");
+                context.writer().print("teavm_reflection_callMethod(");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print("))");
-                break;
-            case "method":
-                context.includes().includePath("reflection.h");
-                context.writer().print("(&((TeaVM_ClassReflection*) (");
-                context.emit(invocation.getArguments().get(0));
-                context.writer().print("))->methods->data[");
+                context.writer().print(", ");
                 context.emit(invocation.getArguments().get(1));
-                context.writer().print("])");
-                break;
-            case "annotationCount":
-                context.includes().includePath("reflection.h");
-                context.writer().print("teavm_reflection_annotationCount((TeaVM_ClassReflection*) ");
-                context.emit(invocation.getArguments().get(0));
+                context.writer().print(", ");
+                context.emit(invocation.getArguments().get(2));
                 context.writer().print(")");
-                break;
-            case "annotation":
-                context.includes().includePath("reflection.h");
-                context.writer().print("(&((TeaVM_ClassReflection*) (");
-                context.emit(invocation.getArguments().get(0));
-                context.writer().print("))->annotations->data[");
-                context.emit(invocation.getArguments().get(1));
-                context.writer().print("])");
                 break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());

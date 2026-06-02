@@ -283,7 +283,6 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var module = new WasmModule();
         module.memoryImportName = "memory";
         module.memoryImportModule = "env";
-        controller.addVirtualMethods(reflection::isVirtual);
         addMethodsOnCallSites(reflection::getVirtualCallSites);
         var inlineIntrinsics = new DefaultIntrinsicRegistry<WasmGCInlineIntrinsic>(classes);
         var bodyIntrinsics = new DefaultIntrinsicRegistry<WasmGCBodyIntrinsic>(classes);

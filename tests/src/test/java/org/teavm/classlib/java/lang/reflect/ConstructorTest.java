@@ -34,7 +34,6 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@SkipPlatform(TestPlatform.C)
 public class ConstructorTest {
     @Test
     public void constructorsEnumerated() {
@@ -96,6 +95,7 @@ public class ConstructorTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void annotationsRead() throws Exception {
         var constructor = ReflectableType.class.getDeclaredConstructor();
         assertEquals(TestAnnot.class, constructor.getAnnotation(TestAnnot.class).annotationType());
@@ -104,6 +104,7 @@ public class ConstructorTest {
     }
     
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void asyncConstructor() throws Exception {
         var constructor = ClassWithAsyncConstructor.class.getDeclaredConstructor(int.class);
         var instance = constructor.newInstance(23);

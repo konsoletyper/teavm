@@ -16,6 +16,7 @@
 package org.teavm.backend.c.intrinsic.reflection;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.c.generate.CodeGenerationVisitor;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.interop.Address;
@@ -154,6 +155,13 @@ public class ClassInfoIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print("))->reflection");
                 break;
+            case "newInstance": {
+                context.importMethod(CodeGenerationVisitor.ALLOC_METHOD, true);
+                context.writer().print(context.names().forMethod(CodeGenerationVisitor.ALLOC_METHOD)).print("(");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(")");
+                break;
+            }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }
