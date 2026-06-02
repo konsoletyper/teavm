@@ -111,15 +111,16 @@ public class WasmGCResourcesIntrinsic implements WasmGCInlineIntrinsic {
         var location = new CallLocation(new MethodReference(ClassLoader.class,
                 "getResourceAsStream", String.class, InputStream.class));
         for (var resource : resourceSet) {
-            try (var input = genContext.classLoader().getResourceAsStream(resource)) {
-                if (input == null) {
-                    genContext.diagnostics().error(location, "Resource not found: " + resource);
-                } else {
-                    var start = resources.size();
-                    input.transferTo(resources);
-                    var end = resources.size();
-                    descriptors.add(new ResourceDescriptor(resource, start, end));
-                }
+            var res = genContext.resources().getResource(resource);
+            if (res == null) {
+                genContext.diagnostics().error(location, "Resource not found: " + resource);
+                continue;
+            }
+            try (var input = res.open()) {
+                var start = resources.size();
+                input.transferTo(resources);
+                var end = resources.size();
+                descriptors.add(new ResourceDescriptor(resource, start, end));
             } catch (IOException e) {
                 genContext.diagnostics().error(location, "Error occurred reading resource '" + resource + "'");
             }

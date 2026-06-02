@@ -17,7 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
@@ -68,8 +67,12 @@ public class ClassLoaderNativeGenerator implements Injector {
         }
 
         boolean first = true;
-        for (String resource : resourceSet) {
-            try (InputStream input = classLoader.getResourceAsStream(resource)) {
+        for (String resourceName : resourceSet) {
+            var resource = context.getResources().getResource(resourceName);
+            if (resource == null) {
+                continue;
+            }
+            try (var input = resource.open()) {
                 if (input == null) {
                     continue;
                 }
@@ -83,7 +86,7 @@ public class ClassLoaderNativeGenerator implements Injector {
                 for (int i = 0; i < dataBytes.length; ++i) {
                     dataChars[i] = (char) dataBytes[i];
                 }
-                RenderingUtil.writeString(writer, resource);
+                RenderingUtil.writeString(writer, resourceName);
                 writer.append(':').ws();
                 RenderingUtil.writeString(writer, new String(dataChars));
             } catch (IOException e) {

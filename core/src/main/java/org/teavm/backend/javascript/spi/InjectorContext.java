@@ -23,6 +23,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.ValueType;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public interface InjectorContext extends ServiceRepository {
     Expr getArgument(int index);
@@ -54,4 +55,6 @@ public interface InjectorContext extends ServiceRepository {
     DependencyInfo getDependencies();
 
     ListableClassReaderSource getClassSource();
+
+    ResourceProvider getResources();
 }
