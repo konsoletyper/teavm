@@ -82,6 +82,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.vm.RenderingException;
 
 public class StatementRenderer implements ExprVisitor, StatementVisitor {
@@ -1668,6 +1669,11 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         @Override
         public DependencyInfo getDependencies() {
             return context.getDependencyInfo();
+        }
+
+        @Override
+        public ResourceProvider getResources() {
+            return context.getResourceProvider();
         }
 
         @Override
