@@ -60,6 +60,14 @@ public class AnnotationsTest {
         assertEquals(13, obj.renamedMethod(6));
     }
 
+    @Test
+    public void recordStylePropertyAccessorsWork() {
+        RecordStyleWrapper obj = createRecordStyleWrapper();
+        assertEquals(23, obj.value());
+        assertEquals("green", obj.color());
+        assertEquals(true, obj.active());
+    }
+
     @JSBody(params = { "a", "b" }, script = "return a + b;")
     private static native int add(int a, int b);
 
@@ -116,4 +124,18 @@ public class AnnotationsTest {
                 + "renamedJSMethod : function(num) { return this.value + num + 2; }"
             + "};")
     public static native InterfaceWrapper createWrapper(int value);
+
+    @JSBody(script = "return { value: 23, color: 'green', active: true };")
+    public static native RecordStyleWrapper createRecordStyleWrapper();
+
+    interface RecordStyleWrapper extends JSObject {
+        @JSProperty
+        int value();
+
+        @JSProperty
+        String color();
+
+        @JSProperty
+        boolean active();
+    }
 }
