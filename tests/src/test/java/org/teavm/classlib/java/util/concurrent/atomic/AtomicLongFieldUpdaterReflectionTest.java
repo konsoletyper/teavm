@@ -23,12 +23,9 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipPlatform(TestPlatform.C)
 public class AtomicLongFieldUpdaterReflectionTest {
     private Class<ClassWithField> getInstanceType() {
         return ClassWithField.class;

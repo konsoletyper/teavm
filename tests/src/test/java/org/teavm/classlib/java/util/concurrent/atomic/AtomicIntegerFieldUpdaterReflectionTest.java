@@ -23,12 +23,9 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipPlatform(TestPlatform.C)
 public class AtomicIntegerFieldUpdaterReflectionTest {
     private Class<ClassWithField> getInstanceType() {
         return ClassWithField.class;
