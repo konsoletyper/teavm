@@ -57,6 +57,26 @@ public class MethodInfoIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print("])");
                 break;
+            case "checkedExceptionCount":
+                context.includes().includePath("reflection.h");
+                context.writer().print("teavm_reflection_methodCheckedExceptionCount((TeaVM_MethodInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))");
+                break;
+            case "checkedExceptionType":
+                context.includes().includePath("reflection.h");
+                context.writer().print("(&(TeaVM_ClassPtr){ .baseClass = ((TeaVM_MethodInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))->checkedExceptionTypes->data[");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print("], .arrayDegree = 0 })");
+                break;
+            case "reflection":
+                context.includes().includePath("reflection.h");
+                context.writer().print("((TeaVM_MethodInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))->reflection");
+                break;
             case "call":
                 context.includes().includePath("reflection.h");
                 context.writer().print("teavm_reflection_callMethod(");

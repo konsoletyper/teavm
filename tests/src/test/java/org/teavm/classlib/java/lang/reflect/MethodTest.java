@@ -174,7 +174,6 @@ public class MethodTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void methodAnnotationsRead() throws Exception {
         var acceptMethod = Foo.class.getMethod("accept", long.class);
         var barMethod = Foo.class.getMethod("bar", Object.class);
@@ -186,7 +185,6 @@ public class MethodTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void overriddenMethodAnnotations() throws Exception {
         var method = SubclassVirtualMethod.class.getDeclaredMethod("g");
         assertNull(method.getAnnotation(TestAnnot.class));
@@ -196,7 +194,6 @@ public class MethodTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void parameterAnnotationsRead() throws Exception {
         var method = ClassWithParameterAnnotations.class.getMethod("m", int.class, String.class, Object.class);
         var paramAnnotations = method.getParameterAnnotations();
@@ -212,7 +209,6 @@ public class MethodTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void parameterAnnotationsEmptyOnUnannotatedMethod() throws Exception {
         var method = ClassWithParameterAnnotations.class.getMethod("noAnnotations", int.class);
         var paramAnnotations = method.getParameterAnnotations();
@@ -221,7 +217,6 @@ public class MethodTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void parameterAnnotationsReadForConstructor() throws Exception {
         var ctor = ClassWithParameterAnnotations.class.getConstructor(int.class);
         var paramAnnotations = ctor.getParameterAnnotations();
@@ -231,7 +226,6 @@ public class MethodTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void checkedExceptionTypesRead() throws Exception {
         var method = ClassWithCheckedExceptions.class.getMethod("m");
         var exceptionTypes = method.getExceptionTypes();
@@ -265,7 +259,6 @@ public class MethodTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void parameterAnnotationsCoexistWithMethodAnnotations() throws Exception {
         var method = ClassWithParameterAnnotations.class.getMethod("annotatedMethod", int.class);
         assertEquals(1, extractAnnotations(method).size());

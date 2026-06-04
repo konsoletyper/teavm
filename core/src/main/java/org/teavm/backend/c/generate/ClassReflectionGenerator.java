@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.ClassReader;
@@ -31,6 +32,9 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
+import org.teavm.runtime.reflect.FieldReflectionInfo;
+import org.teavm.runtime.reflect.MethodInfo;
+import org.teavm.runtime.reflect.MethodReflectionInfo;
 
 class ClassReflectionGenerator {
     private GenerationContext context;
@@ -39,6 +43,10 @@ class ClassReflectionGenerator {
     private ReflectionDependencyListener reflection;
     private Collection<ValueType> types;
     private MethodConvertersGenerator methodConvertersGenerator;
+    private boolean needMethodAnnotations;
+    private boolean needMethodParamAnnotations;
+    private boolean needCheckedExceptions;
+    private boolean needFieldReflection;
 
     ClassReflectionGenerator(GenerationContext context, ReflectionDependencyListener reflection,
             Collection<ValueType> types, MethodConvertersGenerator methodConvertersGenerator) {
@@ -46,6 +54,14 @@ class ClassReflectionGenerator {
         this.reflection = reflection;
         this.types = types;
         this.methodConvertersGenerator = methodConvertersGenerator;
+        needMethodAnnotations = context.getDependencies().getMethod(
+                new MethodReference(MethodReflectionInfo.class, "annotationCount", int.class)) != null;
+        needMethodParamAnnotations = context.getDependencies().getMethod(
+                new MethodReference(MethodReflectionInfo.class, "parameterInfoCount", int.class)) != null;
+        needCheckedExceptions = context.getDependencies().getMethod(
+                new MethodReference(MethodInfo.class, "checkedExceptionCount", int.class)) != null;
+        needFieldReflection = context.getDependencies().getMethod(
+                new MethodReference(FieldReflectionInfo.class, "annotationCount", int.class)) != null;
     }
 
     void prepare(CodeWriter writer, IncludeManager includes) {
@@ -126,6 +142,16 @@ class ClassReflectionGenerator {
         var modifiers = ElementModifier.asModifiersInfo(field.readModifiers(), field.getLevel());
         writer.print(".modifiers = ").print(String.valueOf(modifiers)).println(",");
 
+        if (needFieldReflection) {
+            var fieldAnnotations = AnnotationGenerationHelper.collectRuntimeAnnotations(
+                    context.getClassSource(), field.getAnnotations().all());
+            if (!fieldAnnotations.isEmpty()) {
+                writer.print(".reflection = &(TeaVM_FieldReflectionInfo) { .annotations = ");
+                generateAnnotations(fieldAnnotations);
+                writer.println(" },");
+            }
+        }
+
         writer.print(".type = ");
         writeType(field.getType());
         writer.println(",");
@@ -190,6 +216,61 @@ class ClassReflectionGenerator {
             writer.outdent().print("}");
         }
 
+        if (needCheckedExceptions) {
+            var thrownTypes = method.getThrownTypes();
+            if (thrownTypes != null && !thrownTypes.isEmpty()) {
+                writer.println(",");
+                writer.print(".checkedExceptionTypes = ");
+                writer.print("(TeaVM_ClassRefList*) &(struct { int32_t count; TeaVM_Class* data[")
+                        .print(String.valueOf(thrownTypes.size())).println("];}) {").indent();
+                writer.print(".count = ").print(String.valueOf(thrownTypes.size())).println(",");
+                writer.print(".data = ").println("{").indent();
+                for (var i = 0; i < thrownTypes.size(); ++i) {
+                    if (i > 0) {
+                        writer.println(",");
+                    }
+                    var exType = ValueType.object(thrownTypes.get(i));
+                    includes.includeType(exType);
+                    types.add(exType);
+                    writer.print("(TeaVM_Class*) &").print(context.getNames().forClassInstance(exType));
+                }
+                writer.println();
+                writer.outdent().println("}");
+                writer.outdent().print("}");
+            }
+        }
+
+        if (needMethodAnnotations || needMethodParamAnnotations) {
+            List<AnnotationReader> methodAnnotations = needMethodAnnotations
+                    ? AnnotationGenerationHelper.collectRuntimeAnnotations(
+                            context.getClassSource(), method.getAnnotations().all())
+                    : List.of();
+            var paramAnnotations = needMethodParamAnnotations ? collectParamAnnotations(method) : null;
+            var hasParamAnnotations = paramAnnotations != null && hasNonEmptyList(paramAnnotations);
+            if (!methodAnnotations.isEmpty() || hasParamAnnotations) {
+                writer.println(",");
+                writer.print(".reflection = &(TeaVM_MethodReflectionInfo) {").indent();
+                var needReflectionComma = false;
+                if (!methodAnnotations.isEmpty()) {
+                    writer.println();
+                    writer.print(".annotations = ");
+                    generateAnnotations(methodAnnotations);
+                    needReflectionComma = true;
+                }
+                if (hasParamAnnotations) {
+                    if (needReflectionComma) {
+                        writer.println(",");
+                    } else {
+                        writer.println();
+                    }
+                    writer.print(".parameterInfos = ");
+                    generateParameterInfos(paramAnnotations);
+                }
+                writer.println();
+                writer.outdent().print("}");
+            }
+        }
+
         if (reflection.isCalled(method.getReference())) {
             writer.println(",");
             writer.println(".caller = &(TeaVM_MethodCaller) {").indent();
@@ -231,11 +312,57 @@ class ClassReflectionGenerator {
         writer.outdent().print("}");
     }
 
+    private List<List<AnnotationReader>> collectParamAnnotations(MethodReader method) {
+        var paramAnnots = method.getParameterAnnotations();
+        if (paramAnnots == null) {
+            return null;
+        }
+        var result = new ArrayList<List<AnnotationReader>>();
+        for (AnnotationContainerReader container : paramAnnots) {
+            result.add(AnnotationGenerationHelper.collectRuntimeAnnotations(
+                    context.getClassSource(), container.all()));
+        }
+        return result;
+    }
+
+    private boolean hasNonEmptyList(List<List<AnnotationReader>> lists) {
+        for (var list : lists) {
+            if (!list.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void generateParameterInfos(List<List<AnnotationReader>> paramAnnotations) {
+        var count = paramAnnotations.size();
+        writer.print("(TeaVM_ParameterInfoList*) &(struct { int32_t count; TeaVM_ParameterInfo data[")
+                .print(String.valueOf(count)).println("]; }) {").indent();
+        writer.print(".count = ").print(String.valueOf(count)).println(",");
+        writer.print(".data = ").println("{").indent();
+        for (var i = 0; i < count; ++i) {
+            if (i > 0) {
+                writer.println(",");
+            }
+            var annots = paramAnnotations.get(i);
+            writer.print("{");
+            if (!annots.isEmpty()) {
+                writer.print(" .annotations = ");
+                generateAnnotations(annots);
+                writer.print(" ");
+            }
+            writer.print("}");
+        }
+        writer.println();
+        writer.outdent().println("}");
+        writer.outdent().print("}");
+    }
+
     private void generateAnnotations(List<AnnotationReader> annotations) {
         writer.println("(TeaVM_AnnotationInfoList*) &(struct { int32_t count; "
-                + "TeaVM_AnnotationInfo annotations[" + annotations.size() + "]; }) {").indent();
+                + "TeaVM_AnnotationInfo data[" + annotations.size() + "]; }) {").indent();
         writer.print(".count = ").print(String.valueOf(annotations.size())).println(",");
-        writer.println(".annotations = {").indent();
+        writer.println(".data = {").indent();
         generateAnnotation(annotations.get(0));
         for (var i = 1; i < annotations.size(); ++i) {
             writer.println(",");

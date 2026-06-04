@@ -25,11 +25,51 @@ typedef struct {
     int32_t arrayDegree;
 } TeaVM_ClassPtr;
 
+typedef void* TeaVM_AnnotationConstructor(void* data);
+
+typedef struct {
+    void* data;
+    TeaVM_AnnotationConstructor* constructor;
+} TeaVM_AnnotationInfo;
+
+typedef struct {
+    int32_t count;
+    TeaVM_AnnotationInfo data[0];
+} TeaVM_AnnotationInfoList;
+
+#if TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+    typedef struct {
+        TeaVM_AnnotationInfoList* annotations;
+    } TeaVM_ParameterInfo;
+
+    typedef struct {
+        int32_t count;
+        TeaVM_ParameterInfo data[0];
+    } TeaVM_ParameterInfoList;
+#endif
+
+#if TEAVM_METHOD_ANNOTATIONS_USED || TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+    typedef struct {
+        #if TEAVM_METHOD_ANNOTATIONS_USED
+            TeaVM_AnnotationInfoList* annotations;
+        #endif
+        #if TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+            TeaVM_ParameterInfoList* parameterInfos;
+        #endif
+    } TeaVM_MethodReflectionInfo;
+#endif
+
+#if TEAVM_FIELD_ANNOTATIONS_USED
+    typedef struct {
+        TeaVM_AnnotationInfoList* annotations;
+    } TeaVM_FieldReflectionInfo;
+#endif
+
 typedef struct {
     TeaVM_String** name;
     int32_t modifiers;
     #if TEAVM_FIELD_ANNOTATIONS_USED
-        TeaVM_Array* annotations;
+        TeaVM_FieldReflectionInfo* reflection;
     #endif
     TeaVM_ClassPtr type;
     #if TEAVM_FIELD_GENERIC_TYPE_USED
@@ -49,13 +89,21 @@ typedef struct {
 } TeaVM_ClassPtrList;
 
 typedef struct {
+    int32_t count;
+    TeaVM_Class* data[0];
+} TeaVM_ClassRefList;
+
+typedef struct {
     TeaVM_String** name;
     int32_t modifiers;
-    #if TEAVM_METHOD_ANNOTATIONS_USED
-        TeaVM_Array* annotations;
-    #endif
     TeaVM_ClassPtr returnType;
     TeaVM_ClassPtrList* parameterTypes;
+    #if TEAVM_METHOD_EXCEPTION_TYPES_USED
+        TeaVM_ClassRefList* checkedExceptionTypes;
+    #endif
+    #if TEAVM_METHOD_ANNOTATIONS_USED || TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+        TeaVM_MethodReflectionInfo* reflection;
+    #endif
     TeaVM_MethodCaller* caller;
 } TeaVM_MethodInfo;
 
@@ -63,18 +111,6 @@ typedef struct {
     int32_t count;
     TeaVM_MethodInfo data[0];
 } TeaVM_MethodInfoList;
-
-typedef void* TeaVM_AnnotationConstructor(void* data);
-
-typedef struct {
-    void* data;
-    TeaVM_AnnotationConstructor* constructor;
-} TeaVM_AnnotationInfo;
-
-typedef struct {
-    int32_t count;
-    TeaVM_AnnotationInfo data[0];
-} TeaVM_AnnotationInfoList;
 
 typedef struct {
     int32_t count;
@@ -165,5 +201,28 @@ extern TeaVM_Class* teavm_reflection_extractType(TeaVM_ClassPtr* type);
     }
     static inline int32_t teavm_reflection_methodParameterCount(TeaVM_MethodInfo* method) {
         return method->parameterTypes != NULL ? method->parameterTypes->count : 0;
+    }
+#endif
+#ifdef TEAVM_METHOD_EXCEPTION_TYPES_USED
+    static inline int32_t teavm_reflection_methodCheckedExceptionCount(TeaVM_MethodInfo* method) {
+        return method->checkedExceptionTypes != NULL ? method->checkedExceptionTypes->count : 0;
+    }
+#endif
+#ifdef TEAVM_METHOD_ANNOTATIONS_USED
+    static inline int32_t teavm_reflection_methodReflectionAnnotationCount(TeaVM_MethodReflectionInfo* info) {
+        return info != NULL && info->annotations != NULL ? info->annotations->count : 0;
+    }
+#endif
+#ifdef TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+    static inline int32_t teavm_reflection_methodReflectionParameterInfoCount(TeaVM_MethodReflectionInfo* info) {
+        return info != NULL && info->parameterInfos != NULL ? info->parameterInfos->count : 0;
+    }
+    static inline int32_t teavm_reflection_parameterAnnotationCount(TeaVM_ParameterInfo* info) {
+        return info->annotations != NULL ? info->annotations->count : 0;
+    }
+#endif
+#ifdef TEAVM_FIELD_ANNOTATIONS_USED
+    static inline int32_t teavm_reflection_fieldReflectionAnnotationCount(TeaVM_FieldReflectionInfo* info) {
+        return info != NULL && info->annotations != NULL ? info->annotations->count : 0;
     }
 #endif
