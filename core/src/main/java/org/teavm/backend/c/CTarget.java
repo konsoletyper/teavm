@@ -151,6 +151,7 @@ import org.teavm.model.util.VariableCategoryProvider;
 import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.CFiber;
 import org.teavm.runtime.CallSite;
 import org.teavm.runtime.CallSiteLocation;
 import org.teavm.runtime.EventQueue;
@@ -181,7 +182,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             "heaptrace.h", "log.c", "log.h", "memory.c", "memory.h", "references.c", "references.h",
             "resource.c", "resource.h", "runtime.h", "stack.c", "stack.h", "string.c", "string.h",
             "stringhash.c", "stringhash.h", "time.c", "time.h", "virtcall.c", "virtcall.h",
-            "arrayclass.c", "arrayclass.h", "uchar.h", "reflection.c", "reflection.h"
+            "arrayclass.c", "arrayclass.h", "uchar.h", "reflection.c", "reflection.h",
+            "edt.h", "edt.c"
     };
 
     private TeaVMTargetController controller;
@@ -341,10 +343,11 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             }
         }
 
-        dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "isResuming", boolean.class)).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "isSuspending", boolean.class)).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "current", Fiber.class)).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "startMain", String[].class, void.class)).use();
+        var startMain = dependencyAnalyzer.linkMethod(new MethodReference(CFiber.class, "startMain", String[].class,
+                void.class));
+        startMain.propagate(0, String[].class);
+        startMain.getVariable(0).getArrayItem().propagate(dependencyAnalyzer.getType(ValueType.parse(String.class)));
+        startMain.use();
         dependencyAnalyzer.linkMethod(new MethodReference(EventQueue.class, "process", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class,
                 void.class)).use();
@@ -394,8 +397,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     @Override
     public void afterOptimizations(Program program, MethodReader method) {
         classInitializerEliminator.apply(program);
-        new CoroutineTransformation(controller.getUnprocessedClassSource(), asyncMethods, hasThreads)
-                .apply(program, method.getReference());
         var shadowStackTransformer = !incremental
                 ? this.shadowStackTransformer
                 : new ShadowStackTransformer(characteristics);
@@ -984,6 +985,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         files.add("callsites.c");
         files.add("core.c");
         files.add("date.c");
+        files.add("edt.c");
         files.add("fiber.c");
         files.add("file.c");
         files.add("heapdump.c");
@@ -1093,7 +1095,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (context.getClassInitializerInfo().isDynamicInitializer("java.lang.String")) {
             writer.println(context.getNames().forClassInitializer("java.lang.String") + "();");
         }
-        generateFiberStart(classContext, writer);
+        generateFiberStart(classContext, writer, includes);
 
         writer.println("return 0;");
 
@@ -1143,14 +1145,11 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         writer.println("teavm_initClasses();");
     }
 
-    private void generateFiberStart(ClassGenerationContext context, CodeWriter writer) {
+    private void generateFiberStart(ClassGenerationContext context, CodeWriter writer, IncludeManager includes) {
         NameProvider names = context.getContext().getNames();
-        MethodReference startRef = new MethodReference(Fiber.class, "startMain", String[].class, void.class);
-        MethodReference processRef = new MethodReference(EventQueue.class, "process", void.class);
+        MethodReference startRef = new MethodReference(CFiber.class, "startMain", String[].class, void.class);
         context.importMethod(startRef, true);
-        context.importMethod(processRef, true);
         writer.println(names.forMethod(startRef) + "(teavm_parseArguments(argc, argv));");
-        writer.println(names.forMethod(processRef) + "();");
     }
 
     class FiberIntrinsic implements Intrinsic {

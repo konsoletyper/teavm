@@ -1,6 +1,7 @@
 #include "runtime.h"
 #include "time.h"
 #include "fiber.h"
+#include "edt.h"
 #include "string.h"
 #include "definitions.h"
 #include "core_gen.h"
@@ -36,7 +37,7 @@ void teavm_beforeInit() {
         setlocale (LC_ALL, "");
     #endif
 
-    teavm_initFiber();
+    teavm_edt_init();
     teavm_initTime();
 }
 

@@ -16,6 +16,7 @@
 package org.teavm.runtime;
 
 import java.util.Arrays;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
@@ -227,6 +228,9 @@ public class Fiber {
     }
 
     public static Object suspend(AsyncCall call) throws Throwable {
+        if (PlatformDetector.isC()) {
+            return CFiber.suspend(call);
+        }
         Fiber fiber = current();
         Thread javaThread = Thread.currentThread();
         if (fiber.isResuming()) {
@@ -310,7 +314,11 @@ public class Fiber {
     static native void setCurrentThread(Thread thread);
 
     public static void start(FiberRunner runner, boolean daemon) {
-        new Fiber(runner, daemon).start();
+        if (PlatformDetector.isC()) {
+            CFiber.startFiber(runner, daemon);
+        } else {
+            new Fiber(runner, daemon).start();
+        }
     }
 
     static void startMain(String[] args) {

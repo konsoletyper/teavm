@@ -1,122 +1,185 @@
 #include "fiber.h"
 #include "definitions.h"
+#include "stack.h"
+#include "log.h"
 #include <stddef.h>
-#include <locale.h>
-#include <time.h>
+#include <setjmp.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
-#if TEAVM_UNIX
-    #include <signal.h>
-#endif
-#if TEAVM_WINDOWS
-    #include <Windows.h>
-    #include <synchapi.h>
-#endif
-#if TEAVM_PSP
-    #include <pspkernel.h>
-#endif
+#define TEAVM_FIBER_STATUS_NEW 0
+#define TEAVM_FIBER_STATUS_SCHEDULED 1
 
-#if TEAVM_UNIX
-    static timer_t teavm_queueTimer;
-#endif
-#if TEAVM_WINDOWS
-    static HANDLE teavm_queueTimer;
-#endif
+typedef struct TeaVM_FiberImpl {
+    int32_t status;
+    struct TeaVM_FiberImpl* previous;
+    struct TeaVM_FiberImpl* next;
+    union {
+        void (*newAction)();
+        struct {
+            char* stackSnapshot;
+            int32_t stackSize;
+            TeaVM_StackFrame* shadowStackTop;
+            jmp_buf jmp;
+        } suspended;
+    } data;
+} TeaVM_FiberImpl;
 
-void teavm_initFiber() {
+static TeaVM_FiberImpl* teavm_fiber_first = NULL;
+static TeaVM_FiberImpl* teavm_fiber_last = NULL;
+static TeaVM_FiberImpl* teavm_fiber_currentImpl = NULL;
+static void* teavm_fiber_stackStart = NULL;
+static TeaVM_StackFrame* teavm_fiber_initShadowStack = NULL;
+static jmp_buf teavm_fiber_hostJmpBuf;
+static bool teavm_fiber_stackDirDetected = false;
+static bool teavm_fiber_stackDirTopToBottom;
+static char* teavm_fiber_resumingStackStart;
 
-    #if TEAVM_UNIX
-        #ifndef __EMSCRIPTEN__
-            setlocale (LC_ALL, "");
-
-            struct sigaction sigact;
-            sigact.sa_flags = 0;
-            sigact.sa_handler = NULL;
-            sigaction(SIGRTMIN, &sigact, NULL);
-
-            sigset_t signals;
-            sigemptyset(&signals);
-            sigaddset(&signals, SIGRTMIN);
-            sigprocmask(SIG_BLOCK, &signals, NULL);
-
-            struct sigevent sev;
-            sev.sigev_notify = SIGEV_SIGNAL;
-            sev.sigev_signo = SIGRTMIN;
-            timer_create(CLOCK_REALTIME, &sev, &teavm_queueTimer);
-        #endif
-    #endif
-
-    #if TEAVM_WINDOWS
-        LARGE_INTEGER perf = { .QuadPart  = 0 };
-        QueryPerformanceFrequency(&perf);
-        teavm_perfFrequency = perf.QuadPart;
-        QueryPerformanceCounter(&perf);
-        teavm_perfInitTime = perf.QuadPart;
-
-        teavm_queueTimer = CreateEvent(NULL, TRUE, FALSE, TEXT("TeaVM_eventQueue"));
-
-        SYSTEMTIME unixEpochStart = {
-            .wYear = 1970,
-            .wMonth = 1,
-            .wDayOfWeek = 3,
-            .wDay = 1
-        };
-        FILETIME fileTimeStart;
-        SystemTimeToFileTime(&unixEpochStart, &fileTimeStart);
-        teavm_unixTimeOffset = fileTimeStart.dwLowDateTime | ((uint64_t) fileTimeStart.dwHighDateTime << 32);
-    #endif
+static void teavm_fiber_detectStackDir() {
+    if (teavm_fiber_stackDirDetected) {
+        return;
+    }
+    volatile void* dummy = &teavm_fiber_currentImpl;
+    teavm_fiber_stackDirTopToBottom = ((char*) dummy) - ((char*) teavm_fiber_stackStart) < 0;
 }
 
+__attribute__((noinline))
+static void teavm_fiber_resume() {
+    volatile char guard[2048];
+    memset((char*)guard, 0, sizeof(guard));
 
-#if TEAVM_UNIX
-    #ifdef __EMSCRIPTEN__
-        void teavm_waitFor(int64_t timeout) {
+    teavm_fiber_detectStackDir();
+    teavm_fiber_resumingStackStart = teavm_fiber_stackStart;
+    if (teavm_fiber_stackDirTopToBottom) {
+        teavm_fiber_resumingStackStart -= teavm_fiber_currentImpl->data.suspended.stackSize;
+    }
+    teavm_stackTop = teavm_fiber_currentImpl->data.suspended.shadowStackTop;
+    memcpy(teavm_fiber_resumingStackStart, teavm_fiber_currentImpl->data.suspended.stackSnapshot,
+            teavm_fiber_currentImpl->data.suspended.stackSize);
+    free(teavm_fiber_currentImpl->data.suspended.stackSnapshot);
+    teavm_fiber_currentImpl->data.suspended.stackSnapshot = NULL;
+    longjmp(teavm_fiber_currentImpl->data.suspended.jmp, 1);
+}
+
+__attribute__((noinline))
+static bool teavm_fiber_suspend() {
+    volatile void* dummy = &teavm_fiber_currentImpl;
+    teavm_fiber_detectStackDir();
+    teavm_fiber_currentImpl->data.suspended.shadowStackTop = teavm_stackTop;
+    teavm_fiber_currentImpl->data.suspended.stackSize = teavm_fiber_stackDirTopToBottom
+            ? (int32_t) (((char*) teavm_fiber_stackStart) - ((char*) &dummy))
+            : (int32_t) (((char*) &dummy) - ((char*) teavm_fiber_stackStart));
+    teavm_fiber_currentImpl->data.suspended.stackSnapshot = malloc(teavm_fiber_currentImpl->data.suspended.stackSize);
+    memcpy(teavm_fiber_currentImpl->data.suspended.stackSnapshot,
+            teavm_fiber_stackDirTopToBottom ? &dummy : teavm_fiber_stackStart,
+            teavm_fiber_currentImpl->data.suspended.stackSize);
+    return setjmp(teavm_fiber_currentImpl->data.suspended.jmp) == 0;
+}
+
+static void teavm_fiber_host() {
+    volatile void* dummy = &teavm_fiber_currentImpl;
+    teavm_fiber_stackStart = &dummy;
+    teavm_fiber_initShadowStack = teavm_stackTop;
+    setjmp(teavm_fiber_hostJmpBuf);
+    if (teavm_fiber_currentImpl != NULL) {
+        if (teavm_fiber_currentImpl->status != TEAVM_FIBER_STATUS_NEW) {
+            teavm_printWString(L"[TEAVM] Assertion error: host always expects NEW fibers\n");
             abort();
         }
-        void teavm_interrupt() {
-            abort();
-        }
-    #else
-        void teavm_waitFor(int64_t timeout) {
-            struct itimerspec its = {0};
-            its.it_value.tv_sec = timeout / 1000;
-            its.it_value.tv_nsec = (timeout % 1000) * 1000000L;
-            timer_settime(teavm_queueTimer, 0, &its, NULL);
-
-            sigset_t signals;
-            sigemptyset(&signals);
-            sigaddset(&signals, SIGRTMIN);
-            siginfo_t actualSignal;
-            sigwaitinfo(&signals, &actualSignal);
-        }
-
-        void teavm_interrupt() {
-            struct itimerspec its = {0};
-            timer_settime(teavm_queueTimer, 0, &its, NULL);
-            raise(SIGRTMIN);
-        }
-    #endif
-#endif
-
-#if TEAVM_WINDOWS
-    void teavm_waitFor(int64_t timeout) {
-        WaitForSingleObject(teavm_queueTimer, (DWORD) timeout);
-        ResetEvent(teavm_queueTimer);
+        void (*action)() = teavm_fiber_currentImpl->data.newAction;
+        teavm_fiber_currentImpl->status = TEAVM_FIBER_STATUS_SCHEDULED;
+        teavm_fiber_currentImpl->data.newAction = NULL;
+        teavm_stackTop = teavm_fiber_initShadowStack;
+        action();
     }
+}
 
-    void teavm_interrupt() {
-        SetEvent(teavm_queueTimer);
+static void teavm_fiber_bootstrap(TeaVM_FiberImpl* fiber) {
+    if (fiber->status != TEAVM_FIBER_STATUS_NEW) {
+        teavm_printWString(L"[TEAVM] Assertion error: first running fiber must be in NEW state\n");
+        abort();
     }
-#endif
+    teavm_fiber_currentImpl = fiber;
+    teavm_fiber_host();
+}
 
-#if TEAVM_PSP
-    void teavm_waitFor(int64_t timeout) {
-        // PSP implementation: simple delay
-        if (timeout > 0) {
-            sceKernelDelayThread(timeout * 1000); // timeout in ms, sceKernelDelayThread in us
+TeaVM_Fiber teavm_fiber_current() {
+    return teavm_fiber_currentImpl;
+}
+
+TeaVM_Fiber teavm_fiber_create(void (*action)()) {
+    TeaVM_FiberImpl* fiber = malloc(sizeof(TeaVM_FiberImpl));
+    fiber->status = TEAVM_FIBER_STATUS_NEW;
+    fiber->data.newAction = action;
+    fiber->next = NULL;
+    if (teavm_fiber_last != NULL) {
+        teavm_fiber_last->next = fiber;
+        fiber->previous = teavm_fiber_last;
+    } else {
+        teavm_fiber_last = fiber;
+        teavm_fiber_first = fiber;
+        fiber->previous = NULL;
+    }
+    return fiber;
+}
+
+void teavm_fiber_destroy(TeaVM_Fiber fiber) {
+    TeaVM_FiberImpl* fiberImpl = (TeaVM_FiberImpl*) fiber;
+    if (fiberImpl == teavm_fiber_currentImpl) {
+        teavm_printWString(L"[TEAVM] Assertion error: can't destroy currently running fiber\n");
+        abort();
+    }
+    if (fiberImpl->previous != NULL) {
+        fiberImpl->previous->next = fiberImpl->next;
+    } else {
+        teavm_fiber_first = fiberImpl->next;
+    }
+    if (fiberImpl->next != NULL) {
+        fiberImpl->next->previous = fiberImpl->previous;
+    } else {
+        teavm_fiber_last = fiberImpl->previous;
+    }
+    free(fiberImpl);
+}
+
+void teavm_fiber_switch(TeaVM_Fiber fiber) {
+    TeaVM_FiberImpl* fiberImpl = (TeaVM_FiberImpl*) fiber;
+    if (teavm_fiber_currentImpl == NULL) {
+        teavm_fiber_bootstrap(fiberImpl);
+    } else if (fiberImpl != teavm_fiber_currentImpl) {
+        if (teavm_fiber_suspend()) {
+            teavm_fiber_currentImpl = fiberImpl;
+            if (teavm_fiber_currentImpl->status == TEAVM_FIBER_STATUS_NEW) {
+                longjmp(teavm_fiber_hostJmpBuf, 1);
+            } else {
+                teavm_fiber_resume();
+            }
         }
+    } else {
+        teavm_printWString(L"[TEAVM] Assertion error: can't switch to already running fiber\n");
+        abort();
     }
+}
 
-    void teavm_interrupt() {
-        // Stub for PSP
+static TeaVM_FiberImpl* teavm_fiber_currentIterImpl = NULL;
+
+void teavm_fiber_rewindIter() {
+    teavm_fiber_currentIterImpl = teavm_fiber_first;
+}
+
+TeaVM_Fiber teavm_fiber_currentIter() {
+    return teavm_fiber_currentIterImpl;
+}
+
+void teavm_fiber_nextIter() {
+    teavm_fiber_currentIterImpl = teavm_fiber_currentIterImpl->next;
+}
+
+extern void* teavm_fiber_suspendedStack(TeaVM_Fiber fiber) {
+    TeaVM_FiberImpl* fiberImpl = (TeaVM_FiberImpl*) fiber;
+    if (fiberImpl->status != TEAVM_FIBER_STATUS_SCHEDULED) {
+        return NULL;
     }
-#endif
+    char* data = fiberImpl->data.suspended.stackSnapshot;
+    return teavm_fiber_stackDirTopToBottom ? data : data + fiberImpl->data.suspended.stackSize;
+}

@@ -3,6 +3,7 @@
 #include "uchar.h"
 #include "string.h"
 #include "definitions.h"
+#include <assert.h>
 
 #if TEAVM_USE_SETJMP
 #include <setjmp.h>
@@ -43,15 +44,15 @@ typedef struct TeaVM_CallSite {
 #endif
 
 typedef struct TeaVM_StackFrame {
-    struct TeaVM_StackFrame* next;
+    int16_t nextDiff;
+    int16_t size;
+    int32_t callSiteId;
     #if TEAVM_INCREMENTAL
         TeaVM_CallSite* callSites;
     #endif
     #if TEAVM_USE_SETJMP
         TeaVM_LongjmpDesc* jmpTarget;
     #endif
-    int32_t size;
-    int32_t callSiteId;
 } TeaVM_StackFrame;
 
 #if !TEAVM_INCREMENTAL
@@ -66,7 +67,9 @@ typedef struct TeaVM_StackFrame {
 
     #define TEAVM_ALLOC_STACK_DEF(sz, cs) \
         struct { TeaVM_StackFrame header; void* data[(sz)]; } teavm_shadowStack; \
-        teavm_shadowStack.header.next = teavm_stackTop; \
+        teavm_shadowStack.header.nextDiff = teavm_stackTop == NULL
+                ? 0
+                : (int16_t) ((char*) teavm_stackTop - (char*) &teavm_shadowStack); \
         teavm_shadowStack.header.callSites = (cs); \
         teavm_shadowStack.header.size = (sz); \
         teavm_stackTop = &teavm_shadowStack.header
@@ -77,7 +80,9 @@ typedef struct TeaVM_StackFrame {
 
     #define TEAVM_ALLOC_STACK(sz) \
         struct { TeaVM_StackFrame header; void* data[(sz)]; } teavm_shadowStack; \
-        teavm_shadowStack.header.next = teavm_stackTop; \
+        teavm_shadowStack.header.nextDiff = teavm_stackTop == NULL \
+                ? 0 \
+                : (int16_t) ((char*) teavm_stackTop - (char*) &teavm_shadowStack); \
         teavm_shadowStack.header.size = (sz); \
         teavm_stackTop = &teavm_shadowStack.header
 
@@ -86,7 +91,7 @@ typedef struct TeaVM_StackFrame {
 #endif
 
 
-#define TEAVM_RELEASE_STACK (teavm_stackTop = teavm_shadowStack.header.next)
+#define TEAVM_RELEASE_STACK (teavm_stackTop = TEAVM_GET_NEXT_FRAME(teavm_stackTop))
 #define TEAVM_GC_ROOT(index, ptr) teavm_shadowStack.data[index] = ptr
 #define TEAVM_GC_ROOT_RELEASE(index) teavm_shadowStack.data[index] = NULL
 #define TEAVM_GC_ROOTS_COUNT(ptr) (((TeaVM_StackFrame*) (ptr))->size);
@@ -97,7 +102,10 @@ typedef struct TeaVM_StackFrame {
 #define TEAVM_SET_EXCEPTION_HANDLER(frame, id) (((TeaVM_StackFrame*) (frame))->callSiteId = (id))
 #define TEAVM_SET_EXCEPTION_HANDLER_SKIP(frame) (((TeaVM_StackFrame*) (frame))->callSiteId++)
 #define TEAVM_SET_EXCEPTION_HANDLER_RESTORE(frame) (((TeaVM_StackFrame*) (frame))->callSiteId--)
-#define TEAVM_GET_NEXT_FRAME(frame) (((TeaVM_StackFrame*) (frame))->next)
+#define TEAVM_GET_NEXT_FRAME_DIFF(frame) (((TeaVM_StackFrame*) (frame))->nextDiff)
+#define TEAVM_GET_NEXT_FRAME(frame) (TEAVM_GET_NEXT_FRAME_DIFF(frame) != 0 \
+    ? (TeaVM_StackFrame*) (((char*) (frame)) + TEAVM_GET_NEXT_FRAME_DIFF(frame)) \
+    : NULL)
 #define TEAVM_GET_CALL_SITE_ID(frame) (((TeaVM_StackFrame*) (frame))->callSiteId)
 
 extern TeaVM_StackFrame* teavm_stackTop;
