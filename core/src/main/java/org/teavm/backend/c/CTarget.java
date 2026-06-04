@@ -642,6 +642,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (context.getMetadataRequirements().hasClassInit()) {
             writer.println("#define TEAVM_CLASS_INIT_USED 1");
         }
+        if (context.getDependencies().getMethod(new MethodReference(ClassInfo.class, "initializeNewInstance",
+                Object.class, boolean.class)) != null) {
+            writer.println("#define TEAVM_CLASS_INIT_NEW_INSTANCE_USED 1");
+        }
         if (context.getMetadataRequirements().hasGetInterfaces()) {
             writer.println("#define TEAVM_CLASS_SUPERINTERFACES_USED 1");
         }

@@ -155,13 +155,28 @@ public class ClassInfoIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print("))->reflection");
                 break;
-            case "newInstance": {
+            case "newInstance":
                 context.importMethod(CodeGenerationVisitor.ALLOC_METHOD, true);
                 context.writer().print(context.names().forMethod(CodeGenerationVisitor.ALLOC_METHOD)).print("(");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
                 break;
-            }
+            case "initializeNewInstance":
+                context.writer().print("teavm_initNewInstance(");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(", ");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print(")");
+                break;
+            case "rewind":
+                context.writer().print("teavm_rewindCurrentClass()");
+                break;
+            case "hasNext":
+                context.writer().print("teavm_hasNextClass()");
+                break;
+            case "next":
+                context.writer().print("teavm_nextClass()");
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

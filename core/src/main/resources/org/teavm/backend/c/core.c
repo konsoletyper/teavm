@@ -57,6 +57,8 @@ void teavm_afterInitClasses() {
 }
 
 TeaVM_Class* teavm_firstClass = NULL;
+static TeaVM_Class* teavm_firstObjectClass = NULL;
+static TeaVM_Class* teavm_selectedClass = NULL;
 TeaVM_Class* teavm_classClass;
 TeaVM_Class* teavm_objectClass;
 TeaVM_Class* teavm_stringClass;
@@ -74,6 +76,7 @@ void teavm_initClasses() {
         cls->next = teavm_firstClass;
         teavm_firstClass = cls;
     }
+    teavm_firstObjectClass = teavm_firstClass;
 }
 
 TeaVM_Object* teavm_getClassObject(TeaVM_Class* cls) {
@@ -82,6 +85,18 @@ TeaVM_Object* teavm_getClassObject(TeaVM_Class* cls) {
         result = TEAVM_CREATE_CLASS_OBJECT(cls);
         cls->classObject = result;
     }
+    return result;
+}
+
+void teavm_rewindCurrentClass() {
+    teavm_selectedClass = teavm_firstObjectClass;
+}
+int32_t teavm_hasNextClass() {
+    return teavm_selectedClass != NULL;
+}
+void* teavm_nextClass() {
+    void* result = teavm_selectedClass;
+    teavm_selectedClass = teavm_selectedClass->next;
     return result;
 }
 

@@ -928,6 +928,18 @@ public class ClassGenerator {
         if (context.getMetadataRequirements().hasClassInit()) {
             initializers.add(new FieldInitializer("init", initFunction));
         }
+        if (context.getDependencies().getMethod(new MethodReference(ClassInfo.class, "initializeNewInstance",
+                Object.class, boolean.class)) != null && type instanceof ValueType.Object objClass) {
+            var cls = context.getClassSource().get(objClass.getClassName());
+            if (cls != null) {
+                var defaultConstructor = cls.getMethod(new MethodDescriptor("<init>", void.class));
+                if (defaultConstructor != null && defaultConstructor.getLevel() == AccessLevel.PUBLIC
+                        && defaultConstructor.getProgram() != null) {
+                    var ctorName = context.getNames().forMethod(defaultConstructor.getReference());
+                    initializers.add(new FieldInitializer("initNewInstance", "&" + ctorName));
+                }
+            }
+        }
         var reflectionGeneratorStarted = false;
         if (context.getDependencies().getMethod(new MethodReference(ClassInfo.class, "reflection",
                 ClassReflectionInfo.class)) != null) {

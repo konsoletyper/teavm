@@ -50,6 +50,9 @@ typedef struct TeaVM_Class {
     #if TEAVM_CLASS_INIT_USED
         void (*init)();
     #endif
+    #if TEAVM_CLASS_INIT_NEW_INSTANCE_USED
+        void (*initNewInstance)(void* instance);
+    #endif
     struct TeaVM_Class* superclass;
     #if TEAVM_CLASS_SUPERINTERFACES_USED
         int32_t superinterfaceCount;
@@ -82,6 +85,17 @@ inline static void* teavm_enumConstant(TeaVM_Class* cls, int32_t index) {
     void* values = cls->enumValues;
     return **((void***) values + (index + 1));
 }
+
+#ifdef TEAVM_CLASS_INIT_NEW_INSTANCE_USED
+    int32_t teavm_initNewInstance(void* cls, void* obj) {
+        TeaVM_Class* castClass = (TeaVM_Class*) cls;
+        if (castClass->initNewInstance == NULL) {
+            return 0;
+        }
+        castClass->initNewInstance(obj);
+        return 1;
+    }
+#endif
 
 typedef struct TeaVM_Service {
     TeaVM_Class* cls;
@@ -211,6 +225,10 @@ extern double teavm_rand();
 
 extern void teavm_beforeInit();
 extern void teavm_afterInitClasses();
+
+extern void teavm_rewindCurrentClass();
+extern int32_t teavm_hasNextClass();
+extern void* teavm_nextClass();
 
 
 static inline int64_t teavm_reinterpretDoubleToLong(double v) {

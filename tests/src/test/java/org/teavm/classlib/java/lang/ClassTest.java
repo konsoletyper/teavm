@@ -116,7 +116,6 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThroughReflectionWithClassInstance() throws Exception {
         var instance = (Runnable) getTestClass(true).newInstance();
         instance.run();
@@ -129,7 +128,6 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThroughReflectionWithCalculatedName() throws Exception {
         Runnable instance = (Runnable) Class.forName(getClassNameToFind()).newInstance();
         instance.run();
@@ -142,7 +140,6 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThroughReflection() throws Exception {
         Runnable instance = (Runnable) Class.forName(TestObject.class.getName()).newInstance();
         instance.run();
@@ -151,7 +148,6 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void instanceCreatedThoughReflectionWithConstantName() throws Exception {
         var cls = Class.forName("org.teavm.classlib.java.lang.ClassTest$ClassReferredByConstantName");
         assertArrayEquals(new Class<?>[] { Supplier.class }, cls.getInterfaces());
