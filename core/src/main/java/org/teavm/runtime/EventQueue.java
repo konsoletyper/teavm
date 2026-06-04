@@ -18,7 +18,6 @@ package org.teavm.runtime;
 import java.util.Arrays;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.classlib.PlatformDetector;
-import org.teavm.interop.Export;
 import org.teavm.interop.Import;
 import org.teavm.interop.Intrinsified;
 import org.teavm.interop.StaticInit;
@@ -86,29 +85,12 @@ public final class EventQueue {
         }
     }
 
-    @Export(name = "teavm_processQueue")
-    public static long processSingle() {
-        if (size == 0) {
-            return -1;
+    public static boolean processSingle() {
+        if (size <= 0 || finished) {
+            return false;
         }
-
-        Node node = data[0];
-        long currentTime = System.currentTimeMillis();
-        if (node.time <= System.currentTimeMillis()) {
-            remove(0);
-            node.event.run();
-            if (size == 0) {
-                return -1;
-            }
-            return Math.max(0, node.time - currentTime);
-        } else {
-            return node.time - currentTime;
-        }
-    }
-
-    @Export(name = "teavm_stopped")
-    public static boolean isStopped() {
-        return finished;
+        next();
+        return true;
     }
 
     public static void stop() {
@@ -166,12 +148,12 @@ public final class EventQueue {
         waitFor(diff);
     }
 
-    @Import(name = "teavm_waitFor")
-    @RuntimeInclude("fiber.h")
+    @Import(name = "teavm_edt_waitFor")
+    @RuntimeInclude("edt.h")
     private static native void waitFor(long time);
 
-    @Import(name = "teavm_interrupt", module = "teavm")
-    @RuntimeInclude("fiber.h")
+    @Import(name = "teavm_edt_interrupt", module = "teavm")
+    @RuntimeInclude("edt.h")
     private static native void interrupt();
 
     private static void ensureCapacity(int capacity) {

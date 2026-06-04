@@ -37,9 +37,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
@@ -269,7 +267,6 @@ public class MethodTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void asyncReflection() throws Exception {
         var method = ClassWithAsyncMethod.class.getMethod("foo", int.class);
         var result = method.invoke(null, 23);
