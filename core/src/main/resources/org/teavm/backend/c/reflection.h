@@ -157,9 +157,34 @@ typedef struct {
     TeaVM_ClassPtr data[];
 } TeaVM_ClassArray;
 
+#if TEAVM_TYPE_VARIABLE_BOUNDS_USED
+    typedef struct TeaVM_GenericTypeInfo {
+        int32_t kind;
+        union {
+            struct {
+                TeaVM_Class* rawType;
+                int32_t actualTypeArgumentCount;
+                struct TeaVM_GenericTypeInfo** actualTypeArguments;
+                struct TeaVM_GenericTypeInfo* ownerType;
+            } parameterized;
+            struct {
+                int16_t level;
+                int16_t index;
+            } typeVar;
+            struct TeaVM_GenericTypeInfo* itemType;
+            struct TeaVM_GenericTypeInfo* bound;
+            TeaVM_ClassPtr classPtr;
+        };
+    } TeaVM_GenericTypeInfo;
+#endif
+
 #if TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED
     typedef struct {
         TeaVM_String** name;
+        #if TEAVM_TYPE_VARIABLE_BOUNDS_USED
+            int32_t boundCount;
+            TeaVM_GenericTypeInfo** bounds;
+        #endif
     } TeaVM_TypeVariableInfo;
 
     typedef struct {
@@ -244,5 +269,15 @@ extern TeaVM_Class* teavm_reflection_extractType(TeaVM_ClassPtr* type);
 #ifdef TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED
     static inline int32_t teavm_reflection_typeParameterCount(TeaVM_ClassReflection* cls) {
         return cls->typeParameters != NULL ? cls->typeParameters->count : 0;
+    }
+#endif
+#ifdef TEAVM_TYPE_VARIABLE_BOUNDS_USED
+    static inline int32_t teavm_reflection_typeVariableBoundCount(TeaVM_TypeVariableInfo* param) {
+        return param->bounds != NULL ? param->boundCount : 0;
+    }
+    static inline int32_t teavm_reflection_parameterizedTypeArgumentCount(
+            TeaVM_GenericTypeInfo* type) {
+        return type->parameterized.actualTypeArguments != NULL
+                ? type->parameterized.actualTypeArgumentCount : 0;
     }
 #endif

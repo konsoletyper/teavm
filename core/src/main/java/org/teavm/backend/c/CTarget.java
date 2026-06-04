@@ -87,11 +87,17 @@ import org.teavm.backend.c.intrinsic.reflection.ClassReflectionInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.DerivedClassInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.FieldInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.FieldReflectionInfoIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.GenericArrayInfoIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.GenericTypeInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.MethodInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.MethodReflectionInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.ParameterInfoIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.ParameterizedTypeInfoIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.RawTypeInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.TypeVariableInfoIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.TypeVariableReferenceIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.WildcardTypeInfoIntrinsic;
 import org.teavm.backend.c.transform.CFileSystemTransformer;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.dependency.BufferDependencyListener;
@@ -160,6 +166,7 @@ import org.teavm.runtime.reflect.ClassReflectionInfo;
 import org.teavm.runtime.reflect.FieldReflectionInfo;
 import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.runtime.reflect.MethodReflectionInfo;
+import org.teavm.runtime.reflect.TypeVariableInfo;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
@@ -439,6 +446,12 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new MethodReflectionInfoIntrinsic());
         intrinsics.add(new ParameterInfoIntrinsic());
         intrinsics.add(new TypeVariableInfoIntrinsic());
+        intrinsics.add(new GenericTypeInfoIntrinsic());
+        intrinsics.add(new ParameterizedTypeInfoIntrinsic());
+        intrinsics.add(new TypeVariableReferenceIntrinsic());
+        intrinsics.add(new GenericArrayInfoIntrinsic());
+        intrinsics.add(new WildcardTypeInfoIntrinsic());
+        intrinsics.add(new RawTypeInfoIntrinsic());
 
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());
@@ -667,6 +680,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (context.getDependencies().getMethod(new MethodReference(ClassReflectionInfo.class, "typeParameterCount",
                 int.class)) != null) {
             writer.println("#define TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED 1");
+        }
+        if (context.getDependencies().getMethod(new MethodReference(TypeVariableInfo.class, "boundCount",
+                int.class)) != null) {
+            writer.println("#define TEAVM_TYPE_VARIABLE_BOUNDS_USED 1");
         }
         OutputFileUtil.write(writer, "core_defs.h", buildTarget);
     }

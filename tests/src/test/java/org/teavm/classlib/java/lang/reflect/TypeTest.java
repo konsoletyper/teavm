@@ -87,7 +87,6 @@ public class TypeTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void classTypeVariableBounds() {
         TypeVariable<?>[] params = A.class.getTypeParameters();
         assertEquals(1, params[0].getBounds().length);

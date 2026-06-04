@@ -26,6 +26,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -36,6 +37,7 @@ import org.teavm.runtime.reflect.ClassReflectionInfo;
 import org.teavm.runtime.reflect.FieldReflectionInfo;
 import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.runtime.reflect.MethodReflectionInfo;
+import org.teavm.runtime.reflect.TypeVariableInfo;
 
 class ClassReflectionGenerator {
     private GenerationContext context;
@@ -49,6 +51,7 @@ class ClassReflectionGenerator {
     private boolean needCheckedExceptions;
     private boolean needFieldReflection;
     private boolean needTypeParameters;
+    private boolean needBounds;
 
     ClassReflectionGenerator(GenerationContext context, ReflectionDependencyListener reflection,
             Collection<ValueType> types, MethodConvertersGenerator methodConvertersGenerator) {
@@ -66,6 +69,8 @@ class ClassReflectionGenerator {
                 new MethodReference(FieldReflectionInfo.class, "annotationCount", int.class)) != null;
         needTypeParameters = context.getDependencies().getMethod(
                 new MethodReference(ClassReflectionInfo.class, "typeParameterCount", int.class)) != null;
+        needBounds = context.getDependencies().getMethod(
+                new MethodReference(TypeVariableInfo.class, "boundCount", int.class)) != null;
     }
 
     void prepare(CodeWriter writer, IncludeManager includes) {
@@ -119,7 +124,7 @@ class ClassReflectionGenerator {
                 writer.println(",");
             }
             writer.print(".typeParameters = ");
-            generateTypeParameters(typeParameters);
+            generateTypeParameters(typeParameters, cls);
         }
 
         writer.println();
@@ -586,7 +591,7 @@ class ClassReflectionGenerator {
         return params != null ? params : new org.teavm.model.GenericTypeParameter[0];
     }
 
-    private void generateTypeParameters(org.teavm.model.GenericTypeParameter[] params) {
+    private void generateTypeParameters(org.teavm.model.GenericTypeParameter[] params, ClassReader cls) {
         writer.print("(TeaVM_TypeVariableInfoList*) &(struct { int32_t count; TeaVM_TypeVariableInfo data[")
                 .print(String.valueOf(params.length)).println("]; }) {").indent();
         writer.print(".count = ").print(String.valueOf(params.length)).println(",");
@@ -595,11 +600,170 @@ class ClassReflectionGenerator {
             if (i > 0) {
                 writer.println(",");
             }
-            var nameIndex = context.getStringPool().getStringIndex(params[i].getName());
-            writer.print("{ .name = TEAVM_GET_STRING_ADDRESS(").print(String.valueOf(nameIndex)).print(") }");
+            var param = params[i];
+            var nameIndex = context.getStringPool().getStringIndex(param.getName());
+            writer.print("{ .name = TEAVM_GET_STRING_ADDRESS(").print(String.valueOf(nameIndex)).print(")");
+            if (needBounds) {
+                var bounds = param.extractAllBounds();
+                if (!bounds.isEmpty()) {
+                    writer.println(",");
+                    writer.print(".boundCount = ").print(String.valueOf(bounds.size())).println(",");
+                    writer.print(".bounds = ");
+                    generateBounds(bounds, cls);
+                }
+            }
+            writer.print(" }");
         }
         writer.println();
         writer.outdent().println("}");
         writer.outdent().print("}");
+    }
+
+    private void generateBounds(List<GenericValueType.Reference> bounds, ClassReader contextClass) {
+        writer.print("(TeaVM_GenericTypeInfo*[").print(String.valueOf(bounds.size())).print("]) {").indent();
+        for (var i = 0; i < bounds.size(); ++i) {
+            writer.println();
+            if (i > 0) {
+                writer.println(",");
+            }
+            generateGenericType(bounds.get(i), contextClass, null);
+        }
+        writer.println();
+        writer.outdent().print("}");
+    }
+
+    private void generateGenericType(GenericValueType type, ClassReader contextClass, MethodReader contextMethod) {
+        includes.includePath("reflection.h");
+        if (type instanceof GenericValueType.Object objectType) {
+            var args = objectType.getArguments();
+            if (args.length == 0) {
+                generateRawType(ValueType.object(objectType.getFullClassName()));
+            } else {
+                generateParameterizedType(objectType, contextClass, contextMethod);
+            }
+        } else if (type instanceof GenericValueType.Variable varType) {
+            generateTypeVariableRef(varType.getName(), contextClass, contextMethod);
+        } else if (type instanceof GenericValueType.Array arrayType) {
+            var nonGeneric = type.asValueType();
+            if (nonGeneric != null) {
+                generateRawType(nonGeneric);
+            } else {
+                writer.print("&(TeaVM_GenericTypeInfo) { .kind = 2, .itemType = ");
+                generateGenericType(arrayType.getItemType(), contextClass, contextMethod);
+                writer.print(" }");
+            }
+        } else {
+            throw new IllegalArgumentException("Unsupported generic type: " + type);
+        }
+    }
+
+    private void generateParameterizedType(GenericValueType.Object objectType, ClassReader contextClass,
+            MethodReader contextMethod) {
+        var vt = ValueType.object(objectType.getFullClassName());
+        includes.includeType(vt);
+        types.add(vt);
+        var args = objectType.getArguments();
+        writer.print("&(TeaVM_GenericTypeInfo) { .kind = 0, .parameterized = {").indent();
+        writer.println();
+        writer.print(".rawType = (TeaVM_Class*) &")
+                .print(context.getNames().forClassInstance(vt)).println(",");
+        writer.print(".actualTypeArgumentCount = ").print(String.valueOf(args.length)).println(",");
+        writer.print(".actualTypeArguments = (TeaVM_GenericTypeInfo*[")
+                .print(String.valueOf(args.length)).print("]) {").indent();
+        for (var i = 0; i < args.length; ++i) {
+            writer.println();
+            if (i > 0) {
+                writer.println(",");
+            }
+            generateTypeArgument(args[i], contextClass, contextMethod);
+        }
+        writer.println();
+        writer.outdent().println("},");
+        var parent = objectType.getParent();
+        if (parent != null) {
+            writer.print(".ownerType = ");
+            generateGenericType(parent, contextClass, contextMethod);
+        } else {
+            writer.print(".ownerType = NULL");
+        }
+        writer.println();
+        writer.outdent().print("} }");
+    }
+
+    private void generateTypeArgument(GenericValueType.Argument arg, ClassReader contextClass,
+            MethodReader contextMethod) {
+        switch (arg.getKind()) {
+            case INVARIANT:
+                generateGenericType(arg.getValue(), contextClass, contextMethod);
+                break;
+            case ANY:
+                writer.print("&(TeaVM_GenericTypeInfo) { .kind = 5 }");
+                break;
+            case COVARIANT:
+                writer.print("&(TeaVM_GenericTypeInfo) { .kind = 3, .bound = ");
+                generateGenericType(arg.getValue(), contextClass, contextMethod);
+                writer.print(" }");
+                break;
+            case CONTRAVARIANT:
+                writer.print("&(TeaVM_GenericTypeInfo) { .kind = 4, .bound = ");
+                generateGenericType(arg.getValue(), contextClass, contextMethod);
+                writer.print(" }");
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown argument kind: " + arg.getKind());
+        }
+    }
+
+    private void generateTypeVariableRef(String varName, ClassReader contextClass, MethodReader contextMethod) {
+        var level = 0;
+        if (contextMethod != null) {
+            var params = contextMethod.getTypeParameters();
+            for (var i = 0; i < params.length; ++i) {
+                if (params[i].getName().equals(varName)) {
+                    writeTypeVariableRef(0, i);
+                    return;
+                }
+            }
+            ++level;
+        }
+        var currentClass = contextClass;
+        while (currentClass != null) {
+            var params = currentClass.getGenericParameters();
+            if (params != null) {
+                for (var i = 0; i < params.length; ++i) {
+                    if (params[i].getName().equals(varName)) {
+                        writeTypeVariableRef(level, i);
+                        return;
+                    }
+                }
+            }
+            ++level;
+            if (currentClass.getOwnerName() == null) {
+                break;
+            }
+            currentClass = context.getClassSource().get(currentClass.getOwnerName());
+        }
+        throw new IllegalArgumentException("Unknown type variable: " + varName);
+    }
+
+    private void writeTypeVariableRef(int level, int index) {
+        writer.print("&(TeaVM_GenericTypeInfo) { .kind = 1, .typeVar = { .level = ")
+                .print(String.valueOf(level)).print(", .index = ").print(String.valueOf(index))
+                .print(" } }");
+    }
+
+    private void generateRawType(ValueType type) {
+        includes.includePath("reflection.h");
+        var degree = 0;
+        var current = type;
+        while (current instanceof ValueType.Array) {
+            current = ((ValueType.Array) current).getItemType();
+            ++degree;
+        }
+        includes.includeType(current);
+        types.add(current);
+        writer.print("&(TeaVM_GenericTypeInfo) { .kind = 6, .classPtr = ")
+                .print("{ .baseClass = (TeaVM_Class*) &").print(context.getNames().forClassInstance(current))
+                .print(", .arrayDegree = ").print(String.valueOf(degree)).print(" } }");
     }
 }
