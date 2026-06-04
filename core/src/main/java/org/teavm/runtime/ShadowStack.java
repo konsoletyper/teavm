@@ -37,6 +37,14 @@ public final class ShadowStack {
 
     public static native Address getNextStackFrame(Address stackFrame);
 
+    public static native void rewindToFirstSuspendedStack();
+
+    public static native boolean hasSuspendedStack();
+
+    public static native boolean nextSuspendedStack();
+
+    public static native Address getSuspendedStackTop();
+
     public static native int getStackRootCount(Address stackFrame);
 
     public static native Address getStackRootPointer(Address stackFrame);

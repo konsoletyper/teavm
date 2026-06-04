@@ -308,10 +308,21 @@ public final class GC {
     }
 
     private static void markFromStack() {
-        for (Address stackRoots = ShadowStack.getStackTop(); stackRoots != null;
-             stackRoots = ShadowStack.getNextStackFrame(stackRoots)) {
+        markFromStack(ShadowStack.getStackTop());
+        for (ShadowStack.rewindToFirstSuspendedStack(); ShadowStack.hasSuspendedStack();
+                ShadowStack.nextSuspendedStack()) {
+            var top = ShadowStack.getSuspendedStackTop();
+            if (top != null && top != ShadowStack.getStackTop()) {
+                markFromStack(top);
+            }
+            ShadowStack.nextSuspendedStack();
+        }
+    }
+
+    private static void markFromStack(Address top) {
+        for (var stackRoots = top; stackRoots != null; stackRoots = ShadowStack.getNextStackFrame(stackRoots)) {
             int count = ShadowStack.getStackRootCount(stackRoots);
-            Address stackRootsPtr = ShadowStack.getStackRootPointer(stackRoots);
+            var stackRootsPtr = ShadowStack.getStackRootPointer(stackRoots);
             while (count-- > 0) {
                 RuntimeObject obj = stackRootsPtr.getAddress().toStructure();
                 mark(obj);
@@ -806,9 +817,20 @@ public final class GC {
     }
 
     private static void markStackRoots() {
-        Address relocationThreshold = currentChunkPointer.value.toAddress();
+        markStackRoots(ShadowStack.getStackTop());
+        for (ShadowStack.rewindToFirstSuspendedStack(); ShadowStack.hasSuspendedStack();
+                ShadowStack.nextSuspendedStack()) {
+            var top = ShadowStack.getSuspendedStackTop();
+            if (top != null && top != ShadowStack.getStackTop()) {
+                markStackRoots(top);
+            }
+        }
+    }
 
-        for (Address stackRoots = ShadowStack.getStackTop(); stackRoots != null;
+    private static void markStackRoots(Address top) {
+        var relocationThreshold = currentChunkPointer.value.toAddress();
+
+        for (Address stackRoots = top; stackRoots != null;
              stackRoots = ShadowStack.getNextStackFrame(stackRoots)) {
             int count = ShadowStack.getStackRootCount(stackRoots);
             Address stackRootsPtr = ShadowStack.getStackRootPointer(stackRoots);

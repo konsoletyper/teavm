@@ -42,6 +42,12 @@
     #define TEAVM_PSP 1
 #endif
 
+#ifdef _MSC_VER
+    #define TEAVM_NOINLINE __declspec(noinline)
+#else
+    #define TEAVM_NOINLINE __attribute__((noinline))
+#endif
+
 #ifndef TEAVM_USE_SETJMP
     #define TEAVM_USE_SETJMP 1
 #endif

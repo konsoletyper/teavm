@@ -41,6 +41,10 @@ public class ShadowStackIntrinsic implements Intrinsic {
             case "getStackRootCount":
             case "getStackRootPointer":
             case "getCallSiteId":
+            case "rewindToFirstSuspendedStack":
+            case "hasSuspendedStack":
+            case "nextSuspendedStack":
+            case "getSuspendedStackTop":
                 return true;
             default:
                 return false;
@@ -100,6 +104,22 @@ public class ShadowStackIntrinsic implements Intrinsic {
                 context.writer().print("TEAVM_GET_CALL_SITE_ID(");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
+                return;
+            case "rewindToFirstSuspendedStack":
+                context.includes().includePath("fiber.h");
+                context.writer().print("teavm_fiber_rewindIter()");
+                return;
+            case "hasSuspendedStack":
+                context.includes().includePath("fiber.h");
+                context.writer().print("(teavm_fiber_currentIter() != NULL)");
+                return;
+            case "nextSuspendedStack":
+                context.includes().includePath("fiber.h");
+                context.writer().print("teavm_fiber_nextIter()");
+                return;
+            case "getSuspendedStackTop":
+                context.includes().includePath("fiber.h");
+                context.writer().print("teavm_fiber_suspendedStack(teavm_fiber_currentIter())");
                 return;
         }
 
