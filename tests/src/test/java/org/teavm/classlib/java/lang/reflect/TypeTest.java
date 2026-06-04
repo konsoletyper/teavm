@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
@@ -62,7 +61,6 @@ public class TypeTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void classTypeParametersAndOtherMetadata() {
         var s = Arrays.stream(A.class.getTypeParameters())
                 .map(TypeVariable::getName)
@@ -75,7 +73,6 @@ public class TypeTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void methodTypeParameters() throws Exception {
         var cls = A.class;
         var foo = cls.getMethod("foo");
@@ -165,7 +162,6 @@ public class TypeTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void methodTypeVariableBounds() throws Exception {
         var method = A.class.getMethod("a");
         var params = method.getTypeParameters();
@@ -184,7 +180,6 @@ public class TypeTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void genericFieldType() throws Exception {
         var type = B.class.getDeclaredField("a").getGenericType();
         assertEquals(B.class.getTypeParameters()[0], type);
@@ -200,7 +195,6 @@ public class TypeTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void genericMethodType() throws Exception {
         var method = A.class.getMethod("bar", Object.class);
         assertEquals(void.class, method.getGenericReturnType());
@@ -219,7 +213,6 @@ public class TypeTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void innerClass() throws Exception {
         var param = Outer.Inner.class.getTypeParameters()[0];
         assertEquals(Outer.class.getTypeParameters()[0], param.getBounds()[0]);

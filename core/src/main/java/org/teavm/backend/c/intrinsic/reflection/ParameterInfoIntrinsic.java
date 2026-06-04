@@ -44,6 +44,12 @@ public class ParameterInfoIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print("])");
                 break;
+            case "genericType":
+                context.includes().includePath("reflection.h");
+                context.writer().print("((TeaVM_ParameterInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))->genericType");
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

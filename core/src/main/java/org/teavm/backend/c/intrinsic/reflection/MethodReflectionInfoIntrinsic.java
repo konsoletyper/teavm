@@ -30,6 +30,12 @@ public class MethodReflectionInfoIntrinsic implements Intrinsic {
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
+            case "genericReturnType":
+                context.includes().includePath("reflection.h");
+                context.writer().print("teavm_reflection_methodGenericReturnType((TeaVM_MethodReflectionInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))");
+                break;
             case "annotationCount":
                 context.includes().includePath("reflection.h");
                 context.writer().print("teavm_reflection_methodReflectionAnnotationCount("
@@ -57,6 +63,20 @@ public class MethodReflectionInfoIntrinsic implements Intrinsic {
                 context.writer().print("(&((TeaVM_MethodReflectionInfo*) (");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print("))->parameterInfos->data[");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print("])");
+                break;
+            case "typeParameterCount":
+                context.includes().includePath("reflection.h");
+                context.writer().print("teavm_reflection_methodTypeParameterCount((TeaVM_MethodReflectionInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))");
+                break;
+            case "typeParameter":
+                context.includes().includePath("reflection.h");
+                context.writer().print("(&((TeaVM_MethodReflectionInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))->typeParameters->data[");
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print("])");
                 break;

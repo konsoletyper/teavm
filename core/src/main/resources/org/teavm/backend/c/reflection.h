@@ -37,9 +37,14 @@ typedef struct {
     TeaVM_AnnotationInfo data[0];
 } TeaVM_AnnotationInfoList;
 
-#if TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+#if TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED || TEAVM_METHOD_GENERIC_TYPES_USED
     typedef struct {
-        TeaVM_AnnotationInfoList* annotations;
+        #if TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+            TeaVM_AnnotationInfoList* annotations;
+        #endif
+        #if TEAVM_METHOD_GENERIC_TYPES_USED
+            struct TeaVM_GenericTypeInfo* genericType;
+        #endif
     } TeaVM_ParameterInfo;
 
     typedef struct {
@@ -48,33 +53,42 @@ typedef struct {
     } TeaVM_ParameterInfoList;
 #endif
 
-#if TEAVM_METHOD_ANNOTATIONS_USED || TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+#if TEAVM_METHOD_ANNOTATIONS_USED || TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED \
+        || TEAVM_METHOD_GENERIC_TYPES_USED || TEAVM_METHOD_TYPE_PARAMS_USED
     typedef struct {
+        #if TEAVM_METHOD_GENERIC_TYPES_USED
+            struct TeaVM_GenericTypeInfo* genericReturnType;
+        #endif
         #if TEAVM_METHOD_ANNOTATIONS_USED
             TeaVM_AnnotationInfoList* annotations;
         #endif
-        #if TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+        #if TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED || TEAVM_METHOD_GENERIC_TYPES_USED
             TeaVM_ParameterInfoList* parameterInfos;
+        #endif
+        #if TEAVM_METHOD_TYPE_PARAMS_USED
+            struct TeaVM_TypeVariableInfoList* typeParameters;
         #endif
     } TeaVM_MethodReflectionInfo;
 #endif
 
-#if TEAVM_FIELD_ANNOTATIONS_USED
+#if TEAVM_FIELD_ANNOTATIONS_USED || TEAVM_FIELD_GENERIC_TYPE_USED
     typedef struct {
-        TeaVM_AnnotationInfoList* annotations;
+        #if TEAVM_FIELD_ANNOTATIONS_USED
+            TeaVM_AnnotationInfoList* annotations;
+        #endif
+        #if TEAVM_FIELD_GENERIC_TYPE_USED
+            struct TeaVM_GenericTypeInfo* genericType;
+        #endif
     } TeaVM_FieldReflectionInfo;
 #endif
 
 typedef struct {
     TeaVM_String** name;
     int32_t modifiers;
-    #if TEAVM_FIELD_ANNOTATIONS_USED
+    #if TEAVM_FIELD_ANNOTATIONS_USED || TEAVM_FIELD_GENERIC_TYPE_USED
         TeaVM_FieldReflectionInfo* reflection;
     #endif
     TeaVM_ClassPtr type;
-    #if TEAVM_FIELD_GENERIC_TYPE_USED
-        TeaVM_Object* genericType;
-    #endif
     TeaVM_FieldLocation location;
 } TeaVM_FieldInfo;
 
@@ -101,7 +115,8 @@ typedef struct {
     #if TEAVM_METHOD_EXCEPTION_TYPES_USED
         TeaVM_ClassRefList* checkedExceptionTypes;
     #endif
-    #if TEAVM_METHOD_ANNOTATIONS_USED || TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+    #if TEAVM_METHOD_ANNOTATIONS_USED || TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED \
+            || TEAVM_METHOD_GENERIC_TYPES_USED || TEAVM_METHOD_TYPE_PARAMS_USED
         TeaVM_MethodReflectionInfo* reflection;
     #endif
     TeaVM_MethodCaller* caller;
@@ -157,7 +172,7 @@ typedef struct {
     TeaVM_ClassPtr data[];
 } TeaVM_ClassArray;
 
-#if TEAVM_TYPE_VARIABLE_BOUNDS_USED
+#if TEAVM_TYPE_VARIABLE_BOUNDS_USED || TEAVM_FIELD_GENERIC_TYPE_USED || TEAVM_METHOD_GENERIC_TYPES_USED
     typedef struct TeaVM_GenericTypeInfo {
         int32_t kind;
         union {
@@ -178,7 +193,7 @@ typedef struct {
     } TeaVM_GenericTypeInfo;
 #endif
 
-#if TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED
+#if TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED || TEAVM_METHOD_TYPE_PARAMS_USED
     typedef struct {
         TeaVM_String** name;
         #if TEAVM_TYPE_VARIABLE_BOUNDS_USED
@@ -187,7 +202,7 @@ typedef struct {
         #endif
     } TeaVM_TypeVariableInfo;
 
-    typedef struct {
+    typedef struct TeaVM_TypeVariableInfoList {
         int32_t count;
         TeaVM_TypeVariableInfo data[0];
     } TeaVM_TypeVariableInfoList;
@@ -253,12 +268,24 @@ extern TeaVM_Class* teavm_reflection_extractType(TeaVM_ClassPtr* type);
         return info != NULL && info->annotations != NULL ? info->annotations->count : 0;
     }
 #endif
-#ifdef TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
+#if TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED || TEAVM_METHOD_GENERIC_TYPES_USED
     static inline int32_t teavm_reflection_methodReflectionParameterInfoCount(TeaVM_MethodReflectionInfo* info) {
         return info != NULL && info->parameterInfos != NULL ? info->parameterInfos->count : 0;
     }
+#endif
+#ifdef TEAVM_METHOD_PARAMETER_ANNOTATIONS_USED
     static inline int32_t teavm_reflection_parameterAnnotationCount(TeaVM_ParameterInfo* info) {
         return info->annotations != NULL ? info->annotations->count : 0;
+    }
+#endif
+#ifdef TEAVM_METHOD_GENERIC_TYPES_USED
+    static inline TeaVM_GenericTypeInfo* teavm_reflection_methodGenericReturnType(TeaVM_MethodReflectionInfo* info) {
+        return info != NULL ? info->genericReturnType : NULL;
+    }
+#endif
+#ifdef TEAVM_METHOD_TYPE_PARAMS_USED
+    static inline int32_t teavm_reflection_methodTypeParameterCount(TeaVM_MethodReflectionInfo* info) {
+        return info != NULL && info->typeParameters != NULL ? info->typeParameters->count : 0;
     }
 #endif
 #ifdef TEAVM_FIELD_ANNOTATIONS_USED
@@ -266,15 +293,22 @@ extern TeaVM_Class* teavm_reflection_extractType(TeaVM_ClassPtr* type);
         return info != NULL && info->annotations != NULL ? info->annotations->count : 0;
     }
 #endif
+#ifdef TEAVM_FIELD_GENERIC_TYPE_USED
+    static inline TeaVM_GenericTypeInfo* teavm_reflection_fieldGenericType(TeaVM_FieldReflectionInfo* info) {
+        return info != NULL ? info->genericType : NULL;
+    }
+#endif
 #ifdef TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED
     static inline int32_t teavm_reflection_typeParameterCount(TeaVM_ClassReflection* cls) {
         return cls->typeParameters != NULL ? cls->typeParameters->count : 0;
     }
 #endif
-#ifdef TEAVM_TYPE_VARIABLE_BOUNDS_USED
+#if TEAVM_TYPE_VARIABLE_BOUNDS_USED
     static inline int32_t teavm_reflection_typeVariableBoundCount(TeaVM_TypeVariableInfo* param) {
         return param->bounds != NULL ? param->boundCount : 0;
     }
+#endif
+#if TEAVM_TYPE_VARIABLE_BOUNDS_USED || TEAVM_FIELD_GENERIC_TYPE_USED || TEAVM_METHOD_GENERIC_TYPES_USED
     static inline int32_t teavm_reflection_parameterizedTypeArgumentCount(
             TeaVM_GenericTypeInfo* type) {
         return type->parameterized.actualTypeArguments != NULL

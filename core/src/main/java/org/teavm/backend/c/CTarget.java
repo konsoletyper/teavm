@@ -164,8 +164,10 @@ import org.teavm.runtime.reflect.AnnotationData;
 import org.teavm.runtime.reflect.ClassInfo;
 import org.teavm.runtime.reflect.ClassReflectionInfo;
 import org.teavm.runtime.reflect.FieldReflectionInfo;
+import org.teavm.runtime.reflect.GenericTypeInfo;
 import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.runtime.reflect.MethodReflectionInfo;
+import org.teavm.runtime.reflect.ParameterInfo;
 import org.teavm.runtime.reflect.TypeVariableInfo;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.TeaVMTarget;
@@ -680,6 +682,20 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (context.getDependencies().getMethod(new MethodReference(FieldReflectionInfo.class, "annotationCount",
                 int.class)) != null) {
             writer.println("#define TEAVM_FIELD_ANNOTATIONS_USED 1");
+        }
+        if (context.getDependencies().getMethod(new MethodReference(FieldReflectionInfo.class, "genericType",
+                GenericTypeInfo.class)) != null) {
+            writer.println("#define TEAVM_FIELD_GENERIC_TYPE_USED 1");
+        }
+        if (context.getDependencies().getMethod(new MethodReference(MethodReflectionInfo.class, "genericReturnType",
+                GenericTypeInfo.class)) != null
+                || context.getDependencies().getMethod(new MethodReference(ParameterInfo.class, "genericType",
+                GenericTypeInfo.class)) != null) {
+            writer.println("#define TEAVM_METHOD_GENERIC_TYPES_USED 1");
+        }
+        if (context.getDependencies().getMethod(new MethodReference(MethodReflectionInfo.class, "typeParameterCount",
+                int.class)) != null) {
+            writer.println("#define TEAVM_METHOD_TYPE_PARAMS_USED 1");
         }
         if (context.getDependencies().getMethod(new MethodReference(ClassReflectionInfo.class, "typeParameterCount",
                 int.class)) != null) {

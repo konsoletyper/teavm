@@ -45,6 +45,12 @@ public class FieldReflectionInfoIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print("])");
                 break;
+            case "genericType":
+                context.includes().includePath("reflection.h");
+                context.writer().print("teavm_reflection_fieldGenericType((TeaVM_FieldReflectionInfo*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))");
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

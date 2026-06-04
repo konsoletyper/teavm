@@ -35,8 +35,10 @@ import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.reflect.ClassReflectionInfo;
 import org.teavm.runtime.reflect.FieldReflectionInfo;
+import org.teavm.runtime.reflect.GenericTypeInfo;
 import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.runtime.reflect.MethodReflectionInfo;
+import org.teavm.runtime.reflect.ParameterInfo;
 import org.teavm.runtime.reflect.TypeVariableInfo;
 
 class ClassReflectionGenerator {
@@ -49,7 +51,10 @@ class ClassReflectionGenerator {
     private boolean needMethodAnnotations;
     private boolean needMethodParamAnnotations;
     private boolean needCheckedExceptions;
-    private boolean needFieldReflection;
+    private boolean needFieldAnnotations;
+    private boolean needFieldGenericType;
+    private boolean needMethodGenericTypes;
+    private boolean needMethodTypeParams;
     private boolean needTypeParameters;
     private boolean needBounds;
 
@@ -65,8 +70,16 @@ class ClassReflectionGenerator {
                 new MethodReference(MethodReflectionInfo.class, "parameterInfoCount", int.class)) != null;
         needCheckedExceptions = context.getDependencies().getMethod(
                 new MethodReference(MethodInfo.class, "checkedExceptionCount", int.class)) != null;
-        needFieldReflection = context.getDependencies().getMethod(
+        needFieldAnnotations = context.getDependencies().getMethod(
                 new MethodReference(FieldReflectionInfo.class, "annotationCount", int.class)) != null;
+        needFieldGenericType = context.getDependencies().getMethod(
+                new MethodReference(FieldReflectionInfo.class, "genericType", GenericTypeInfo.class)) != null;
+        needMethodGenericTypes = context.getDependencies().getMethod(
+                new MethodReference(MethodReflectionInfo.class, "genericReturnType", GenericTypeInfo.class)) != null
+                || context.getDependencies().getMethod(
+                new MethodReference(ParameterInfo.class, "genericType", GenericTypeInfo.class)) != null;
+        needMethodTypeParams = context.getDependencies().getMethod(
+                new MethodReference(MethodReflectionInfo.class, "typeParameterCount", int.class)) != null;
         needTypeParameters = context.getDependencies().getMethod(
                 new MethodReference(ClassReflectionInfo.class, "typeParameterCount", int.class)) != null;
         needBounds = context.getDependencies().getMethod(
@@ -160,14 +173,34 @@ class ClassReflectionGenerator {
         var modifiers = ElementModifier.asModifiersInfo(field.readModifiers(), field.getLevel());
         writer.print(".modifiers = ").print(String.valueOf(modifiers)).println(",");
 
-        if (needFieldReflection) {
-            var fieldAnnotations = AnnotationGenerationHelper.collectRuntimeAnnotations(
-                    context.getClassSource(), field.getAnnotations().all());
+        var fieldAnnotations = needFieldAnnotations
+                ? AnnotationGenerationHelper.collectRuntimeAnnotations(context.getClassSource(),
+                        field.getAnnotations().all())
+                : List.<AnnotationReader>of();
+        var fieldGenericType = needFieldGenericType ? field.getGenericType() : null;
+        if (fieldGenericType != null && fieldGenericType.canBeRepresentedAsRaw()
+                && fieldGenericType.asValueType() != null
+                && fieldGenericType.asValueType().equals(field.getType())) {
+            fieldGenericType = null;
+        }
+        if (!fieldAnnotations.isEmpty() || fieldGenericType != null) {
+            writer.print(".reflection = &(TeaVM_FieldReflectionInfo) {");
+            var needReflectionComma = false;
             if (!fieldAnnotations.isEmpty()) {
-                writer.print(".reflection = &(TeaVM_FieldReflectionInfo) { .annotations = ");
+                writer.print(" .annotations = ");
                 generateAnnotations(fieldAnnotations);
-                writer.println(" },");
+                needReflectionComma = true;
             }
+            if (fieldGenericType != null) {
+                if (needReflectionComma) {
+                    writer.print(", ");
+                } else {
+                    writer.print(" ");
+                }
+                writer.print(".genericType = ");
+                generateGenericType(fieldGenericType, context.getClassSource().get(field.getOwnerName()), null);
+            }
+            writer.println(" },");
         }
 
         writer.print(".type = ");
@@ -258,31 +291,79 @@ class ClassReflectionGenerator {
             }
         }
 
-        if (needMethodAnnotations || needMethodParamAnnotations) {
+        if (needMethodAnnotations || needMethodParamAnnotations || needMethodGenericTypes || needMethodTypeParams) {
             List<AnnotationReader> methodAnnotations = needMethodAnnotations
                     ? AnnotationGenerationHelper.collectRuntimeAnnotations(
                             context.getClassSource(), method.getAnnotations().all())
                     : List.of();
             var paramAnnotations = needMethodParamAnnotations ? collectParamAnnotations(method) : null;
             var hasParamAnnotations = paramAnnotations != null && hasNonEmptyList(paramAnnotations);
-            if (!methodAnnotations.isEmpty() || hasParamAnnotations) {
+
+            var cls = context.getClassSource().get(method.getOwnerName());
+            var genericReturnType = needMethodGenericTypes ? method.getGenericResultType() : null;
+            if (genericReturnType != null && genericReturnType.canBeRepresentedAsRaw()
+                    && genericReturnType.asValueType() != null
+                    && genericReturnType.asValueType().equals(method.getResultType())) {
+                genericReturnType = null;
+            }
+            GenericValueType[] genericParamTypes = null;
+            var hasGenericParams = false;
+            if (needMethodGenericTypes) {
+                genericParamTypes = method.getGenericParameterTypes();
+                if (genericParamTypes != null) {
+                    for (var i = 0; i < genericParamTypes.length; ++i) {
+                        var pt = genericParamTypes[i];
+                        if (!pt.canBeRepresentedAsRaw() || !pt.asValueType().equals(method.parameterType(i))) {
+                            hasGenericParams = true;
+                            break;
+                        }
+                    }
+                    if (!hasGenericParams) {
+                        genericParamTypes = null;
+                    }
+                }
+            }
+            var methodTypeParams = needMethodTypeParams ? method.getTypeParameters() : null;
+
+            if (!methodAnnotations.isEmpty() || hasParamAnnotations || genericReturnType != null
+                    || hasGenericParams || (methodTypeParams != null && methodTypeParams.length > 0)) {
                 writer.println(",");
                 writer.print(".reflection = &(TeaVM_MethodReflectionInfo) {").indent();
                 var needReflectionComma = false;
-                if (!methodAnnotations.isEmpty()) {
+                if (genericReturnType != null) {
                     writer.println();
+                    writer.print(".genericReturnType = ");
+                    generateGenericType(genericReturnType, cls, method);
+                    needReflectionComma = true;
+                }
+                if (!methodAnnotations.isEmpty()) {
+                    if (needReflectionComma) {
+                        writer.println(",");
+                    } else {
+                        writer.println();
+                    }
                     writer.print(".annotations = ");
                     generateAnnotations(methodAnnotations);
                     needReflectionComma = true;
                 }
-                if (hasParamAnnotations) {
+                if (hasParamAnnotations || hasGenericParams) {
                     if (needReflectionComma) {
                         writer.println(",");
                     } else {
                         writer.println();
                     }
                     writer.print(".parameterInfos = ");
-                    generateParameterInfos(paramAnnotations);
+                    generateParameterInfos(method, paramAnnotations, genericParamTypes, cls);
+                    needReflectionComma = true;
+                }
+                if (methodTypeParams != null && methodTypeParams.length > 0) {
+                    if (needReflectionComma) {
+                        writer.println(",");
+                    } else {
+                        writer.println();
+                    }
+                    writer.print(".typeParameters = ");
+                    generateTypeParameters(methodTypeParams, cls, method);
                 }
                 writer.println();
                 writer.outdent().print("}");
@@ -352,8 +433,9 @@ class ClassReflectionGenerator {
         return false;
     }
 
-    private void generateParameterInfos(List<List<AnnotationReader>> paramAnnotations) {
-        var count = paramAnnotations.size();
+    private void generateParameterInfos(MethodReader method, List<List<AnnotationReader>> paramAnnotations,
+            GenericValueType[] genericParamTypes, ClassReader contextClass) {
+        var count = method.parameterCount();
         writer.print("(TeaVM_ParameterInfoList*) &(struct { int32_t count; TeaVM_ParameterInfo data[")
                 .print(String.valueOf(count)).println("]; }) {").indent();
         writer.print(".count = ").print(String.valueOf(count)).println(",");
@@ -362,14 +444,25 @@ class ClassReflectionGenerator {
             if (i > 0) {
                 writer.println(",");
             }
-            var annots = paramAnnotations.get(i);
+            var annots = paramAnnotations != null && i < paramAnnotations.size()
+                    ? paramAnnotations.get(i) : List.<AnnotationReader>of();
+            GenericValueType paramGenericType = null;
+            if (genericParamTypes != null && i < genericParamTypes.length) {
+                var pt = genericParamTypes[i];
+                if (!pt.canBeRepresentedAsRaw() || !pt.asValueType().equals(method.parameterType(i))) {
+                    paramGenericType = pt;
+                }
+            }
             writer.print("{");
             if (!annots.isEmpty()) {
                 writer.print(" .annotations = ");
                 generateAnnotations(annots);
-                writer.print(" ");
             }
-            writer.print("}");
+            if (paramGenericType != null) {
+                writer.print(" .genericType = ");
+                generateGenericType(paramGenericType, contextClass, method);
+            }
+            writer.print(" }");
         }
         writer.println();
         writer.outdent().println("}");
@@ -592,6 +685,11 @@ class ClassReflectionGenerator {
     }
 
     private void generateTypeParameters(org.teavm.model.GenericTypeParameter[] params, ClassReader cls) {
+        generateTypeParameters(params, cls, null);
+    }
+
+    private void generateTypeParameters(org.teavm.model.GenericTypeParameter[] params, ClassReader cls,
+            MethodReader method) {
         writer.print("(TeaVM_TypeVariableInfoList*) &(struct { int32_t count; TeaVM_TypeVariableInfo data[")
                 .print(String.valueOf(params.length)).println("]; }) {").indent();
         writer.print(".count = ").print(String.valueOf(params.length)).println(",");
@@ -609,7 +707,7 @@ class ClassReflectionGenerator {
                     writer.println(",");
                     writer.print(".boundCount = ").print(String.valueOf(bounds.size())).println(",");
                     writer.print(".bounds = ");
-                    generateBounds(bounds, cls);
+                    generateBounds(bounds, cls, method);
                 }
             }
             writer.print(" }");
@@ -619,14 +717,15 @@ class ClassReflectionGenerator {
         writer.outdent().print("}");
     }
 
-    private void generateBounds(List<GenericValueType.Reference> bounds, ClassReader contextClass) {
+    private void generateBounds(List<GenericValueType.Reference> bounds, ClassReader contextClass,
+            MethodReader contextMethod) {
         writer.print("(TeaVM_GenericTypeInfo*[").print(String.valueOf(bounds.size())).print("]) {").indent();
         for (var i = 0; i < bounds.size(); ++i) {
             writer.println();
             if (i > 0) {
                 writer.println(",");
             }
-            generateGenericType(bounds.get(i), contextClass, null);
+            generateGenericType(bounds.get(i), contextClass, contextMethod);
         }
         writer.println();
         writer.outdent().print("}");
