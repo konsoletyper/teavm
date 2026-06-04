@@ -162,14 +162,18 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
     }
 
     private void accept(Expr expr) {
-        expr.acceptVisitor(this);
+        if (expectedType != null) {
+            var oldExpectedType = expectedType;
+            expectedType = null;
+            expr.acceptVisitor(this);
+            expectedType = oldExpectedType;
+        } else {
+            expr.acceptVisitor(this);
+        }
     }
 
     private void accept(Expr expr, WasmInstructionBuilder target) {
-        var oldBuilder = builder;
-        builder = target;
-        expr.acceptVisitor(this);
-        builder = oldBuilder;
+        accept(expr, target, null);
     }
 
     private void accept(Expr expr, WasmInstructionBuilder target, WasmType expectedType) {
