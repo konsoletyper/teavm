@@ -91,6 +91,7 @@ import org.teavm.backend.c.intrinsic.reflection.MethodInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.MethodReflectionInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.ParameterInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.TypeVariableInfoIntrinsic;
 import org.teavm.backend.c.transform.CFileSystemTransformer;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.dependency.BufferDependencyListener;
@@ -437,6 +438,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new MethodInfoIntrinsic());
         intrinsics.add(new MethodReflectionInfoIntrinsic());
         intrinsics.add(new ParameterInfoIntrinsic());
+        intrinsics.add(new TypeVariableInfoIntrinsic());
 
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());
@@ -661,6 +663,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (context.getDependencies().getMethod(new MethodReference(FieldReflectionInfo.class, "annotationCount",
                 int.class)) != null) {
             writer.println("#define TEAVM_FIELD_ANNOTATIONS_USED 1");
+        }
+        if (context.getDependencies().getMethod(new MethodReference(ClassReflectionInfo.class, "typeParameterCount",
+                int.class)) != null) {
+            writer.println("#define TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED 1");
         }
         OutputFileUtil.write(writer, "core_defs.h", buildTarget);
     }

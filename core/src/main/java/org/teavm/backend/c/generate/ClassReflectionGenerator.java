@@ -32,6 +32,7 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
+import org.teavm.runtime.reflect.ClassReflectionInfo;
 import org.teavm.runtime.reflect.FieldReflectionInfo;
 import org.teavm.runtime.reflect.MethodInfo;
 import org.teavm.runtime.reflect.MethodReflectionInfo;
@@ -47,6 +48,7 @@ class ClassReflectionGenerator {
     private boolean needMethodParamAnnotations;
     private boolean needCheckedExceptions;
     private boolean needFieldReflection;
+    private boolean needTypeParameters;
 
     ClassReflectionGenerator(GenerationContext context, ReflectionDependencyListener reflection,
             Collection<ValueType> types, MethodConvertersGenerator methodConvertersGenerator) {
@@ -62,6 +64,8 @@ class ClassReflectionGenerator {
                 new MethodReference(MethodInfo.class, "checkedExceptionCount", int.class)) != null;
         needFieldReflection = context.getDependencies().getMethod(
                 new MethodReference(FieldReflectionInfo.class, "annotationCount", int.class)) != null;
+        needTypeParameters = context.getDependencies().getMethod(
+                new MethodReference(ClassReflectionInfo.class, "typeParameterCount", int.class)) != null;
     }
 
     void prepare(CodeWriter writer, IncludeManager includes) {
@@ -76,7 +80,8 @@ class ClassReflectionGenerator {
         var annotations = extractAnnotations(cls);
         var fields = extractFields(cls);
         var methods = extractMethods(cls);
-        if (annotations.isEmpty() && fields.isEmpty() && methods.isEmpty()) {
+        var typeParameters = extractTypeParameters(cls);
+        if (annotations.isEmpty() && fields.isEmpty() && methods.isEmpty() && typeParameters.length == 0) {
             writer.print("NULL");
             return;
         }
@@ -107,6 +112,14 @@ class ClassReflectionGenerator {
             }
             writer.print(".methods = ");
             generateMethods(methods);
+            needComma = true;
+        }
+        if (typeParameters.length > 0) {
+            if (needComma) {
+                writer.println(",");
+            }
+            writer.print(".typeParameters = ");
+            generateTypeParameters(typeParameters);
         }
 
         writer.println();
@@ -563,5 +576,30 @@ class ClassReflectionGenerator {
             methods.add(method);
         }
         return methods;
+    }
+
+    private org.teavm.model.GenericTypeParameter[] extractTypeParameters(ClassReader cls) {
+        if (!needTypeParameters) {
+            return new org.teavm.model.GenericTypeParameter[0];
+        }
+        var params = cls.getGenericParameters();
+        return params != null ? params : new org.teavm.model.GenericTypeParameter[0];
+    }
+
+    private void generateTypeParameters(org.teavm.model.GenericTypeParameter[] params) {
+        writer.print("(TeaVM_TypeVariableInfoList*) &(struct { int32_t count; TeaVM_TypeVariableInfo data[")
+                .print(String.valueOf(params.length)).println("]; }) {").indent();
+        writer.print(".count = ").print(String.valueOf(params.length)).println(",");
+        writer.print(".data = ").println("{").indent();
+        for (var i = 0; i < params.length; ++i) {
+            if (i > 0) {
+                writer.println(",");
+            }
+            var nameIndex = context.getStringPool().getStringIndex(params[i].getName());
+            writer.print("{ .name = TEAVM_GET_STRING_ADDRESS(").print(String.valueOf(nameIndex)).print(") }");
+        }
+        writer.println();
+        writer.outdent().println("}");
+        writer.outdent().print("}");
     }
 }
