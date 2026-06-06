@@ -341,7 +341,6 @@ public class StringTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void internsConstants() {
         assertSame("abc", ("a" + "bc").intern());
     }
