@@ -19,6 +19,9 @@ import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
 import static org.teavm.jso.impl.JSMethods.JS_OBJECT_CLASS;
 import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
 import static org.teavm.jso.impl.JSMethods.OBJECT;
+import static org.teavm.jso.impl.JSPropertyUtil.getGetterName;
+import static org.teavm.jso.impl.JSPropertyUtil.getSetterName;
+import static org.teavm.jso.impl.JSPropertyUtil.isProperSetter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -541,25 +544,15 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                             name = nameStr;
                         }
                     }
-                    String expectedPrefix;
                     if (method.parameterCount() == 0) {
-                        if (method.getResultType() == ValueType.BOOLEAN) {
-                            expectedPrefix = "is";
-                        } else {
-                            expectedPrefix = "get";
-                        }
                         kind = MethodKind.GETTER;
+                        if (name == null) {
+                            name = getGetterName(method);
+                        }
                     } else {
-                        expectedPrefix = "set";
                         kind = MethodKind.SETTER;
-                    }
-
-                    if (name == null) {
-                        name = method.getName();
-                        if (name.startsWith(expectedPrefix) && name.length() > expectedPrefix.length()
-                                && Character.isUpperCase(name.charAt(expectedPrefix.length()))) {
-                            name = Character.toLowerCase(name.charAt(expectedPrefix.length()))
-                                    + name.substring(expectedPrefix.length() + 1);
+                        if (name == null) {
+                            name = isProperSetter(method, null) ? getSetterName(method) : method.getName();
                         }
                     }
                 }

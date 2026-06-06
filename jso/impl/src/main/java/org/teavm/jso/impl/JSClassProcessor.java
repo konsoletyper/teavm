@@ -19,6 +19,10 @@ import static org.teavm.jso.impl.JSMethods.JS_CLASS;
 import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
 import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
 import static org.teavm.jso.impl.JSMethods.OBJECT;
+import static org.teavm.jso.impl.JSPropertyUtil.getGetterName;
+import static org.teavm.jso.impl.JSPropertyUtil.getSetterName;
+import static org.teavm.jso.impl.JSPropertyUtil.isProperGetter;
+import static org.teavm.jso.impl.JSPropertyUtil.isProperSetter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -1102,12 +1106,8 @@ class JSClassProcessor {
     private boolean processProperty(MethodReader method, String suggestedName, CallLocation callLocation,
             InvokeInstruction invoke) {
         boolean pure = method.getAnnotations().get(NO_SIDE_EFFECTS) != null;
-        if (isProperGetter(method, suggestedName)) {
-            var propertyName = suggestedName;
-            if (propertyName == null) {
-                propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2)
-                        : cutPrefix(method.getName(), 3);
-            }
+        if (isProperGetter(method)) {
+            var propertyName = suggestedName != null ? suggestedName : getGetterName(method);
             Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
             addPropertyGet(propertyName, getCallTarget(invoke), result, invoke.getLocation(), pure);
             if (result != null) {
@@ -1118,10 +1118,7 @@ class JSClassProcessor {
             return true;
         }
         if (isProperSetter(method, suggestedName)) {
-            var propertyName = suggestedName;
-            if (propertyName == null) {
-                propertyName = cutPrefix(method.getName(), 3);
-            }
+            var propertyName = suggestedName != null ? suggestedName : getSetterName(method);
             var value = invoke.getArguments().get(0);
             value = marshaller.wrapArgument(callLocation, value, method.parameterType(0), types.typeOf(value), false,
                     null);
@@ -1614,38 +1611,6 @@ class JSClassProcessor {
         return null;
     }
 
-    private boolean isProperGetter(MethodReader method, String suggestedName) {
-        if (method.parameterCount() > 0) {
-            return false;
-        }
-        if (suggestedName != null) {
-            return true;
-        }
-
-        if (method.getResultType().equals(ValueType.BOOLEAN)) {
-            if (isProperPrefix(method.getName(), "is")) {
-                return true;
-            }
-        }
-        return isProperPrefix(method.getName(), "get");
-    }
-
-    private boolean isProperSetter(MethodReader method, String suggestedName) {
-        if (method.parameterCount() != 1 || method.getResultType() != ValueType.VOID) {
-            return false;
-        }
-
-        return suggestedName != null || isProperPrefix(method.getName(), "set");
-    }
-
-    private boolean isProperPrefix(String name, String prefix) {
-        if (!name.startsWith(prefix) || name.length() == prefix.length()) {
-            return false;
-        }
-        char c = name.charAt(prefix.length());
-        return Character.isUpperCase(c) || !Character.isAlphabetic(c) && Character.isJavaIdentifierStart(c);
-    }
-
     private boolean isProperGetIndexer(MethodDescriptor desc) {
         return desc.parameterCount() == 1;
     }
@@ -1654,14 +1619,4 @@ class JSClassProcessor {
         return desc.parameterCount() == 2 && desc.getResultType() == ValueType.VOID;
     }
 
-    private static String cutPrefix(String name, int prefixLength) {
-        if (name.length() == prefixLength + 1) {
-            return name.substring(prefixLength).toLowerCase();
-        }
-        char c = name.charAt(prefixLength + 1);
-        if (Character.isUpperCase(c)) {
-            return name.substring(prefixLength);
-        }
-        return Character.toLowerCase(name.charAt(prefixLength)) + name.substring(prefixLength + 1);
-    }
 }

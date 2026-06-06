@@ -23,9 +23,10 @@ import java.lang.annotation.Target;
 /**
  * <p>Marks abstract member method as either a getter or a setter.</p>
  *
- * <p>Getter's name must conform the Java Beans specification, i.e. start with <code>get</code> prefix
- * (or <code>is</code> in case of boolean getter). It must not take any parameters and must return a value.
- * For getter annotation is equivalent to the following:</p>
+ * <p>Getter's name may conform the Java Beans specification, i.e. start with <code>get</code> prefix
+ * (or <code>is</code> in case of boolean getter), or use record-style accessor naming where the method name
+ * is the property name. It must not take any parameters and must return a value. For getter annotation is
+ * equivalent to the following:</p>
  *
  * <pre>
  * {@literal @}JSBody(params = {}, script = "return this.propertyName;")
@@ -39,8 +40,9 @@ import java.lang.annotation.Target;
  * {@literal @}JSBody(params = "value", script = "this.propertyName = value;")
  * </pre>
  *
- * <p>By default <code>propertyName</code> is calculated from method's name according to Java Beans specification,
- * otherwise the name specified by annotation is taken.</p>
+ * <p>By default <code>propertyName</code> is calculated from method's name according to Java Beans specification
+ * when it has a getter or setter prefix. Otherwise, a getter method's name is used as is. The name specified by
+ * annotation overrides this computation.</p>
  *
  * @author Alexey Andreev
  */
