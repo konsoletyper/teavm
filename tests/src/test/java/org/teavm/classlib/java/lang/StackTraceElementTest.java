@@ -18,14 +18,11 @@ package org.teavm.classlib.java.lang;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class StackTraceElementTest {
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void toStringWorks() {
         var element = new StackTraceElement("java.lang.String", "intern", "String.java", 123);
         assertEquals("java.lang.String.intern(String.java:123)", element.toString());

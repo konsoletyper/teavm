@@ -31,9 +31,7 @@ import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class IntBufferTest {
@@ -55,7 +53,6 @@ public class IntBufferTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
     public void bulkTransferDirect() {
         var buffer = ByteBuffer.allocateDirect(20).asIntBuffer();
         var ints = new int[] { 1, 2, 3 };

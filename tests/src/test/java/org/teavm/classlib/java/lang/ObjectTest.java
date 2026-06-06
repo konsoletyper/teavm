@@ -23,9 +23,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
@@ -76,7 +74,6 @@ public class ObjectTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WASI)
     public void waitWorks() throws InterruptedException {
         long start = System.currentTimeMillis();
         final Object lock = new Object();

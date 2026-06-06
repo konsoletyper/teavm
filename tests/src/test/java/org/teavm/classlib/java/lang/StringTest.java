@@ -322,7 +322,7 @@ public class StringTest {
     private String turkish = "istanbul";
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC })
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC })
     public void convertsCaseLocaled() {
         assertEquals(turkish, "İstanbul".toLowerCase(new Locale("tr", "TR")));
         assertEquals(common, "İstanbul".toLowerCase(Locale.US));
@@ -335,14 +335,14 @@ public class StringTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void interns() {
         assertSame("xabc".substring(1).intern(), "abcx".substring(0, 3).intern());
         assertSame("xabc".substring(1).intern(), "abc");
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
+    @SkipPlatform(TestPlatform.C)
     public void internsConstants() {
         assertSame("abc", ("a" + "bc").intern());
     }

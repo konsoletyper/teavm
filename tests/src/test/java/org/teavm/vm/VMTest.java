@@ -164,7 +164,6 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY)
     public void setsVariableBeforeTryCatch() {
         int a = 23;
         try {

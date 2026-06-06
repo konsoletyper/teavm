@@ -16,8 +16,8 @@
 package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.DuplicateFormatFlagsException;
 import java.util.FormatFlagsConversionMismatchException;
@@ -32,9 +32,7 @@ import java.util.MissingFormatWidthException;
 import java.util.UnknownFormatConversionException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class FormatterTest {
@@ -116,7 +114,6 @@ public class FormatterTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void formatsChar() {
         assertEquals("x:  Y:\uDBFF\uDFFF ", new Formatter().format("%c:%3C:%-3c", 'x', 'y', 0x10ffff).toString());
 

@@ -31,9 +31,7 @@ import java.nio.ReadOnlyBufferException;
 import java.nio.ShortBuffer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class ShortBufferTest {
@@ -55,7 +53,6 @@ public class ShortBufferTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
     public void bulkTransferDirect() {
         var buffer = ByteBuffer.allocateDirect(20).asShortBuffer();
         var shorts = new short[] { 1, 2, 3 };

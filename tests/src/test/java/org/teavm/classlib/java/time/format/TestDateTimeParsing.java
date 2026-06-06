@@ -182,7 +182,7 @@ public class TestDateTimeParsing {
     }
 
     @Test(dataProvider = "instantNoZone", expectedExceptions = DateTimeException.class)
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform(TestPlatform.C)
     public void test_parse_instantNoZone_ZDT(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
         ZonedDateTime.from(actual);
