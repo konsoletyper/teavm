@@ -19,3 +19,10 @@ typedef struct TeaVM_HashtableEntrySet {
 extern TeaVM_HashtableEntrySet* teavm_stringHashtableData;
 
 extern TeaVM_String* teavm_registerString(TeaVM_String*);
+extern TeaVM_String* teavm_internString(TeaVM_String*);
+
+extern void teavm_stringHashtableRewind();
+extern void* teavm_stringHashtableCurrent();
+extern void teavm_stringHashtableUpdateRef(void* str);
+extern void teavm_stringHashtableDelete();
+extern void teavm_stringHashtableNext();

@@ -15,7 +15,9 @@
  */
 package org.teavm.runtime;
 
+import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.interop.Address;
+import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
 
@@ -26,4 +28,24 @@ public final class Mutator {
     }
 
     public static native Address getStaticGCRoots();
+
+    @RuntimeInclude("stringhash.h")
+    @Import(name = "teavm_stringHashtableRewind")
+    public static native void stringHashtableRewind();
+
+    @RuntimeInclude("stringhash.h")
+    @Import(name = "teavm_stringHashtableCurrent")
+    public static native RuntimeObject stringHashtableCurrent();
+
+    @RuntimeInclude("stringhash.h")
+    @Import(name = "teavm_stringHashtableUpdateRef")
+    public static native void stringHashtableUpdateRef(RuntimeObject str);
+
+    @RuntimeInclude("stringhash.h")
+    @Import(name = "teavm_stringHashtableDelete")
+    public static native void stringHashtableDelete();
+
+    @RuntimeInclude("stringhash.h")
+    @Import(name = "teavm_stringHashtableNext")
+    public static native void stringHashtableNext();
 }

@@ -221,6 +221,7 @@ public final class GC {
         mark();
         processReferences();
         processDirectBuffers();
+        processStringPool();
         sweep();
         defragment();
         updateFreeMemory();
@@ -598,6 +599,21 @@ public final class GC {
         }
     }
 
+    private static void processStringPool() {
+        Mutator.stringHashtableRewind();
+        while (true) {
+            var current = Mutator.stringHashtableCurrent();
+            if (current == null) {
+                break;
+            }
+            if (!isMarked(current)) {
+                Mutator.stringHashtableDelete();
+            } else {
+                Mutator.stringHashtableNext();
+            }
+        }
+    }
+
     private static void sweep() {
         MemoryTrace.sweepStarted();
 
@@ -757,6 +773,7 @@ public final class GC {
         updatePointersFromStaticRoots();
         updatePointersFromClasses();
         updatePointersFromObjects();
+        updatePointersFromStringPool();
         restoreObjectHeaders();
         relocateObjects();
         putNewFreeChunks();
@@ -1167,6 +1184,14 @@ public final class GC {
         for (int i = 0; i < size; ++i) {
             base.putAddress(updatePointer(base.getAddress()));
             base = base.add(Address.sizeOf());
+        }
+    }
+
+    private static void updatePointersFromStringPool() {
+        Mutator.stringHashtableRewind();
+        while (Mutator.stringHashtableCurrent() != null) {
+            Mutator.stringHashtableUpdateRef(updatePointer(Mutator.stringHashtableCurrent().toAddress()).toStructure());
+            Mutator.stringHashtableNext();
         }
     }
 

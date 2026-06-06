@@ -10,12 +10,19 @@ TeaVM_HashtableEntrySet* teavm_stringHashtableData = NULL;
 static int32_t teavm_stringHashtableSize = 0;
 static int32_t teavm_stringHashtableFill = 0;
 static int32_t teavm_stringHashtableThreshold = 0;
+static TeaVM_HashtableEntry* teavm_stringHashtableFirstFree = NULL;
 
 static void teavm_updateStringHashtableThreshold() {
     teavm_stringHashtableThreshold = (int32_t) (0.6f * teavm_stringHashtableSize) - INT32_C(1);
 }
 
 static TeaVM_HashtableEntry* teavm_stringHashtableNewEntry() {
+    if (teavm_stringHashtableFirstFree != NULL) {
+        TeaVM_HashtableEntry* result = teavm_stringHashtableFirstFree;
+        teavm_stringHashtableFirstFree = result->next;
+        return result;
+    }
+
     TeaVM_HashtableEntrySet* data = teavm_stringHashtableData;
     if (data == NULL || data->size == TEAVM_HASHTABLE_ENTRIES) {
         data = malloc(sizeof(TeaVM_HashtableEntrySet));
@@ -39,6 +46,7 @@ static void teavm_putStringIntoHashtable(TeaVM_String* str, int32_t hash) {
 }
 
 static void teavm_rehashStrings() {
+    teavm_stringHashtableFirstFree = NULL;
     TeaVM_HashtableEntry** oldHashtable = teavm_stringHashtable;
     TeaVM_HashtableEntrySet* oldHashtableData = teavm_stringHashtableData;
     int32_t oldHashtableSize = teavm_stringHashtableSize;
@@ -68,7 +76,10 @@ static void teavm_rehashStrings() {
 TeaVM_String* teavm_registerString(TeaVM_String* str) {
     str->parent.header = TEAVM_PACK_CLASS(teavm_stringClass) | (int32_t) INT32_C(0x80000000);
     str->characters->parent.header = TEAVM_PACK_CLASS(teavm_charArrayClass) | (int32_t) INT32_C(0x80000000);
+    return teavm_internString(str);
+}
 
+TeaVM_String* teavm_internString(TeaVM_String* str) {
     if (teavm_stringHashtable == NULL) {
         teavm_stringHashtableSize = 256;
         teavm_updateStringHashtableThreshold();
@@ -101,4 +112,68 @@ TeaVM_String* teavm_registerString(TeaVM_String* str) {
     teavm_stringHashtable[index] = entry;
 
     return str;
+}
+
+static TeaVM_HashtableEntry* teavm_stringHashtableCurrentImpl;
+static TeaVM_HashtableEntry* teavm_stringHashtablePrevious;
+static int32_t teavm_stringHashtableCurrentIndex;
+
+void teavm_stringHashtableRewind() {
+    teavm_stringHashtableCurrentImpl = NULL;
+    teavm_stringHashtablePrevious = NULL;
+    teavm_stringHashtableCurrentIndex = teavm_stringHashtableSize;
+    for (int32_t i = 0; i < teavm_stringHashtableSize; ++i) {
+        TeaVM_HashtableEntry* entry = teavm_stringHashtable[i];
+        if (entry != NULL) {
+            teavm_stringHashtableCurrentIndex = i;
+            teavm_stringHashtableCurrentImpl = entry;
+            break;
+        }
+    }
+}
+
+void* teavm_stringHashtableCurrent() {
+    return teavm_stringHashtableCurrentImpl != NULL ? teavm_stringHashtableCurrentImpl->data : NULL;
+}
+
+void teavm_stringHashtableUpdateRef(void *newRef) {
+    teavm_stringHashtableCurrentImpl->data = (TeaVM_String*) newRef;
+}
+
+void teavm_stringHashtableNext() {
+    if (teavm_stringHashtableCurrentImpl->next != NULL) {
+        teavm_stringHashtablePrevious = teavm_stringHashtableCurrentImpl;
+        teavm_stringHashtableCurrentImpl = teavm_stringHashtableCurrentImpl->next;
+        return;
+    }
+    teavm_stringHashtablePrevious = NULL;
+    for (int32_t i = teavm_stringHashtableCurrentIndex + 1; i < teavm_stringHashtableSize; ++i) {
+        TeaVM_HashtableEntry* entry = teavm_stringHashtable[i];
+        if (entry != NULL) {
+            teavm_stringHashtableCurrentIndex = i;
+            teavm_stringHashtableCurrentImpl = entry;
+            return;
+        }
+    }
+    teavm_stringHashtableCurrentIndex = teavm_stringHashtableSize;
+    teavm_stringHashtableCurrentImpl = NULL;
+}
+
+void teavm_stringHashtableDelete() {
+    TeaVM_HashtableEntry* entry = teavm_stringHashtableCurrentImpl;
+    TeaVM_HashtableEntry* savedPrevious = teavm_stringHashtablePrevious;
+    if (teavm_stringHashtablePrevious != NULL) {
+        teavm_stringHashtablePrevious->next = entry->next;
+    } else {
+        teavm_stringHashtable[teavm_stringHashtableCurrentIndex] = entry->next;
+        if (entry->next == NULL) {
+            teavm_stringHashtableFill--;
+        }
+    }
+    teavm_stringHashtableNext();
+    if (teavm_stringHashtablePrevious == entry) {
+        teavm_stringHashtablePrevious = savedPrevious;
+    }
+    entry->next = teavm_stringHashtableFirstFree;
+    teavm_stringHashtableFirstFree = entry;
 }

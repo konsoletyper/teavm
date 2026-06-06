@@ -335,7 +335,6 @@ public class StringTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void interns() {
         assertSame("xabc".substring(1).intern(), "abcx".substring(0, 3).intern());
         assertSame("xabc".substring(1).intern(), "abc");
