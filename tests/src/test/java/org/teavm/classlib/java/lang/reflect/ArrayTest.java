@@ -23,9 +23,7 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
@@ -45,7 +43,6 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void getWorks() {
         var intArray = new int[] { 23, 42 };
         var stringArray = new String[] { "asd", "qwe" };
@@ -63,7 +60,6 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void setWorks() {
         Object array = Array.newInstance(String.class, 2);
         Array.set(array, 0, "foo");
@@ -72,7 +68,6 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void setPrimitiveWorks() {
         Object array = Array.newInstance(int.class, 2);
         Array.set(array, 0, 23);
@@ -81,7 +76,6 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void getArrayTypeDependency() {
         var cls = float[].class.getComponentType();
         var array = Array.newInstance(cls, 3);

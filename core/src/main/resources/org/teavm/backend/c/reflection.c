@@ -46,13 +46,17 @@ inline void* teavm_reflection_callMethod(void* method, void* instance, void* arg
 
 void* teavm_reflection_getItem(void* array, int32_t index) {
     TeaVM_Class* cls = TEAVM_CLASS_OF(array);
-    int32_t size = cls->itemType->size;
+    int32_t size = teavm_primitiveKind(cls->itemType) != TEAVM_PRIMITIVE_NONE
+            ? cls->itemType->size
+            : (int32_t) sizeof(void*);
     char* data = TEAVM_ALIGN(((TeaVM_Array*) array) + 1, size);
     return teavm_reflection_box(teavm_primitiveKind(cls->itemType), data + size * index);
 }
 void teavm_reflection_putItem(void* array, int32_t index, void* item) {
     TeaVM_Class* cls = TEAVM_CLASS_OF(array);
-    int32_t size = cls->itemType->size;
+    int32_t size = teavm_primitiveKind(cls->itemType) != TEAVM_PRIMITIVE_NONE
+                ? cls->itemType->size
+                : (int32_t) sizeof(void*);
     char* data = TEAVM_ALIGN(((TeaVM_Array*) array) + 1, size);
     teavm_reflection_unbox(teavm_primitiveKind(cls->itemType), data + size * index, item);
 }
