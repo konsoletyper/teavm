@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.lang.DoubleTest;
 import org.teavm.junit.OnlyPlatform;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
@@ -664,7 +663,6 @@ public class ByteBufferTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void putsDoubleNaN() {
         var array = new byte[8];
         var buffer = ByteBuffer.wrap(array);

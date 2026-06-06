@@ -26,9 +26,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class MapTest {
@@ -56,7 +54,6 @@ public class MapTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void copyOfWorks() {
         testOf(new String[0], Map.copyOf(new HashMap<>()));
         testOf(new String[] { "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a" },

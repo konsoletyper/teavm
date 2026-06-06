@@ -28,9 +28,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class RandomTest {
@@ -64,7 +62,6 @@ public class RandomTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void testIntegers() {
         Random random = new Random();
         int[] ints = IntStream.range(0, 10000).map(i -> random.nextInt())
@@ -103,7 +100,6 @@ public class RandomTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void testLongs() {
         Random random = new Random();
         long[] longs = IntStream.range(0, 10000).mapToLong(i -> random.nextLong())

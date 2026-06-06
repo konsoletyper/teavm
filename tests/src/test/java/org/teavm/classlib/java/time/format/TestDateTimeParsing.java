@@ -66,11 +66,9 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.util.Locale;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
@@ -182,14 +180,12 @@ public class TestDateTimeParsing {
     }
 
     @Test(dataProvider = "instantNoZone", expectedExceptions = DateTimeException.class)
-    @SkipPlatform(TestPlatform.C)
     public void test_parse_instantNoZone_ZDT(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
         ZonedDateTime.from(actual);
     }
 
     @Test(dataProvider = "instantNoZone", expectedExceptions = DateTimeException.class)
-    @SkipPlatform(TestPlatform.C)
     public void test_parse_instantNoZone_LDT(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
         LocalDateTime.from(actual);
