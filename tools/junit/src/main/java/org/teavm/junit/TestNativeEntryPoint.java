@@ -17,7 +17,8 @@ package org.teavm.junit;
 
 import java.io.PrintStream;
 import org.teavm.classlib.impl.console.StderrOutputStream;
-import org.teavm.classlib.impl.console.StdoutOutputStream;
+import org.teavm.interop.Import;
+import org.teavm.interop.c.Include;
 
 final class TestNativeEntryPoint {
     private TestNativeEntryPoint() {
@@ -26,11 +27,15 @@ final class TestNativeEntryPoint {
     public static void main(String[] args) {
         try {
             TestEntryPoint.run(args.length > 0 ? args[0] : null);
-            new PrintStream(StdoutOutputStream.INSTANCE).println("SUCCESS");
+            exitProcess(0);
         } catch (Throwable e) {
             PrintStream out = new PrintStream(StderrOutputStream.INSTANCE);
             e.printStackTrace(out);
-            new PrintStream(StdoutOutputStream.INSTANCE).println("FAILURE");
+            exitProcess(1);
         }
     }
+
+    @Include("stdlib.h")
+    @Import(name = "exit")
+    private static native void exitProcess(int code);
 }

@@ -15,22 +15,21 @@
  */
 package org.teavm.junit;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 class CRunStrategy implements TestRunStrategy {
     private String compilerCommand;
+    private String wrapperCommand;
     private ConcurrentMap<String, Compilation> compilationMap = new ConcurrentHashMap<>();
 
-    CRunStrategy(String compilerCommand) {
+    CRunStrategy(String compilerCommand, String wrapperCommand) {
         this.compilerCommand = compilerCommand;
+        this.wrapperCommand = wrapperCommand;
     }
 
     @Override
@@ -48,38 +47,27 @@ class CRunStrategy implements TestRunStrategy {
                 throw new RuntimeException("C compiler error");
             }
 
-            List<String> runtimeOutput = new ArrayList<>();
-            List<String> stdout = new ArrayList<>();
             outputFile.setExecutable(true);
+            boolean passed;
             synchronized (this) {
                 List<String> runCommand = new ArrayList<>();
+                if (wrapperCommand != null) {
+                    runCommand.addAll(List.of(wrapperCommand.split(" ")));
+                }
                 runCommand.add(outputFile.getPath());
                 if (run.getArgument() != null) {
                     runCommand.add(run.getArgument());
                 }
-                runProcess(new ProcessBuilder(runCommand.toArray(new String[0])).start(), runtimeOutput, stdout);
+                passed = new ProcessBuilder(runCommand.toArray(new String[0]))
+                        .inheritIO()
+                        .start()
+                        .waitFor() == 0;
             }
-            if (!stdout.isEmpty() && stdout.get(stdout.size() - 1).equals("SUCCESS")) {
-                writeLines(runtimeOutput);
-            } else {
-                throw new RuntimeException("Test failed:\n" + mergeLines(runtimeOutput));
+            if (!passed) {
+                throw new RuntimeException("Test failed");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-    }
-
-    private String mergeLines(List<String> lines) {
-        StringBuilder sb = new StringBuilder();
-        for (String line : lines) {
-            sb.append(line).append('\n');
-        }
-        return sb.toString();
-    }
-
-    private void writeLines(List<String> lines) {
-        for (String line : lines) {
-            System.out.println(line);
         }
     }
 
@@ -95,60 +83,12 @@ class CRunStrategy implements TestRunStrategy {
     }
 
     private boolean doCompile(File inputDir) throws IOException, InterruptedException {
-        List<String> compilerOutput = new ArrayList<>();
-        boolean compilerSuccess = runCompiler(inputDir, compilerOutput);
-        writeLines(compilerOutput);
-        return compilerSuccess;
-    }
-
-    private boolean runCompiler(File inputDir, List<String> output)
-            throws IOException, InterruptedException {
         String command = new File(compilerCommand).getAbsolutePath();
-        return runProcess(new ProcessBuilder(command).directory(inputDir).start(), output, new ArrayList<>());
-    }
-
-    private boolean runProcess(Process process, List<String> output, List<String> stdout) throws InterruptedException {
-        BufferedReader stdin = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        BufferedReader stderr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-        ConcurrentLinkedQueue<String> lines = new ConcurrentLinkedQueue<>();
-
-        Thread thread = new Thread(() -> {
-            try {
-                while (true) {
-                    String line = stderr.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    lines.add(line);
-                }
-            } catch (IOException e) {
-                // do nothing
-            }
-        });
-        thread.setDaemon(true);
-        thread.start();
-
-        try {
-            while (true) {
-                String line = stdin.readLine();
-                if (line == null) {
-                    break;
-                }
-                lines.add(line);
-                stdout.add(line);
-                if (lines.size() > 10000) {
-                    output.addAll(lines);
-                    process.destroy();
-                    return false;
-                }
-            }
-        } catch (IOException e) {
-            // do nothing
-        }
-
-        boolean result = process.waitFor() == 0;
-        output.addAll(lines);
-        return result;
+        var process = new ProcessBuilder(command)
+                .directory(inputDir)
+                .inheritIO()
+                .start();
+        return process.waitFor() == 0;
     }
 
     @Override

@@ -18,6 +18,7 @@ package org.teavm.junit;
 import static org.teavm.junit.PropertyNames.C_COMPILER;
 import static org.teavm.junit.PropertyNames.C_ENABLED;
 import static org.teavm.junit.PropertyNames.C_LINE_NUMBERS;
+import static org.teavm.junit.PropertyNames.C_RUN_WRAPPER;
 import static org.teavm.junit.PropertyNames.OPTIMIZED;
 import static org.teavm.junit.TestUtil.resourceToFile;
 import java.io.File;
@@ -46,7 +47,7 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
     TestRunStrategy createRunStrategy(File outputDir) {
         String cCommand = System.getProperty(C_COMPILER);
         if (cCommand != null) {
-            return new CRunStrategy(cCommand);
+            return new CRunStrategy(cCommand, System.getProperty(C_RUN_WRAPPER));
         }
         return null;
     }
