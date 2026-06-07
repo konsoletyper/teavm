@@ -1,5 +1,5 @@
 #!/bin/bash
-export LC_ALL=C
+export LC_ALL=C.UTF-8
 SCRIPT_DIR=$(dirname "$0")
 gdb --batch-silent \
   -ex 'set debuginfod enabled off' \
