@@ -22,20 +22,21 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSString;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
+import org.teavm.runtime.EventQueue;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @SkipJVM
 public class AsyncTest {
     @Test
@@ -47,10 +48,11 @@ public class AsyncTest {
     private native int getPrimitive();
 
     private void getPrimitive(AsyncCallback<Integer> callback) {
-        Window.setTimeout(() -> callback.complete(23), 0);
+        setTimeout(() -> callback.complete(23));
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void jsObjects() {
         var str = getJsString();
         assertEquals(3, str.getLength());
@@ -132,9 +134,10 @@ public class AsyncTest {
     }
     
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void awaitPromise() {
         var promise = new JSPromise<String>((resolve, _) -> {
-            Window.setTimeout(() -> resolve.accept("ok"), 1);
+            setTimeout(() -> resolve.accept("ok"));
         });
         assertEquals("ok", promise.await());
     }
@@ -143,27 +146,35 @@ public class AsyncTest {
     private native JSString getJsString();
 
     private void getJsString(AsyncCallback<JSString> callback) {
-        Window.setTimeout(() -> callback.complete(JSString.valueOf("foo")), 0);
+        setTimeout(() -> callback.complete(JSString.valueOf("foo")));
     }
     
     @Async
     private native int returnSamePrimitive(int value);
     
     private void returnSamePrimitive(int value, AsyncCallback<Integer> callback) {
-        Window.setTimeout(() -> callback.complete(value), 0);
+        setTimeout(() -> callback.complete(value));
     }
 
     @Async
     private native double returnSamePrimitive(double value);
 
     private void returnSamePrimitive(double value, AsyncCallback<Double> callback) {
-        Window.setTimeout(() -> callback.complete(value), 0);
+        setTimeout(() -> callback.complete(value));
     }
     
     @Async
     private native String returnSamePrimitive(String value);
 
     private void returnSamePrimitive(String value, AsyncCallback<String> callback) {
-        Window.setTimeout(() -> callback.complete(value), 0);
+        setTimeout(() -> callback.complete(value));
+    }
+    
+    private void setTimeout(Runnable callback) {
+        if (PlatformDetector.isC()) {
+            EventQueue.offer(callback::run);
+        } else {
+            Window.setTimeout(callback::run, 0);
+        }
     }
 }
