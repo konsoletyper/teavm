@@ -510,6 +510,7 @@ public class CoroutineTransformation {
             }
 
             var domainSet = IntHashSet.from(remaining);
+            var copiedSet = IntHashSet.from(copies);
             for (int i = 0; i < toCopy.length; ++i) {
                 int node = toCopy[i];
                 BasicBlock blockCopy = program.basicBlockAt(copies[i]);
@@ -521,6 +522,10 @@ public class CoroutineTransformation {
                         output.getPhi().getIncomings().add(outputCopy);
                     }
                 }
+            }
+            for (int i = 0; i < toCopy.length; ++i) {
+                int node = toCopy[i];
+                BasicBlock blockCopy = program.basicBlockAt(copies[i]);
 
                 var block = program.basicBlockAt(node);
                 for (var phi : block.getPhis()) {
@@ -528,7 +533,8 @@ public class CoroutineTransformation {
                 }
 
                 for (var phi : blockCopy.getPhis()) {
-                    phi.getIncomings().removeIf(incoming -> !domainSet.contains(incoming.getSource().getIndex()));
+                    phi.getIncomings().removeIf(incoming -> !domainSet.contains(incoming.getSource().getIndex())
+                            && !copiedSet.contains(incoming.getSource().getIndex()));
                 }
             }
 

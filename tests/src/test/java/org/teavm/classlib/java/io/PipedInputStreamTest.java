@@ -106,7 +106,6 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void available() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -150,7 +149,6 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void connectLjava_io_PipedOutputStream() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -168,7 +166,6 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void test_read() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -186,7 +183,6 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void test_read$BII() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();

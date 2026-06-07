@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
@@ -357,7 +358,6 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
     public void asyncTryCatch() {
         try {
             throwExceptionAsync();
@@ -369,7 +369,6 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
     public void asyncExceptionHandler() {
         try {
             throw new RuntimeException("OK");
@@ -395,8 +394,17 @@ public class VMTest {
         initCount = 23;
         assertEquals(23, ReadingStateInClinit.state);
     }
+    
+    private static int[] createArray() {
+        if (PlatformDetector.isC()) {
+            return new int[] { 1, 2 };
+        } else {
+            return doCreateArrayJS();
+        }
+    }
+
     @JSBody(script = "return [1, 2]")
-    private static native int[] createArray();
+    private static native int[] doCreateArrayJS();
 
     static int initCount;
 

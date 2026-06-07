@@ -132,7 +132,6 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void flush() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -145,7 +144,6 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void write$BII() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
