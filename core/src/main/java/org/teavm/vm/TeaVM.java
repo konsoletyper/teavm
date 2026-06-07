@@ -775,34 +775,34 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         target.beforeOptimizations(optimizedProgram, method);
 
         if (optimizedProgram.basicBlockCount() > 0) {
-            var context = new MethodOptimizationContextImpl(method);
-            boolean changed;
-            do {
-                changed = false;
-                for (MethodOptimization optimization : getOptimizations()) {
-                    try {
+            try {
+                var context = new MethodOptimizationContextImpl(method);
+                boolean changed;
+                do {
+                    changed = false;
+                    for (MethodOptimization optimization : getOptimizations()) {
                         changed |= optimization.optimize(context, optimizedProgram);
-                    } catch (Exception | AssertionError e) {
-                        ListingBuilder listingBuilder = new ListingBuilder();
-                        try {
-                            String listing = listingBuilder.buildListing(optimizedProgram, "");
-                            System.err.println("Error optimizing program for method " + method.getReference()
-                                    + ":\n" + listing);
-                        } catch (RuntimeException e2) {
-                            System.err.println("Error optimizing program for method " + method.getReference());
-                            // do nothing
-                        }
-                        throw new RuntimeException(e);
                     }
-                }
-            } while (changed);
+                } while (changed);
 
-            target.afterOptimizations(optimizedProgram, method);
-            var categoryProvider = target.variableCategoryProvider();
-            if (categoryProvider != null) {
-                var allocator = new RegisterAllocator(categoryProvider);
-                allocator.allocateRegisters(method.getReference(), optimizedProgram,
-                        optimizationLevel == TeaVMOptimizationLevel.SIMPLE);
+                target.afterOptimizations(optimizedProgram, method);
+                var categoryProvider = target.variableCategoryProvider();
+                if (categoryProvider != null) {
+                    var allocator = new RegisterAllocator(categoryProvider);
+                    allocator.allocateRegisters(method.getReference(), optimizedProgram,
+                            optimizationLevel == TeaVMOptimizationLevel.SIMPLE);
+                }
+            } catch (Exception | AssertionError e) {
+                ListingBuilder listingBuilder = new ListingBuilder();
+                try {
+                    String listing = listingBuilder.buildListing(optimizedProgram, "");
+                    System.err.println("Error optimizing program for method " + method.getReference()
+                            + ":\n" + listing);
+                } catch (RuntimeException e2) {
+                    System.err.println("Error optimizing program for method " + method.getReference());
+                    // do nothing
+                }
+                throw new RuntimeException(e);
             }
         }
 
