@@ -1,13 +1,13 @@
 #!/bin/bash
 export LC_ALL=C
-gdb -batch \
+SCRIPT_DIR=$(dirname "$0")
+gdb --batch-silent \
   -ex 'set debuginfod enabled off' \
   -ex 'set startup-with-shell off' \
   -ex 'set verbose off' \
   -ex 'set complaints 0' \
   -ex run \
-  -ex bt \
-  -ex 'quit $_exitcode' \
+  -x "$SCRIPT_DIR/run-process-unix-gdb-commands.gdb" \
   --args "$@"
 GDB_STATUS=$?
 exit $GDB_STATUS
