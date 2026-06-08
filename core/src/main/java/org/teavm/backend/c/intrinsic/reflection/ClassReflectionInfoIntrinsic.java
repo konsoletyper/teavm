@@ -86,6 +86,20 @@ public class ClassReflectionInfoIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print("])");
                 break;
+            case "innerClassCount":
+                context.includes().includePath("reflection.h");
+                context.writer().print("teavm_reflection_innerClassCount((TeaVM_ClassReflection*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))");
+                break;
+            case "innerClass":
+                context.includes().includePath("reflection.h");
+                context.writer().print("((TeaVM_ClassReflection*) (");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print("))->innerClasses->data[");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print("]");
+                break;
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

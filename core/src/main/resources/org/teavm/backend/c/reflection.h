@@ -211,7 +211,8 @@ typedef struct {
 #if TEAVM_CLASS_REFLECTION_FIELDS_USED \
   || TEAVM_CLASS_REFLECTION_ANNOTATIONS_USED \
   || TEAVM_CLASS_REFLECTION_METHODS_USED \
-  || TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED
+  || TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED \
+  || TEAVM_CLASS_REFLECTION_INNER_CLASSES_USED
 typedef struct {
     #if TEAVM_CLASS_REFLECTION_FIELDS_USED
         TeaVM_FieldInfoList* fields;
@@ -224,6 +225,9 @@ typedef struct {
     #endif
     #if TEAVM_CLASS_REFLECTION_TYPE_PARAMS_USED
         TeaVM_TypeVariableInfoList* typeParameters;
+    #endif
+    #if TEAVM_CLASS_REFLECTION_INNER_CLASSES_USED
+        TeaVM_ClassRefList* innerClasses;
     #endif
 } TeaVM_ClassReflection;
 #endif
@@ -313,5 +317,10 @@ extern TeaVM_Class* teavm_reflection_extractType(TeaVM_ClassPtr* type);
             TeaVM_GenericTypeInfo* type) {
         return type->parameterized.actualTypeArguments != NULL
                 ? type->parameterized.actualTypeArgumentCount : 0;
+    }
+#endif
+#ifdef TEAVM_CLASS_REFLECTION_INNER_CLASSES_USED
+    static inline int32_t teavm_reflection_innerClassCount(TeaVM_ClassReflection* cls) {
+        return cls->innerClasses != NULL ? cls->innerClasses->count : 0;
     }
 #endif

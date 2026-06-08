@@ -720,6 +720,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 int.class)) != null) {
             writer.println("#define TEAVM_TYPE_VARIABLE_BOUNDS_USED 1");
         }
+        if (context.getDependencies().getMethod(new MethodReference(ClassReflectionInfo.class, "innerClassCount",
+                int.class)) != null) {
+            writer.println("#define TEAVM_CLASS_REFLECTION_INNER_CLASSES_USED 1");
+        }
         OutputFileUtil.write(writer, "core_defs.h", buildTarget);
     }
 

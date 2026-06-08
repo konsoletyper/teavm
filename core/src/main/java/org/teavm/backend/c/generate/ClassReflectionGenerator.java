@@ -17,7 +17,9 @@ package org.teavm.backend.c.generate;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationReader;
@@ -26,6 +28,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericTypeParameter;
 import org.teavm.model.GenericValueType;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -57,6 +60,8 @@ class ClassReflectionGenerator {
     private boolean needMethodTypeParams;
     private boolean needTypeParameters;
     private boolean needBounds;
+    private boolean needInnerClasses;
+    private Set<String> innerClassesAccessed = new HashSet<>();
 
     ClassReflectionGenerator(GenerationContext context, ReflectionDependencyListener reflection,
             Collection<ValueType> types, MethodConvertersGenerator methodConvertersGenerator) {
@@ -84,6 +89,16 @@ class ClassReflectionGenerator {
                 new MethodReference(ClassReflectionInfo.class, "typeParameterCount", int.class)) != null;
         needBounds = context.getDependencies().getMethod(
                 new MethodReference(TypeVariableInfo.class, "boundCount", int.class)) != null;
+        var classesMethod = context.getDependencies().getMethod(new MethodReference(Class.class,
+                "getDeclaredClasses", Class[].class));
+        if (classesMethod != null) {
+            needInnerClasses = true;
+            for (var type : classesMethod.getVariable(0).getClassValueNode().getTypes()) {
+                if (type instanceof ValueType.Object) {
+                    innerClassesAccessed.add(((ValueType.Object) type).getClassName());
+                }
+            }
+        }
     }
 
     void prepare(CodeWriter writer, IncludeManager includes) {
@@ -99,7 +114,9 @@ class ClassReflectionGenerator {
         var fields = extractFields(cls);
         var methods = extractMethods(cls);
         var typeParameters = extractTypeParameters(cls);
-        if (annotations.isEmpty() && fields.isEmpty() && methods.isEmpty() && typeParameters.length == 0) {
+        var innerClasses = extractInnerClasses(cls);
+        if (annotations.isEmpty() && fields.isEmpty() && methods.isEmpty() && typeParameters.length == 0
+                && innerClasses.isEmpty()) {
             writer.print("NULL");
             return;
         }
@@ -138,6 +155,14 @@ class ClassReflectionGenerator {
             }
             writer.print(".typeParameters = ");
             generateTypeParameters(typeParameters, cls);
+            needComma = true;
+        }
+        if (!innerClasses.isEmpty()) {
+            if (needComma) {
+                writer.println(",");
+            }
+            writer.print(".innerClasses = ");
+            generateInnerClasses(innerClasses);
         }
 
         writer.println();
@@ -676,12 +701,44 @@ class ClassReflectionGenerator {
         return methods;
     }
 
-    private org.teavm.model.GenericTypeParameter[] extractTypeParameters(ClassReader cls) {
+    private GenericTypeParameter[] extractTypeParameters(ClassReader cls) {
         if (!needTypeParameters) {
             return new org.teavm.model.GenericTypeParameter[0];
         }
         var params = cls.getGenericParameters();
         return params != null ? params : new org.teavm.model.GenericTypeParameter[0];
+    }
+
+    private List<String> extractInnerClasses(ClassReader cls) {
+        if (!needInnerClasses || !innerClassesAccessed.contains(cls.getName())) {
+            return List.of();
+        }
+        var result = new ArrayList<String>();
+        for (var innerCls : cls.getInnerClasses()) {
+            if (context.getDependencies().getClass(innerCls) != null) {
+                result.add(innerCls);
+            }
+        }
+        return result;
+    }
+
+    private void generateInnerClasses(List<String> innerClasses) {
+        writer.print("(TeaVM_ClassRefList*) &(struct { int32_t count; TeaVM_Class* data[")
+                .print(String.valueOf(innerClasses.size())).println("];}) {").indent();
+        writer.print(".count = ").print(String.valueOf(innerClasses.size())).println(",");
+        writer.print(".data = ").println("{").indent();
+        for (var i = 0; i < innerClasses.size(); ++i) {
+            if (i > 0) {
+                writer.println(",");
+            }
+            var innerType = ValueType.object(innerClasses.get(i));
+            includes.includeType(innerType);
+            types.add(innerType);
+            writer.print("(TeaVM_Class*) &").print(context.getNames().forClassInstance(innerType));
+        }
+        writer.println();
+        writer.outdent().println("}");
+        writer.outdent().print("}");
     }
 
     private void generateTypeParameters(org.teavm.model.GenericTypeParameter[] params, ClassReader cls) {

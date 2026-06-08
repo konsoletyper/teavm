@@ -273,7 +273,6 @@ public class ClassTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void innerClasses() {        
         assertArrayEquals(new Class<?>[0], InnerClass.class.getDeclaredClasses());
         assertEquals(Set.of(ClassWithInnerClasses.A.class, ClassWithInnerClasses.B.class),
