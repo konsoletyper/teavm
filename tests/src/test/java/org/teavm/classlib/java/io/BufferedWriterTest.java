@@ -29,6 +29,8 @@ import java.io.Writer;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.interop.Address;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
@@ -219,18 +221,22 @@ public class BufferedWriterTest {
     }
 
     @Test
+    @SkipJVM
     public void writeI() throws Exception {
         bw.write('T');
         assertTrue("Char written without flush", sw.toString().equals(""));
         bw.flush();
         assertEquals("Incorrect char written", "T", sw.toString());
+        throw new RuntimeException("Test that exceptions are logged");
     }
 
     @Test
+    @SkipJVM
     public void writeLjava_lang_StringII() throws Exception {
         bw.write(testString);
         bw.flush();
         assertTrue("Incorrect string written", sw.toString().equals(testString));
+        System.out.println(Address.fromInt(0).getInt());
     }
 
     @Test

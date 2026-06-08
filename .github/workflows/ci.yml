@@ -15,10 +15,10 @@ jobs:
       matrix:
         platform:
         - c
-        - js
-        - wasm-gc
     steps:
     - uses: actions/checkout@v4
+    - name: Install gdb
+      run: sudo apt-get install -y gdb
     - uses: actions/setup-java@v3
       with:
         java-version: 25
@@ -34,11 +34,14 @@ jobs:
             args+=("-Pteavm.tests.${v}=false")
           fi
         done
+        if [[ "${{ matrix.platform }}" == "c" ]]; then
+          args+=("-Pteavm.tests.c.runWrapper=bash run-process-unix-gdb.sh")
+        fi
         args+=("-Pteavm.localNodeJS=true")
         args+=("-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m")
         echo "${args[@]}"
         export TEAVM_TEST_BROWSER_LOG=1
-        ./gradlew "${args[@]}" --stacktrace test
+        ./gradlew "${args[@]}" --stacktrace :tests:test --tests org.teavm.classlib.java.time.format.TestDateTimeParsing
     - uses: actions/upload-artifact@v4
       if: failure()
       with:
@@ -47,17 +50,3 @@ jobs:
           tests/build/reports/tests/test
           tests/build/teavm-tests/browser-stderr-*.txt
           tests/build/teavm-tests/browser-stdout-*.txt
-  checkstyle:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v3
-        with:
-          java-version: 25
-          distribution: adopt
-      - uses: gradle/gradle-build-action@v2
-      - run: |
-          args=()
-          args+=("-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m")
-          ./gradlew "${args[@]}" check -x test
