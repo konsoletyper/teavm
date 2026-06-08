@@ -21,6 +21,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,6 +96,9 @@ import org.teavm.backend.c.intrinsic.reflection.MethodInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.MethodReflectionInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.ParameterInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.ParameterizedTypeInfoIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.ProxyIntrinsic;
+import org.teavm.backend.c.intrinsic.reflection.ProxyIntrinsicContext;
+import org.teavm.backend.c.intrinsic.reflection.ProxyMethodIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.RawTypeInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.TypeVariableInfoIntrinsic;
@@ -185,7 +190,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             "heaptrace.h", "log.c", "log.h", "memory.c", "memory.h", "references.c", "references.h",
             "resource.c", "resource.h", "runtime.h", "stack.c", "stack.h", "string.c", "string.h",
             "stringhash.c", "stringhash.h", "time.c", "time.h", "virtcall.c", "virtcall.h",
-            "arrayclass.c", "arrayclass.h", "uchar.h", "reflection.c", "reflection.h"
+            "arrayclass.c", "arrayclass.h", "uchar.h", "reflection.c", "reflection.h", "proxy.h"
     };
 
     private TeaVMTargetController controller;
@@ -213,6 +218,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private boolean obfuscated;
     private List<CallSiteDescriptor> callSites = new ArrayList<>();
     private ReflectionDependencyListener reflection;
+    private ProxyIntrinsicContext proxyContext;
 
     public CTarget(CNameProvider nameProvider) {
         rawNameProvider = nameProvider;
@@ -438,6 +444,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new StringsIntrinsic());
         intrinsics.add(new ConsoleIntrinsic());
 
+        proxyContext = new ProxyIntrinsicContext();
+        intrinsics.add(new ProxyIntrinsic());
+        intrinsics.add(new ProxyMethodIntrinsic(reflection, proxyContext));
+
         intrinsics.add(new StringInfoIntrinsic());
         intrinsics.add(new ClassInfoIntrinsic());
         intrinsics.add(new ClassReflectionInfoIntrinsic());
@@ -531,6 +541,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generateCoreDefs(buildTarget, context);
         generateArrayClassGen(buildTarget, context, classes.getClassNames().size());
         generateReflectionGen(buildTarget, context);
+        generateProxyGen(buildTarget, context);
         generateCallSites(buildTarget, context, classes.getClassNames());
         generateStrings(buildTarget, context);
         methodConvertersGenerator.endForBuild(buildTarget);
@@ -960,6 +971,130 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         writer.outdent().println("}");
     }
 
+    private void generateProxyGen(BuildTarget buildTarget, GenerationContext context) throws IOException {
+        var writer = new BufferedCodeWriter(false);
+        var includes = new SimpleIncludeManager(context.getFileNames(), writer);
+        includes.init("proxy.c");
+        includes.includePath("proxy.h");
+        includes.includePath("core.h");
+        includes.includePath("reflection.h");
+        includes.includePath("strings.h");
+
+        var names = context.getNames();
+        var allocArrayRef = new MethodReference(Allocator.class, "allocateArray", RuntimeClass.class, int.class,
+                Address.class);
+        var getDeclaredMethodRef = new MethodReference(Class.class, "getDeclaredMethod",
+                String.class, Class[].class, Method.class);
+        var appendInterfaceRef = new MethodReference(Proxy.class, "appendInterface", ClassInfo.class, void.class);
+        var registerClassRef = new MethodReference(Proxy.class, "registerClass", ClassInfo.class, void.class);
+
+        var classContext = new ClassGenerationContext(context, includes, writer.fragment(), null, null);
+
+        var classType = ValueType.object(Class.class.getName());
+        int methodCount = proxyContext.getMethodCount();
+
+        writer.println("static void* teavm_proxyMethods[" + Math.max(1, methodCount) + "];");
+        writer.println();
+
+        writer.println("void* teavm_getProxyMethod(int32_t index) {").indent();
+        writer.println("return teavm_proxyMethods[index];");
+        writer.outdent().println("}");
+        writer.println();
+
+        if (reflection.isProxyReached() && methodCount > 0) {
+            includes.includeClass(Class.class.getName());
+            includes.includeClass(Allocator.class.getName());
+
+            writer.println("static void* teavm_proxy_getDeclaredMethod("
+                    + "TeaVM_Class* cls, void* name, int32_t count, TeaVM_ClassPtr* paramTypes) {").indent();
+            writer.print("TeaVM_Array* params = (TeaVM_Array*) ").print(names.forMethod(allocArrayRef))
+                    .print("(teavm_getArrayClass((TeaVM_Class*) &")
+                    .print(names.forClassInstance(classType))
+                    .println("), count);");
+            writer.println("for (int32_t i = 0; i < count; i++) {").indent();
+            writer.println("TEAVM_ARRAY_AT(params, void*, i) = "
+                    + "teavm_getClassObject(teavm_reflection_extractType(&paramTypes[i]));");
+            writer.outdent().println("}");
+            writer.print("return ").print(names.forMethod(getDeclaredMethodRef))
+                    .println("(teavm_getClassObject(cls), name, params);");
+            writer.outdent().println("}");
+            writer.println();
+        }
+
+        writer.println("void teavm_proxy_registerClasses(void) {").indent();
+
+        if (reflection.isProxyReached()) {
+            includes.includeClass(Class.class.getName());
+            includes.includeClass(Proxy.class.getName());
+
+            for (var entry : proxyContext.getMethodIndices().entrySet()) {
+                var methodToAcquire = entry.getKey();
+                int index = entry.getValue();
+                int paramCount = methodToAcquire.parameterCount();
+
+                var declaringType = ValueType.object(methodToAcquire.getClassName());
+                includes.includeType(declaringType);
+                context.addType(declaringType);
+                int nameIndex = context.getStringPool().getStringIndex(methodToAcquire.getName());
+
+                writer.print("teavm_proxyMethods[" + index + "] = teavm_proxy_getDeclaredMethod(")
+                        .print("(TeaVM_Class*) &").print(names.forClassInstance(declaringType))
+                        .print(", TEAVM_GET_STRING(" + nameIndex + "), ")
+                        .print(paramCount + ", ");
+                if (paramCount == 0) {
+                    writer.println("NULL);");
+                } else {
+                    writer.print("(TeaVM_ClassPtr[]) {");
+                    for (int i = 0; i < paramCount; i++) {
+                        if (i > 0) {
+                            writer.print(", ");
+                        }
+                        writeClassPtr(writer, context, includes, methodToAcquire.parameterType(i));
+                    }
+                    writer.println("});");
+                }
+            }
+
+            for (var entry : reflection.getProxyClasses().entrySet()) {
+                var itfList = entry.getKey();
+                var cls = entry.getValue();
+                for (var itf : itfList) {
+                    var itfType = ValueType.object(itf);
+                    includes.includeType(itfType);
+                    context.addType(itfType);
+                    writer.print(names.forMethod(appendInterfaceRef))
+                            .print("((TeaVM_Class*) &")
+                            .print(names.forClassInstance(itfType))
+                            .println(");");
+                }
+                var clsType = ValueType.object(cls);
+                includes.includeType(clsType);
+                context.addType(clsType);
+                writer.print(names.forMethod(registerClassRef))
+                        .print("((TeaVM_Class*) &")
+                        .print(names.forClassInstance(clsType))
+                        .println(");");
+            }
+        }
+
+        writer.outdent().println("}");
+
+        OutputFileUtil.write(writer, "proxy.c", buildTarget);
+    }
+
+    private void writeClassPtr(CodeWriter writer, GenerationContext context, IncludeManager includes,
+            ValueType type) {
+        int arrayDegree = 0;
+        while (type instanceof ValueType.Array) {
+            arrayDegree++;
+            type = ((ValueType.Array) type).getItemType();
+        }
+        includes.includeType(type);
+        context.addType(type);
+        writer.print("{(TeaVM_Class*) &").print(context.getNames().forClassInstance(type))
+                .print(", " + arrayDegree + "}");
+    }
+
     private void generateMainFile(GenerationContext context, ListableClassHolderSource classes,
             List<? extends ValueType> types, Collection<? extends ValueType> typeLiterals,
             BuildTarget buildTarget) throws IOException {
@@ -1012,6 +1147,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         files.add("memory.c");
         files.add("references.c");
         files.add("resource.c");
+        files.add("proxy.c");
         files.add("special.c");
         files.add("stack.c");
         files.add("string.c");
