@@ -106,6 +106,9 @@ public class CVirtualFile implements VirtualFile {
         if (file == 0) {
             return null;
         }
+        if (append) {
+            CFileSystem.seek(file, 2, 0);
+        }
         return new CVirtualFileAccessor(file);
     }
 

@@ -269,19 +269,18 @@ int64_t teavm_file_open(char16_t* name, int32_t nameSize, int32_t mode) {
             modeString = "w";
             break;
         case 3:
-            modeString = "w+";
+            modeString = "r+";
             break;
         case 6:
-            modeString = "a";
-            break;
         case 7:
-            modeString = "a+";
+            modeString = "r+";
             break;
         default:
             modeString = "";
             break;
     }
     FILE* file = fopen(mbName, modeString);
+    free(mbName);
     if (file == NULL) {
         return 0;
     }

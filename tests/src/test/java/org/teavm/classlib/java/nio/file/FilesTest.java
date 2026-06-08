@@ -45,9 +45,7 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class FilesTest {
@@ -80,7 +78,6 @@ public class FilesTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void outputStream() throws IOException {
         try {
             try (var output = Files.newOutputStream(Path.of("test-file-1"))) {
