@@ -339,7 +339,6 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
     public void loopAndExceptionPhi() {
         int[] a = createArray();
         int s = 0;

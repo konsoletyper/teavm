@@ -100,6 +100,7 @@ import org.teavm.backend.c.intrinsic.reflection.TypeVariableInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.TypeVariableReferenceIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.WildcardTypeInfoIntrinsic;
 import org.teavm.backend.c.transform.CFileSystemTransformer;
+import org.teavm.backend.c.transform.SynchronizedMethodTransformer;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.dependency.BufferDependencyListener;
 import org.teavm.backend.lowlevel.dependency.ExceptionHandlingDependencyListener;
@@ -256,6 +257,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         transformers.add(new CDependencyListener());
         transformers.add(new WeakReferenceTransformation());
         transformers.add(new CFileSystemTransformer());
+        transformers.add(new SynchronizedMethodTransformer());
         return transformers;
     }
 
