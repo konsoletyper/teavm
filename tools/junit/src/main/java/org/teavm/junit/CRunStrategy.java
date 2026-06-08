@@ -321,8 +321,21 @@ class CRunStrategy implements TestRunStrategy {
         String command = new File(compilerCommand).getAbsolutePath();
         var process = new ProcessBuilder(command)
                 .directory(inputDir)
-                .inheritIO()
                 .start();
+        var stdoutBytes = new ByteArrayOutputStream();
+        var stderrBytes = new ByteArrayOutputStream();
+        var stdoutThread = captureStream(process.getInputStream(), stdoutBytes);
+        var stderrThread = captureStream(process.getErrorStream(), stderrBytes);
+        stdoutThread.join();
+        stderrThread.join();
+        if (stdoutBytes.size() > 0) {
+            System.out.write(stdoutBytes.toByteArray());
+            System.out.flush();
+        }
+        if (stderrBytes.size() > 0) {
+            System.err.write(stderrBytes.toByteArray());
+            System.err.flush();
+        }
         return process.waitFor() == 0;
     }
 
