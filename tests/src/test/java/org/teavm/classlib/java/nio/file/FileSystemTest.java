@@ -28,9 +28,7 @@ import java.nio.file.Path;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class FileSystemTest {
@@ -41,7 +39,6 @@ public class FileSystemTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
     public void roots() {
         var roots = FileSystems.getDefault().getRootDirectories().iterator();
         assertTrue(roots.hasNext());
@@ -52,7 +49,6 @@ public class FileSystemTest {
     
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
     public void separator() {
         var separator = FileSystems.getDefault().getSeparator();
         assertEquals("/", separator);
@@ -60,7 +56,6 @@ public class FileSystemTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
     public void getPath() {
         var path = FileSystems.getDefault().getPath("a", "b", "c");
         assertEquals("a/b/c", path.toString());
