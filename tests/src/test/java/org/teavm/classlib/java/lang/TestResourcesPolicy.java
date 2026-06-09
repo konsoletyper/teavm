@@ -23,10 +23,10 @@ import org.teavm.extension.spi.resources.DefaultResourcesPolicy;
 public class TestResourcesPolicy extends DefaultResourcesPolicy {
     @Override
     public String[] supplyResources(Collection<? extends String> availableClassNames) {
-        String[] result = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = "resources-for-test/" + result[i];
+        String[] names = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "binary-null", "binary-all-bytes" };
+        for (int i = 0; i < names.length; ++i) {
+            names[i] = "resources-for-test/" + names[i];
         }
-        return result;
+        return names;
     }
 }

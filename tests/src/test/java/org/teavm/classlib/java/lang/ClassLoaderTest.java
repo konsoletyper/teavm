@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import java.io.BufferedReader;
@@ -24,15 +25,12 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
 public class ClassLoaderTest {
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void loadsResources() {
         assertEquals("q", loadResource("1"));
         assertEquals("qw", loadResource("2"));
@@ -46,7 +44,23 @@ public class ClassLoaderTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    public void binaryResourceWithNullByte() throws IOException {
+        var classLoader = ClassLoader.getSystemClassLoader();
+        var bytes = classLoader.getResourceAsStream("resources-for-test/binary-null").readAllBytes();
+        assertArrayEquals(new byte[] { 'a', 0, 'b' }, bytes);
+    }
+
+    @Test
+    public void binaryResourceAllBytes() throws IOException {
+        var classLoader = ClassLoader.getSystemClassLoader();
+        var bytes = classLoader.getResourceAsStream("resources-for-test/binary-all-bytes").readAllBytes();
+        assertEquals(256, bytes.length);
+        for (int i = 0; i < 256; i++) {
+            assertEquals((byte) i, bytes[i]);
+        }
+    }
+
+    @Test
     public void returnsNullForNonExistentResource() {
         var input = ClassLoader.getSystemClassLoader().getResourceAsStream("non-existent-resource.txt");
         assertNull(input);

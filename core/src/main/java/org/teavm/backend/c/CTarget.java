@@ -56,6 +56,7 @@ import org.teavm.backend.c.generate.SimpleIncludeManager;
 import org.teavm.backend.c.generate.SimpleStringPool;
 import org.teavm.backend.c.generate.StringPoolGenerator;
 import org.teavm.backend.c.generators.ArrayGenerator;
+import org.teavm.backend.c.generators.CResourcesGenerator;
 import org.teavm.backend.c.generators.ClassMethodsGenerator;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.generators.GeneratorFactory;
@@ -63,6 +64,7 @@ import org.teavm.backend.c.generators.ReferenceQueueGenerator;
 import org.teavm.backend.c.generators.ReflectionGenerator;
 import org.teavm.backend.c.generators.WeakReferenceGenerator;
 import org.teavm.backend.c.intrinsic.AddressIntrinsic;
+import org.teavm.backend.c.intrinsic.CResourcesIntrinsic;
 import org.teavm.backend.c.intrinsic.ConsoleIntrinsic;
 import org.teavm.backend.c.intrinsic.ExceptionHandlingIntrinsic;
 import org.teavm.backend.c.intrinsic.FunctionClassIntrinsic;
@@ -104,7 +106,9 @@ import org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.TypeVariableInfoIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.TypeVariableReferenceIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.WildcardTypeInfoIntrinsic;
+import org.teavm.backend.c.runtime.CResources;
 import org.teavm.backend.c.transform.CFileSystemTransformer;
+import org.teavm.backend.c.transform.ClassLoaderCResourceTransformation;
 import org.teavm.backend.c.transform.SynchronizedMethodTransformer;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.dependency.BufferDependencyListener;
@@ -264,6 +268,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         transformers.add(new WeakReferenceTransformation());
         transformers.add(new CFileSystemTransformer());
         transformers.add(new SynchronizedMethodTransformer());
+        transformers.add(new ClassLoaderCResourceTransformation());
         return transformers;
     }
 
@@ -370,6 +375,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         dependencyAnalyzer.linkClass(CallSite.class.getName());
         dependencyAnalyzer.linkClass(CallSiteLocation.class.getName());
 
+        dependencyAnalyzer.linkMethod(new MethodReference(CResources.class, "create",
+                String.class, int.class, int.class, CResources.Resource.class)).use();
+
         dependencyAnalyzer.addDependencyListener(new ExceptionHandlingDependencyListener());
         dependencyAnalyzer.addDependencyListener(new StringsDependencyListener());
         dependencyAnalyzer.addDependencyListener(new BufferDependencyListener());
@@ -443,6 +451,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new IntegerIntrinsic());
         intrinsics.add(new StringsIntrinsic());
         intrinsics.add(new ConsoleIntrinsic());
+        intrinsics.add(new CResourcesIntrinsic());
 
         proxyContext = new ProxyIntrinsicContext();
         intrinsics.add(new ProxyIntrinsic());
@@ -474,6 +483,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generators.add(new ClassMethodsGenerator());
         generators.add(new WeakReferenceGenerator());
         generators.add(new ReferenceQueueGenerator());
+        generators.add(new CResourcesGenerator(controller.getProperties(), controller.getResourceProvider(),
+                controller.getClassLoader(), controller.extensionEnvironment()));
 
         var reflectionGenerators = new ArrayList<ReflectionGenerator>();
 
