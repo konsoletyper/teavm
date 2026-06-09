@@ -35,7 +35,7 @@ jobs:
           fi
         done
         args+=("-Pteavm.localNodeJS=true")
-        args+=("-Pteavm.tests.c.runWrapper=''")
+        args+=("-Pteavm.tests.c.runWrapper=")
         args+=("-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m")
         echo "${args[@]}"
         export TEAVM_TEST_BROWSER_LOG=1
