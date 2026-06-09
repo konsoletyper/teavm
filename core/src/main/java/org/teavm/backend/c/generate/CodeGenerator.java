@@ -119,7 +119,7 @@ public class CodeGenerator {
         for (int i = 0; i < start; ++i) {
             if (spilledVariables.contains(i)) {
                 VariableNode variableNode = methodNode.getVariables().get(i);
-                localsWriter.print("volatile ").printType(variableNode.getType()).print(" teavm_spill_")
+                localsWriter.printVolatileType(variableNode.getType()).print(" teavm_spill_")
                         .print(String.valueOf(i)).println(";");
             }
         }
@@ -132,7 +132,7 @@ public class CodeGenerator {
             localsWriter.printType(variableNode.getType()).print(" teavm_local_").print(String.valueOf(i))
                     .println(";");
             if (spilledVariables.contains(i)) {
-                localsWriter.print("volatile ").printType(variableNode.getType()).print(" teavm_spill_")
+                localsWriter.printVolatileType(variableNode.getType()).print(" teavm_spill_")
                         .print(String.valueOf(i)).println(";");
             }
         }

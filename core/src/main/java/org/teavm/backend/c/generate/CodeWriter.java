@@ -130,6 +130,38 @@ public abstract class CodeWriter {
         return this;
     }
 
+    public CodeWriter printVolatileType(VariableType type) {
+        switch (type) {
+            case INT:
+                print("volatile int32_t");
+                break;
+            case LONG:
+                print("volatile int64_t");
+                break;
+            case FLOAT:
+                print("volatile float");
+                break;
+            case DOUBLE:
+                print("volatile double");
+                break;
+            case OBJECT:
+                print("void * volatile");
+                break;
+            case BYTE_ARRAY:
+            case CHAR_ARRAY:
+            case SHORT_ARRAY:
+            case INT_ARRAY:
+            case LONG_ARRAY:
+            case FLOAT_ARRAY:
+            case DOUBLE_ARRAY:
+            case OBJECT_ARRAY:
+                print("TeaVM_Array * volatile");
+                break;
+        }
+
+        return this;
+    }
+
     protected abstract void newLine();
 
     protected abstract void append(String text);
