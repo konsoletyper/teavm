@@ -98,6 +98,10 @@ public class VolatileDefinitionFinder {
                             definitionsToBackup.add(definition.getStatement());
                             mutatedVars.computeIfAbsent(tryCatch, k -> new IntHashSet())
                                     .add(definition.getVariableIndex());
+                            for (var outerTryCatch : outerTryCatches) {
+                                definitionsToBackupOnEntry.computeIfAbsent(outerTryCatch, k -> new IntHashSet())
+                                        .add(definition.getVariableIndex());
+                            }
                         } else {
                             definitionsToBackupOnEntry.computeIfAbsent(tryCatch, k -> new IntHashSet())
                                     .add(definition.getVariableIndex());
