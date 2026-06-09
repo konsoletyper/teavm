@@ -20,9 +20,7 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 import org.teavm.vm.subpackage.SubclassWithPrivateOverride;
 
 @RunWith(TeaVMTestRunner.class)
@@ -109,7 +107,6 @@ public class VirtualCallTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void indirectDefaultMethod() {
         StringBuilder sb = new StringBuilder();
         for (FirstPath o : new FirstPath[] { new PathJoint(), new FirstPathOptimizationPrevention() }) {
@@ -119,7 +116,6 @@ public class VirtualCallTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void indirectDefaultMethodSubclass() {
         StringBuilder sb = new StringBuilder();
         for (FirstPath o : new FirstPath[] { new PathJointSubclass(), new FirstPathOptimizationPrevention() }) {
@@ -213,7 +209,6 @@ public class VirtualCallTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.C)
     public void subclassOverridesConcreteInheritedMethodWithDefault() {
         var list = List.of(new SuperclassWithConcreteMethod(), new SubclassWithMethodOverriddenWithInterface());
         var sb = new StringBuilder();

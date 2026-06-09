@@ -116,14 +116,22 @@ public class VirtualTableBuilder {
             TableBuilder parentTable = tables.get(parent);
             if (parentTable != null) {
                 copyEntries(parentTable, table);
+                table.entriesFromInterfaces.addAll(parentTable.entriesFromInterfaces);
+                table.processedInterfaces.addAll(parentTable.processedInterfaces);
             }
         }
 
-        for (String itf : cls.getInterfaces()) {
-            fillClass(itf);
-            TableBuilder itfTable = tables.get(itf);
-            if (itfTable != null) {
-                copyEntries(itfTable, table);
+        if (cls.hasModifier(ElementModifier.INTERFACE)) {
+            for (String itf : cls.getInterfaces()) {
+                fillClass(itf);
+                TableBuilder itfTable = tables.get(itf);
+                if (itfTable != null) {
+                    copyEntries(itfTable, table);
+                }
+            }
+        } else {
+            for (String itf : cls.getInterfaces()) {
+                fillFromInterfaces(itf, table);
             }
         }
 
@@ -139,22 +147,66 @@ public class VirtualTableBuilder {
         }
 
         for (MethodReader method : cls.getMethods()) {
-            if (method.hasModifier(ElementModifier.ABSTRACT)
-                    || method.hasModifier(ElementModifier.STATIC)
+            if (method.hasModifier(ElementModifier.STATIC)
                     || method.getName().equals("<init>")
                     || method.getLevel() == AccessLevel.PRIVATE) {
                 continue;
             }
-
-            EntryBuilder entry = table.entries.get(method.getDescriptor());
-            if (entry == null) {
-                if (cls.hasModifier(ElementModifier.FINAL)) {
-                    continue;
+            if (method.hasModifier(ElementModifier.ABSTRACT)) {
+                if (!cls.hasModifier(ElementModifier.INTERFACE)) {
+                    var entry = table.entries.get(method.getDescriptor());
+                    if (entry != null) {
+                        entry.implementor = null;
+                    }
+                    table.entriesFromInterfaces.remove(method.getDescriptor());
                 }
-                entry = new EntryBuilder();
-                table.entries.put(method.getDescriptor(), entry);
+            } else {
+                var entry = table.entries.get(method.getDescriptor());
+                if (entry == null) {
+                    if (cls.hasModifier(ElementModifier.FINAL)) {
+                        continue;
+                    }
+                    entry = new EntryBuilder();
+                    table.entries.put(method.getDescriptor(), entry);
+                }
+                entry.implementor = method.getReference();
+                table.entriesFromInterfaces.remove(method.getDescriptor());
             }
+        }
+    }
+
+    private void fillFromInterfaces(String itfName, TableBuilder table) {
+        if (!table.processedInterfaces.add(itfName)) {
+            return;
+        }
+        fillClass(itfName);
+        var itf = classes.get(itfName);
+        if (itf == null) {
+            return;
+        }
+        var itfTable = tables.get(itfName);
+        for (var superItf : itf.getInterfaces()) {
+            fillFromInterfaces(superItf, table);
+        }
+        if (itfTable != null) {
+            for (var descriptor : itfTable.entries.keySet()) {
+                table.entries.computeIfAbsent(descriptor, k -> new EntryBuilder());
+            }
+        }
+        for (var method : itf.getMethods()) {
+            if (method.hasModifier(ElementModifier.STATIC) || method.hasModifier(ElementModifier.ABSTRACT)
+                    || method.getLevel() == AccessLevel.PRIVATE) {
+                continue;
+            }
+            var descriptor = method.getDescriptor();
+            var existing = table.entries.get(descriptor);
+            if (existing != null && existing.implementor != null
+                    && !table.entriesFromInterfaces.contains(descriptor)) {
+                continue;
+            }
+            var entry = table.entries.computeIfAbsent(descriptor, k -> new EntryBuilder());
             entry.implementor = method.getReference();
+            table.entriesFromInterfaces.add(descriptor);
         }
     }
 
@@ -494,6 +546,8 @@ public class VirtualTableBuilder {
 
     static class TableBuilder {
         Map<MethodDescriptor, EntryBuilder> entries = new LinkedHashMap<>();
+        Set<MethodDescriptor> entriesFromInterfaces = new HashSet<>();
+        Set<String> processedInterfaces = new HashSet<>();
     }
 
     static class EntryBuilder {
