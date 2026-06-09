@@ -55,7 +55,7 @@ class CRunStrategy implements TestRunStrategy {
                 var exceptionFile = File.createTempFile("teavm-test-exception", ".txt");
                 try {
                     List<String> runCommand = new ArrayList<>();
-                    if (wrapperCommand != null) {
+                    if (wrapperCommand != null && !wrapperCommand.isEmpty()) {
                         runCommand.addAll(List.of(wrapperCommand.split(" ")));
                     }
                     runCommand.add(outputFile.getPath());
