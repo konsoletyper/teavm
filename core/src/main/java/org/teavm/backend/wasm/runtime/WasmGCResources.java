@@ -88,7 +88,7 @@ public final class WasmGCResources {
 
     private static void readBytes(byte[] bytes, int off, int len, int fromAddress) {
         for (int i = 0; i < len; ++i) {
-            bytes[i] = (byte) readSingleByte(fromAddress++);
+            bytes[i + off] = (byte) readSingleByte(fromAddress++);
         }
     }
 
