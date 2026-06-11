@@ -48,6 +48,9 @@ static int64_t teavm_gc_pageSize;
         return 1 << 16;
     }
 #elif TEAVM_UNIX
+    #ifndef MAP_ANONYMOUS
+        #define MAP_ANONYMOUS MAP_ANON
+    #endif
     static void* teavm_virtualAlloc(int64_t size) {
         return mmap(NULL, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
     }

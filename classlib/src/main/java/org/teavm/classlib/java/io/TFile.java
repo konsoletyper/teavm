@@ -396,6 +396,9 @@ public class TFile implements Serializable, Comparable<TFile> {
     }
 
     public boolean createNewFile() throws IOException {
+        if (getName().isEmpty()) {
+            throw new IOException("No such file or directory: " + getPath());
+        }
         VirtualFile parentVirtualFile = findParentFile();
         if (parentVirtualFile == null || !parentVirtualFile.isDirectory()) {
             throw new IOException("Can't create file " + getPath() + " since parent directory does not exist");
@@ -556,14 +559,14 @@ public class TFile implements Serializable, Comparable<TFile> {
         if (!(obj instanceof TFile)) {
             return false;
         }
-        return fs().isWindows()
-            ? path.equalsIgnoreCase(((File) obj).getPath())
-            : path.equals(((File) obj).getPath());
+        return fs().isCaseSensitive()
+            ? path.equals(((File) obj).getPath())
+            : path.equalsIgnoreCase(((File) obj).getPath());
     }
 
     @Override
     public int hashCode() {
-        return fs().isWindows() ? path.toLowerCase().hashCode() : path.hashCode();
+        return fs().isCaseSensitive() ? path.hashCode() : path.toLowerCase().hashCode();
     }
 
     @Override

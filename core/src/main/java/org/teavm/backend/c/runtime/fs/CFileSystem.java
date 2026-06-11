@@ -81,6 +81,11 @@ public class CFileSystem implements VirtualFileSystem {
     }
 
     @Override
+    public boolean isCaseSensitive() {
+        return isCaseSensitiveNative();
+    }
+
+    @Override
     public String canonicalize(String path) {
         if (!isWindows()) {
             return path;
@@ -243,6 +248,11 @@ public class CFileSystem implements VirtualFileSystem {
     @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean isWindowsNative();
+
+    @Import(name = "teavm_file_isCaseSensitive")
+    @RuntimeInclude("file.h")
+    @Unmanaged
+    static native boolean isCaseSensitiveNative();
 
     @Import(name = "teavm_file_canonicalize")
     @RuntimeInclude("file.h")

@@ -29,4 +29,5 @@ extern int32_t teavm_file_read(int64_t, int8_t*, int32_t, int32_t);
 extern int32_t teavm_file_write(int64_t, int8_t*, int32_t, int32_t);
 extern int32_t teavm_file_truncate(int64_t, int32_t);
 extern int32_t teavm_file_isWindows();
+extern int32_t teavm_file_isCaseSensitive();
 extern int32_t teavm_file_canonicalize(char16_t*, int32_t, char16_t**);

@@ -665,7 +665,9 @@ public class FileTest {
         if (onWindows) {
             assertTrue("Files Should Return Equal.", f1.equals(f3));
         } else if (onUnix) {
-            assertTrue("Files Should NOT Return Equal.", !f1.equals(f3));
+            // We can't test it right now, since there are OS with `/` separator but with case-insensitive 
+            // file names. Perhaps, we need to support other ways to detect OS.
+            //assertTrue("Files Should NOT Return Equal.", !f1.equals(f3));
         }
 
         f1 = new File(tempDirectory, "casetest.tmp");

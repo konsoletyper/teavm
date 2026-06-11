@@ -22,6 +22,10 @@ public interface VirtualFileSystem {
 
     boolean isWindows();
 
+    default boolean isCaseSensitive() {
+        return true;
+    }
+
     String canonicalize(String path);
 
     String[] getRoots();

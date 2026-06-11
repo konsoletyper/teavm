@@ -339,6 +339,14 @@ int32_t teavm_file_isWindows() {
     return 0;
 }
 
+int32_t teavm_file_isCaseSensitive() {
+    #if TEAVM_APPLE
+        return 0;
+    #else
+        return 1;
+    #endif
+}
+
 int32_t teavm_file_canonicalize(char16_t* path, int32_t pathSize, char16_t** result) {
     return 0;
 }
@@ -612,6 +620,10 @@ int32_t teavm_file_truncate(int64_t file, int32_t size) {
 
 int32_t teavm_file_isWindows() {
     return 1;
+}
+
+int32_t teavm_file_isCaseSensitive() {
+    return 0;
 }
 
 static TeaVM_StringList* teavm_file_addToList(TeaVM_StringList* strings, char16_t* data) {

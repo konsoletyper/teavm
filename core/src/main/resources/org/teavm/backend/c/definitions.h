@@ -4,6 +4,7 @@
 #define TEAVM_WINDOWS 0
 #define TEAVM_WINDOWS_UWP 0
 #define TEAVM_UNIX 0
+#define TEAVM_APPLE 0
 
 #ifdef _MSC_VER
     #define alignas(n) __declspec(align(n))
@@ -23,10 +24,15 @@
     #define TEAVM_WINDOWS 1
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__APPLE__)
     #undef TEAVM_UNIX
     #define TEAVM_UNIX 1
     #include <stdalign.h>
+#endif
+
+#ifdef __APPLE__
+    #undef TEAVM_APPLE
+    #define TEAVM_APPLE 1
 #endif
 
 #ifdef __PSP__

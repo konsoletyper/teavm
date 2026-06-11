@@ -6,6 +6,11 @@
 
 #if TEAVM_UNIX
     #include <signal.h>
+    #if TEAVM_APPLE
+        #include <unistd.h>
+        #include <fcntl.h>
+        #include <sys/select.h>
+    #endif
 #endif
 #if TEAVM_WINDOWS
     #include <Windows.h>
@@ -15,8 +20,11 @@
     #include <pspkernel.h>
 #endif
 
-#if TEAVM_UNIX
+#if TEAVM_UNIX && !TEAVM_APPLE && !defined(__EMSCRIPTEN__)
     static timer_t teavm_queueTimer;
+#endif
+#if TEAVM_APPLE
+    static int teavm_pipefd[2];
 #endif
 #if TEAVM_WINDOWS
     static HANDLE teavm_queueTimer;
@@ -25,7 +33,11 @@
 void teavm_initFiber() {
 
     #if TEAVM_UNIX
-        #ifndef __EMSCRIPTEN__
+        #if TEAVM_APPLE
+            setlocale(LC_ALL, "");
+            pipe(teavm_pipefd);
+            fcntl(teavm_pipefd[0], F_SETFL, O_NONBLOCK);
+        #elif !defined(__EMSCRIPTEN__)
             setlocale (LC_ALL, "");
 
             struct sigaction sigact;
@@ -74,6 +86,23 @@ void teavm_initFiber() {
         }
         void teavm_interrupt() {
             abort();
+        }
+    #elif TEAVM_APPLE
+        void teavm_waitFor(int64_t timeout) {
+            fd_set fds;
+            FD_ZERO(&fds);
+            FD_SET(teavm_pipefd[0], &fds);
+            struct timeval tv;
+            tv.tv_sec = (long) (timeout / 1000);
+            tv.tv_usec = (int) ((timeout % 1000) * 1000);
+            select(teavm_pipefd[0] + 1, &fds, NULL, NULL, &tv);
+            char buf;
+            while (read(teavm_pipefd[0], &buf, 1) > 0) {}
+        }
+
+        void teavm_interrupt() {
+            char c = 1;
+            write(teavm_pipefd[1], &c, 1);
         }
     #else
         void teavm_waitFor(int64_t timeout) {

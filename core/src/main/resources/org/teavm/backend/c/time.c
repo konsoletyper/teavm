@@ -1,3 +1,13 @@
+#ifdef __APPLE__
+    #ifndef _DARWIN_C_SOURCE
+    #define _DARWIN_C_SOURCE
+    #endif
+#elif !defined(_WIN32)
+    #ifndef _POSIX_C_SOURCE
+    #define _POSIX_C_SOURCE 200112L
+    #endif
+#endif
+
 #include "time.h"
 #include "definitions.h"
 #include <time.h>

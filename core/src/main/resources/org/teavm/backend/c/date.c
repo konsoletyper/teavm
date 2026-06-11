@@ -1,17 +1,23 @@
+#ifdef __APPLE__
+    #ifndef _DARWIN_C_SOURCE
+    #define _DARWIN_C_SOURCE
+    #endif
+#else
+    #ifndef _XOPEN_SOURCE
+    #define _XOPEN_SOURCE
+    #endif
+
+    #ifndef __USE_XOPEN
+    #define __USE_XOPEN
+    #endif
+
+    #ifndef _GNU_SOURCE
+    #define _GNU_SOURCE
+    #endif
+#endif
+
 #include "date.h"
 #include "definitions.h"
-
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE
-#endif
-
-#ifndef __USE_XOPEN
-#define __USE_XOPEN
-#endif
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 
 #if TEAVM_WINDOWS
     #define timegm _mkgmtime
