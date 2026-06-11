@@ -642,6 +642,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         var includes = new SimpleIncludeManager(context.getFileNames(), writer);
         includes.init("core_gen.h");
         includes.includeClass("java.lang.Object");
+        includes.includeClass("java.lang.Class");
 
         writer.print("#define TEAVM_CREATE_CLASS_OBJECT ").println(context.getNames()
                 .forMethod(new MethodReference(Class.class, "createClass", ClassInfo.class, Class.class)));
