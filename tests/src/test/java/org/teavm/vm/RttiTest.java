@@ -58,6 +58,34 @@ public class RttiTest {
         assertEquals("fttf", sb.toString());
     }
 
+    @Test
+    public void instanceOfSpecificReferenceArray() {
+        Object[] arrays = { new String[0], new Integer[0], new Object[0], new int[0], new String[0][] };
+        StringBuilder sb = new StringBuilder();
+        for (Object o : arrays) {
+            sb.append(o instanceof String[] ? 't' : 'f');
+        }
+        assertEquals("tffff", sb.toString());
+    }
+
+    @Test
+    public void instanceOfMultiDimReferenceArray() {
+        Object[] arrays = { new String[0][], new Integer[0][], new Object[0][], new int[0][], new String[0] };
+        StringBuilder sb = new StringBuilder();
+        for (Object o : arrays) {
+            sb.append(o instanceof String[][] ? 't' : 'f');
+            sb.append(o instanceof Object[][] ? 't' : 'f');
+        }
+        assertEquals("ttftftffff", sb.toString());
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void castToWrongReferenceArrayFails() {
+        Object o = new String[] { "a" };
+        Integer[] integers = (Integer[]) o;
+        assertEquals(0, integers.length);
+    }
+
     private void checkImplements(Object o, boolean i, boolean j, boolean k) {
         assertTrue(predicate(o, i, "I"), !i ^ o instanceof I);
         assertTrue(predicate(o, j, "J"), !j ^ o instanceof J);

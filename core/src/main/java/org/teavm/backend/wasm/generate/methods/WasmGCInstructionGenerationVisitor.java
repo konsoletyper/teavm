@@ -964,7 +964,12 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
 
     private boolean canCastNatively(ValueType type) {
         if (type instanceof ValueType.Array) {
-            return true;
+            // arrays with non-primitive item types all share the Array<java.lang.Object>
+            // structure, so ref.test can only distinguish primitive arrays and Object[]
+            // itself; other item types need a class check
+            var itemType = ((ValueType.Array) type).getItemType();
+            return itemType instanceof ValueType.Primitive
+                    || itemType.equals(ValueType.object("java.lang.Object"));
         }
         if (!(type instanceof ValueType.Object)) {
             return false;

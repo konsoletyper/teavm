@@ -61,6 +61,9 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
 
     @Override
     public WasmFunction getIsSupertypeFunction(ValueType type) {
+        if (type instanceof ValueType.Array) {
+            return getIsArraySupertypeFunction();
+        }
         var result = functions.get(type);
         if (result == null) {
             result = generateIsSupertypeFunction(type);
@@ -147,16 +150,16 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
 
         var classInfoType = classGenerator.reflectionTypes().classInfo();
         function.setName(nameProvider.topLevel("teavm@isArrayType"));
-        var thisVar = new WasmLocal(classInfoType.structure().getReference(), "this");
         var subtypeVar = new WasmLocal(classInfoType.structure().getReference(), "subtype");
-        function.add(thisVar);
+        var supertypeVar = new WasmLocal(classInfoType.structure().getReference(), "supertype");
         function.add(subtypeVar);
+        function.add(supertypeVar);
 
         int itemOffset = classInfoType.itemTypeIndex();
         var body = function.getBody().builder();
 
+        body.getLocal(supertypeVar).structGet(classInfoType.structure(), itemOffset).setLocal(supertypeVar);
         body.getLocal(subtypeVar).structGet(classInfoType.structure(), itemOffset).setLocal(subtypeVar);
-        body.getLocal(thisVar).structGet(classInfoType.structure(), itemOffset).setLocal(thisVar);
 
         body.getLocal(subtypeVar).isNull();
         var itemTest = body.conditional(WasmType.INT32);
@@ -165,8 +168,8 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         var funcType = functionTypes.of(WasmType.INT32, classInfoType.structure().getReference(),
                 classInfoType.structure().getReference());
         var elseBody = itemTest.getElseBlock().builder();
-        elseBody.getLocal(thisVar).getLocal(subtypeVar)
-                .getLocal(thisVar).structGet(classInfoType.structure(), classInfoType.supertypeFunctionIndex())
+        elseBody.getLocal(subtypeVar).getLocal(supertypeVar)
+                .getLocal(supertypeVar).structGet(classInfoType.structure(), classInfoType.supertypeFunctionIndex())
                 .callReference(funcType);
 
         return function;
