@@ -664,4 +664,25 @@ public class VMTest {
     private int[][] array() {
         return new int[][] { { 23 } };
     }
+
+    @Test
+    public void variableJoiningPrimitiveAndReferenceArrays() {
+        // the shape of scala.Array$.copyOf (Scala 2.13): one variable receives
+        // either a primitive array or a reference array depending on the branch
+        assertEquals("copied 3", copyAs(new String[] { "a", "b" }, 3));
+        assertEquals("copied 3", copyAs(new int[] { 1, 2 }, 3));
+    }
+
+    private static String copyAs(Object original, int newLength) {
+        Object copy;
+        if (original instanceof int[]) {
+            copy = Arrays.copyOf((int[]) original, newLength);
+        } else {
+            copy = Arrays.copyOf((Object[]) original, newLength);
+        }
+        if (copy == original) {
+            return "same";
+        }
+        return "copied " + java.lang.reflect.Array.getLength(copy);
+    }
 }

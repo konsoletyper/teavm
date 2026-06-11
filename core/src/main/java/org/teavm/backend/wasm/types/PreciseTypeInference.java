@@ -63,9 +63,18 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
                 }
             } else if (a.valueType instanceof ValueType.Array) {
                 if (b.valueType instanceof ValueType.Array) {
-                    var p = new PreciseValueType(((ValueType.Array) a.valueType).getItemType(), false);
-                    var q = new PreciseValueType(((ValueType.Array) b.valueType).getItemType(), false);
-                    return new PreciseValueType(ValueType.arrayOf(merge(p, q).valueType), a.isArrayUnwrap);
+                    var p = ((ValueType.Array) a.valueType).getItemType();
+                    var q = ((ValueType.Array) b.valueType).getItemType();
+                    if (p.equals(q)) {
+                        return a;
+                    }
+                    if (p instanceof ValueType.Primitive || q instanceof ValueType.Primitive) {
+                        // distinct primitive array types map to unrelated Wasm GC structs,
+                        // so the only valid common supertype is java.lang.Object
+                        return OBJECT_TYPE;
+                    }
+                    var itemType = merge(new PreciseValueType(p, false), new PreciseValueType(q, false));
+                    return new PreciseValueType(ValueType.arrayOf(itemType.valueType), a.isArrayUnwrap);
                 } else {
                     return OBJECT_TYPE;
                 }
