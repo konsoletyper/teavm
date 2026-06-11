@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -257,5 +258,31 @@ public class ArraysTest {
     public void deepToString() {
         int[][] array = { { 1, 2, 3 }, { 4, 5, 6 } };
         assertEquals("[[1, 2, 3], [4, 5, 6]]", Arrays.deepToString(array));
+    }
+
+    @Test
+    public void copyOfRangePadsPastEndOfArray() {
+        String[] strings = Arrays.copyOfRange(new String[] { "a", "b" }, 0, 4);
+        assertEquals(4, strings.length);
+        assertEquals("a", strings[0]);
+        assertEquals("b", strings[1]);
+        assertNull(strings[2]);
+        assertNull(strings[3]);
+
+        int[] ints = Arrays.copyOfRange(new int[] { 1, 2 }, 1, 4);
+        assertEquals(3, ints.length);
+        assertEquals(2, ints[0]);
+        assertEquals(0, ints[1]);
+        assertEquals(0, ints[2]);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void copyOfRangeWithFromGreaterThanToFails() {
+        Arrays.copyOfRange(new String[] { "a", "b" }, 2, 1);
+    }
+
+    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    public void copyOfRangeWithFromPastEndFails() {
+        Arrays.copyOfRange(new String[] { "a", "b" }, 3, 4);
     }
 }

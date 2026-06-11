@@ -23,6 +23,7 @@ import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
+import org.teavm.classlib.java.lang.TArrayIndexOutOfBoundsException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
@@ -131,73 +132,91 @@ public class TArrays extends TObject {
     }
 
     public static boolean[] copyOfRange(boolean[] array, int from, int to) {
+        checkCopyOfRange(array.length, from, to);
         boolean[] result = new boolean[to - from];
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, array.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = array[i];
         }
         return result;
     }
 
     public static byte[] copyOfRange(byte[] array, int from, int to) {
+        checkCopyOfRange(array.length, from, to);
         byte[] result = new byte[to - from];
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, array.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = array[i];
         }
         return result;
     }
 
     public static char[] copyOfRange(char[] array, int from, int to) {
+        checkCopyOfRange(array.length, from, to);
         char[] result = new char[to - from];
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, array.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = array[i];
         }
         return result;
     }
 
     public static short[] copyOfRange(short[] array, int from, int to) {
+        checkCopyOfRange(array.length, from, to);
         short[] result = new short[to - from];
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, array.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = array[i];
         }
         return result;
     }
 
     public static int[] copyOfRange(int[] array, int from, int to) {
+        checkCopyOfRange(array.length, from, to);
         int[] result = new int[to - from];
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, array.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = array[i];
         }
         return result;
     }
 
     public static long[] copyOfRange(long[] array, int from, int to) {
+        checkCopyOfRange(array.length, from, to);
         long[] result = new long[to - from];
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, array.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = array[i];
         }
         return result;
     }
 
     public static float[] copyOfRange(float[] array, int from, int to) {
+        checkCopyOfRange(array.length, from, to);
         float[] result = new float[to - from];
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, array.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = array[i];
         }
         return result;
     }
 
     public static double[] copyOfRange(double[] array, int from, int to) {
+        checkCopyOfRange(array.length, from, to);
         double[] result = new double[to - from];
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, array.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = array[i];
         }
         return result;
     }
 
     public static <T> T[] copyOfRange(T[] original, int from, int to) {
+        checkCopyOfRange(original.length, from, to);
         @SuppressWarnings("unchecked")
         T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), to - from);
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, original.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = original[i];
         }
         return result;
@@ -205,12 +224,23 @@ public class TArrays extends TObject {
 
     @SuppressWarnings("unchecked")
     public static <T, U> T[] copyOfRange(U[] original, int from, int to, Class<? extends T[]> newType) {
+        checkCopyOfRange(original.length, from, to);
         Class<?> componentType = newType.getComponentType();
         T[] result = (T[]) (Object) Array.newInstance(componentType, to - from);
-        for (int i = from; i < to; ++i) {
+        int limit = TMath.min(to, original.length);
+        for (int i = from; i < limit; ++i) {
             result[i - from] = (T) newType.getComponentType().cast(original[i]);
         }
         return result;
+    }
+
+    private static void checkCopyOfRange(int length, int from, int to) {
+        if (from > to) {
+            throw new TIllegalArgumentException(from + " > " + to);
+        }
+        if (from < 0 || from > length) {
+            throw new TArrayIndexOutOfBoundsException();
+        }
     }
 
     public static String toString(TObject[] a) {
