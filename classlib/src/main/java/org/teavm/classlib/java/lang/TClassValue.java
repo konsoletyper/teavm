@@ -36,10 +36,27 @@ public abstract class TClassValue<T> extends TObject {
         return value;
     }
 
+    public void remove(Class<?> clazz) {
+        Item prev = null;
+        Item it = items;
+        while (it != null) {
+            if (it.clazz == clazz) {
+                if (prev == null) {
+                    items = it.next;
+                } else {
+                    prev.next = it.next;
+                }
+                return;
+            }
+            prev = it;
+            it = it.next;
+        }
+    }
+
     private class Item {
         final Class<?> clazz;
         final T value;
-        final Item next;
+        Item next;
 
         Item(Item next, Class<?> clazz, T value) {
             this.clazz = clazz;
