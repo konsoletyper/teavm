@@ -31,6 +31,7 @@ final class PropertyNames {
     static final String MINIFIED = "teavm.junit.minified";
     static final String OPTIMIZED = "teavm.junit.optimized";
     static final String SOURCE_DIRS = "teavm.junit.sourceDirs";
+    static final String C_CLASS_LIST_FILE = "teavm.junit.c.classListFile";
 
     private PropertyNames() {
     }

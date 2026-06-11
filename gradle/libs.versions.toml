@@ -14,6 +14,7 @@ jreleaser = "1.18.0"
 
 [libraries]
 
+gson = "com.google.code.gson:gson:2.11.0"
 hppc = "com.carrotsearch:hppc:0.10.0"
 commons-cli = "commons-cli:commons-cli:1.11.0"
 rhino = "org.mozilla:rhino:1.9.1"

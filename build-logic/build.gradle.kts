@@ -26,6 +26,7 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.gson)
     implementation(libs.shadowPlugin)
     implementation(libs.maven.plugin.tools.api)
     implementation(libs.maven.plugin.tools.generators)
@@ -60,6 +61,10 @@ gradlePlugin {
         create("javaVersion") {
             id = "javaVersion"
             implementationClass = "org.teavm.buildutil.JavaVersionPlugin"
+        }
+        create("mac-remote-test") {
+            id = "mac-remote-test"
+            implementationClass = "org.teavm.buildutil.MacRemoteTestPlugin"
         }
     }
 }

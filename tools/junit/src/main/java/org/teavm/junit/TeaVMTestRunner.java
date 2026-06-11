@@ -15,10 +15,12 @@
  */
 package org.teavm.junit;
 
+import static org.teavm.junit.PropertyNames.C_CLASS_LIST_FILE;
 import static org.teavm.junit.PropertyNames.PATH_PARAM;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -27,6 +29,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -975,6 +978,14 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             writer.write("\n]");
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+        var classListFilePath = System.getProperty(C_CLASS_LIST_FILE);
+        if (classListFilePath != null && platform.getPlatform() == TestPlatform.C) {
+            try (var appender = new FileWriter(classListFilePath, StandardCharsets.UTF_8, true)) {
+                appender.write(outputDir.getAbsolutePath() + "\n");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
