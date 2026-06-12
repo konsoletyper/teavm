@@ -12,23 +12,13 @@ jobs:
         java-version: 25
         distribution: adopt
     - uses: gradle/gradle-build-action@v2
-    - name: Create cmake build wrapper
-      run: |
-        cat > /tmp/teavm-cmake-build.sh << 'SCRIPT'
-        #!/bin/bash
-        set -e
-        cmake -DCMAKE_BUILD_TYPE=Debug -S . -B _build
-        cmake --build _build
-        cp _build/run_test .
-        SCRIPT
-        chmod +x /tmp/teavm-cmake-build.sh
     - run: |
         ./gradlew \
           -Pteavm.tests.c=true \
           -Pteavm.tests.js=false \
           -Pteavm.tests.wasm-gc=false \
           -Pteavm.tests.optimized=false \
-          -Pteavm.tests.c.compiler=/tmp/teavm-cmake-build.sh \
+          -Pteavm.tests.c.compiler=compile-c-macos-fast.sh \
           -Pteavm.tests.c.runWrapper= \
           "-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m" \
           --stacktrace test
