@@ -228,16 +228,8 @@ public class CoroutineTransformation {
     }
 
     private boolean isSplitInstruction(Instruction instruction) {
-        if (instruction instanceof InvokeInstruction) {
-            InvokeInstruction invoke = (InvokeInstruction) instruction;
-            MethodReference method = findRealMethod(invoke.getMethod());
-            if (method.equals(FIBER_SUSPEND)) {
-                return true;
-            }
-            if (method.getClassName().equals(Fiber.class.getName())) {
-                return false;
-            }
-            return asyncMethods.contains(method);
+        if (instruction instanceof InvokeInstruction invoke) {
+            return isAsyncSplit(invoke.getMethod());
         } else if (instruction instanceof InitClassInstruction) {
             return isSplittingClassInitializer(((InitClassInstruction) instruction).getClassName());
         } else {
@@ -400,14 +392,52 @@ public class CoroutineTransformation {
         return method != null && asyncMethods.contains(method.getReference());
     }
 
+    protected boolean isAsyncSplit(MethodReference methodRef) {
+        return isAsyncSplitImpl(findRealMethod(methodRef));
+    }
+
+    private boolean isAsyncSplitImpl(MethodReference methodRef) {
+        if (methodRef.equals(FIBER_SUSPEND)) {
+            return true;
+        }
+        if (methodRef.getClassName().equals(Fiber.class.getName())) {
+            return false;
+        }
+
+        if (asyncMethods.isEmpty()) {
+            return false;
+        }
+        if (asyncMethods.contains(methodRef)) {
+            return true;
+        }
+
+        var cls = classSource.get(methodRef.getClassName());
+        if (cls == null) {
+            return false;
+        }
+
+        if (cls.getParent() != null) {
+            if (isAsyncSplitImpl(new MethodReference(cls.getParent(), methodRef.getDescriptor()))) {
+                return true;
+            }
+        }
+        for (var itf : cls.getInterfaces()) {
+            if (isAsyncSplitImpl(new MethodReference(itf, methodRef.getDescriptor()))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private MethodReference findRealMethod(MethodReference method) {
-        String clsName = method.getClassName();
+        var clsName = method.getClassName();
         while (clsName != null) {
             ClassReader cls = classSource.get(clsName);
             if (cls == null) {
                 break;
             }
-            MethodReader methodReader = cls.getMethod(method.getDescriptor());
+            var methodReader = cls.getMethod(method.getDescriptor());
             if (methodReader != null) {
                 return new MethodReference(clsName, method.getDescriptor());
             }
