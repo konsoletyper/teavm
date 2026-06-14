@@ -37,7 +37,7 @@ public final class TTemplateCollections {
         }
 
         @SuppressWarnings("unchecked")
-        public ImmutableArrayList(TCollection<? extends T> collection) {
+        ImmutableArrayList(TCollection<? extends T> collection) {
             T[] list = (T[]) new Object[collection.size()];
 
             TIterator<? extends T> iter = collection.iterator();
@@ -123,7 +123,7 @@ public final class TTemplateCollections {
 
         @Override
         public TIterator<T> iterator() {
-            return new TIterator<T>() {
+            return new TIterator<>() {
                 private boolean more = true;
 
                 @Override
@@ -174,7 +174,7 @@ public final class TTemplateCollections {
 
         @Override
         public TIterator<T> iterator() {
-            return new TIterator<T>() {
+            return new TIterator<>() {
                 private int index;
 
                 @Override
@@ -288,7 +288,7 @@ public final class TTemplateCollections {
 
         @Override
         public TIterator<T> iterator() {
-            return new TIterator<T>() {
+            return new TIterator<>() {
                 private int index;
 
                 @Override
@@ -467,7 +467,6 @@ public final class TTemplateCollections {
         private Entry<K, V>[] data;
         private AbstractImmutableSet<Entry<K, V>> entrySet;
 
-        @SuppressWarnings("unchecked")
         @SafeVarargs
         NEtriesMap(Entry<K, V>... data) {
             this.data = toEntryArray(data);
@@ -588,7 +587,7 @@ public final class TTemplateCollections {
         @Override
         public TSet<Entry<K, V>> entrySet() {
             if (entrySet == null) {
-                entrySet = new AbstractImmutableSet<Entry<K, V>>() {
+                entrySet = new AbstractImmutableSet<>() {
                     @Override
                     public int size() {
                         return data.length;
@@ -596,7 +595,7 @@ public final class TTemplateCollections {
 
                     @Override
                     public TIterator<Entry<K, V>> iterator() {
-                        return new TIterator<Entry<K, V>>() {
+                        return new TIterator<>() {
                             int index;
 
                             @Override
@@ -621,10 +620,9 @@ public final class TTemplateCollections {
 
                     @Override
                     public boolean contains(Object o) {
-                        if (!(o instanceof Entry)) {
+                        if (!(o instanceof Entry<?, ?> e)) {
                             return false;
                         }
-                        Entry<?, ?> e = (Entry<?, ?>) o;
 
                         Object key = e.getKey();
                         if (key == null) {
@@ -795,8 +793,7 @@ public final class TTemplateCollections {
             if (this == object) {
                 return true;
             }
-            if (object instanceof TMap.Entry) {
-                TMap.Entry<?, ?> entry = (TMap.Entry<?, ?>) object;
+            if (object instanceof TMap.Entry<?, ?> entry) {
                 return TObjects.equals(key, entry.getKey()) && TObjects.equals(value, entry.getValue());
             }
             return false;
