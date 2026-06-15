@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.HashMap;
@@ -51,6 +52,16 @@ public class MapTest {
                 Map.ofEntries(Map.entry("q", 0), Map.entry("w", 1), Map.entry("e", 2), Map.entry("r", 3),
                         Map.entry("t", 4), Map.entry("y", 5), Map.entry("u", 6), Map.entry("i", 7), Map.entry("o", 8),
                         Map.entry("p", 9), Map.entry("a", 10)));
+        
+        assertThrows(NullPointerException.class, () -> Map.of(null, "q"));
+        assertThrows(NullPointerException.class, () -> Map.of("q", null));
+        assertThrows(NullPointerException.class, () -> Map.of("q", "w", "e", null));
+        assertThrows(NullPointerException.class, () -> Map.of("q", "w", null, "e"));
+        assertThrows(NullPointerException.class, () -> Map.of("q", "w", "e", "r", "t", null));
+        assertThrows(NullPointerException.class, () -> Map.of("q", "w", "e", "r", null, "t"));
+        
+        assertThrows(IllegalArgumentException.class, () -> Map.of("q", "w", "q", "e"));
+        assertThrows(IllegalArgumentException.class, () -> Map.of("q", "w", "e", "r", "e", "t"));
     }
 
     @Test

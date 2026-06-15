@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.Arrays;
@@ -59,6 +60,13 @@ public class SetTest {
         expectIAE(() -> Set.of("q", "w", "e", "r", "t", "y", "u", "i", "q"));
         expectIAE(() -> Set.of("q", "w", "e", "r", "t", "y", "u", "i", "o", "q"));
         expectIAE(() -> Set.of("q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "q"));
+        
+        assertThrows(NullPointerException.class, () -> Set.of("q", null));
+        assertThrows(NullPointerException.class, () -> Set.of(null, "q"));
+        assertThrows(NullPointerException.class, () -> Set.of(null));
+        assertThrows(NullPointerException.class, () -> Set.of(null, null, null));
+        assertThrows(NullPointerException.class, () -> Set.of(null, "q", "w"));
+        assertThrows(NullPointerException.class, () -> Set.of("q", "w", null));
     }
 
     @Test

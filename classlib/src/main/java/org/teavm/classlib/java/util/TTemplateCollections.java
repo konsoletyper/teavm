@@ -345,7 +345,7 @@ public final class TTemplateCollections {
         private AbstractImmutableList<V> values;
 
         SingleEntryMap(K key, V value) {
-            this.entry = new ImmutableEntry<>(key, value);
+            this.entry = new ImmutableEntry<>(Objects.requireNonNull(key), Objects.requireNonNull(value));
         }
 
         @Override
@@ -406,8 +406,11 @@ public final class TTemplateCollections {
         private AbstractImmutableList<V> values;
 
         TwoEntriesMap(K k1, V v1, K k2, V v2) {
-            this.first = new ImmutableEntry<>(k1, v1);
-            this.second = new ImmutableEntry<>(k2, v2);
+            this.first = new ImmutableEntry<>(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
+            this.second = new ImmutableEntry<>(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
+            if (Objects.equals(k1, k2)) {
+                throw new IllegalArgumentException();
+            }
         }
 
         @Override
