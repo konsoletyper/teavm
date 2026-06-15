@@ -56,7 +56,7 @@ public final class TCollectors {
     }
 
     public static <T> TCollector<T, ?, List<T>> toUnmodifiableList() {
-        return collectingAndThen(toList(), Collections::unmodifiableList);
+        return collectingAndThen(toList(), List::copyOf);
     }
 
     public static <T> TCollector<T, ?, Set<T>> toSet() {

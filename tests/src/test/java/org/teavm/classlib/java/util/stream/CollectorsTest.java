@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util.stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -50,6 +51,13 @@ public class CollectorsTest {
     @Test
     public void toList() {
         assertEquals(Arrays.asList(1, 2, 3), Stream.of(1, 2, 3).collect(Collectors.toList()));
+    }
+    
+    @Test
+    public void toUnmodifiableList() {
+        assertEquals(List.of(1, 2, 3), Stream.of(1, 2, 3).collect(Collectors.toUnmodifiableList()));
+        assertThrows(NullPointerException.class, () -> Stream.of(null).collect(Collectors.toUnmodifiableList()));
+        assertThrows(NullPointerException.class, () -> Stream.of(1, null).collect(Collectors.toUnmodifiableList()));
     }
 
     @Test
