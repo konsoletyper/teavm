@@ -125,7 +125,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
     private void installWasmGC(TeaVMHost host, TeaVMWasmGCHost wasmGCHost) {
         wasmGCHost.contributeToCodeGen((ctx, reg) -> {
             reg.inlineIntrinsics().registerIntrinsic(StringAmplifier.class, (invocation, context, builder) -> {
-                context.generate(builder, invocation.getArguments().get(0));
+                context.emitLocal(builder, invocation.getArguments().get(0));
             });
         });
 

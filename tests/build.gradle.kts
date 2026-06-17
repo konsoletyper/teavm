@@ -22,7 +22,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     scala
-    id("mac-remote-test")
+    //id("mac-remote-test")
 }
 
 description = "Tests"

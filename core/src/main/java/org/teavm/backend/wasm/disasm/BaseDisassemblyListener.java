@@ -187,7 +187,24 @@ public abstract class BaseDisassemblyListener  {
         if (name == null) {
             writer.write(Integer.toString(index));
         } else {
-            writer.write("(; ").write(Integer.toString(index)).write(" ;) $").write(name);
+            if (writer.isWithIndices()) {
+                writer.write("(; ").write(Integer.toString(index)).write(" ;) ");
+            }
+            writer.write("$").write(name);
         }
+    }
+
+    protected void writeDeclaration(String linkTarget, String name, int index) {
+        writer.startLinkTarget(linkTarget);
+        if (name == null || writer.isWithIndices()) {
+            writer.write("(; ").write(Integer.toString(index)).write(" ;)");
+            if (name != null) {
+                writer.write(" ");
+            }
+        }
+        if (name != null) {
+            writer.write("$").write(name);
+        }
+        writer.endLinkTarget();
     }
 }

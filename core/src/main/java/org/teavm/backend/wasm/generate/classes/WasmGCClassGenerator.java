@@ -1171,8 +1171,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         module.functions.add(function);
         var instanceLocal = new WasmLocal(standardClasses.objectClass().getType(), "instance");
         var originalLocal = new WasmLocal(objectStructure.getReference(), "original");
-        var originalDataLocal = new WasmLocal(arrayType.getNonNullReference(), "originalData");
-        var dataCopyLocal = new WasmLocal(arrayType.getNonNullReference(), "resultData");
+        var originalDataLocal = new WasmLocal(arrayType.getReference(), "originalData");
+        var dataCopyLocal = new WasmLocal(arrayType.getReference(), "resultData");
         function.add(instanceLocal);
         function.add(originalLocal);
         function.add(originalDataLocal);
@@ -1582,7 +1582,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             wasmArray = getObjectArrayType();
         }
 
-        classInfo.structure.getFields().add(new WasmField(wasmArray.getNonNullReference().asStorage(),
+        classInfo.structure.getFields().add(new WasmField(wasmArray.getReference().asStorage(),
                 arrayDataFieldName()));
     }
 

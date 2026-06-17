@@ -77,14 +77,13 @@ public class WasmInstructionList implements Iterable<WasmInstruction> {
     public void addFirst(WasmInstruction instruction) {
         instruction.checkAddable();
         instruction.owner = this;
+        instruction.next = first;
         if (first == null) {
-            first = instruction;
             last = instruction;
         } else {
             first.previous = instruction;
-            instruction.next = first;
-            first = instruction;
         }
+        first = instruction;
     }
 
     public void addFirst(WasmInstructionList src) {
@@ -92,13 +91,13 @@ public class WasmInstructionList implements Iterable<WasmInstruction> {
             for (var insn = src.first; insn != null; insn = insn.next) {
                 insn.owner = this;
             }
-            if (last == null) {
-                first = src.first;
+            src.last.next = first;
+            if (first == null) {
+                last = src.last;
             } else {
                 first.previous = src.last;
             }
-            src.first.previous = last;
-            last = src.last;
+            first = src.first;
             src.first = null;
             src.last = null;
         }
@@ -118,6 +117,22 @@ public class WasmInstructionList implements Iterable<WasmInstruction> {
             last = src.last;
             src.first = null;
             src.last = null;
+        }
+    }
+
+    public void insertAfter(WasmInstruction insn, WasmInstruction after) {
+        if (after == null) {
+            addFirst(insn);
+        } else {
+            after.insertNext(insn);
+        }
+    }
+
+    public void insertAfter(WasmInstructionList insn, WasmInstruction after) {
+        if (after == null) {
+            addFirst(insn);
+        } else {
+            after.insertNext(insn);
         }
     }
 

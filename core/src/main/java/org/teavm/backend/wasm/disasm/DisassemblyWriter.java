@@ -27,6 +27,7 @@ import org.teavm.backend.wasm.parser.AddressListener;
 public abstract class DisassemblyWriter {
     private PrintWriter out;
     private boolean withAddress;
+    private boolean withIndices = true;
     private int indentLevel;
     private int address;
     private boolean hasAddress;
@@ -43,6 +44,18 @@ public abstract class DisassemblyWriter {
 
     public void setWithAddress(boolean withAddress) {
         this.withAddress = withAddress;
+    }
+
+    public boolean isWithIndices() {
+        return withIndices;
+    }
+
+    /**
+     * Sets whether indices of named entities (functions, types, locals, etc.) should be written
+     * along with their names. Entities without names are always referred by indices.
+     */
+    public void setWithIndices(boolean withIndices) {
+        this.withIndices = withIndices;
     }
 
     public void setAddressOffset(int addressOffset) {
