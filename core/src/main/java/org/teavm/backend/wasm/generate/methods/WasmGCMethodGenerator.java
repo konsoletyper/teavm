@@ -18,7 +18,6 @@ package org.teavm.backend.wasm.generate.methods;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -26,8 +25,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.teavm.ast.RegularMethodNode;
-import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCInitializerContributor;
@@ -40,17 +37,20 @@ import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.intrinsics.WasmGCBodyIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmBreak;
 import org.teavm.backend.wasm.model.instruction.WasmCatchClause;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
+import org.teavm.backend.wasm.model.instruction.WasmReturn;
 import org.teavm.backend.wasm.model.instruction.WasmUnreachable;
+import org.teavm.backend.wasm.optimization.WasmDeadCodeEliminator;
+import org.teavm.backend.wasm.optimization.WasmDeadStoreOptimizer;
+import org.teavm.backend.wasm.optimization.WasmIdentityCopyOptimizer;
+import org.teavm.backend.wasm.optimization.WasmInstructionsOptimizer;
+import org.teavm.backend.wasm.optimization.WasmLocalsOptimizer;
 import org.teavm.backend.wasm.transformation.CoroutineTransformation;
-import org.teavm.backend.wasm.types.PreciseTypeInference;
-import org.teavm.backend.wasm.types.PreciseValueType;
-import org.teavm.backend.wasm.types.WasmGCVariableCategoryProvider;
 import org.teavm.backend.wasm.vtable.WasmGCVirtualTableProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
@@ -72,7 +72,6 @@ import org.teavm.model.Variable;
 import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.util.InstructionVariableMapper;
-import org.teavm.model.util.RegisterAllocator;
 import org.teavm.model.util.UsageExtractor;
 import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.vm.intrinsic.IntrinsicProvider;
@@ -96,7 +95,6 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private Map<MethodReference, WasmFunction> staticMethods = new HashMap<>();
     private Map<MethodReference, WasmFunction> instanceMethods = new HashMap<>();
     private boolean friendlyToDebugger;
-    private Decompiler decompiler;
     private WasmGCGenerationContext context;
     private WasmFunction dummyInitializer;
     private WasmGCClassInfoProvider classInfoProvider;
@@ -303,7 +301,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             } else {
                 generateNativeMethodBody(method, function);
             }
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             var buffer = new StringWriter();
             var printWriter = new PrintWriter(buffer);
             e.printStackTrace(printWriter);
@@ -330,87 +328,26 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private void generateRegularMethodBody(MethodHolder method, WasmFunction function) {
         Objects.requireNonNull(method.getProgram());
         eliminateMultipleNullConstantUsages(method.getProgram());
-        var decompiler = getDecompiler();
-        var categoryProvider = new WasmGCVariableCategoryProvider(hierarchy);
-        var methodCompact = compactMode && !method.hasModifier(ElementModifier.STATIC)
-                && typeMapper.mapType(ValueType.object(method.getOwnerName())) instanceof WasmType.Reference;
-        categoryProvider.setCompactMode(methodCompact);
-        var allocator = new RegisterAllocator(categoryProvider);
-        allocator.allocateRegisters(method.getReference(), method.getProgram(), friendlyToDebugger);
-        var ast = decompiler.decompileRegular(method);
+
         var firstVar = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
-        var typeInference = new PreciseTypeInference(method.getProgram(), method.getReference(), hierarchy);
-        typeInference.setPhisSkipped(true);
-        typeInference.setBackPropagation(true);
-        typeInference.ensure();
-
-        var registerCount = 0;
-        for (var i = 0; i < method.getProgram().variableCount(); ++i) {
-            registerCount = Math.max(registerCount, method.getProgram().variableAt(i).getRegister() + 1);
-        }
-        var originalIndexToIndex = new int[registerCount];
-        Arrays.fill(originalIndexToIndex, -1);
-        for (var varNode : ast.getVariables()) {
-            originalIndexToIndex[varNode.getOriginalIndex()] = varNode.getIndex();
-        }
-
-        var variableRepresentatives = new int[registerCount];
-        Arrays.fill(variableRepresentatives, -1);
-        for (var i = 0; i < method.getProgram().variableCount(); ++i) {
-            var variable = method.getProgram().variableAt(i);
-            var varNodeIndex = variable.getRegister() >= 0 ? originalIndexToIndex[variable.getRegister()] : -1;
-            if (varNodeIndex >= 0 && variableRepresentatives[varNodeIndex] < 0) {
-                if (typeInference.typeOf(variable) != null) {
-                    variableRepresentatives[varNodeIndex] = variable.getIndex();
-                }
-            }
-        }
-        for (var i = 0; i < method.getProgram().variableCount(); ++i) {
-            var variable = method.getProgram().variableAt(i);
-            var varNodeIndex = variable.getRegister() >= 0 ? originalIndexToIndex[variable.getRegister()] : -1;
-            if (varNodeIndex >= 0 && variableRepresentatives[varNodeIndex] < 0) {
-                variableRepresentatives[varNodeIndex] = variable.getIndex();
-            }
-        }
-
-        var nonNullableVars = new boolean[ast.getVariables().size()];
-        var preciseTypes = new PreciseValueType[ast.getVariables().size()];
         var isSuspend = asyncMethods.contains(method.getReference())
                 && method.getAnnotations().get(Async.class.getName()) == null;
-        for (var i = firstVar; i < ast.getVariables().size(); ++i) {
-            var representative = method.getProgram().variableAt(variableRepresentatives[i]);
-            var inferredType = typeInference.typeOf(representative);
-            if (inferredType == null) {
-                inferredType = new PreciseValueType(ValueType.object("java.lang.Object"), false);
-            }
-            preciseTypes[i] = inferredType;
-            nonNullableVars[i] = !isSuspend && inferredType.isArrayUnwrap;
-        }
-        if (!isSuspend) {
-            calculateNonNullableVars(nonNullableVars, ast);
-        }
-
-        for (var i = firstVar; i < ast.getVariables().size(); ++i) {
-            var localVar = ast.getVariables().get(i);
-            var inferredType = preciseTypes[i];
-            WasmType type;
-            if (i == 0 && compactMode) {
-                type = WasmType.ANY;
-            } else if (!inferredType.isArrayUnwrap || inferredType.valueType == null) {
-                type = typeMapper.mapType(inferredType.valueType);
-            } else {
-                var arrayType = classInfoProvider.getClassInfo(inferredType.valueType).getArray();
-                type = nonNullableVars[i] ? arrayType.getNonNullReference() : arrayType.getReference();
-            }
-            var wasmLocal = new WasmLocal(type, localVar.getName());
-            function.add(wasmLocal);
-        }
 
         addInitializerErase(method, function);
-        var visitor = new WasmGCInstructionGenerationVisitor(getGenerationContext(), method.getReference(),
-                function, firstVar, isSuspend, typeInference, asyncSplitMethods);
-        wrapSynchronizedMethod(method, visitor, function, ast);
-
+        
+        var codeGen = new WasmCodeGenerator(context, asyncSplitMethods);
+        wrapSynchronizedMethod(method, codeGen, function, firstVar, isSuspend);
+        new WasmDeadCodeEliminator().optimize(function);
+        if (function.getBody().getLast() instanceof WasmReturn) {
+            function.getBody().getLast().delete();
+        }
+        new WasmInstructionsOptimizer().optimize(function);
+        new WasmDeadStoreOptimizer().optimize(function);
+        var localsOptimizer = new WasmLocalsOptimizer();
+        localsOptimizer.setFriendlyToDebugger(friendlyToDebugger);
+        localsOptimizer.optimize(function);
+        new WasmIdentityCopyOptimizer().visitMany(function.getBody());
+        new WasmInstructionsOptimizer().optimize(function);
         if (isSuspend) {
             if (coroutineTransformation == null) {
                 coroutineTransformation = new CoroutineTransformation(functionTypes, this, classInfoProvider);
@@ -419,39 +356,38 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         }
     }
 
-    private void wrapSynchronizedMethod(MethodHolder method, WasmGCInstructionGenerationVisitor visitor,
-            WasmFunction function, RegularMethodNode ast) {
+    private void wrapSynchronizedMethod(MethodHolder method, WasmCodeGenerator codeGen,
+            WasmFunction function, int firstVar, boolean isSuspend) {
         if (!method.hasModifier(ElementModifier.SYNCHRONIZED)) {
-            visitor.generate(ast.getBody(), function.getBody());
-            if (function.getBody().getLast() == null || !function.getBody().getLast().isTerminating()) {
-                if (method.getResultType() != ValueType.VOID && !visitor.isShortenedReturn()) {
-                    function.getBody().add(new WasmUnreachable());
-                }
-            }
+            codeGen.generate(method.getProgram(), method.getReference(), function, function.getBody(),
+                    firstVar, isSuspend);
             return;
         }
 
         var builder = function.getBody().builder();
-        generateMonitor(method, function, builder);
-        visitor.monitorEnter(builder);
 
         var catchBlock = builder.block(function.getType().getSingleReturnType());
         var tryWrapper = catchBlock.block(WasmType.EXN);
 
         var tryCatch = tryWrapper.try_();
         tryCatch.getCatches().add(new WasmCatchClause(null, true, tryWrapper.list));
-        visitor.setReturnBlock(catchBlock.list);
-        visitor.generate(ast.getBody(), tryCatch.getBody());
+        codeGen.setReturnBlock(catchBlock.list);
+        codeGen.generate(method.getProgram(), method.getReference(), function, tryCatch.getBody(),
+                firstVar, isSuspend);
         tryCatch.getBody().add(new WasmBreak(catchBlock.list));
         tryWrapper.unreachable();
 
-        catchBlock.typeInference.typeStack.add(WasmType.EXN);
+        var prologueBuilder = new WasmInstructionList().builder();
+        generateMonitor(method, function, prologueBuilder);
+        codeGen.monitorEnter(prologueBuilder);
+        function.getBody().addFirst(prologueBuilder.list);
+
         generateMonitor(method, function, catchBlock);
-        visitor.monitorExit(catchBlock);
+        codeGen.monitorExit(catchBlock);
         catchBlock.throw_(null);
 
         generateMonitor(method, function, builder);
-        visitor.monitorExit(builder);
+        codeGen.monitorExit(builder);
     }
 
     private void generateMonitor(MethodHolder method, WasmFunction function, WasmInstructionBuilder builder) {
@@ -507,13 +443,24 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             }
         }
 
+        var hasSomethingToUpdate = false;
+        for (var i = program.variableCount() - 1; i >= 0; --i) {
+            if (nulls[i] && usageCount[i] > 1) {
+                hasSomethingToUpdate = true;
+                break;
+            }
+        }
+        if (!hasSomethingToUpdate) {
+            return;
+        }
+
         var mapFunction = new Function<Variable, Variable>() {
             Instruction instruction;
 
             @Override
             public Variable apply(Variable variable) {
                 if (variable.getIndex() >= nulls.length || !nulls[variable.getIndex()]
-                        || usageCount[variable.getIndex()]++ == 0) {
+                        || usageCount[variable.getIndex()] == 0) {
                     return variable;
                 }
                 var nullConstant = new NullConstantInstruction();
@@ -524,10 +471,19 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             }
         };
         var mapper = new InstructionVariableMapper(mapFunction);
+
         for (var block : program.getBasicBlocks()) {
             for (var insn : block) {
-                mapFunction.instruction = insn;
-                insn.acceptVisitor(mapper);
+                if (insn instanceof NullConstantInstruction nullConst) {
+                    var variable = nullConst.getReceiver();
+                    if (variable.getIndex() < nulls.length && nulls[variable.getIndex()]
+                            && usageCount[variable.getIndex()] > 1) {
+                        insn.delete();
+                    }
+                } else {
+                    mapFunction.instruction = insn;
+                    insn.acceptVisitor(mapper);
+                }
             }
             for (var phi : block.getPhis()) {
                 for (var input : phi.getIncomings()) {
@@ -542,11 +498,6 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                 }
             }
         }
-    }
-
-    private void calculateNonNullableVars(boolean[] nonNullVars, RegularMethodNode ast) {
-        var calculator = new NonNullVarsCalculator(nonNullVars);
-        ast.getBody().acceptVisitor(calculator);
     }
 
     private void generateNativeMethodBody(MethodHolder method, WasmFunction function) {
@@ -578,13 +529,6 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                         .structSet(classInfoStruct.structure(), classInfoStruct.initializerIndex());
             }
         }
-    }
-
-    private Decompiler getDecompiler() {
-        if (decompiler == null) {
-            decompiler = new Decompiler(classes, Set.of(), friendlyToDebugger);
-        }
-        return decompiler;
     }
 
     public WasmGCGenerationContext getGenerationContext() {

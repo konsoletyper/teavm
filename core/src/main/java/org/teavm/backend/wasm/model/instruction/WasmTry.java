@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.model.instruction;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.wasm.model.WasmType;
@@ -22,7 +23,57 @@ import org.teavm.backend.wasm.model.WasmType;
 public class WasmTry extends WasmInstruction {
     private WasmType type;
     private WasmInstructionList body = new WasmInstructionList(this);
-    private List<WasmCatchClause> catches = new ArrayList<>();
+    private List<WasmCatchClause> catches = new AbstractList<>() {
+        private List<WasmCatchClause> inner = new ArrayList<>();
+
+        @Override
+        public WasmCatchClause get(int index) {
+            return inner.get(index);
+        }
+
+        @Override
+        public int size() {
+            return inner.size();
+        }
+
+        @Override
+        public void clear() {
+            for (var e : inner) {
+                e.owner = null;
+            }
+            inner.clear();
+        }
+
+        @Override
+        public boolean add(WasmCatchClause wasmCatchClause) {
+            bind(wasmCatchClause);
+            return inner.add(wasmCatchClause);
+        }
+
+        @Override
+        public WasmCatchClause set(int index, WasmCatchClause element) {
+            if (inner.get(index) == element) {
+                return element;
+            }
+            inner.get(index).owner = null;
+            bind(element);
+            return inner.set(index, element);
+        }
+
+        @Override
+        public WasmCatchClause remove(int index) {
+            var result = inner.get(index);
+            result.owner = null;
+            return result;
+        }
+
+        private void bind(WasmCatchClause clause) {
+            if (clause.owner != null) {
+                throw new IllegalArgumentException("This clause already added to try instruction");
+            }
+            clause.owner = WasmTry.this;
+        }
+    };
 
     public WasmInstructionList getBody() {
         return body;
