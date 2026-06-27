@@ -1,5 +1,8 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(./gradlew *)"
+    ],
     "additionalDirectories": ["../teavm-site"]
   }
 }
