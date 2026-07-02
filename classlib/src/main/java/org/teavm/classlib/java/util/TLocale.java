@@ -289,4 +289,16 @@ public final class TLocale implements TCloneable, TSerializable {
         }
         return new TString(result.toString().toCharArray());
     }
+
+    public static Locale of(String language, String country, String variant) {
+        return new Locale(language.toLowerCase(), country.toUpperCase(), variant);
+    }
+    
+    public static Locale of(String language, String country) {
+        return new Locale(language.toLowerCase(), country.toUpperCase(), "");
+    }
+
+    public static Locale of(String language) {
+        return new Locale(language.toLowerCase(), "", "");
+    }
 }
