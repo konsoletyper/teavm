@@ -316,7 +316,7 @@ public final class TSystem extends TObject {
 
     public interface Logger {
 
-        public enum Level {
+        enum Level {
             ALL(Integer.MIN_VALUE),
             TRACE(400),
             DEBUG(500),
