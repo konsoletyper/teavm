@@ -18,6 +18,8 @@ package org.teavm.classlib.java.lang;
 import java.lang.reflect.Array;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.function.Supplier;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.backend.c.runtime.Memory;
 import org.teavm.backend.c.runtime.fs.CFileSystem;
@@ -302,5 +304,123 @@ public final class TSystem extends TObject {
     
     public static String getenv(String name) {
         return null;
+    }
+
+    public static Logger getLogger(String name) {
+        return ConsoleLogger.INSTANCE;
+    }
+
+    public static Logger getLogger(String name, ResourceBundle bundle) {
+        return ConsoleLogger.INSTANCE;
+    }
+
+    public interface Logger {
+
+        public enum Level {
+            ALL(Integer.MIN_VALUE),
+            TRACE(400),
+            DEBUG(500),
+            INFO(800),
+            WARNING(900),
+            ERROR(1000),
+            OFF(Integer.MAX_VALUE);
+
+            private final int severity;
+
+            private Level(int severity) {
+                this.severity = severity;
+            }
+
+            public final String getName() {
+                return name();
+            }
+
+            public final int getSeverity() {
+                return severity;
+            }
+        }
+
+        public String getName();
+
+        public boolean isLoggable(Level level);
+
+        public default void log(Level level, String msg) {
+            log(level, (ResourceBundle) null, msg, (Object[]) null);
+        }
+
+        public default void log(Level level, Supplier<String> msgSupplier) {
+            if (isLoggable(level)) {
+                log(level, (ResourceBundle) null, msgSupplier.get(), (Object[]) null);
+            }
+        }
+
+        public default void log(Level level, Object obj) {
+            if (isLoggable(level)) {
+                log(level, (ResourceBundle) null, obj.toString(), (Object[]) null);
+            }
+        }
+
+        public default void log(Level level, String msg, Throwable thrown) {
+            log(level, null, msg, thrown);
+        }
+
+        public default void log(Level level, Supplier<String> msgSupplier, Throwable thrown) {
+            if (isLoggable(level)) {
+                log(level, null, msgSupplier.get(), thrown);
+            }
+        }
+
+        public void log(Level level, ResourceBundle bundle, String msg, Throwable thrown);
+
+        public void log(Level level, ResourceBundle bundle, String format, Object... params);
+    }
+
+    public abstract static class LoggerFinder {
+
+        protected LoggerFinder() {
+        }
+
+        public abstract Logger getLogger(String name, Module module);
+
+        public Logger getLocalizedLogger(String name, ResourceBundle bundle, Module module) {
+            return getLogger(name, module);
+        }
+
+        public static LoggerFinder getLoggerFinder() {
+            return ConsoleLogger.INSTANCE;
+        }
+    }
+
+    private static class ConsoleLogger extends LoggerFinder implements Logger {
+
+        private static final ConsoleLogger INSTANCE = new ConsoleLogger();
+
+        @Override
+        public Logger getLogger(String name, Module module) {
+            return this;
+        }
+
+        @Override
+        public String getName() {
+            return "ConsoleLogger";
+        }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return level.getSeverity() >= Level.INFO.getSeverity();
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle bundle, String msg, Throwable thrown) {
+            System.err.println(level.getName() + ": " + msg);
+            if (thrown != null) {
+                thrown.printStackTrace(System.err);
+            }
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle bundle, String format, Object... params) {
+            log(level, bundle, format, (Throwable) null);
+        }
     }
 }
