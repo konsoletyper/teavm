@@ -340,39 +340,39 @@ public final class TSystem extends TObject {
             }
         }
 
-        public String getName();
+        String getName();
 
-        public boolean isLoggable(Level level);
+        boolean isLoggable(Level level);
 
-        public default void log(Level level, String msg) {
+        default void log(Level level, String msg) {
             log(level, (ResourceBundle) null, msg, (Object[]) null);
         }
 
-        public default void log(Level level, Supplier<String> msgSupplier) {
+        default void log(Level level, Supplier<String> msgSupplier) {
             if (isLoggable(level)) {
                 log(level, (ResourceBundle) null, msgSupplier.get(), (Object[]) null);
             }
         }
 
-        public default void log(Level level, Object obj) {
+        default void log(Level level, Object obj) {
             if (isLoggable(level)) {
                 log(level, (ResourceBundle) null, obj.toString(), (Object[]) null);
             }
         }
 
-        public default void log(Level level, String msg, Throwable thrown) {
+        default void log(Level level, String msg, Throwable thrown) {
             log(level, null, msg, thrown);
         }
 
-        public default void log(Level level, Supplier<String> msgSupplier, Throwable thrown) {
+        default void log(Level level, Supplier<String> msgSupplier, Throwable thrown) {
             if (isLoggable(level)) {
                 log(level, null, msgSupplier.get(), thrown);
             }
         }
 
-        public void log(Level level, ResourceBundle bundle, String msg, Throwable thrown);
+        void log(Level level, ResourceBundle bundle, String msg, Throwable thrown);
 
-        public void log(Level level, ResourceBundle bundle, String format, Object... params);
+        void log(Level level, ResourceBundle bundle, String format, Object... params);
     }
 
     public abstract static class LoggerFinder {
