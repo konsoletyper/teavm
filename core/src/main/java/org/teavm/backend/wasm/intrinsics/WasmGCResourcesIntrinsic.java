@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
@@ -43,6 +42,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class WasmGCResourcesIntrinsic implements WasmGCInlineIntrinsic {
     private Properties properties;
@@ -78,13 +78,14 @@ public class WasmGCResourcesIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "acquireResources":
                 acquireResources(builder);
                 break;
             case "readSingleByte":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.loadI32(1, 0, WasmInt32Subtype.UINT8);
                 break;
         }

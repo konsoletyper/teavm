@@ -15,25 +15,51 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.Expr;
-import org.teavm.backend.wasm.generate.TemporaryVariablePool;
-import org.teavm.backend.wasm.generate.ValueCache;
-import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
+import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 
 public interface WasmGCInlineIntrinsicContext {
-    void generate(WasmInstructionBuilder builder, Expr expr);
+    WasmLocal mapToLocal(Variable variable);
 
-    PreciseTypeInference types();
-
-    TemporaryVariablePool tempVars();
-
-    ValueCache valueCache();
+    WasmLocal newWasmLocal(WasmType type);
 
     boolean isAsync();
 
     boolean isAsyncMethod(MethodReference method);
 
     MethodReference currentMethod();
+
+    Program currentProgram();
+
+    PreciseTypeInference types();
+
+    /**
+     * Returns instruction that defines the given variable, following chains of assignments.
+     * Returns {@code null} if variable is not defined by an instruction (e.g. it's a parameter or a phi).
+     */
+    Instruction definition(Variable variable);
+
+    /**
+     * Returns type of the class literal assigned to the given variable, or {@code null} if variable is not
+     * a class literal.
+     */
+    default ValueType classConstant(Variable variable) {
+        return definition(variable) instanceof ClassConstantInstruction cst ? cst.getConstant() : null;
+    }
+
+    /**
+     * Returns value of the string literal assigned to the given variable, or {@code null} if variable is not
+     * a string literal.
+     */
+    default String stringConstant(Variable variable) {
+        return definition(variable) instanceof StringConstantInstruction cst ? cst.getConstant() : null;
+    }
 }

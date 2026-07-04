@@ -136,6 +136,7 @@ final class TeaVMTestExecutionSupport {
                 var compileResult = castPlatform.compile(singleTestEntryPoint(method, testClass, plan), "test",
                         castConfig, outputPath, method);
                 if (!compileResult.success) {
+                    platform.additionalSingleTestOutput(outputPath, configuration, reference);
                     throw compileResult.throwable != null
                             ? compileResult.throwable
                             : new AssertionError(compileResult.errorMessage);
@@ -195,6 +196,7 @@ final class TeaVMTestExecutionSupport {
                 var compileResult = castPlatform.compile(wholeClassEntryPoint(methods, platform.getPlatform(),
                         configuration, testClass, runs, ignored, plans), "classTest", castConfig, path, testClass);
                 if (!compileResult.success) {
+                    platform.additionalOutput(path, configuration);
                     throw compileResult.throwable != null
                             ? compileResult.throwable
                             : new AssertionError(compileResult.errorMessage);

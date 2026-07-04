@@ -15,13 +15,13 @@
  */
 package org.teavm.backend.wasm.intrinsics.reflection;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class FieldInfoIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -31,32 +31,30 @@ public class FieldInfoIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var infoStruct = classInfoProvider.reflectionTypes().fieldInfo();
         switch (invocation.getMethod().getName()) {
             case "name":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.nameIndex());
                 break;
             case "modifiers":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.modifiersIndex());
                 break;
             case "type":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.typeIndex());
                 break;
             case "read": {
                 // Stack: [rawReader, obj, readerConverter] → callReference → Object
-                context.generate(builder, invocation.getArguments().get(0));
-                var cachedFieldInfo = context.valueCache().create(infoStruct.structure().getReference(), builder);
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.readerIndex());
-                context.generate(builder, invocation.getArguments().get(1));
-                cachedFieldInfo.emit(builder);
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.readerConverterIndex())
                         .callReference(infoStruct.readerConverterType());
-                cachedFieldInfo.release();
                 break;
             }
             case "readAsBoolean":
@@ -79,7 +77,7 @@ public class FieldInfoIntrinsic implements WasmGCInlineIntrinsic {
                 generateWrite(invocation, context, builder);
                 break;
             case "reflection":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.reflectionIndex());
                 break;
             default:
@@ -87,19 +85,19 @@ public class FieldInfoIntrinsic implements WasmGCInlineIntrinsic {
         }
     }
 
-    private void generatePrimitiveRead(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    private void generatePrimitiveRead(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder, WasmType rawWasmType) {
         var infoStruct = classInfoProvider.reflectionTypes().fieldInfo();
         // Stack: [obj, rawReader(cast)] → callReference → rawValue
-        context.generate(builder, invocation.getArguments().get(1));
-        context.generate(builder, invocation.getArguments().get(0));
+        builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
+        builder.getLocal(context.mapToLocal(invocation.getInstance()));
         var readerType = infoStruct.rawReaderFunctionType(rawWasmType);
         builder.structGet(infoStruct.structure(), infoStruct.readerIndex())
                 .cast(readerType.getReference())
                 .callReference(readerType);
     }
 
-    private void generateWrite(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    private void generateWrite(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var infoStruct = classInfoProvider.reflectionTypes().fieldInfo();
         var valueParamType = invocation.getMethod().parameterType(1);
@@ -112,9 +110,9 @@ public class FieldInfoIntrinsic implements WasmGCInlineIntrinsic {
                 case FLOAT -> WasmType.FLOAT32;
                 case DOUBLE -> WasmType.FLOAT64;
             };
-            context.generate(builder, invocation.getArguments().get(1));
-            context.generate(builder, invocation.getArguments().get(2));
-            context.generate(builder, invocation.getArguments().get(0));
+            builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
+            builder.getLocal(context.mapToLocal(invocation.getArguments().get(1)));
+            builder.getLocal(context.mapToLocal(invocation.getInstance()));
             var writerType = infoStruct.rawWriterFunctionType(rawWasmType);
             builder.structGet(infoStruct.structure(), infoStruct.writerIndex())
                     .cast(writerType.getReference())
@@ -122,15 +120,13 @@ public class FieldInfoIntrinsic implements WasmGCInlineIntrinsic {
         } else {
             // Generic Object write: use the writerConverter which handles unboxing internally
             // Stack: [rawWriter, obj, boxedValue, writerConverter] → callReference → void
-            context.generate(builder, invocation.getArguments().get(0));
-            var cachedFieldInfo = context.valueCache().create(infoStruct.structure().getReference(), builder);
+            builder.getLocal(context.mapToLocal(invocation.getInstance()));
             builder.structGet(infoStruct.structure(), infoStruct.writerIndex());
-            context.generate(builder, invocation.getArguments().get(1));
-            context.generate(builder, invocation.getArguments().get(2));
-            cachedFieldInfo.emit(builder);
+            builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
+            builder.getLocal(context.mapToLocal(invocation.getArguments().get(1)));
+            builder.getLocal(context.mapToLocal(invocation.getInstance()));
             builder.structGet(infoStruct.structure(), infoStruct.writerConverterIndex())
                     .callReference(infoStruct.writerConverterType());
-            cachedFieldInfo.release();
         }
     }
 }

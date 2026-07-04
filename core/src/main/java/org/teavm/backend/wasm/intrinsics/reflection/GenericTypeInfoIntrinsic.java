@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.intrinsics.reflection;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
@@ -29,6 +28,7 @@ import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.MethodReference;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.runtime.reflect.GenericTypeInfo;
 
 public class GenericTypeInfoIntrinsic implements WasmGCInlineIntrinsic {
@@ -47,32 +47,32 @@ public class GenericTypeInfoIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var reflectionTypes = classInfoProvider.reflectionTypes();
         switch (invocation.getMethod().getName()) {
             case "kind":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.call(getKindFunction());
                 break;
             case "asParameterizedType":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.cast(reflectionTypes.parameterizedTypeInfo().structure().getReference());
                 break;
             case "asTypeVariable":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.cast(reflectionTypes.typeVariableReference().structure().getReference());
                 break;
             case "asGenericArray":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.cast(reflectionTypes.genericArrayInfo().structure().getReference());
                 break;
             case "asWildcard":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.cast(reflectionTypes.wildcardTypeInfo().structure().getReference());
                 break;
             case "asRawType":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.cast(reflectionTypes.derivedClassInfo().structure().getReference());
                 break;
             default:

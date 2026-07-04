@@ -17,13 +17,13 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.MethodReference;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class MethodInfoIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -33,47 +33,47 @@ public class MethodInfoIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var infoStruct = classInfoProvider.reflectionTypes().methodInfo();
         switch (invocation.getMethod().getName()) {
             case "name":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.nameIndex());
                 break;
             case "modifiers":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.modifiersIndex());
                 break;
             case "returnType":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.returnTypeIndex());
                 break;
             case "parameterCount":
                 WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
-                    context.generate(b, invocation.getArguments().get(0));
+                    b.getLocal(context.mapToLocal(invocation.getInstance()));
                     b.structGet(infoStruct.structure(), infoStruct.parameterTypesIndex());
                 });
                 break;
             case "parameterType": {
                 var paramsType = classInfoProvider.reflectionTypes().derivedClassInfo().array();
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.parameterTypesIndex());
-                context.generate(builder, invocation.getArguments().get(1));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.arrayGet(paramsType);
                 break;
             }
             case "checkedExceptionCount":
                 WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
-                    context.generate(b, invocation.getArguments().get(0));
+                    b.getLocal(context.mapToLocal(invocation.getInstance()));
                     b.structGet(infoStruct.structure(), infoStruct.checkedExceptionTypesIndex());
                 });
                 break;
             case "checkedExceptionType": {
                 var exceptionTypesArray = classInfoProvider.reflectionTypes().classInfo().array();
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.checkedExceptionTypesIndex());
-                context.generate(builder, invocation.getArguments().get(1));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.arrayGet(exceptionTypesArray);
                 break;
             }
@@ -82,15 +82,15 @@ public class MethodInfoIntrinsic implements WasmGCInlineIntrinsic {
                         Object[].class, Object.class));
                 isAsync |= context.isAsyncMethod(new MethodReference(Constructor.class, "newInstance",
                         Object[].class, Object.class));
-                context.generate(builder, invocation.getArguments().get(1));
-                context.generate(builder, invocation.getArguments().get(2));
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(1)));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.callerIndex())
                         .callReference(infoStruct.callerType(), isAsync);
                 break;
             }
             case "reflection":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(infoStruct.structure(), infoStruct.reflectionIndex());
                 break;
             default:

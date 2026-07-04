@@ -15,8 +15,6 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import java.util.Set;
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.model.WasmNumType;
@@ -25,11 +23,9 @@ import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmIntUnaryOperation;
 import org.teavm.model.MethodReference;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class IntNumIntrinsic implements WasmGCInlineIntrinsic {
-    static final Set<String> METHODS = Set.of("divideUnsigned", "remainderUnsigned", "compareUnsigned",
-            "numberOfLeadingZeros", "numberOfTrailingZeros", "bitCount");
-
     private final MethodReference compareUnsigned;
     private final WasmIntType wasmType;
     private final BaseWasmFunctionRepository functions;
@@ -41,36 +37,36 @@ public class IntNumIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "divideUnsigned":
-                context.generate(builder, invocation.getArguments().get(0));
-                context.generate(builder, invocation.getArguments().get(1));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)))
+                        .getLocal(context.mapToLocal(invocation.getArguments().get(1)));
                 builder.intBinary(wasmType, WasmIntBinaryOperation.DIV_UNSIGNED);
                 break;
             case "remainderUnsigned":
-                context.generate(builder, invocation.getArguments().get(0));
-                context.generate(builder, invocation.getArguments().get(1));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)))
+                        .getLocal(context.mapToLocal(invocation.getArguments().get(1)));
                 builder.intBinary(wasmType, WasmIntBinaryOperation.REM_UNSIGNED);
                 break;
             case "compareUnsigned":
-                context.generate(builder, invocation.getArguments().get(0));
-                context.generate(builder, invocation.getArguments().get(1));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)))
+                        .getLocal(context.mapToLocal(invocation.getArguments().get(1)));
                 builder.call(functions.forStaticMethod(compareUnsigned));
                 break;
             case "numberOfLeadingZeros":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.intUnary(wasmType, WasmIntUnaryOperation.CLZ);
                 castToInt(builder);
                 break;
             case "numberOfTrailingZeros":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.intUnary(wasmType, WasmIntUnaryOperation.CTZ);
                 castToInt(builder);
                 break;
             case "bitCount":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.intUnary(wasmType, WasmIntUnaryOperation.POPCNT);
                 castToInt(builder);
                 break;

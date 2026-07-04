@@ -15,6 +15,7 @@
  */
 package org.teavm.flow;
 
+import com.carrotsearch.hppc.IntArrayList;
 import com.carrotsearch.hppc.sorting.IndirectSort;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +39,12 @@ public class FlowReconstruction {
     private LoopGraph loopGraph;
     private int[] nodeOrder;
     private int[] nodeIndexes;
+    // For each loop head node: position in nodeOrder right after the end of the loop, -1 if node is not a loop head
     private int[] loopEnds;
+    // For each position: position of the head of the innermost loop range containing it, -1 if none
+    private int[] innermostLoop;
+    // For each position of loop head: position of the head of the enclosing loop range, -1 if none
+    private int[] parentLoop;
     private int[][] forwardBlocks;
     private TryCatchInfo currentTryCatch;
     private int currentIndex;
@@ -71,6 +77,8 @@ public class FlowReconstruction {
         nodeOrder = null;
         nodeIndexes = null;
         loopEnds = null;
+        innermostLoop = null;
+        parentLoop = null;
         forwardBlocks = null;
 
         return result;
@@ -124,7 +132,7 @@ public class FlowReconstruction {
         private void reconstructLoop() {
             var node = nodeOrder[currentIndex];
             var loop = new FlowTreeNode.Loop(program.basicBlockAt(node));
-            reconstructRange(loop.body, nodeIndexes[loopEnds[node]]);
+            reconstructRange(loop.body, loopEnds[node]);
             var commonTryCatch = commonTryCatch(localTryCatch, currentTryCatch);
             closeTryCatches(commonTryCatch);
             target.add(loop);
@@ -178,8 +186,9 @@ public class FlowReconstruction {
             } else {
                 while (localTryCatch != commonTryCatch) {
                     if (tryCatchLevels.isEmpty()) {
-                        var containingTryCatchNode = new FlowTreeNode.TryCatch(localTryCatch.handler,
-                                localTryCatch.exceptionType);
+                        var containingTryCatchNode = new FlowTreeNode.TryCatch(
+                                program.basicBlockAt(nodeOrder[currentIndex]),
+                                localTryCatch.handler, localTryCatch.exceptionType);
                         containingTryCatchNode.tryBody.addAll(target);
                         target.clear();
                         target.add(containingTryCatchNode);
@@ -201,7 +210,8 @@ public class FlowReconstruction {
             tryCatchLevels.add(target);
             FlowTreeNode.TryCatch firstCreatedTryCatchNode = null;
             while (tryCatch != localTryCatch) {
-                var newTryCatchNode = new FlowTreeNode.TryCatch(tryCatch.handler, tryCatch.exceptionType);
+                var newTryCatchNode = new FlowTreeNode.TryCatch(program.basicBlockAt(nodeOrder[currentIndex]),
+                        tryCatch.handler, tryCatch.exceptionType);
                 if (currentTryCatchNode != null) {
                     newTryCatchNode.tryBody.add(currentTryCatchNode);
                     tryCatchLevels.add(newTryCatchNode.tryBody);
@@ -348,24 +358,43 @@ public class FlowReconstruction {
         return result;
     }
 
+    // Loop occupies range of positions from its head to its last node. Note that this range may contain
+    // nodes which do not belong to the loop (i.e. those which exit loop and never return to loop head),
+    // for example, in `while (true) { A; if (c) { B; break; } C }` node B may be placed between A and C.
+    // That's fine, since such nodes never jump back to loop nodes.
     private int[] findLoopEnds() {
-        var result = new int[nodeOrder.length];
+        var result = new int[program.basicBlockCount()];
         Arrays.fill(result, -1);
-        Loop previousLoop = null;
         for (var i = 0; i < nodeOrder.length; ++i) {
             var node = nodeOrder[i];
-            var loop = loopGraph.loopAt(node);
-            if (loop != previousLoop) {
-                if (previousLoop != null && (loop == null || !loop.isChildOf(previousLoop))) {
-                    result[previousLoop.getHead()] = node;
-                }
-                previousLoop = loop;
-            } else if (hasSuccessor(cfg.outgoingEdges(node), node)) {
-                result[node] = i + 1 < nodeOrder.length ? nodeOrder[i + 1] : nodeOrder.length;
+            for (var loop = loopGraph.loopAt(node); loop != null; loop = loop.getParent()) {
+                result[loop.getHead()] = i + 1;
+            }
+            if (hasSuccessor(cfg.outgoingEdges(node), node)) {
+                result[node] = Math.max(result[node], i + 1);
             }
         }
-        if (previousLoop != null) {
-            result[previousLoop.getHead()] = nodeOrder.length;
+
+        // Compute nesting of loop ranges. Enclosing range is extended if necessary to cover nested range,
+        // so that loop ranges never intersect
+        innermostLoop = new int[nodeOrder.length];
+        parentLoop = new int[nodeOrder.length];
+        Arrays.fill(parentLoop, -1);
+        var stack = new IntArrayList();
+        for (var i = 0; i < nodeOrder.length; ++i) {
+            while (!stack.isEmpty() && result[nodeOrder[stack.get(stack.size() - 1)]] <= i) {
+                stack.removeAt(stack.size() - 1);
+            }
+            var node = nodeOrder[i];
+            if (result[node] >= 0) {
+                var parent = stack.isEmpty() ? -1 : stack.get(stack.size() - 1);
+                parentLoop[i] = parent;
+                for (var p = parent; p >= 0 && result[nodeOrder[p]] < result[node]; p = parentLoop[p]) {
+                    result[nodeOrder[p]] = result[node];
+                }
+                stack.add(i);
+            }
+            innermostLoop[i] = stack.isEmpty() ? -1 : stack.get(stack.size() - 1);
         }
         return result;
     }
@@ -381,8 +410,8 @@ public class FlowReconstruction {
 
     private int[][] findRanges() {
         // Step 1. For each node B calculate the most early node A (in ordering) so that A jumps to B
-        // Additionally, take loops into account. That is, in case there's a jump from *any* node in loop L,
-        // we replace node A with head(L).
+        // Additionally, take loops into account. That is, in case there's a jump from *any* node in range of
+        // loop L to a node beyond this range, we replace node A with head(L).
         var startPositions = new int[nodeOrder.length];
         for (var i = 0; i < nodeOrder.length; ++i) {
             startPositions[i] = i * 2 + 1;
@@ -401,16 +430,13 @@ public class FlowReconstruction {
                 targets.add(tryCatch.getHandler());
             }
             if (!targets.isEmpty()) {
-                var nodeLoop = loopGraph.loopAt(node);
                 for (var target : targets) {
                     var targetIndex = nodeIndexes[target.getIndex()];
                     if (targetIndex > i + 1) {
                         var sourceIndex = i * 2 + 1;
-                        var targetLoop = loopGraph.loopAt(target.getIndex());
-                        var loop = nodeLoop;
-                        while (loop != targetLoop) {
-                            sourceIndex = nodeIndexes[loop.getHead()] * 2;
-                            loop = loop.getParent();
+                        for (var loop = innermostLoop[i]; loop >= 0 && targetIndex >= loopEnds[nodeOrder[loop]];
+                                loop = parentLoop[loop]) {
+                            sourceIndex = loop * 2;
                         }
                         if (sourceIndex < startPositions[targetIndex]) {
                             startPositions[targetIndex] = sourceIndex;
@@ -452,7 +478,7 @@ public class FlowReconstruction {
 
         // Step 4. Initialize range end nodes for each starting node
         var result = new int[nodeOrder.length * 2][];
-        for (var i = 0; i < nodeOrder.length; ++i) {
+        for (var i = 0; i < result.length; ++i) {
             var count = rangeCount[i];
             if (count > 0) {
                 result[i] = new int[count];
@@ -484,7 +510,7 @@ public class FlowReconstruction {
         }
         while (index > 0) {
             var tryCatchBlock = block.getTryCatchBlocks().get(block.getTryCatchBlocks().size() - index);
-            if (tryCatchBlock.getExceptionType().equals(currentTryCatch.exceptionType)
+            if (Objects.equals(tryCatchBlock.getExceptionType(), currentTryCatch.exceptionType)
                     && tryCatchBlock.getHandler() == currentTryCatch.handler) {
                 break;
             }

@@ -15,28 +15,26 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class HeapIntrinsic implements WasmGCInlineIntrinsic {
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
-        var pagesVar = context.tempVars().acquire(WasmType.INT32);
+        var pagesVar = context.newWasmLocal(WasmType.INT32);
 
-        context.generate(builder, invocation.getArguments().get(0));
+        builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
         builder.i32Const(1).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB)
                 .i32Const(WasmGeneratorUtil.PAGE_SIZE).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.DIV_UNSIGNED)
                 .i32Const(1).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD)
-                .setLocal(pagesVar)
-                .getLocal(pagesVar).memoryGrow().drop()
+                .teeLocal(pagesVar)
+                .memoryGrow().drop()
                 .getLocal(pagesVar).i32Const(WasmGeneratorUtil.PAGE_SIZE)
                 .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL);
-
-        context.tempVars().release(pagesVar);
     }
 }

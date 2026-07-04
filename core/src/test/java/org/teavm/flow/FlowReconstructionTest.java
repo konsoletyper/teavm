@@ -869,6 +869,73 @@ public class FlowReconstructionTest {
         );
     }
 
+    @Test
+    public void loopExitVisitedBeforeOtherLoopNodesInsideLoopRange() {
+        var program = buildProgram(new int[][] {
+                { 1 },
+                { 2, 3 },
+                { 4, 5 },
+                { 5 },
+                { 6 },
+                { 1 },
+                null
+        });
+        assertFlow(
+                program,
+                """
+                0: br 1
+                loop_1: loop
+                  block_5: block
+                    block_3: block
+                      1: br 2 block_3
+                      2: br 4 block_5
+                      4: br 6
+                      6: terminate
+                    end
+                    3: br block_5
+                  end
+                  5: br loop_1
+                end
+                """.stripIndent()
+        );
+    }
+
+    @Test
+    public void loopExitWithMultiplePredecessorsInsideLoopRange() {
+        // while (true) { if (p) { if (c1 || c2) { B; break; } } else { E } F } D
+        var program = buildProgram(new int[][] {
+                { 1 },
+                { 2, 5 },
+                { 3, 4 },
+                { 7 },
+                { 3, 6 },
+                { 6 },
+                { 1 },
+                null
+        });
+        assertFlow(
+                program,
+                """
+                0: br 1
+                loop_1: loop
+                  block_6: block
+                    block_5: block
+                      1: br 2 block_5
+                      block_3: block
+                        2: br block_3 4
+                        4: br block_3 block_6
+                      end
+                      3: br 7
+                      7: terminate
+                    end
+                    5: br block_6
+                  end
+                  6: br loop_1
+                end
+                """.stripIndent()
+        );
+    }
+
     private void assertFlow(Program program, String expected) {
         var flow = new FlowReconstruction().reconstruct(program);
         assertEquals(expected, formatFlow(flow));

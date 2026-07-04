@@ -15,10 +15,10 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.instruction.WasmFloatType;
 import org.teavm.backend.wasm.model.instruction.WasmFloatUnaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class MathUnaryIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmFloatType type;
@@ -30,9 +30,9 @@ public class MathUnaryIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
-        context.generate(builder, invocation.getArguments().get(0));
+        builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
         builder.floatUnary(type, operation);
     }
 }

@@ -100,9 +100,12 @@ import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
+import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
 import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
 
 public class WasmGCInstructionGenerationVisitor implements StatementVisitor, ExprVisitor {
     private static final MethodReference MONITOR_ENTER_SYNC = new MethodReference(Object.class,
@@ -1741,7 +1744,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
     private void generateInvocation(InvocationExpr expr) {
         var csIntrinsic = context.callSiteIntrinsics().getIntrinsic(expr.getMethod());
         if (csIntrinsic != null) {
-            csIntrinsic.apply(expr, intrinsicContext, builder);
+            csIntrinsic.apply(null, intrinsicContext, builder);
             return;
         }
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
@@ -1908,20 +1911,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
     }
 
     private WasmGCInlineIntrinsicContext intrinsicContext = new WasmGCInlineIntrinsicContext() {
-        @Override
-        public void generate(WasmInstructionBuilder builder, Expr expr) {
-            accept(expr, builder);
-        }
-
-        @Override
-        public TemporaryVariablePool tempVars() {
-            return tempVars;
-        }
-
-        @Override
-        public ValueCache valueCache() {
-            return valueCache;
-        }
 
         @Override
         public boolean isAsync() {
@@ -1939,8 +1928,28 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         }
 
         @Override
+        public WasmLocal mapToLocal(Variable variable) {
+            return null;
+        }
+
+        @Override
         public PreciseTypeInference types() {
             return types;
+        }
+
+        @Override
+        public Instruction definition(Variable variable) {
+            return null;
+        }
+
+        @Override
+        public Program currentProgram() {
+            return null;
+        }
+
+        @Override
+        public WasmLocal newWasmLocal(WasmType type) {
+            return null;
         }
     };
 }

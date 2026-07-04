@@ -15,10 +15,10 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.model.MethodReference;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class StringIntrinsic implements WasmGCInlineIntrinsic {
     private WasmGCCodeGenContext codeGenContext;
@@ -28,10 +28,11 @@ public class StringIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context, WasmInstructionBuilder builder) {
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
+            WasmInstructionBuilder builder) {
         var worker = codeGenContext.functions().forStaticMethod(new MethodReference(StringInternPool.class,
                 "query", String.class, String.class));
-        context.generate(builder, invocation.getArguments().get(0));
+        builder.getLocal(context.mapToLocal(invocation.getInstance()));
         builder.call(worker);
     }
 }

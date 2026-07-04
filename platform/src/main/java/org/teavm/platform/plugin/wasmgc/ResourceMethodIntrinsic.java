@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin.wasmgc;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
@@ -23,6 +22,7 @@ import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 class ResourceMethodIntrinsic implements WasmGCInlineIntrinsic {
     private WasmGCTypeMapper typeMapper;
@@ -34,12 +34,12 @@ class ResourceMethodIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var structType = (WasmType.CompositeReference) typeMapper.mapType(
                 ValueType.object(invocation.getMethod().getClassName()));
         var struct = (WasmStructure) structType.composite;
-        context.generate(builder, invocation.getArguments().get(0));
+        builder.getLocal(context.mapToLocal(invocation.getInstance()));
         builder.structGet(struct, fieldIndex);
     }
 }

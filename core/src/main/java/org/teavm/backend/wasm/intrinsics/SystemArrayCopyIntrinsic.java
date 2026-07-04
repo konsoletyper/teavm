@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
@@ -35,6 +34,7 @@ import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class SystemArrayCopyIntrinsic implements WasmGCInlineIntrinsic {
     private ClassHierarchy hierarchy;
@@ -63,7 +63,7 @@ public class SystemArrayCopyIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "arraycopy":
@@ -77,55 +77,44 @@ public class SystemArrayCopyIntrinsic implements WasmGCInlineIntrinsic {
         }
     }
 
-    private void generateArrayCopy(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    private void generateArrayCopy(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         if (!tryGenerateSpecialCase(invocation, context, builder)) {
             for (int i = 0; i < 5; i++) {
-                context.generate(builder, invocation.getArguments().get(i));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(i)));
             }
             builder.call(getDefaultFunction());
         }
     }
 
-    private void generateDoArrayCopy(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    private void generateDoArrayCopy(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var classInfoStruct = classInfoProvider.reflectionTypes().classInfo();
         var objInfo = classInfoProvider.getClassInfo(Object.class.getName());
 
-        context.generate(builder, invocation.getArguments().get(0));
-        var source = context.valueCache().create(objInfo.getType(), builder);
-
-        builder
+        var source = context.mapToLocal(invocation.getArguments().get(0));
+        builder.getLocal(source)
                 .structGet(objInfo.getStructure(), WasmGCClassInfoProvider.VT_FIELD_OFFSET)
                 .structGet(objInfo.getVirtualTableStructure(), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
 
-        var sourceClsCached = context.valueCache().create(classInfoStruct.structure().getReference(), builder);
-        builder.append(source);
-        context.generate(builder, invocation.getArguments().get(1));
-        context.generate(builder, invocation.getArguments().get(2));
-        context.generate(builder, invocation.getArguments().get(3));
-        context.generate(builder, invocation.getArguments().get(4));
-        builder.append(sourceClsCached)
+        var sourceCls = context.newWasmLocal(classInfoStruct.structure().getReference());
+        builder.setLocal(sourceCls);
+        builder.getLocal(source);
+        for (var i = 1; i < 5; ++i) {
+            builder.getLocal(context.mapToLocal(invocation.getArguments().get(i)));
+        }
+        builder.getLocal(sourceCls)
                 .structGet(classInfoStruct.structure(), classInfoStruct.copyArrayIndex())
                 .callReference(classInfoStruct.copyArrayFunctionType());
-
-        source.release();
-        sourceClsCached.release();
     }
 
-    private boolean tryGenerateSpecialCase(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    private boolean tryGenerateSpecialCase(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
-        var sourceArray = invocation.getArguments().get(0);
-        var targetArray = invocation.getArguments().get(2);
-        if (sourceArray.getVariableIndex() < 0 || targetArray.getVariableIndex() < 0) {
-            return false;
-        }
-
-        var sourceType = context.types().typeOf(sourceArray.getVariableIndex());
+        var sourceType = context.types().typeOf(invocation.getArguments().get(0));
         if (sourceType == null || !(sourceType.valueType instanceof ValueType.Array)) {
             return false;
         }
-        var targetType = context.types().typeOf(targetArray.getVariableIndex());
+        var targetType = context.types().typeOf(invocation.getArguments().get(2));
         if (targetType == null || !(targetType.valueType instanceof ValueType.Array)) {
             return false;
         }
@@ -145,14 +134,11 @@ public class SystemArrayCopyIntrinsic implements WasmGCInlineIntrinsic {
         if (context.isAsync()) {
             wasmTargetArrayTypeRef = wasmTargetArrayTypeRef.composite.getReference();
         }
-        context.generate(builder, invocation.getArguments().get(2));
-        builder.structGet(wasmTargetArrayStruct, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
-        var wasmTargetArray = context.valueCache().create(wasmTargetArrayTypeRef, builder);
-        builder.drop();
-
-        context.generate(builder, invocation.getArguments().get(3));
-        var wasmTargetIndex = context.valueCache().create(WasmType.INT32, builder);
-        builder.drop();
+        var wasmTargetArray = context.newWasmLocal(wasmTargetArrayTypeRef);
+        builder.getLocal(context.mapToLocal(invocation.getArguments().get(2)))
+                .structGet(wasmTargetArrayStruct, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
+                .setLocal(wasmTargetArray);
+        var wasmTargetIndex = context.mapToLocal(invocation.getArguments().get(3));
 
         var wasmSourceArrayType = (WasmType.CompositeReference) typeMapper.mapType(
                 ValueType.arrayOf(sourceItemType));
@@ -162,32 +148,21 @@ public class SystemArrayCopyIntrinsic implements WasmGCInlineIntrinsic {
         if (context.isAsync()) {
             wasmSourceArrayTypeRef = wasmSourceArrayTypeRef.composite.getReference();
         }
-        context.generate(builder, invocation.getArguments().get(0));
-        builder.structGet(wasmSourceArrayStruct, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
-        var wasmSourceArray = context.valueCache().create(wasmSourceArrayTypeRef, builder);
-        builder.drop();
+        var wasmSourceArray = context.newWasmLocal(wasmSourceArrayTypeRef);
+        builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)))
+                .structGet(wasmSourceArrayStruct, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
+                .setLocal(wasmSourceArray);
+        var wasmSourceIndex = context.mapToLocal(invocation.getArguments().get(1));
+        var wasmSize = context.mapToLocal(invocation.getArguments().get(4));
 
-        context.generate(builder, invocation.getArguments().get(1));
-        var wasmSourceIndex = context.valueCache().create(WasmType.INT32, builder);
-        builder.drop();
+        builder.getLocal(wasmTargetArray).getLocal(wasmTargetIndex)
+                .getLocal(wasmSourceArray).getLocal(wasmSourceIndex).getLocal(wasmSize)
+                .call(getArgsCheckFunction());
 
-        context.generate(builder, invocation.getArguments().get(4));
-        var wasmSize = context.valueCache().create(WasmType.INT32, builder);
-        builder.drop();
+        builder.getLocal(wasmTargetArray).getLocal(wasmTargetIndex)
+                .getLocal(wasmSourceArray).getLocal(wasmSourceIndex).getLocal(wasmSize)
+                .arrayCopy((WasmArray) wasmTargetArrayTypeRef.composite, (WasmArray) wasmSourceArrayTypeRef.composite);
 
-        builder.append(wasmTargetArray).append(wasmTargetIndex)
-                .append(wasmSourceArray).append(wasmSourceIndex).append(wasmSize);
-        builder.call(getArgsCheckFunction());
-
-        builder.append(wasmTargetArray).append(wasmTargetIndex)
-                .append(wasmSourceArray).append(wasmSourceIndex).append(wasmSize);
-        builder.arrayCopy((WasmArray) wasmTargetArrayTypeRef.composite, (WasmArray) wasmSourceArrayTypeRef.composite);
-
-        wasmTargetArray.release();
-        wasmTargetIndex.release();
-        wasmSourceArray.release();
-        wasmSourceIndex.release();
-        wasmSize.release();
         return true;
     }
 

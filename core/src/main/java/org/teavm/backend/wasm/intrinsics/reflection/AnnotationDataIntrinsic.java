@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.intrinsics.reflection;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
@@ -24,6 +23,7 @@ import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class AnnotationDataIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -38,10 +38,10 @@ public class AnnotationDataIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var dataStruct = classInfoProvider.reflectionTypes().annotationData(annotationClassName);
-        if (invocation.getMethod().getName().equals("constructor") && invocation.getArguments().isEmpty()) {
+        if (invocation.getMethod().getName().equals("constructor") && invocation.getInstance() == null) {
             var fn = dataStruct.constructor();
             fn.setReferenced(true);
             builder.funcRef(fn);
@@ -49,7 +49,7 @@ public class AnnotationDataIntrinsic implements WasmGCInlineIntrinsic {
         }
 
         var field = dataStruct.field(invocation.getMethod().getName());
-        context.generate(builder, invocation.getArguments().get(0));
+        builder.getLocal(context.mapToLocal(invocation.getInstance()));
         WasmSignedType signedType = null;
         if (field.type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) field.type).getKind()) {

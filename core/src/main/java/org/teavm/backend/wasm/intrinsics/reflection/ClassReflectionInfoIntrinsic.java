@@ -16,7 +16,6 @@
 package org.teavm.backend.wasm.intrinsics.reflection;
 
 import java.util.function.ToIntFunction;
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.generate.reflection.ClassReflectionInfoStruct;
@@ -24,6 +23,7 @@ import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class ClassReflectionInfoIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -33,7 +33,7 @@ public class ClassReflectionInfoIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "annotationCount":
@@ -82,22 +82,22 @@ public class ClassReflectionInfoIntrinsic implements WasmGCInlineIntrinsic {
         }
     }
 
-    private void collectionCount(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    private void collectionCount(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder, ToIntFunction<ClassReflectionInfoStruct> fieldIndex) {
         var infoStruct = classInfoProvider.reflectionTypes().classReflectionInfo();
         WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
-            context.generate(b, invocation.getArguments().get(0));
+            b.getLocal(context.mapToLocal(invocation.getInstance()));
             b.structGet(infoStruct.structure(), fieldIndex.applyAsInt(infoStruct));
         });
     }
 
-    private void collectionElement(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    private void collectionElement(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder, WasmArray array,
             ToIntFunction<ClassReflectionInfoStruct> fieldIndex) {
         var infoStruct = classInfoProvider.reflectionTypes().classReflectionInfo();
-        context.generate(builder, invocation.getArguments().get(0));
+        builder.getLocal(context.mapToLocal(invocation.getInstance()));
         builder.structGet(infoStruct.structure(), fieldIndex.applyAsInt(infoStruct));
-        context.generate(builder, invocation.getArguments().get(1));
+        builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
         builder.arrayGet(array);
     }
 }

@@ -15,11 +15,11 @@
  */
 package org.teavm.backend.wasm.intrinsics.reflection;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class AnnotationInfoIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -29,10 +29,10 @@ public class AnnotationInfoIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var annotInfoStruct = classInfoProvider.reflectionTypes().annotationInfo();
-        context.generate(builder, invocation.getArguments().get(0));
+        builder.getLocal(context.mapToLocal(invocation.getInstance()));
         switch (invocation.getMethod().getName()) {
             case "data":
                 builder.structGet(annotInfoStruct.structure(), annotInfoStruct.dataIndex());

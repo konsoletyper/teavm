@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
@@ -27,6 +26,7 @@ import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 class WasmGCJSRuntimeIntrinsic implements WasmGCInlineIntrinsic {
     private WasmGCJsoCommonGenerator commonGen;
@@ -41,13 +41,13 @@ class WasmGCJSRuntimeIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "wrapObject": {
                 var wrapperClass = commonGen.getDefaultWrapperClass();
                 var wrapperFunction = commonGen.javaObjectToJSFunction();
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.getGlobal(wrapperClass);
                 builder.call(wrapperFunction);
                 break;
@@ -56,7 +56,7 @@ class WasmGCJSRuntimeIntrinsic implements WasmGCInlineIntrinsic {
                 var stringCls = classInfoProvider.getClassInfo("java.lang.String");
                 var fieldIndex = classInfoProvider.getFieldIndex(new FieldReference(
                         "java.lang.String", "characters"));
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.structGet(stringCls.getStructure(), fieldIndex);
                 var arrayCls = classInfoProvider.getClassInfo(ValueType.arrayOf(ValueType.CHARACTER));
                 builder.structGet(arrayCls.getStructure(), WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
@@ -67,7 +67,7 @@ class WasmGCJSRuntimeIntrinsic implements WasmGCInlineIntrinsic {
                 var field = arrayCls.getStructure().getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
                 WasmGCGenerationUtil.allocateArray(classInfoProvider, ValueType.CHARACTER, builder,
                         (array, b) -> {
-                            context.generate(b, invocation.getArguments().get(0));
+                            b.getLocal(context.mapToLocal(invocation.getInstance()));
                             b.cast((WasmType.Reference) field.getType().asUnpackedType());
                         });
                 builder.call(functions.forStaticMethod(new MethodReference(String.class, "fromArray",
@@ -79,21 +79,21 @@ class WasmGCJSRuntimeIntrinsic implements WasmGCInlineIntrinsic {
                 var field = arrayCls.getStructure().getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
                 var type = (WasmType.CompositeReference) field.getType().asUnpackedType();
                 var array = (WasmArray) type.composite;
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.arrayNewDefault(array);
                 break;
             }
             case "toNullable":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 break;
             case "put": {
                 var arrayCls = classInfoProvider.getClassInfo(ValueType.arrayOf(ValueType.CHARACTER));
                 var field = arrayCls.getStructure().getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
                 var type = (WasmType.CompositeReference) field.getType().asUnpackedType();
                 var array = (WasmArray) type.composite;
-                context.generate(builder, invocation.getArguments().get(0));
-                context.generate(builder, invocation.getArguments().get(1));
-                context.generate(builder, invocation.getArguments().get(2));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(1)));
                 builder.arraySet(array);
                 break;
             }

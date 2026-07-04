@@ -15,13 +15,13 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.jso.impl.JSBodyEmitter;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 class WasmGCJSBodyIntrinsic implements WasmGCInlineIntrinsic {
     private JSBodyEmitter emitter;
@@ -39,15 +39,22 @@ class WasmGCJSBodyIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         if (global == null) {
             global = commonGen.addJSBody(emitter, inlined);
         }
-        var caller = jsFunctions.getFunctionCaller(invocation.getArguments().size());
+        var argCount = invocation.getArguments().size();
+        if (invocation.getInstance() != null) {
+            argCount++;
+        }
+        var caller = jsFunctions.getFunctionCaller(argCount);
         builder.getGlobal(global);
+        if (invocation.getInstance() != null) {
+            builder.getLocal(context.mapToLocal(invocation.getInstance()));
+        }
         for (var arg : invocation.getArguments()) {
-            context.generate(builder, arg);
+            builder.getLocal(context.mapToLocal(arg));
         }
         builder.call(caller);
         if (invocation.getMethod().getReturnType() == ValueType.VOID) {

@@ -18,7 +18,6 @@ package org.teavm.backend.wasm.intrinsics.reflection;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashSet;
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.intrinsics.WasmGCCodeGenContext;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
@@ -26,6 +25,7 @@ import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.reflect.ClassInfo;
 
@@ -42,14 +42,14 @@ public class ProxyIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "registerProxyClasses":
                 registerProxyClasses(builder);
                 break;
             case "wrapDependency":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 break;
         }
     }

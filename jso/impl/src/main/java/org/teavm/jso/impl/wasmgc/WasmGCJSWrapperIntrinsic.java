@@ -18,7 +18,6 @@ package org.teavm.jso.impl.wasmgc;
 import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
 import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
 import static org.teavm.jso.impl.JSMethods.OBJECT;
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
@@ -31,6 +30,7 @@ import org.teavm.backend.wasm.model.instruction.WasmExternConversionType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 class WasmGCJSWrapperIntrinsic implements WasmGCInlineIntrinsic {
     private WasmGCTypeMapper typeMapper;
@@ -49,16 +49,16 @@ class WasmGCJSWrapperIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "wrap": {
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.call(getWrapFunction());
                 break;
             }
             case "isJava": {
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.externConvert(WasmExternConversionType.EXTERN_TO_ANY);
                 var objectType = (WasmType.Reference) typeMapper.mapType(ValueType.parse(Object.class));
                 builder.test(objectType);

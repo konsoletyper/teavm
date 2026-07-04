@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin.wasmgc;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
@@ -23,6 +22,7 @@ import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.platform.metadata.ResourceArray;
 
 public class WasmGCResourceArrayIntrinsic implements WasmGCInlineIntrinsic {
@@ -33,16 +33,16 @@ public class WasmGCResourceArrayIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "size":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.arrayLength();
                 break;
             case "get":
-                context.generate(builder, invocation.getArguments().get(0));
-                context.generate(builder, invocation.getArguments().get(1));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.arrayGet(getArrayType());
                 break;
             default:

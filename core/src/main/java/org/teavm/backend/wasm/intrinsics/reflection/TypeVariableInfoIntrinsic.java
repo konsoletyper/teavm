@@ -15,12 +15,12 @@
  */
 package org.teavm.backend.wasm.intrinsics.reflection;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmGCInlineIntrinsicContext;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class TypeVariableInfoIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -30,25 +30,25 @@ public class TypeVariableInfoIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var struct = classInfoProvider.reflectionTypes().typeVariableInfo();
         switch (invocation.getMethod().getName()) {
             case "name":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(struct.structure(), struct.nameIndex());
                 break;
             case "boundCount":
                 WasmGCGenerationUtil.getArrayLengthOfNullable(builder, b -> {
-                    context.generate(b, invocation.getArguments().get(0));
+                    b.getLocal(context.mapToLocal(invocation.getInstance()));
                     b.structGet(struct.structure(), struct.boundsIndex());
                 });
                 break;
             case "bound": {
                 var array = classInfoProvider.reflectionTypes().genericTypeArray();
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(struct.structure(), struct.boundsIndex());
-                context.generate(builder, invocation.getArguments().get(1));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
                 builder.arrayGet(array);
                 break;
             }

@@ -15,14 +15,13 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.ConstantExpr;
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class StructureIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -32,28 +31,28 @@ public class StructureIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "toAddress":
             case "cast":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 break;
             case "sizeOf": {
-                var type = (ValueType.Object) ((ConstantExpr) invocation.getArguments().get(0)).getValue();
+                var type = (ValueType.Object) context.classConstant(invocation.getArguments().get(0));
                 builder.i32Const(classInfoProvider.getHeapSize(type.getClassName()));
                 break;
             }
             case "add": {
-                var type = ((ConstantExpr) invocation.getArguments().get(0)).getValue();
+                var type = context.classConstant(invocation.getArguments().get(0));
                 var className = ((ValueType.Object) type).getClassName();
                 int size = classInfoProvider.getHeapSize(className);
                 int alignment = classInfoProvider.getHeapAlignment(className);
                 size = WasmGeneratorUtil.align(size, alignment);
 
-                context.generate(builder, invocation.getArguments().get(1));
-                context.generate(builder, invocation.getArguments().get(2));
-                builder.i32Const(size).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL)
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(1)))
+                        .getLocal(context.mapToLocal(invocation.getArguments().get(2)))
+                        .i32Const(size).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL)
                         .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD);
                 break;
             }

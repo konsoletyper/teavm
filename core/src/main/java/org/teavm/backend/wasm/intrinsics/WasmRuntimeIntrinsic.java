@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmFloatBinaryOperation;
@@ -23,10 +22,11 @@ import org.teavm.backend.wasm.model.instruction.WasmFloatType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class WasmRuntimeIntrinsic implements WasmGCInlineIntrinsic {
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
             case "lt":
@@ -59,11 +59,11 @@ public class WasmRuntimeIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     private static void comparison(WasmIntBinaryOperation intOp, WasmFloatBinaryOperation floatOp,
-            InvocationExpr invocation, WasmGCInlineIntrinsicContext context, WasmInstructionBuilder builder) {
+            InvokeInstruction invocation, WasmGCInlineIntrinsicContext context, WasmInstructionBuilder builder) {
         var type = (WasmType.Number) WasmGeneratorUtil.mapType(invocation.getMethod().parameterType(0));
 
-        context.generate(builder, invocation.getArguments().get(0));
-        context.generate(builder, invocation.getArguments().get(1));
+        builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
+        builder.getLocal(context.mapToLocal(invocation.getArguments().get(1)));
 
         switch (type.number) {
             case INT32:

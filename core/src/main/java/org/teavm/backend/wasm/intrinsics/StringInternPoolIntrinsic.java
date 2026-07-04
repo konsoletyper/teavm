@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
@@ -26,6 +25,7 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 
 class StringInternPoolIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
@@ -44,28 +44,22 @@ class StringInternPoolIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         var entryStruct = classInfoProvider.getClassInfo(StringInternPool.class.getName() + "$Entry")
                 .getStructure();
         switch (invocation.getMethod().getName()) {
             case "getValue":
-                context.generate(builder, invocation.getArguments().get(0));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.structGet(entryStruct, WasmGCClassInfoProvider.STRING_POOL_ENTRY_OFFSET);
                 builder.call(createDerefFunction());
                 break;
             case "setValue": {
-                context.generate(builder, invocation.getArguments().get(0));
-                var instance = context.valueCache().create(entryStruct.getReference(), builder);
-                builder.drop();
-
-                builder.append(instance);
-                context.generate(builder, invocation.getArguments().get(1));
-                builder.append(instance);
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
+                builder.getLocal(context.mapToLocal(invocation.getArguments().get(0)));
+                builder.getLocal(context.mapToLocal(invocation.getInstance()));
                 builder.call(createRefFunction());
                 builder.structSet(entryStruct, WasmGCClassInfoProvider.STRING_POOL_ENTRY_OFFSET);
-
-                instance.release();
                 break;
             }
             default:

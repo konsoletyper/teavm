@@ -19,6 +19,7 @@ import org.teavm.ast.OperationType;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.util.VariableType;
 
 public final class WasmGeneratorUtil {
@@ -39,6 +40,15 @@ public final class WasmGeneratorUtil {
                 return WasmNumType.FLOAT64;
         }
         throw new IllegalArgumentException(type.toString());
+    }
+
+    public static WasmNumType mapType(NumericOperandType type) {
+        return switch (type) {
+            case INT -> WasmNumType.INT32;
+            case LONG -> WasmNumType.INT64;
+            case FLOAT -> WasmNumType.FLOAT32;
+            case DOUBLE -> WasmNumType.FLOAT64;
+        };
     }
 
     public static WasmType mapType(ValueType type) {
