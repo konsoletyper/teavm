@@ -178,8 +178,9 @@ public class FlowReconstruction {
             } else {
                 while (localTryCatch != commonTryCatch) {
                     if (tryCatchLevels.isEmpty()) {
-                        var containingTryCatchNode = new FlowTreeNode.TryCatch(localTryCatch.handler,
-                                localTryCatch.exceptionType);
+                        var containingTryCatchNode = new FlowTreeNode.TryCatch(
+                                program.basicBlockAt(nodeOrder[currentIndex]),
+                                localTryCatch.handler, localTryCatch.exceptionType);
                         containingTryCatchNode.tryBody.addAll(target);
                         target.clear();
                         target.add(containingTryCatchNode);
@@ -201,7 +202,8 @@ public class FlowReconstruction {
             tryCatchLevels.add(target);
             FlowTreeNode.TryCatch firstCreatedTryCatchNode = null;
             while (tryCatch != localTryCatch) {
-                var newTryCatchNode = new FlowTreeNode.TryCatch(tryCatch.handler, tryCatch.exceptionType);
+                var newTryCatchNode = new FlowTreeNode.TryCatch(program.basicBlockAt(nodeOrder[currentIndex]),
+                        tryCatch.handler, tryCatch.exceptionType);
                 if (currentTryCatchNode != null) {
                     newTryCatchNode.tryBody.add(currentTryCatchNode);
                     tryCatchLevels.add(newTryCatchNode.tryBody);
@@ -407,10 +409,17 @@ public class FlowReconstruction {
                     if (targetIndex > i + 1) {
                         var sourceIndex = i * 2 + 1;
                         var targetLoop = loopGraph.loopAt(target.getIndex());
-                        var loop = nodeLoop;
-                        while (loop != targetLoop) {
-                            sourceIndex = nodeIndexes[loop.getHead()] * 2;
-                            loop = loop.getParent();
+                        // TODO: I believe it's not correct condition
+                        // We never jump *into* the loop
+                        // We can jump from within loop out of the loop, but then
+                        // get right into adjacent's loop head.
+                        // This condition does not handle this properly.
+                        if (nodeLoop != null && nodeLoop.isChildOf(targetLoop)) {
+                            var loop = nodeLoop;
+                            while (loop != targetLoop) {
+                                sourceIndex = nodeIndexes[loop.getHead()] * 2;
+                                loop = loop.getParent();
+                            }
                         }
                         if (sourceIndex < startPositions[targetIndex]) {
                             startPositions[targetIndex] = sourceIndex;
@@ -452,7 +461,7 @@ public class FlowReconstruction {
 
         // Step 4. Initialize range end nodes for each starting node
         var result = new int[nodeOrder.length * 2][];
-        for (var i = 0; i < nodeOrder.length; ++i) {
+        for (var i = 0; i < result.length; ++i) {
             var count = rangeCount[i];
             if (count > 0) {
                 result[i] = new int[count];
@@ -484,7 +493,7 @@ public class FlowReconstruction {
         }
         while (index > 0) {
             var tryCatchBlock = block.getTryCatchBlocks().get(block.getTryCatchBlocks().size() - index);
-            if (tryCatchBlock.getExceptionType().equals(currentTryCatch.exceptionType)
+            if (Objects.equals(tryCatchBlock.getExceptionType(), currentTryCatch.exceptionType)
                     && tryCatchBlock.getHandler() == currentTryCatch.handler) {
                 break;
             }

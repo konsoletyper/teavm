@@ -121,6 +121,22 @@ public class WasmInstructionList implements Iterable<WasmInstruction> {
         }
     }
 
+    public void insertAfter(WasmInstruction insn, WasmInstruction after) {
+        if (after == null) {
+            addFirst(insn);
+        } else {
+            after.insertNext(insn);
+        }
+    }
+
+    public void insertAfter(WasmInstructionList insn, WasmInstruction after) {
+        if (after == null) {
+            addFirst(insn);
+        } else {
+            after.insertNext(insn);
+        }
+    }
+
     @Override
     public Iterator<WasmInstruction> iterator() {
         return new Iterator<>() {

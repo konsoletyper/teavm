@@ -32,11 +32,13 @@ public abstract sealed class FlowTreeNode {
     }
 
     public static final class TryCatch extends FlowTreeNode {
+        public final BasicBlock blockAfter;
         public final List<FlowTreeNode> tryBody = new ArrayList<>();
         public final BasicBlock catchBlock;
         public final String exceptionType;
 
-        public TryCatch(BasicBlock catchBlock, String exceptionType) {
+        public TryCatch(BasicBlock blockAfter, BasicBlock catchBlock, String exceptionType) {
+            this.blockAfter = blockAfter;
             this.catchBlock = catchBlock;
             this.exceptionType = exceptionType;
         }

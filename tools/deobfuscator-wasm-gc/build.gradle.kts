@@ -49,7 +49,7 @@ val generateWasm by tasks.register<JavaExec>("generateWasm") {
 }
 
 tasks.withType<Jar> {
-    dependsOn(generateWasm)
+    //dependsOn(generateWasm)
     from(layout.buildDirectory.dir("teavm"))
     include("**/*.wasm")
     includeEmptyDirs = false

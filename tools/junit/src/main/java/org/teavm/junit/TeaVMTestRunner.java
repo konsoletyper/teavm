@@ -308,6 +308,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 var result = castPlatform.compile(wholeClass(children, platform.getPlatform(), configuration, runs),
                         "classTest", castConfiguration, path, testClass);
                 if (!result.success) {
+                    platform.additionalOutput(path, configuration);
                     notifier.fireTestFailure(createFailure(description, result));
                     return null;
                 }
@@ -430,8 +431,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                         var run = prepareRun(configuration, child, compileResult, notifier, platform.getPlatform());
                         if (run != null) {
                             runs.add(run);
-                            platform.additionalSingleTestOutput(outputPath, configuration, reference);
                         }
+                        platform.additionalSingleTestOutput(outputPath, configuration, reference);
                     }
                     platform.additionalOutputForAllConfigurations(outputPath, child);
                 }
