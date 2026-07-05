@@ -423,6 +423,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmFunction function, RegularMethodNode ast) {
         if (!method.hasModifier(ElementModifier.SYNCHRONIZED)) {
             visitor.generate(ast.getBody(), function.getBody());
+            if (function.getBody().getLast() == null || !function.getBody().getLast().isTerminating()) {
+                if (method.getResultType() != ValueType.VOID && !visitor.isShortenedReturn()) {
+                    function.getBody().add(new WasmUnreachable());
+                }
+            }
             return;
         }
 

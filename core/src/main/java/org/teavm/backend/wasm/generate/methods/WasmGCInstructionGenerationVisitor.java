@@ -134,6 +134,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
     private IdentifiedStatement currentContinueTarget;
     private int blockLevel;
     private WasmGCVirtualCallGenerator vcallGen;
+    private boolean shortenedReturn;
 
     public WasmGCInstructionGenerationVisitor(WasmGCGenerationContext context, MethodReference currentMethod,
             WasmFunction function, int firstVariable, boolean async, PreciseTypeInference types,
@@ -156,9 +157,14 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
     }
 
     public void generate(Statement statement, WasmInstructionList target) {
+        shortenedReturn = false;
         builder = target.builder();
         statement.acceptVisitor(this);
         builder = null;
+    }
+
+    public boolean isShortenedReturn() {
+        return shortenedReturn;
     }
 
     private void accept(Expr expr) {
@@ -1587,6 +1593,8 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             } else {
                 builder.breakTo(returnBlock);
             }
+        } else {
+            shortenedReturn = true;
         }
         builder.popLocation();
     }

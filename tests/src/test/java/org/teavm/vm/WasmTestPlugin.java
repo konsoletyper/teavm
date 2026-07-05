@@ -19,7 +19,7 @@ import org.teavm.backend.wasm.TeaVMWasmGCHost;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-public class WasmAsyncTestPlugin implements TeaVMPlugin {
+public class WasmTestPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
         var gen = new WasmAsyncTestDependency();
@@ -30,5 +30,6 @@ public class WasmAsyncTestPlugin implements TeaVMPlugin {
             });
         }
         host.add(gen);
+        host.add(new WasmTestClassTransformer());
     }
 }
