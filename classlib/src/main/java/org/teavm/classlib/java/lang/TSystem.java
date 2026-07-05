@@ -375,30 +375,9 @@ public final class TSystem extends TObject {
         void log(Level level, ResourceBundle bundle, String format, Object... params);
     }
 
-    public abstract static class LoggerFinder {
-
-        protected LoggerFinder() {
-        }
-
-        public abstract Logger getLogger(String name, Module module);
-
-        public Logger getLocalizedLogger(String name, ResourceBundle bundle, Module module) {
-            return getLogger(name, module);
-        }
-
-        public static LoggerFinder getLoggerFinder() {
-            return ConsoleLogger.INSTANCE;
-        }
-    }
-
-    private static class ConsoleLogger extends LoggerFinder implements Logger {
+    private static class ConsoleLogger implements Logger {
 
         private static final ConsoleLogger INSTANCE = new ConsoleLogger();
-
-        @Override
-        public Logger getLogger(String name, Module module) {
-            return this;
-        }
 
         @Override
         public String getName() {
