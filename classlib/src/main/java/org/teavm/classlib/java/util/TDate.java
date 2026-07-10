@@ -22,9 +22,7 @@ import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TSystem;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
-import org.teavm.interop.Platforms;
 import org.teavm.interop.Unmanaged;
-import org.teavm.interop.UnsupportedOn;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSDate;
 import org.teavm.jso.impl.JS;
@@ -399,14 +397,13 @@ public class TDate implements TComparable<TDate> {
     }
 
     @Override
-    @UnsupportedOn(Platforms.WEBASSEMBLY_GC)
     public String toString() {
         if (PlatformDetector.isC()) {
             return toStringC(value);
         } else if (PlatformDetector.isWebAssemblyGC()) {
             return JS.unwrapString(toStringWebAssemblyGC(value));
         } else {
-            return JSDate.create(value).stringValue();
+            return new JSDate(value).stringValue();
         }
     }
 
