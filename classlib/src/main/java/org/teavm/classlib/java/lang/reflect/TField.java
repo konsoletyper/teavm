@@ -19,7 +19,6 @@ import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
-import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.interop.Address;
 import org.teavm.interop.Unmanaged;
@@ -100,10 +99,192 @@ public class TField extends TAccessibleObject implements TMember {
         return getWithoutCheck(obj);
     }
 
-    public Object getWithoutCheck(Object obj) {
-        if ((fieldInfo.modifiers() & ModifiersInfo.STATIC) != 0) {
-            declaringClass.initialize();
+    public boolean getBoolean(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
+        checkGetAccess();
+        checkInstance(obj);
+        initClass();
+        if (fieldInfo.type().arrayDegree() > 0
+                || fieldInfo.type().classInfo().primitiveKind() != ClassInfo.PrimitiveKind.BOOLEAN) {
+            throw new IllegalArgumentException();
         }
+        return fieldInfo.readAsBoolean(obj);
+    }
+
+    public byte getByte(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
+        checkGetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0
+                || fieldInfo.type().classInfo().primitiveKind() != ClassInfo.PrimitiveKind.BYTE) {
+            throw new IllegalArgumentException();
+        }
+        initClass();
+        return fieldInfo.readAsByte(obj);
+    }
+
+    public short getShort(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
+        checkGetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        switch (fieldInfo.type().classInfo().primitiveKind()) {
+            case ClassInfo.PrimitiveKind.BYTE -> {
+                initClass();
+                return fieldInfo.readAsByte(obj);
+            }
+            case ClassInfo.PrimitiveKind.SHORT -> {
+                initClass();
+                return fieldInfo.readAsShort(obj);
+            }
+            default -> throw new IllegalArgumentException();
+        }
+    }
+
+    public char getChar(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
+        checkGetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0
+                || fieldInfo.type().classInfo().primitiveKind() != ClassInfo.PrimitiveKind.CHAR) {
+            throw new IllegalArgumentException();
+        }
+        initClass();
+        return fieldInfo.readAsChar(obj);
+    }
+
+    public int getInt(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
+        checkGetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        switch (fieldInfo.type().classInfo().primitiveKind()) {
+            case ClassInfo.PrimitiveKind.BYTE -> {
+                initClass();
+                return fieldInfo.readAsByte(obj);
+            }
+            case ClassInfo.PrimitiveKind.SHORT -> {
+                initClass();
+                return fieldInfo.readAsShort(obj);
+            }
+            case ClassInfo.PrimitiveKind.CHAR -> {
+                initClass();
+                return fieldInfo.readAsChar(obj);
+            }
+            case ClassInfo.PrimitiveKind.INT -> {
+                initClass();
+                return fieldInfo.readAsInt(obj);
+            }
+            default -> throw new IllegalArgumentException();
+        }
+    }
+
+    public long getLong(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
+        checkGetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        switch (fieldInfo.type().classInfo().primitiveKind()) {
+            case ClassInfo.PrimitiveKind.BYTE -> {
+                initClass();
+                return fieldInfo.readAsByte(obj);
+            }
+            case ClassInfo.PrimitiveKind.SHORT -> {
+                initClass();
+                return fieldInfo.readAsShort(obj);
+            }
+            case ClassInfo.PrimitiveKind.CHAR -> {
+                initClass();
+                return fieldInfo.readAsChar(obj);
+            }
+            case ClassInfo.PrimitiveKind.INT -> {
+                initClass();
+                return fieldInfo.readAsInt(obj);
+            }
+            case ClassInfo.PrimitiveKind.LONG -> {
+                initClass();
+                return fieldInfo.readAsLong(obj);
+            }
+            default -> throw new IllegalArgumentException();
+        }
+    }
+
+    public float getFloat(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
+        checkGetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        switch (fieldInfo.type().classInfo().primitiveKind()) {
+            case ClassInfo.PrimitiveKind.BYTE -> {
+                initClass();
+                return fieldInfo.readAsByte(obj);
+            }
+            case ClassInfo.PrimitiveKind.SHORT -> {
+                initClass();
+                return fieldInfo.readAsShort(obj);
+            }
+            case ClassInfo.PrimitiveKind.CHAR -> {
+                initClass();
+                return fieldInfo.readAsChar(obj);
+            }
+            case ClassInfo.PrimitiveKind.INT -> {
+                initClass();
+                return fieldInfo.readAsInt(obj);
+            }
+            case ClassInfo.PrimitiveKind.LONG -> {
+                initClass();
+                return fieldInfo.readAsLong(obj);
+            }
+            case ClassInfo.PrimitiveKind.FLOAT -> {
+                initClass();
+                return fieldInfo.readAsFloat(obj);
+            }
+            default -> throw new IllegalArgumentException();
+        }
+    }
+
+    public double getDouble(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
+        checkGetAccess();
+        checkInstance(obj);
+        initClass();
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        switch (fieldInfo.type().classInfo().primitiveKind()) {
+            case ClassInfo.PrimitiveKind.BYTE -> {
+                initClass();
+                return fieldInfo.readAsByte(obj);
+            }
+            case ClassInfo.PrimitiveKind.SHORT -> {
+                initClass();
+                return fieldInfo.readAsShort(obj);
+            }
+            case ClassInfo.PrimitiveKind.CHAR -> {
+                initClass();
+                return fieldInfo.readAsChar(obj);
+            }
+            case ClassInfo.PrimitiveKind.INT -> {
+                initClass();
+                return fieldInfo.readAsInt(obj);
+            }
+            case ClassInfo.PrimitiveKind.LONG -> {
+                initClass();
+                return fieldInfo.readAsLong(obj);
+            }
+            case ClassInfo.PrimitiveKind.FLOAT -> {
+                initClass();
+                return fieldInfo.readAsFloat(obj);
+            }
+            case ClassInfo.PrimitiveKind.DOUBLE -> {
+                return fieldInfo.readAsDouble(obj);
+            }
+            default -> throw new IllegalArgumentException();
+        }
+    }
+
+    public Object getWithoutCheck(Object obj) {
+        initClass();
         return fieldInfo.read(obj);
     }
 
@@ -113,15 +294,141 @@ public class TField extends TAccessibleObject implements TMember {
         setWithoutCheck(obj, value);
     }
 
+    public void setBoolean(Object obj, boolean value) throws TIllegalArgumentException, TIllegalAccessException {
+        checkSetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.BOOLEAN) {
+            fieldInfo.write(obj, value);
+        } else if (fieldInfo.type().classInfo().classObject() == Boolean.class) {
+            fieldInfo.write(obj, (Object) value);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void setByte(Object obj, byte value) throws TIllegalArgumentException, TIllegalAccessException {
+        checkSetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.BYTE) {
+            fieldInfo.write(obj, value);
+        } else if (fieldInfo.type().classInfo().classObject() == Byte.class) {
+            fieldInfo.write(obj, (Object) value);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void setShort(Object obj, short value) throws TIllegalArgumentException, TIllegalAccessException {
+        checkSetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.SHORT) {
+            fieldInfo.write(obj, value);
+        } else if (fieldInfo.type().classInfo().classObject() == Short.class) {
+            fieldInfo.write(obj, (Object) value);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void setChar(Object obj, char value) throws TIllegalArgumentException, TIllegalAccessException {
+        checkSetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.CHAR) {
+            fieldInfo.write(obj, value);
+        } else if (fieldInfo.type().classInfo().classObject() == Character.class) {
+            fieldInfo.write(obj, (Object) value);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void setInt(Object obj, int value) throws TIllegalArgumentException, TIllegalAccessException {
+        checkSetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.INT) {
+            fieldInfo.write(obj, value);
+        } else if (fieldInfo.type().classInfo().classObject() == Integer.class) {
+            fieldInfo.write(obj, (Object) value);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void setLong(Object obj, long value) throws TIllegalArgumentException, TIllegalAccessException {
+        checkSetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.LONG) {
+            fieldInfo.write(obj, value);
+        } else if (fieldInfo.type().classInfo().classObject() == Long.class) {
+            fieldInfo.write(obj, (Object) value);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void setFloat(Object obj, float value) throws TIllegalArgumentException, TIllegalAccessException {
+        checkSetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.FLOAT) {
+            fieldInfo.write(obj, value);
+        } else if (fieldInfo.type().classInfo().classObject() == Float.class) {
+            fieldInfo.write(obj, (Object) value);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void setDouble(Object obj, double value) throws TIllegalArgumentException, TIllegalAccessException {
+        checkSetAccess();
+        checkInstance(obj);
+        if (fieldInfo.type().arrayDegree() > 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.DOUBLE) {
+            fieldInfo.write(obj, value);
+        } else if (fieldInfo.type().classInfo().classObject() == Double.class) {
+            fieldInfo.write(obj, (Object) value);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
     @Unmanaged
     public void setWithoutCheck(Object obj, Object value) {
-        if ((fieldInfo.modifiers() & ModifiersInfo.STATIC) != 0) {
-            declaringClass.initialize();
-        } else if (PlatformDetector.requiresOwnGC() && fieldInfo.type().arrayDegree() == 0
-                && fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.NOT) {
+        initClass();
+        if ((fieldInfo.modifiers() & ModifiersInfo.STATIC) == 0
+                && PlatformDetector.requiresOwnGC() && (fieldInfo.type().arrayDegree() > 0
+                || fieldInfo.type().classInfo().primitiveKind() == ClassInfo.PrimitiveKind.NOT)) {
             GC.writeBarrier(Address.ofObject(obj).toStructure());
         }
         fieldInfo.write(obj, value);
+    }
+
+    private void initClass() {
+        if ((fieldInfo.modifiers() & ModifiersInfo.STATIC) != 0) {
+            declaringClass.initialize();
+        }
     }
 
     private void checkInstance(Object obj) {
@@ -129,7 +436,7 @@ public class TField extends TAccessibleObject implements TMember {
             if (obj == null) {
                 throw new NullPointerException();
             }
-            if (!declaringClass.isInstance((TObject) obj)) {
+            if (!declaringClass.isInstance(obj)) {
                 throw new TIllegalArgumentException();
             }
         }

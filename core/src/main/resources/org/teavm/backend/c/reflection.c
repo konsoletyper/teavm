@@ -23,9 +23,79 @@ void* teavm_reflection_readField(void* obj, TeaVM_FieldInfo* field) {
     return teavm_reflection_box(primitiveType, teavm_reflection_fieldPtr(obj, field));
 }
 
+int32_t teavm_reflection_readFieldAsByte(void* obj, TeaVM_FieldInfo* field) {
+    int8_t* ptr = (int8_t*) teavm_reflection_fieldPtr(obj, field);
+    return *ptr;
+}
+
+int32_t teavm_reflection_readFieldAsShort(void* obj, TeaVM_FieldInfo* field) {
+    int16_t* ptr = (int16_t*) teavm_reflection_fieldPtr(obj, field);
+    return *ptr;
+}
+
+int32_t teavm_reflection_readFieldAsChar(void* obj, TeaVM_FieldInfo* field) {
+    uint16_t* ptr = (uint16_t*) teavm_reflection_fieldPtr(obj, field);
+    return *ptr;
+}
+
+int32_t teavm_reflection_readFieldAsInt(void* obj, TeaVM_FieldInfo* field) {
+    int32_t* ptr = (int32_t*) teavm_reflection_fieldPtr(obj, field);
+    return *ptr;
+}
+
+int64_t teavm_reflection_readFieldAsLong(void* obj, TeaVM_FieldInfo* field) {
+    int64_t* ptr = (int64_t*) teavm_reflection_fieldPtr(obj, field);
+    return *ptr;
+}
+
+float teavm_reflection_readFieldAsFloat(void* obj, TeaVM_FieldInfo* field) {
+    float* ptr = (float*) teavm_reflection_fieldPtr(obj, field);
+    return *ptr;
+}
+
+double teavm_reflection_readFieldAsDouble(void* obj, TeaVM_FieldInfo* field) {
+    double* ptr = (double*) teavm_reflection_fieldPtr(obj, field);
+    return *ptr;
+}
+
 void teavm_reflection_writeField(void* obj, TeaVM_FieldInfo* field, void* value) {
     int32_t primitiveType = teavm_reflection_getFieldPrimitiveType(field);
     teavm_reflection_unbox(primitiveType, teavm_reflection_fieldPtr(obj, field), value);
+}
+
+void teavm_reflection_writeFieldAsByte(void* obj, TeaVM_FieldInfo* field, int32_t value) {
+    int8_t* ptr = (int8_t*) teavm_reflection_fieldPtr(obj, field);
+    *ptr = (int8_t) value;
+}
+
+void teavm_reflection_writeFieldAsShort(void* obj, TeaVM_FieldInfo* field, int32_t value) {
+    int16_t* ptr = (int16_t*) teavm_reflection_fieldPtr(obj, field);
+    *ptr = (int16_t) value;
+}
+
+void teavm_reflection_writeFieldAsChar(void* obj, TeaVM_FieldInfo* field, int32_t value) {
+    uint16_t* ptr = (uint16_t*) teavm_reflection_fieldPtr(obj, field);
+    *ptr = (uint16_t) value;
+}
+
+void teavm_reflection_writeFieldAsInt(void* obj, TeaVM_FieldInfo* field, int32_t value) {
+    int32_t* ptr = (int32_t*) teavm_reflection_fieldPtr(obj, field);
+    *ptr = value;
+}
+
+void teavm_reflection_writeFieldAsLong(void* obj, TeaVM_FieldInfo* field, int64_t value) {
+    int64_t* ptr = (int64_t*) teavm_reflection_fieldPtr(obj, field);
+    *ptr = value;
+}
+
+void teavm_reflection_writeFieldAsFloat(void* obj, TeaVM_FieldInfo* field, float value) {
+    float* ptr = (float*) teavm_reflection_fieldPtr(obj, field);
+    *ptr = value;
+}
+
+void teavm_reflection_writeFieldAsDouble(void* obj, TeaVM_FieldInfo* field, double value) {
+    double* ptr = (double*) teavm_reflection_fieldPtr(obj, field);
+    *ptr = value;
 }
 
 inline void* teavm_reflection_callMethod(void* method, void* instance, void* args) {

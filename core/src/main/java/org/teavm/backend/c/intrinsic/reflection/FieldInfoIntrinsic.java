@@ -19,6 +19,7 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.runtime.reflect.FieldInfo;
 
 public class FieldInfoIntrinsic implements Intrinsic {
@@ -44,23 +45,61 @@ public class FieldInfoIntrinsic implements Intrinsic {
                 context.writer().print("))->type)");
                 break;
             case "read":
-                context.includes().includePath("reflection.h");
-                context.writer().print("teavm_reflection_readField(");
-                context.emit(invocation.getArguments().get(1));
-                context.writer().print(", (TeaVM_FieldInfo*)");
-                context.emit(invocation.getArguments().get(0));
-                context.writer().print(")");
+                generateReadField(context, invocation, "teavm_reflection_readField");
                 break;
-            case "write":
-                context.includes().includePath("reflection.h");
-                context.writer().print("teavm_reflection_writeField(");
-                context.emit(invocation.getArguments().get(1));
-                context.writer().print(", (TeaVM_FieldInfo*) ");
-                context.emit(invocation.getArguments().get(0));
-                context.writer().print(", ");
-                context.emit(invocation.getArguments().get(2));
-                context.writer().print(")");
+            case "readAsByte":
+            case "readAsBoolean":
+                generateReadField(context, invocation, "teavm_reflection_readFieldAsByte");
                 break;
+            case "readAsShort":
+                generateReadField(context, invocation, "teavm_reflection_readFieldAsShort");
+                break;
+            case "readAsChar":
+                generateReadField(context, invocation, "teavm_reflection_readFieldAsChar");
+                break;
+            case "readAsInt":
+                generateReadField(context, invocation, "teavm_reflection_readFieldAsInt");
+                break;
+            case "readAsLong":
+                generateReadField(context, invocation, "teavm_reflection_readFieldAsLong");
+                break;
+            case "readAsFloat":
+                generateReadField(context, invocation, "teavm_reflection_readFieldAsFloat");
+                break;
+            case "readAsDouble":
+                generateReadField(context, invocation, "teavm_reflection_readFieldAsDouble");
+                break;
+            case "write": {
+                var type = invocation.getMethod().parameterType(1);
+                if (type instanceof ValueType.Primitive primitiveType) {
+                    switch (primitiveType.getKind()) {
+                        case BOOLEAN, BYTE -> {
+                            generateWriteField(context, invocation, "teavm_reflection_writeFieldAsByte");
+                        }
+                        case CHARACTER -> {
+                            generateWriteField(context, invocation, "teavm_reflection_writeFieldAsChar");
+                        }
+                        case SHORT -> {
+                            generateWriteField(context, invocation, "teavm_reflection_writeFieldAsChar");
+                        }
+                        case INTEGER -> {
+                            generateWriteField(context, invocation, "teavm_reflection_writeFieldAsInt");
+                        }
+                        case LONG -> {
+                            generateWriteField(context, invocation, "teavm_reflection_writeFieldAsLong");
+                        }
+                        case FLOAT -> {
+                            generateWriteField(context, invocation, "teavm_reflection_writeFieldAsFloat");
+                        }
+                        case DOUBLE -> {
+                            generateWriteField(context, invocation, "teavm_reflection_writeFieldAsDouble");
+                        }
+                    }
+                } else {
+                    generateWriteField(context, invocation, "teavm_reflection_writeField");
+                }
+                break;
+            }
             case "reflection":
                 context.includes().includePath("reflection.h");
                 context.writer().print("((TeaVM_FieldInfo*) (");
@@ -70,5 +109,25 @@ public class FieldInfoIntrinsic implements Intrinsic {
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }
+    }
+
+    private void generateReadField(IntrinsicContext context, InvocationExpr invocation, String functionName) {
+        context.includes().includePath("reflection.h");
+        context.writer().print(functionName).print("(");
+        context.emit(invocation.getArguments().get(1));
+        context.writer().print(", (TeaVM_FieldInfo*)");
+        context.emit(invocation.getArguments().get(0));
+        context.writer().print(")");
+    }
+
+    private void generateWriteField(IntrinsicContext context, InvocationExpr invocation, String functionName) {
+        context.includes().includePath("reflection.h");
+        context.writer().print(functionName).print("(");
+        context.emit(invocation.getArguments().get(1));
+        context.writer().print(", (TeaVM_FieldInfo*) ");
+        context.emit(invocation.getArguments().get(0));
+        context.writer().print(", ");
+        context.emit(invocation.getArguments().get(2));
+        context.writer().print(")");
     }
 }

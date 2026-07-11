@@ -76,7 +76,32 @@ import org.teavm.runtime.reflect.MethodInfo;
 public class ReflectionDependencyListener extends AbstractDependencyListener {
     private List<ReflectionSupplier> reflectionSuppliers;
     private MethodReference fieldGet = new MethodReference(Field.class, "getWithoutCheck", Object.class, Object.class);
+    private MethodReference fieldGetBoolean = new MethodReference(Field.class, "getBoolean", Object.class,
+            boolean.class);
+    private MethodReference fieldGetByte = new MethodReference(Field.class, "getByte", Object.class, byte.class);
+    private MethodReference fieldGetShort = new MethodReference(Field.class, "getShort", Object.class, short.class);
+    private MethodReference fieldGetChar = new MethodReference(Field.class, "getChar", Object.class, char.class);
+    private MethodReference fieldGetInt = new MethodReference(Field.class, "getInt", Object.class, int.class);
+    private MethodReference fieldGetLong = new MethodReference(Field.class, "getLong", Object.class, long.class);
+    private MethodReference fieldGetFloat = new MethodReference(Field.class, "getFloat", Object.class, float.class);
+    private MethodReference fieldGetDouble = new MethodReference(Field.class, "getDouble", Object.class, double.class);
     private MethodReference fieldSet = new MethodReference(Field.class, "setWithoutCheck", Object.class, Object.class,
+            void.class);
+    private MethodReference fieldSetBoolean = new MethodReference(Field.class, "setBoolean", Object.class,
+            boolean.class, void.class);
+    private MethodReference fieldSetByte = new MethodReference(Field.class, "setByte", Object.class, byte.class,
+            void.class);
+    private MethodReference fieldSetShort = new MethodReference(Field.class, "setShort", Object.class, short.class,
+            void.class);
+    private MethodReference fieldSetChar = new MethodReference(Field.class, "setChar", Object.class, char.class,
+            void.class);
+    private MethodReference fieldSetInt = new MethodReference(Field.class, "setInt", Object.class, int.class,
+            void.class);
+    private MethodReference fieldSetLong = new MethodReference(Field.class, "setLong", Object.class, long.class,
+            void.class);
+    private MethodReference fieldSetFloat = new MethodReference(Field.class, "setFloat", Object.class, float.class,
+            void.class);
+    private MethodReference fieldSetDouble = new MethodReference(Field.class, "setDouble", Object.class, double.class,
             void.class);
     private MethodReference newInstance = new MethodReference(Constructor.class, "newInstance", Object[].class,
             Object.class);
@@ -257,9 +282,27 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().equals(fieldGet)) {
-            handleFieldGet(agent, method);
+            handleFieldGet(agent, method, false);
+        } else if (method.getReference().equals(fieldGetBoolean)
+                || method.getReference().equals(fieldGetByte)
+                || method.getReference().equals(fieldGetShort)
+                || method.getReference().equals(fieldGetChar)
+                || method.getReference().equals(fieldGetInt)
+                || method.getReference().equals(fieldGetLong)
+                || method.getReference().equals(fieldGetFloat)
+                || method.getReference().equals(fieldGetDouble)) {
+            handleFieldGet(agent, method, true);
         } else if (method.getReference().equals(fieldSet)) {
-            handleFieldSet(agent, method);
+            handleFieldSet(agent, method, false);
+        } else if (method.getReference().equals(fieldSetBoolean)
+                || method.getReference().equals(fieldSetByte)
+                || method.getReference().equals(fieldSetShort)
+                || method.getReference().equals(fieldSetChar)
+                || method.getReference().equals(fieldSetInt)
+                || method.getReference().equals(fieldSetLong)
+                || method.getReference().equals(fieldSetFloat)
+                || method.getReference().equals(fieldSetDouble)) {
+            handleFieldSet(agent, method, true);
         } else if (method.getReference().equals(newInstance)) {
             handleNewInstance(agent, method);
         } else if (method.getReference().equals(classNewInstance)) {
@@ -558,7 +601,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         return cls.getName().equals("java.lang.Object") || cls.getName().equals("java.lang.Class");
     }
 
-    private void handleFieldGet(DependencyAgent agent, MethodDependency method) {
+    private void handleFieldGet(DependencyAgent agent, MethodDependency method, boolean primitive) {
         CallLocation location = new CallLocation(method.getReference());
         DependencyNode classValueNode = agent.linkMethod(getFields)
                 .addLocation(location)
@@ -577,17 +620,19 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                         .addLocation(location);
                 if (field.hasModifier(ElementModifier.STATIC)) {
                     readFields.add(field.getReference());
-                    propagateGet(agent, field.getType(), fieldDep.getValue(), method.getResult(), location);
+                    if (!primitive) {
+                        propagateGet(agent, field.getType(), fieldDep.getValue(), method.getResult(), location);
+                    }
                 } else {
                     method.getVariable(1).addConsumer(new InstanceGetConsumer(agent, field.getReference(),
-                            method, location));
+                                method, location, primitive));
                 }
                 linkClassIfNecessary(agent, field, location);
             }
         });
     }
 
-    private void handleFieldSet(DependencyAgent agent, MethodDependency method) {
+    private void handleFieldSet(DependencyAgent agent, MethodDependency method, boolean primitive) {
         CallLocation location = new CallLocation(method.getReference());
         DependencyNode classValueNode = agent.linkMethod(getFields)
                 .addLocation(location)
@@ -606,10 +651,12 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 FieldDependency fieldDep = agent.linkField(field.getReference()).addLocation(location);
                 if (field.hasModifier(ElementModifier.STATIC)) {
                     writtenFields.add(field.getReference());
-                    propagateSet(agent, field.getType(), method.getVariable(2), fieldDep.getValue(), location);
+                    if (!primitive) {
+                        propagateSet(agent, field.getType(), method.getVariable(2), fieldDep.getValue(), location);
+                    }
                 } else {
                     method.getVariable(1).addConsumer(new InstanceSetConsumer(agent, field.getReference(),
-                            method, location));
+                            method, location, primitive));
                 }
                 linkClassIfNecessary(agent, field, location);
             }
@@ -808,16 +855,18 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         private final FieldReference fieldRef;
         private final MethodDependency readDep;
         private final CallLocation location;
+        private final boolean primitive;
 
         private Set<DependencyType> knownTypes = new HashSet<>();
         private boolean done;
 
         InstanceGetConsumer(DependencyAgent agent, FieldReference fieldRef, MethodDependency readDep,
-                CallLocation location) {
+                CallLocation location, boolean primitive) {
             this.agent = agent;
             this.fieldRef = fieldRef;
             this.readDep = readDep;
             this.location = location;
+            this.primitive = primitive;
         }
 
         @Override
@@ -845,7 +894,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
 
             if (!fieldDep.isMissing()) {
                 readFields.add(fieldRef);
-                propagateGet(agent, fieldDep.getField().getType(), fieldDep.getValue(), readDep.getResult(), location);
+                if (!primitive) {
+                    propagateGet(agent, fieldDep.getField().getType(), fieldDep.getValue(), readDep.getResult(),
+                            location);
+                }
             }
         }
     }
@@ -855,16 +907,18 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         private final FieldReference fieldRef;
         private final MethodDependency readDep;
         private final CallLocation location;
+        private final boolean primitive;
 
         private Set<DependencyType> knownTypes = new HashSet<>();
         private boolean done;
 
         InstanceSetConsumer(DependencyAgent agent, FieldReference fieldRef, MethodDependency readDep,
-                CallLocation location) {
+                CallLocation location, boolean primitive) {
             this.agent = agent;
             this.fieldRef = fieldRef;
             this.readDep = readDep;
             this.location = location;
+            this.primitive = primitive;
         }
 
         @Override
@@ -892,8 +946,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
 
             if (!fieldDep.isMissing()) {
                 writtenFields.add(fieldRef);
-                propagateSet(agent, fieldDep.getField().getType(), readDep.getVariable(2), fieldDep.getValue(),
-                        location);
+                if (!primitive) {
+                    propagateSet(agent, fieldDep.getField().getType(), readDep.getVariable(2), fieldDep.getValue(),
+                            location);
+                }
             }
         }
     }

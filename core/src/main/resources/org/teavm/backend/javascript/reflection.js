@@ -85,11 +85,17 @@ let $rt_callDefaultConstructor = (cls, obj) => {
     return true;
 }
 
+let $rt_getRawFieldValue = (field, obj) => {
+    return field.reader(obj);
+}
 let $rt_getFieldValue = (field, obj) => {
     return field.type[$rt_meta].valueToObject(field.reader(obj));
 }
 let $rt_setFieldValue = (field, obj, value) => {
     field.writer(obj, field.type[$rt_meta].objectToValue(value));
+}
+let $rt_setRawFieldValue = (field, obj, value) => {
+    field.writer(obj, value);
 }
 let $rt_callMethod = (method, instance, args) => {
     let argsToPass = [];

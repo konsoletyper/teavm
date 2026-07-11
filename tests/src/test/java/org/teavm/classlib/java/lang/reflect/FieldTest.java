@@ -156,6 +156,73 @@ public class FieldTest {
         field.set(null, "w");
         assertEquals("w", ClassWithoutInitializerWithStaticField.foo);
     }
+
+    @Test
+    public void primitiveGetters() throws Exception {
+        var instance = new PrimitiveHolder();
+        assertEquals(true, PrimitiveHolder.class.getDeclaredField("z").getBoolean(instance));
+        assertEquals((byte) 42, PrimitiveHolder.class.getDeclaredField("by").getByte(instance));
+        assertEquals((short) 1000, PrimitiveHolder.class.getDeclaredField("sh").getShort(instance));
+        assertEquals('X', PrimitiveHolder.class.getDeclaredField("ch").getChar(instance));
+        assertEquals(123456, PrimitiveHolder.class.getDeclaredField("i").getInt(instance));
+        assertEquals(9876543210L, PrimitiveHolder.class.getDeclaredField("lo").getLong(instance));
+        assertEquals(3.14f, PrimitiveHolder.class.getDeclaredField("fl").getFloat(instance), 0.001f);
+        assertEquals(2.718281828, PrimitiveHolder.class.getDeclaredField("db").getDouble(instance), 0.000000001);
+    }
+
+    @Test
+    public void primitiveSetters() throws Exception {
+        var instance = new PrimitiveHolder();
+        PrimitiveHolder.class.getDeclaredField("z").setBoolean(instance, false);
+        assertEquals(false, instance.z);
+        PrimitiveHolder.class.getDeclaredField("by").setByte(instance, (byte) 100);
+        assertEquals((byte) 100, instance.by);
+        PrimitiveHolder.class.getDeclaredField("sh").setShort(instance, (short) 2000);
+        assertEquals((short) 2000, instance.sh);
+        PrimitiveHolder.class.getDeclaredField("ch").setChar(instance, 'Y');
+        assertEquals('Y', instance.ch);
+        PrimitiveHolder.class.getDeclaredField("i").setInt(instance, 654321);
+        assertEquals(654321, instance.i);
+        PrimitiveHolder.class.getDeclaredField("lo").setLong(instance, 1234567890123L);
+        assertEquals(1234567890123L, instance.lo);
+        PrimitiveHolder.class.getDeclaredField("fl").setFloat(instance, 2.71f);
+        assertEquals(2.71f, instance.fl, 0.001f);
+        PrimitiveHolder.class.getDeclaredField("db").setDouble(instance, 1.41421356);
+        assertEquals(1.41421356, instance.db, 0.000000001);
+    }
+
+    @Test
+    public void primitiveGetterWidening() throws Exception {
+        var instance = new PrimitiveHolder();
+        assertEquals((short) 42, PrimitiveHolder.class.getDeclaredField("by").getShort(instance));
+        assertEquals(42, PrimitiveHolder.class.getDeclaredField("by").getInt(instance));
+        assertEquals(1000, PrimitiveHolder.class.getDeclaredField("sh").getInt(instance));
+        assertEquals(123456L, PrimitiveHolder.class.getDeclaredField("i").getLong(instance));
+        assertEquals(3.14f, PrimitiveHolder.class.getDeclaredField("fl").getDouble(instance), 0.001);
+    }
+
+    @Test
+    public void primitiveGetterWrongType() throws Exception {
+        var instance = new PrimitiveHolder();
+        try {
+            PrimitiveHolder.class.getDeclaredField("i").getBoolean(instance);
+            throw new AssertionError("Expected IllegalArgumentException from getBoolean");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        try {
+            PrimitiveHolder.class.getDeclaredField("sh").getByte(instance);
+            throw new AssertionError("Expected IllegalArgumentException from getByte");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        try {
+            PrimitiveHolder.class.getDeclaredField("sh").setInt(instance, 5);
+            throw new AssertionError("Expected IllegalArgumentException from setInt");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
     
     @Test
     public void annotationsRead() throws Exception {
@@ -230,6 +297,17 @@ public class FieldTest {
         public static String foo;
     }
     
+    static class PrimitiveHolder {
+        @Reflectable boolean z = true;
+        @Reflectable byte by = 42;
+        @Reflectable short sh = 1000;
+        @Reflectable char ch = 'X';
+        @Reflectable int i = 123456;
+        @Reflectable long lo = 9876543210L;
+        @Reflectable float fl = 3.14f;
+        @Reflectable double db = 2.718281828;
+    }
+
     @Retention(RetentionPolicy.RUNTIME)
     @interface TestAnnot {
         int a();

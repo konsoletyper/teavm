@@ -233,7 +233,21 @@ typedef struct {
 #endif
 
 extern void* teavm_reflection_readField(void* obj, TeaVM_FieldInfo* field);
+extern int32_t teavm_reflection_readFieldAsByte(void* obj, TeaVM_FieldInfo* field);
+extern int32_t teavm_reflection_readFieldAsShort(void* obj, TeaVM_FieldInfo* field);
+extern int32_t teavm_reflection_readFieldAsChar(void* obj, TeaVM_FieldInfo* field);
+extern int32_t teavm_reflection_readFieldAsInt(void* obj, TeaVM_FieldInfo* field);
+extern int64_t teavm_reflection_readFieldAsLong(void* obj, TeaVM_FieldInfo* field);
+extern float teavm_reflection_readFieldAsFloat(void* obj, TeaVM_FieldInfo* field);
+extern double teavm_reflection_readFieldAsDouble(void* obj, TeaVM_FieldInfo* field);
 extern void teavm_reflection_writeField(void* obj, TeaVM_FieldInfo* field, void* value);
+extern void teavm_reflection_writeFieldAsByte(void* obj, TeaVM_FieldInfo* field, int32_t value);
+extern void teavm_reflection_writeFieldAsShort(void* obj, TeaVM_FieldInfo* field, int32_t value);
+extern void teavm_reflection_writeFieldAsChar(void* obj, TeaVM_FieldInfo* field, int32_t value);
+extern void teavm_reflection_writeFieldAsInt(void* obj, TeaVM_FieldInfo* field, int32_t value);
+extern void teavm_reflection_writeFieldAsLong(void* obj, TeaVM_FieldInfo* field, int64_t value);
+extern void teavm_reflection_writeFieldAsFloat(void* obj, TeaVM_FieldInfo* field, float value);
+extern void teavm_reflection_writeFieldAsDouble(void* obj, TeaVM_FieldInfo* field, double value);
 extern void* teavm_reflection_callMethod(void* method, void* instance, void* args);
 
 extern void* teavm_reflection_box(int32_t conv, void* ptr);

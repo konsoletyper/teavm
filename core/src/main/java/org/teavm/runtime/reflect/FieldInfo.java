@@ -38,7 +38,71 @@ public final class FieldInfo extends ReflectionInfo {
 
     @Unmanaged
     @Intrinsified
+    public native boolean readAsBoolean(Object instance);
+
+    @Unmanaged
+    @Intrinsified
+    public native byte readAsByte(Object instance);
+
+    @Unmanaged
+    @Intrinsified
+    public native short readAsShort(Object instance);
+
+    @Unmanaged
+    @Intrinsified
+    public native char readAsChar(Object instance);
+
+    @Unmanaged
+    @Intrinsified
+    public native int readAsInt(Object instance);
+
+    @Unmanaged
+    @Intrinsified
+    public native long readAsLong(Object instance);
+
+    @Unmanaged
+    @Intrinsified
+    public native float readAsFloat(Object instance);
+
+    @Unmanaged
+    @Intrinsified
+    public native double readAsDouble(Object instance);
+
+    @Unmanaged
+    @Intrinsified
     public native void write(Object instance, Object value);
+
+    @Unmanaged
+    @Intrinsified
+    public native void write(Object instance, boolean value);
+
+    @Unmanaged
+    @Intrinsified
+    public native void write(Object instance, byte value);
+
+    @Unmanaged
+    @Intrinsified
+    public native void write(Object instance, short value);
+
+    @Unmanaged
+    @Intrinsified
+    public native void write(Object instance, char value);
+
+    @Unmanaged
+    @Intrinsified
+    public native void write(Object instance, int value);
+
+    @Unmanaged
+    @Intrinsified
+    public native void write(Object instance, long value);
+
+    @Unmanaged
+    @Intrinsified
+    public native void write(Object instance, float value);
+
+    @Unmanaged
+    @Intrinsified
+    public native void write(Object instance, double value);
 
     @Unmanaged
     @Intrinsified
