@@ -106,8 +106,8 @@ public class CalendarTest {
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.WEEK_OF_MONTH, 2);
-        //assertTrue("Incorrect result 0d: " + cal.getTime(), cal.getTime()
-        //        .getTime() == 1010293200000L);
+        assertTrue("Incorrect result 0d: " + cal.getTime(), cal.getTime()
+                .getTime() == 1010293200000L);
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
@@ -163,7 +163,7 @@ public class CalendarTest {
                 .getTime());
 
         // WEEK_OF_MONTH has priority
-        /*cal.clear();
+        cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.WEEK_OF_YEAR, 12);
         cal.set(Calendar.DAY_OF_WEEK_IN_MONTH, 1);
@@ -171,7 +171,7 @@ public class CalendarTest {
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.DATE, 5);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        assertEquals("Incorrect result 2", new Date(1015822800000L), cal.getTime());*/
+        assertEquals("Incorrect result 2", new Date(1015822800000L), cal.getTime());
 
         // DAY_OF_WEEK_IN_MONTH has priority over WEEK_OF_YEAR
         cal.clear();
@@ -184,14 +184,14 @@ public class CalendarTest {
         assertEquals("Incorrect result 3", new Date(1015822800000L), cal.getTime());
 
         // WEEK_OF_MONTH has priority, MONTH not set
-        /*cal.clear();
+        cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.WEEK_OF_YEAR, 12);
         cal.set(Calendar.DAY_OF_WEEK_IN_MONTH, 1);
         cal.set(Calendar.WEEK_OF_MONTH, 3);
         cal.set(Calendar.DATE, 25);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        assertEquals("Incorrect result 4", new Date(1010984400000L), cal.getTime());*/
+        assertEquals("Incorrect result 4", new Date(1010984400000L), cal.getTime());
 
         // WEEK_OF_YEAR has priority when MONTH set last and DAY_OF_WEEK set
         cal.clear();
@@ -223,7 +223,7 @@ public class CalendarTest {
                 .getTime() == 1015822800000L);
 
         // WEEK_OF_MONTH has priority
-        /*cal.clear();
+        cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.WEEK_OF_YEAR, 12);
         cal.set(Calendar.DATE, 5);
@@ -231,7 +231,7 @@ public class CalendarTest {
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         cal.set(Calendar.MONTH, Calendar.MARCH);
         assertTrue("Incorrect result 5c: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);*/
+                .getTime() == 1015822800000L);
 
         // DATE has priority when set last
         cal.clear();
