@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -168,6 +169,36 @@ public class ClassTest {
         instance.run();
         assertEquals(TestObjectAsync.class, instance.getClass());
         assertEquals(2, ((TestObjectAsync) instance).getCounter());
+    }
+
+    @Test
+    public void newInstanceOnAbstractClassFails() throws Exception {
+        // The abstract class must reach the newInstance dependency node while its
+        // only regular constructor caller is a subclass, so the optimizer may inline
+        // and eliminate the constructor. Reflection metadata referring to it used to
+        // produce an invalid script that failed before reaching any test.
+        var instance = new ConcreteCaseOfAbstractClass();
+        assertEquals("concrete", instance.name());
+        try {
+            AbstractClassWithPublicConstructor.class.newInstance();
+            fail("InstantiationException expected");
+        } catch (InstantiationException e) {
+            // expected
+        }
+    }
+
+    public abstract static class AbstractClassWithPublicConstructor {
+        public AbstractClassWithPublicConstructor() {
+        }
+
+        abstract String name();
+    }
+
+    static class ConcreteCaseOfAbstractClass extends AbstractClassWithPublicConstructor {
+        @Override
+        String name() {
+            return "concrete";
+        }
     }
 
     @Test
