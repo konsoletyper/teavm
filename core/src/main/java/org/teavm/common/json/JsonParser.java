@@ -178,7 +178,7 @@ public class JsonParser {
                     case '\"':
                     case '\\':
                     case '/':
-                        sb.append(lastChar);
+                        sb.append((char) lastChar);
                         nextChar(reader);
                         break;
                     case 'b':
