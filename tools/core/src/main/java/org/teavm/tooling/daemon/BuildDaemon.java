@@ -279,8 +279,15 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
 
     public static DaemonInfo start(int debugPort, boolean incremental, int daemonMemory, DaemonLog log,
             String... classPathEntries) throws IOException {
-        String javaHome = System.getProperty("java.home");
-        String javaCommand = javaHome + "/bin/java";
+        return start(debugPort, incremental, daemonMemory, null, log, classPathEntries);
+    }
+
+    public static DaemonInfo start(int debugPort, boolean incremental, int daemonMemory, String javaCommand,
+            DaemonLog log, String... classPathEntries) throws IOException {
+        if (javaCommand == null || javaCommand.isEmpty()) {
+            String javaHome = System.getProperty("java.home");
+            javaCommand = javaHome + "/bin/java";
+        }
         String classPath = String.join(File.pathSeparator, classPathEntries);
         List<String> arguments = new ArrayList<>();
 

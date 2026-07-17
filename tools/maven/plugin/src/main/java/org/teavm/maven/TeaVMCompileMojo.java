@@ -22,11 +22,13 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.MavenArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -37,6 +39,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
@@ -72,6 +76,22 @@ public class TeaVMCompileMojo extends AbstractMojo {
 
     @Parameter(readonly = true, defaultValue = "${plugin.artifacts}")
     private List<Artifact> pluginArtifacts;
+
+    @Component
+    private ToolchainManager toolchainManager;
+
+    @Parameter(defaultValue = "${session}", readonly = true)
+    private MavenSession session;
+
+    /**
+     * Requirements for the JDK toolchain used to run the TeaVM compiler (e.g. {@code <version>}).
+     * When a matching toolchain is found, the compiler is launched out of process using that JDK,
+     * which allows compiling class files whose bytecode version is newer than the JDK running Maven.
+     * When omitted, the toolchain selected by the maven-toolchains-plugin (if any) is used; otherwise
+     * TeaVM runs in the same JVM as Maven, as before.
+     */
+    @Parameter
+    private Map<String, String> jdkToolchain;
 
     @Parameter(defaultValue = "${project.build.outputDirectory}")
     private File classFiles;
@@ -273,17 +293,41 @@ public class TeaVMCompileMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        if (outOfProcess) {
-            executeInSeparateProcess();
+        String javaCommand = null;
+        Toolchain toolchain = getToolchain();
+        if (toolchain != null) {
+            javaCommand = toolchain.findTool("java");
+            if (javaCommand != null) {
+                getLog().info("Using JDK toolchain to run TeaVM out of process: " + javaCommand);
+            }
+        }
+
+        if (javaCommand != null || outOfProcess) {
+            executeInSeparateProcess(javaCommand);
         } else {
             executeWithBuilder(new InProcessBuildStrategy());
         }
     }
 
-    private void executeInSeparateProcess() throws MojoExecutionException {
+    private Toolchain getToolchain() {
+        Toolchain toolchain = null;
+        if (jdkToolchain != null) {
+            List<Toolchain> toolchains = toolchainManager.getToolchains(session, "jdk", jdkToolchain);
+            if (toolchains != null && !toolchains.isEmpty()) {
+                toolchain = toolchains.get(0);
+            }
+        }
+        if (toolchain == null) {
+            toolchain = toolchainManager.getToolchainFromBuildContext("jdk", session);
+        }
+        return toolchain;
+    }
+
+    private void executeInSeparateProcess(String javaCommand) throws MojoExecutionException {
         DaemonInfo daemon;
         try {
-            daemon = BuildDaemon.start(false, processMemory, new DaemonLogImpl(), createDaemonClassPath());
+            daemon = BuildDaemon.start(0, false, processMemory, javaCommand, new DaemonLogImpl(),
+                    createDaemonClassPath());
         } catch (Throwable e) {
             throw new MojoExecutionException("Error starting TeaVM process", e);
         }
