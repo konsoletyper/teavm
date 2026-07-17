@@ -57,6 +57,8 @@ public class TThreadLocalRandom extends TRandom {
 
     @Override
     public void setSeed(long seed) {
-        throw new UnsupportedOperationException();
+        if (current != null) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
