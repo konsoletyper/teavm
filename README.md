@@ -13,7 +13,6 @@ Useful links:
 * [Getting started](https://teavm.org/docs/intro/getting-started.html)
 * [Gallery](https://teavm.org/gallery.html)
 * [Site source code repository](https://github.com/konsoletyper/teavm-site)
-* [Discussion on Google Groups](https://groups.google.com/forum/#!forum/teavm)
 
 
 ## Building TeaVM
