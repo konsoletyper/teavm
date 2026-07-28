@@ -79,7 +79,9 @@ public final class Heap {
         var result = tryAlloc(bytes);
         if (result == null) {
             var last = lastRecord();
-            var amountToGrow = bytes - (!HeapRecord.isAllocated(last) ? HeapRecord.size(last) : 0);
+            var amountToGrow = !HeapRecord.isAllocated(last)
+                    ? bytes - HeapRecord.size(last)
+                    : bytes + Structure.sizeOf(HeapRecord.class);
             if (amountToGrow > 0 && tryExtend(amountToGrow, last)) {
                 result = tryAlloc(bytes);
             }

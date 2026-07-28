@@ -131,6 +131,24 @@ public class HeapTest {
     }
 
     @Test
+    public void growWholePageAfterFullAllocation() {
+        var initialSize = Heap.getCurrentSize();
+        var size = Heap.getCurrentSize() - 8;
+        var a = Heap.alloc(size);
+        dump();
+        check();
+        assertEquals(8, a.diff(Heap.getStart()));
+        assertEquals(initialSize, Heap.getCurrentSize());
+
+        // Grow by whole Wasm page
+        var b = Heap.alloc(65536);
+        dump();
+        assertEquals(16 + size, b.diff(Heap.getStart()));
+        assertTrue(initialSize < Heap.getCurrentSize());
+        check();
+    }
+
+    @Test
     public void alloc1() {
         var a = Heap.alloc(256);
         dump();
