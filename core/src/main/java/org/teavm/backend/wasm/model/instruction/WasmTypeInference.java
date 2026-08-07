@@ -150,7 +150,9 @@ public class WasmTypeInference implements WasmInstructionVisitor {
 
     @Override
     public void visit(WasmTeeLocal instruction) {
-        depthBeforeLastInstructionOut = typeStack.size() - 1;
+        pop();
+        depthBeforeLastInstructionOut = typeStack.size();
+        typeStack.add(instruction.getLocal().getType());
     }
 
     @Override
