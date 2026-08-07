@@ -59,6 +59,12 @@ public class WasmAsyncTest {
             assertEquals("generated", e.getMessage());
         }
     }
+    
+    @Test
+    public void suspendWithValueTeedIntoWiderLocal() {
+        // sum(20, 25) plus the length of "generated"
+        assertEquals(54, teeThenSuspend());
+    }
 
     @Async
     @NativeAsync
@@ -75,8 +81,17 @@ public class WasmAsyncTest {
     @Intrinsified
     private static native int loopAfterThrow(int n);
 
+    @Async
+    @NativeAsync
+    @Intrinsified
+    private static native int teeThenSuspend();
+
     static RuntimeException newException() {
         return new RuntimeException("generated");
+    }
+
+    static int lengthOf(Throwable t) {
+        return t.getMessage().length();
     }
 
     @Async

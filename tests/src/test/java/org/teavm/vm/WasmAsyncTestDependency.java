@@ -35,6 +35,14 @@ public class WasmAsyncTestDependency extends AbstractDependencyListener {
                 agent.linkMethod(new MethodReference(WasmAsyncTest.class, "newException",
                         RuntimeException.class)).use();
                 break;
+            case "teeThenSuspend":
+                agent.linkMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class, int.class,
+                        int.class)).use();
+                agent.linkMethod(new MethodReference(WasmAsyncTest.class, "newException",
+                        RuntimeException.class)).use();
+                agent.linkMethod(new MethodReference(WasmAsyncTest.class, "lengthOf", Throwable.class,
+                        int.class)).use();
+                break;
             default:
                 break;
         }

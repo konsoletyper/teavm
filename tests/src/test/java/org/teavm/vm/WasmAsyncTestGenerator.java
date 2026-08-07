@@ -45,7 +45,8 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
             case "loopAfterThrow":
                 generateLoopAfterThrow(function, addParam(function));
                 break;
-            default:
+            case "teeThenSuspend":
+                generateTeeThenSuspend(function);
                 break;
         }
     }
@@ -86,6 +87,25 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
         suspendingLoop(outer);
         outer.i32Const(0);
     }
+    
+    private void generateTeeThenSuspend(WasmFunction function) {
+        var throwableType = context.classInfoProvider().getClassInfo("java.lang.Throwable").getType();
+        var wider = new WasmLocal(throwableType, "wider");
+        var sum = new WasmLocal(WasmType.INT32, "sum");
+        function.add(wider);
+        function.add(sum);
+        
+        function.getBody().builder()
+                .call(newExceptionFn(), false)
+                .teeLocal(wider)
+                .i32Const(20)
+                .i32Const(25)
+                .call(sumFn(), true)
+                .setLocal(sum)
+                .call(lengthOfFn(), false)
+                .getLocal(sum)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD);
+    }
 
     private void escapeIfNonZero(WasmInstructionBuilder outer, WasmLocal param) {
         outer.getLocal(param);
@@ -110,6 +130,11 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
     private WasmFunction newExceptionFn() {
         return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "newException",
                 RuntimeException.class));
+    }
+
+    private WasmFunction lengthOfFn() {
+        return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "lengthOf",
+                Throwable.class, int.class));
     }
 
     private class Generator {
