@@ -30,6 +30,7 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     @Override
     public void visit(WasmUnreachable instruction) {
         typeStack.clear();
+        depthBeforeLastInstructionOut = 0;
     }
 
     @Override
@@ -39,6 +40,8 @@ public class WasmTypeInference implements WasmInstructionVisitor {
             popN(type.getInputTypes().size());
             depthBeforeLastInstructionOut = typeStack.size();
             typeStack.addAll(type.getOutputTypes());
+        } else {
+            depthBeforeLastInstructionOut = typeStack.size();
         }
     }
 
@@ -50,12 +53,15 @@ public class WasmTypeInference implements WasmInstructionVisitor {
             popN(type.getInputTypes().size());
             depthBeforeLastInstructionOut = typeStack.size();
             typeStack.addAll(type.getOutputTypes());
+        } else {
+            depthBeforeLastInstructionOut = typeStack.size();
         }
     }
 
     @Override
     public void visit(WasmBranch instruction) {
         pop();
+        depthBeforeLastInstructionOut = typeStack.size();
     }
 
     @Override
@@ -87,16 +93,19 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     @Override
     public void visit(WasmBreak instruction) {
         typeStack.clear();
+        depthBeforeLastInstructionOut = 0;
     }
 
     @Override
     public void visit(WasmSwitch instruction) {
         typeStack.clear();
+        depthBeforeLastInstructionOut = 0;
     }
 
     @Override
     public void visit(WasmReturn instruction) {
         typeStack.clear();
+        depthBeforeLastInstructionOut = 0;
     }
 
     @Override
@@ -341,8 +350,8 @@ public class WasmTypeInference implements WasmInstructionVisitor {
 
     @Override
     public void visit(WasmThrow instruction) {
-        depthBeforeLastInstructionOut = typeStack.size();
         typeStack.clear();
+        depthBeforeLastInstructionOut = 0;
     }
 
     @Override

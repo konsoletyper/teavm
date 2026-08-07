@@ -35,20 +35,87 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
 
     @Override
     public void apply(MethodReference method, WasmFunction function) {
-        if (method.getName().equals("generatedMethod")) {
-            var param = new WasmLocal(WasmType.INT32, "n");
-            function.add(param);
-            var generator = new Generator(context, param);
-            generator.generate(function.getBody().builder());
+        switch (method.getName()) {
+            case "generatedMethod":
+                new Generator(addParam(function)).generate(function.getBody().builder());
+                break;
+            case "loopAfterBranch":
+                generateLoopAfterBranch(function, addParam(function));
+                break;
+            case "loopAfterThrow":
+                generateLoopAfterThrow(function, addParam(function));
+                break;
+            default:
+                break;
         }
     }
 
-    private static class Generator {
-        final WasmGCCodeGenContext context;
+    private static WasmLocal addParam(WasmFunction function) {
+        var param = new WasmLocal(WasmType.INT32, "n");
+        function.add(param);
+        return param;
+    }
+
+    // A suspending loop that follows a block whose body ends with a branch. The branch empties the
+    // type stack, so a stale depth recorded by an earlier instruction indexes an empty snapshot.
+    private void generateLoopAfterBranch(WasmFunction function, WasmLocal param) {
+        var outer = function.getBody().builder().block(WasmType.INT32);
+        escapeIfNonZero(outer, param);
+        outer.block()
+                .i32Const(1)
+                .i32Const(2)
+                .call(sumFn(), true)
+                .i32Const(7)
+                .breakTo(outer.list);
+        suspendingLoop(outer);
+        outer.i32Const(0);
+    }
+
+    // Same shape, with the type stack emptied by throw instead of by a branch. This is what Kotlin
+    // coroutine state machines produce.
+    private void generateLoopAfterThrow(WasmFunction function, WasmLocal param) {
+        var outer = function.getBody().builder().block(WasmType.INT32);
+        escapeIfNonZero(outer, param);
+        outer.block()
+                .i32Const(1)
+                .i32Const(2)
+                .call(sumFn(), true)
+                .drop()
+                .call(newExceptionFn(), false)
+                .throw_(context.exceptionTag());
+        suspendingLoop(outer);
+        outer.i32Const(0);
+    }
+
+    private void escapeIfNonZero(WasmInstructionBuilder outer, WasmLocal param) {
+        outer.getLocal(param);
+        outer.conditional().getThenBlock().builder()
+                .i32Const(100)
+                .breakTo(outer.list);
+    }
+
+    private void suspendingLoop(WasmInstructionBuilder builder) {
+        builder.loop()
+                .i32Const(1)
+                .i32Const(2)
+                .call(sumFn(), true)
+                .drop();
+    }
+
+    private WasmFunction sumFn() {
+        return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class,
+                int.class, int.class));
+    }
+
+    private WasmFunction newExceptionFn() {
+        return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "newException",
+                RuntimeException.class));
+    }
+
+    private class Generator {
         final WasmLocal param;
 
-        Generator(WasmGCCodeGenContext context, WasmLocal param) {
-            this.context = context;
+        Generator(WasmLocal param) {
             this.param = param;
         }
 
@@ -86,15 +153,10 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
             });
             builder.intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD);
         }
-        
+
         private void block(WasmInstructionBuilder builder, Consumer<WasmInstructionBuilder> body) {
             var block = builder.block(WasmType.INT32);
             body.accept(block);
-        }
-        
-        private WasmFunction sumFn() {
-            return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class,
-                    int.class, int.class));
         }
     }
 }
