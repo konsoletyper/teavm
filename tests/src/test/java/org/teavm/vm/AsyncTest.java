@@ -94,6 +94,22 @@ public class AsyncTest {
     }
     
     @Test
+    public void conditionalBranchOfDistinctTypesBeforeSuspension() {
+        var sb = new StringBuilder();
+        for (var i = 0; i < 2; ++i) {
+            sb.append(describe(i == 0 ? "foo" : returnSameObject(this), getPrimitive())).append(";");
+        }
+        for (var i = 0; i < 2; ++i) {
+            sb.append(describe(i == 0 ? returnSameObject(this) : "foo", getPrimitive())).append(";");
+        }
+        assertEquals("string:23;other:23;other:23;string:23", sb.toString());
+    }
+
+    private static String describe(Object o, int n) {
+        return (o instanceof String ? "string" : "other") + ":" + n;
+    }
+
+    @Test
     public void passStringConstant() {
         assertEquals("foo", returnSamePrimitive("foo"));
     }
@@ -163,6 +179,13 @@ public class AsyncTest {
         setTimeout(() -> callback.complete(value));
     }
     
+    @Async
+    private native Object returnSameObject(Object value);
+
+    private void returnSameObject(Object value, AsyncCallback<Object> callback) {
+        setTimeout(() -> callback.complete(value));
+    }
+
     @Async
     private native String returnSamePrimitive(String value);
 

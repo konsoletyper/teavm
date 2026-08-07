@@ -329,6 +329,9 @@ public class CoroutineTransformation {
                 replacement.visit(wrapper);
             }
 
+            typeInference.typeStack.clear();
+            typeInference.typeStack.addAll(outputTypes);
+
             conditional.insertPrevious(wrapper);
             conditional.delete();
         }
