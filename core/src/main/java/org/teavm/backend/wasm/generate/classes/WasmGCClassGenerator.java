@@ -48,7 +48,6 @@ import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmFunctionReference;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
-import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 import org.teavm.backend.wasm.model.instruction.WasmNullConstant;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
@@ -113,7 +112,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private final ReflectionTypes reflectionTypes;
     public final WasmGCTypeMapper typeMapper;
     private final WasmGCNameProvider names;
-    private WasmInstructionBuilder initializerFunctionStatements = new WasmInstructionList().builder();
+    private static final int INIT_PART_INSTRUCTION_BUDGET = 4096;
+    private final List<WasmFunction> initializerParts = new ArrayList<>();
+    private WasmFunction currentInitializerPart;
+    private WasmInstructionBuilder currentInitializerPartBuilder;
+    private int currentInitializerPartSize;
     private WasmFunction createPrimitiveClassFunction;
     private WasmFunction getArrayClassFunction;
     private WasmFunction fillArrayClassFunction;
@@ -254,10 +257,25 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     public void contributeToInitializerDefinitions(WasmFunction function) {
     }
 
+    private WasmInstructionBuilder initializerPartBuilder() {
+        if (currentInitializerPart == null || currentInitializerPartSize >= INIT_PART_INSTRUCTION_BUDGET) {
+            var part = new WasmFunction(functionTypes.of(null));
+            part.setName(names.topLevel("teavm@initClasses@part" + initializerParts.size()));
+            module.functions.add(part);
+            initializerParts.add(part);
+            currentInitializerPart = part;
+            currentInitializerPartBuilder = part.getBody().builder();
+            currentInitializerPartSize = 0;
+        }
+        return currentInitializerPartBuilder;
+    }
+
     @Override
     public void contributeToInitializer(WasmFunction function) {
         var builder = function.getBody().builder();
-        builder.transferFrom(initializerFunctionStatements);
+        for (var part : initializerParts) {
+            builder.call(part);
+        }
         var classInfoType = reflectionTypes.classInfo();
         for (var classInfo : classInfoMap.values()) {
             if (classInfo.supertypeFunction != null) {
@@ -300,8 +318,15 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             var finalClassInfo = classInfo;
             queue.add(() -> {
                 if (finalClassInfo.initializer != null) {
-                    finalClassInfo.initializer.accept(initializerFunctionStatements);
+                    var builder = initializerPartBuilder();
+                    var lastBefore = currentInitializerPart.getBody().getLast();
+                    finalClassInfo.initializer.accept(builder);
                     finalClassInfo.initializer = null;
+                    var body = currentInitializerPart.getBody();
+                    for (var instruction = lastBefore == null ? body.getFirst() : lastBefore.getNext();
+                            instruction != null; instruction = instruction.getNext()) {
+                        ++currentInitializerPartSize;
+                    }
                 }
             });
             classInfoMap.put(type, classInfo);

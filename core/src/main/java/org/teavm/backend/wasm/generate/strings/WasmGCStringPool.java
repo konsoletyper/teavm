@@ -82,17 +82,25 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
             body.call(internInit);
         }
         var stringIterator = stringMap.values().iterator();
+        var partIndex = 0;
         while (stringIterator.hasNext()) {
+            var part = new WasmFunction(functionTypes.of(null));
+            part.setName(names.topLevel("teavm@initStrings@part" + partIndex++));
+            module.functions.add(part);
+            var partBody = part.getBody().builder();
+
             var elementCount = 0;
             // WasmArrayNewFixed cannot be larger than 10000 elements
 
             while (elementCount < 10000 && stringIterator.hasNext()) {
-                body.getGlobal(stringIterator.next().global);
+                partBody.getGlobal(stringIterator.next().global);
                 ++elementCount;
             }
-            body
+            partBody
                     .arrayNewFixed(stringsArray, elementCount)
                     .call(initStringsFunction);
+
+            body.call(part);
         }
     }
 

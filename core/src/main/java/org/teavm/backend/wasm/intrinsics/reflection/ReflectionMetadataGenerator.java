@@ -88,7 +88,11 @@ public class ReflectionMetadataGenerator {
     private Map<PrimitiveType, WasmFunction> writerConverters = new EnumMap<>(PrimitiveType.class);
     private WasmFunction referenceWriterConverter;
 
+    private static final int PART_INSTRUCTION_BUDGET = 6144;
     private WasmFunction initFunction;
+    private WasmFunction currentPart;
+    private int currentPartBudget;
+    private int partCount;
 
     public ReflectionMetadataGenerator(WasmGCNameProvider names, WasmModule module, WasmFunctionTypes functionTypes,
             DependencyInfo dependencies, ReflectionDependencyListener reflection, ListableClassReaderSource classes,
@@ -154,7 +158,19 @@ public class ReflectionMetadataGenerator {
             var metadata = generateClassMetadata(className, annotations, fields, methods, typeParameters,
                     innerClasses);
             if (metadata != null) {
-                var builder = initFunction.getBody().builder();
+                var size = 0;
+                for (var instruction : metadata) {
+                    ++size;
+                }
+                if (currentPart == null || currentPartBudget < size + 2) {
+                    currentPart = new WasmFunction(functionTypes.of(null));
+                    currentPart.setName(names.topLevel("teavm@initReflection@part" + partCount++));
+                    module.functions.add(currentPart);
+                    initFunction.getBody().builder().call(currentPart);
+                    currentPartBudget = PART_INSTRUCTION_BUDGET;
+                }
+                currentPartBudget -= size + 2;
+                var builder = currentPart.getBody().builder();
                 builder
                         .getGlobal(classInfoProvider.getClassInfo(className).getPointer())
                         .transferFrom(metadata.builder())
