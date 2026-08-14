@@ -359,7 +359,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     ClassReader cls = agent.getClassSource().get(className);
                     if (cls != null) {
                         var skipPrivates = shouldSkipPrivates(cls);
-                        var reflectable = collectAccessibleMethods(className);
+                        var reflectable = collectAccessibleMethods(agent, className);
                         for (MethodReader reflectableMethod : cls.getMethods()) {
                             if (!reflectable.contains(reflectableMethod.getDescriptor())) {
                                 continue;
@@ -685,7 +685,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 return;
             }
 
-            Set<MethodDescriptor> accessibleMethods = collectAccessibleMethods(className);
+            Set<MethodDescriptor> accessibleMethods = collectAccessibleMethods(agent, className);
 
             var hasConstructors = false;
             for (MethodDescriptor methodDescriptor : accessibleMethods) {
@@ -755,7 +755,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             }
 
             var className = ((ValueType.Object) reflectedType.getValueType()).getClassName();
-            Set<MethodDescriptor> accessibleMethods = collectAccessibleMethods(className);
+            Set<MethodDescriptor> accessibleMethods = collectAccessibleMethods(agent, className);
             ClassReader cls = agent.getClassSource().get(className);
             for (MethodDescriptor methodDescriptor : accessibleMethods) {
                 if (methodDescriptor.getName().equals("<init>")) {
@@ -1000,8 +1000,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         return accessibleFieldCache.computeIfAbsent(className, key -> gatherAccessibleFields(agent, key));
     }
 
-    private Set<MethodDescriptor> collectAccessibleMethods(String className) {
-        return accessibleMethodCache.computeIfAbsent(className, this::gatherAccessibleMethods);
+    private Set<MethodDescriptor> collectAccessibleMethods(DependencyAgent agent, String className) {
+        return accessibleMethodCache.computeIfAbsent(className, key -> gatherAccessibleMethods(agent, key));
     }
 
     private Set<String> gatherAccessibleFields(DependencyAgent agent, String className) {
@@ -1010,15 +1010,44 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         for (ReflectionSupplier supplier : reflectionSuppliers) {
             fields.addAll(supplier.getAccessibleFields(context, className));
         }
+        var cls = agent.getClassSource().get(className);
+        if (cls != null) {
+            for (var fieldName : fields) {
+                var field = cls.getField(fieldName);
+                if (field != null) {
+                    linkReflectedType(agent, field.getType());
+                }
+            }
+        }
         return fields;
     }
 
-    private Set<MethodDescriptor> gatherAccessibleMethods(String className) {
+    private Set<MethodDescriptor> gatherAccessibleMethods(DependencyAgent agent, String className) {
         Set<MethodDescriptor> methods = new LinkedHashSet<>();
         for (ReflectionSupplier supplier : reflectionSuppliers) {
             methods.addAll(supplier.getAccessibleMethods(reflectionContext, className));
         }
+        for (var descriptor : methods) {
+            for (var i = 0; i < descriptor.parameterCount(); ++i) {
+                linkReflectedType(agent, descriptor.parameterType(i));
+            }
+            linkReflectedType(agent, descriptor.getResultType());
+        }
         return methods;
+    }
+
+    /**
+     * Reflection metadata references a member's parameter, result and field types by
+     * their emitted aliases; a type that appears only in such a signature would otherwise
+     * never be emitted, leaving an undefined identifier in the output.
+     */
+    private void linkReflectedType(DependencyAgent agent, ValueType type) {
+        while (type instanceof ValueType.Array) {
+            type = ((ValueType.Array) type).getItemType();
+        }
+        if (type instanceof ValueType.Object) {
+            agent.linkClass(((ValueType.Object) type).getClassName());
+        }
     }
 
     private void propagateGet(DependencyAgent agent, ValueType type, DependencyNode sourceNode,
