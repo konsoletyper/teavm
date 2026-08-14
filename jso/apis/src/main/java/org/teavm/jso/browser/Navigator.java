@@ -21,6 +21,7 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.gamepad.Gamepad;
 import org.teavm.jso.geolocation.Geolocation;
+import org.teavm.jso.webgpu.GPU;
 
 @JSClass(name = "navigator")
 public final class Navigator implements JSObject {
@@ -46,6 +47,12 @@ public final class Navigator implements JSObject {
 
     @JSBody(script = "return navigator.hardwareConcurrency")
     public static native int hardwareConcurrency();
+
+    @JSProperty("gpu")
+    public static native GPU getGPU();
+
+    @JSBody(script = "return 'gpu' in navigator;")
+    public static native boolean isWebGPUSupported();
 
     public static native boolean sendBeacon(String url);
 
