@@ -224,7 +224,7 @@ public abstract class GenericValueType {
 
         @Override
         public ValueType asValueType() {
-            return arguments == null || arguments.length == 0 ? ValueType.object(className) : null;
+            return arguments == null || arguments.length == 0 ? ValueType.object(getFullClassName()) : null;
         }
 
         @Override
