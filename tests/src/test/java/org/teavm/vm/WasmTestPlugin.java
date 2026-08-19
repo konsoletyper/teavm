@@ -27,9 +27,12 @@ public class WasmTestPlugin implements TeaVMPlugin {
         if (wasmGC != null) {
             wasmGC.contributeToCodeGen((context, registry) -> {
                 registry.bodyIntrinsics().registerIntrinsic(WasmAsyncTest.class, new WasmAsyncTestGenerator(context));
+                registry.bodyIntrinsics().registerIntrinsic(WasmTeeLocalTest.class,
+                        new WasmTeeLocalGenerator(context));
             });
         }
         host.add(gen);
+        host.add(new WasmTeeLocalDependency());
         host.add(new WasmTestClassTransformer());
     }
 }
