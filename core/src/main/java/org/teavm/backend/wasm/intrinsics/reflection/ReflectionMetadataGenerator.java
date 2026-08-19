@@ -851,9 +851,13 @@ public class ReflectionMetadataGenerator {
         function.add(boxedValueVar);
 
         var body = function.getBody().builder();
-        // Push obj, then unbox the value to get the raw primitive (or cast for reference types)
+        // Push obj, then unbox the value to get the raw primitive. Reference values are passed
+        // as Object: this converter is shared by all reference fields, and the setter itself
+        // casts to the field type.
         body.getLocal(objVar).getLocal(boxedValueVar);
-        unboxIfNecessary(body, fieldType);
+        if (fieldType instanceof ValueType.Primitive) {
+            unboxIfNecessary(body, fieldType);
+        }
         // Cast the raw writer funcref to the specific typed function, then call it
         body.getLocal(rawWriterVar)
                 .cast(typedWriterType.getReference())
