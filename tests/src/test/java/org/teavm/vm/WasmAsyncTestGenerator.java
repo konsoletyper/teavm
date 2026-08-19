@@ -48,6 +48,12 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
             case "teeThenSuspend":
                 generateTeeThenSuspend(function);
                 break;
+            case "useAfterSuspend":
+                addParam(function);
+                generateUseAfterSuspend(function);
+                break;
+            default:
+                break;
         }
     }
 
@@ -127,6 +133,23 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
                 int.class, int.class));
     }
 
+    private void generateUseAfterSuspend(WasmFunction function) {
+        var stringType = (WasmType.Reference) context.classInfoProvider()
+                .getClassInfo("java.lang.String").getType();
+        var value = new WasmLocal(stringType.asNonNull(), "value");
+        function.add(value);
+        function.getBody().builder()
+                .call(newStringFn())
+                .cast(stringType.asNonNull())
+                .setLocal(value)
+                .i32Const(1)
+                .i32Const(2)
+                .call(sumFn(), true)
+                .drop()
+                .getLocal(value)
+                .call(tagFn());
+    }
+
     private WasmFunction newExceptionFn() {
         return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "newException",
                 RuntimeException.class));
@@ -135,6 +158,16 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
     private WasmFunction lengthOfFn() {
         return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "lengthOf",
                 Throwable.class, int.class));
+    }
+
+    private WasmFunction newStringFn() {
+        return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "newString",
+                String.class));
+    }
+
+    private WasmFunction tagFn() {
+        return context.functions().forStaticMethod(new MethodReference(WasmAsyncTest.class, "tag", Object.class,
+                int.class));
     }
 
     private class Generator {

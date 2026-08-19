@@ -66,6 +66,11 @@ public class WasmAsyncTest {
         assertEquals(54, teeThenSuspend());
     }
 
+    @Test
+    public void nonNullLocalSurvivesSuspension() {
+        assertEquals(1, useAfterSuspend(0));
+    }
+
     @Async
     @NativeAsync
     @Intrinsified
@@ -86,12 +91,25 @@ public class WasmAsyncTest {
     @Intrinsified
     private static native int teeThenSuspend();
 
+    @Async
+    @NativeAsync
+    @Intrinsified
+    private static native int useAfterSuspend(int n);
+
     static RuntimeException newException() {
         return new RuntimeException("generated");
     }
 
     static int lengthOf(Throwable t) {
         return t.getMessage().length();
+    }
+
+    static String newString() {
+        return "s";
+    }
+
+    static int tag(Object o) {
+        return o instanceof String ? 1 : 2;
     }
 
     @Async
