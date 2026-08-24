@@ -23,8 +23,20 @@ import org.teavm.model.MethodReference;
 public class WasmAsyncTestDependency extends AbstractDependencyListener {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        if (method.getMethod().getName().equals("generatedMethod")) {
-            agent.linkMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class, int.class, int.class)).use();
+        switch (method.getMethod().getName()) {
+            case "generatedMethod":
+            case "loopAfterBranch":
+                agent.linkMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class, int.class,
+                        int.class)).use();
+                break;
+            case "loopAfterThrow":
+                agent.linkMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class, int.class,
+                        int.class)).use();
+                agent.linkMethod(new MethodReference(WasmAsyncTest.class, "newException",
+                        RuntimeException.class)).use();
+                break;
+            default:
+                break;
         }
     }
 }

@@ -16,6 +16,7 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
@@ -42,11 +43,42 @@ public class WasmAsyncTest {
         assertEquals(4111, generatedMethod(4));
     }
 
+    @Test
+    public void suspendingLoopAfterBranch() {
+        assertEquals(100, loopAfterBranch(1));
+        assertEquals(7, loopAfterBranch(0));
+    }
+
+    @Test
+    public void suspendingLoopAfterThrow() {
+        assertEquals(100, loopAfterThrow(1));
+        try {
+            loopAfterThrow(0);
+            fail("Exception expected");
+        } catch (RuntimeException e) {
+            assertEquals("generated", e.getMessage());
+        }
+    }
+
     @Async
     @NativeAsync
     @Intrinsified
     private static native int generatedMethod(int n);
-    
+
+    @Async
+    @NativeAsync
+    @Intrinsified
+    private static native int loopAfterBranch(int n);
+
+    @Async
+    @NativeAsync
+    @Intrinsified
+    private static native int loopAfterThrow(int n);
+
+    static RuntimeException newException() {
+        return new RuntimeException("generated");
+    }
+
     @Async
     private static native int sum(int a, int b);
 
