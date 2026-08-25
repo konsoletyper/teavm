@@ -80,6 +80,11 @@ public class ClassTest {
     }
 
     @Test
+    public void superClassOfInterfaceIsNull() {
+        assertNull(Runnable.class.getSuperclass());
+    }
+
+    @Test
     public void objectClassConsideredNotArray() {
         assertFalse(Object.class.isArray());
     }

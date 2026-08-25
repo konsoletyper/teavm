@@ -550,7 +550,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                             .getGlobal(namePtr)
                             .structSet(classInfoCls.structure(), classInfoCls.simpleNameIndex());
                 }
-                if (cls.getParent() != null && metadataReq.superclass()) {
+                if (cls.getParent() != null && metadataReq.superclass()
+                        && !cls.hasModifier(ElementModifier.INTERFACE)) {
                     var parent = getClassInfo(cls.getParent());
                     target
                             .getGlobal(classInfo.pointer)

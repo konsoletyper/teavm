@@ -61,6 +61,10 @@ let $rt_metadata = data => {
         cls.prototype.constructor = cls;
         m.modifiers = data[i++];
         m.primitiveKind = 0;
+        // INTERFACE
+        if ((m.modifiers & (1 << 9)) !== 0) {
+            m.parent = null;
+        }
 
         let innerClassInfo = data[i++];
         if (innerClassInfo !== 0) {

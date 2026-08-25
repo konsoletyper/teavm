@@ -800,7 +800,7 @@ public class ClassGenerator {
             List<TagRegistry.Range> ranges = tagRegistry != null ? tagRegistry.getRanges(className) : null;
             tag = !context.isIncremental() && ranges != null && !ranges.isEmpty() ? ranges.get(0).lower : 0;
 
-            if (cls != null && cls.getParent() != null) {
+            if (cls != null && cls.getParent() != null && !cls.hasModifier(ElementModifier.INTERFACE)) {
                 includes.includeClass(cls.getParent());
                 parent = "(TeaVM_Class*) &" + context.getNames().forClassInstance(ValueType.object(cls.getParent()));
             } else {
