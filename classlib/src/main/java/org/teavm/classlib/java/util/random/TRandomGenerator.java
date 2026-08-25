@@ -102,7 +102,7 @@ public interface TRandomGenerator {
             for (int j = 0; j < Integer.BYTES; j++) {
                 int idx = Integer.BYTES * i + j;
                 if (idx < bytes.length) {
-                    bytes[idx] = (byte) (0xFF & (rnd >> (i * Byte.SIZE)));
+                    bytes[idx] = (byte) (0xFF & (rnd >> (j * Byte.SIZE)));
                 }
             }
         }
