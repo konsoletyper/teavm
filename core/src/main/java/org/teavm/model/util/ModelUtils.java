@@ -56,6 +56,8 @@ public final class ModelUtils {
         if (original.getGenericParameters() != null) {
             target.setGenericParameters(original.getGenericParameters());
         }
+        target.setGenericParent(original.getGenericParent());
+        target.getGenericInterfaces().addAll(original.getGenericInterfaces());
         return target;
     }
 
