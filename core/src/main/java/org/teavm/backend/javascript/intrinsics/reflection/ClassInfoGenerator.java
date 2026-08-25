@@ -238,7 +238,8 @@ public class ClassInfoGenerator implements Injector, Generator {
             if (type instanceof ValueType.Object) {
                 var className = ((ValueType.Object) type).getClassName();
                 var cls = context.getClassSource().get(className);
-                if (cls.hasModifier(ElementModifier.ABSTRACT) || cls.hasModifier(ElementModifier.INTERFACE)) {
+                if (cls == null || cls.hasModifier(ElementModifier.ABSTRACT)
+                        || cls.hasModifier(ElementModifier.INTERFACE)) {
                     // newInstance rejects abstract classes and interfaces at run time, and the
                     // optimizer may eliminate their never-callable constructors, which would leave
                     // dangling function references in the emitted table.
