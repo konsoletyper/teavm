@@ -497,7 +497,7 @@ public class WasmBinaryRenderer {
 
     private void renderInitializer(WasmBinaryWriter output, int value) {
         output.writeByte(0x41);
-        output.writeLEB(value);
+        output.writeSignedLEB(value);
         output.writeByte(0x0B);
     }
 
