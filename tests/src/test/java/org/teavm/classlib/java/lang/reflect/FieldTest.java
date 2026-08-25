@@ -158,6 +158,15 @@ public class FieldTest {
     }
 
     @Test
+    public void setReferenceFieldsOfDifferentTypes() throws Exception {
+        var instance = new TwoReferenceFields();
+        TwoReferenceFields.class.getDeclaredField("first").set(instance, "foo");
+        TwoReferenceFields.class.getDeclaredField("second").set(instance, new StringBuilder("bar"));
+        assertEquals("foo", instance.first);
+        assertEquals("bar", instance.second.toString());
+    }
+
+    @Test
     public void primitiveGetters() throws Exception {
         var instance = new PrimitiveHolder();
         assertEquals(true, PrimitiveHolder.class.getDeclaredField("z").getBoolean(instance));
@@ -297,6 +306,11 @@ public class FieldTest {
         public static String foo;
     }
     
+    static class TwoReferenceFields {
+        @Reflectable String first;
+        @Reflectable StringBuilder second;
+    }
+
     static class PrimitiveHolder {
         @Reflectable boolean z = true;
         @Reflectable byte by = 42;
