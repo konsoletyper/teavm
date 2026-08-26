@@ -27,6 +27,9 @@ let $rt_enumConstants = cls => {
 let $rt_isInstance = (obj, cls) => obj instanceof $rt_objcls() && !!obj.constructor[$rt_meta]
     && $rt_isAssignable(obj.constructor, cls);
 let $rt_isAssignable = (from, to) => {
+    if (to === $rt_objcls()) {
+        return true;
+    }
     if (from === to) {
         return true;
     }
