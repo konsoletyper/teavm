@@ -33,20 +33,22 @@ public class TSecureRandom extends TRandom {
 
     public static TSecureRandom getInstance(String algorithm)
             throws TNoSuchAlgorithmException {
+        if (PlatformDetector.isC()) {
+            throw new TNoSuchAlgorithmException();
+        }
         if (!(algorithm.equals("NativePRNG")
                 || algorithm.equals("NativePRNGBlocking")
                 || algorithm.equals("NativePRNGNonBlocking"))) {
+            throw new TNoSuchAlgorithmException();
+        }
+        if (!Crypto.isSupported()) {
             throw new TNoSuchAlgorithmException();
         }
         return new TSecureRandom();
     }
 
     public String getAlgorithm() {
-        if ((PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) && Crypto.isSupported()) {
-            return "NativePRNG";
-        } else {
-            return "unknown";
-        }
+        return "NativePRNG";
     }
 
     public void setSeed(@SuppressWarnings("unused") byte[] seed) {
@@ -71,37 +73,21 @@ public class TSecureRandom extends TRandom {
 
     @Override
     public void nextBytes(byte[] bytes) {
-        if ((PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) && Crypto.isSupported()) {
-            var buffer = new Uint8Array(bytes.length);
-            Crypto.current().getRandomValues(buffer);
-
-            for (int i = 0; i < bytes.length; ++i) {
-                bytes[i] = (byte) buffer.get(i);
-            }
-        } else {
-            // TODO: Implement wrapper to JavaScript (Crypto) for WASM backend
-            // TODO: Implement proper randomness source in C backend (/dev/urandom, etc.)
-            // Fall back to generic random implementation
-            super.nextBytes(bytes);
+        var buffer = new Uint8Array(bytes.length);
+        Crypto.current().getRandomValues(buffer);
+        for (int i = 0; i < bytes.length; ++i) {
+            bytes[i] = (byte) buffer.get(i);
         }
     }
 
     @Override
     public int nextInt() {
-        if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
-            return next(32);
-        } else {
-            return super.nextInt();
-        }
+        return next(32);
     }
 
     @Override
     public double nextDouble() {
-        if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
-            return (((long) next(26) << 27) + next(27)) / (double) (1L << 53);
-        } else {
-            return super.nextDouble();
-        }
+        return (((long) next(26) << 27) + next(27)) / (double) (1L << 53);
     }
 
     public static byte[] getSeed(int numBytes) {
