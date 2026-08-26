@@ -66,10 +66,9 @@ abstract class TIntBufferOverByteBuffer extends TIntBufferImpl {
 
     @Override
     void putImpl(int index, TIntBuffer src, int offset, int length) {
-        if (src instanceof TIntBufferOverByteBuffer && src.order() == order()) {
-            var srcImpl = (TIntBufferOverByteBuffer) src;
-            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 4,
-                    byteBuffer.array, start + offset * 4, length * 4);
+        if (src instanceof TIntBufferOverByteBuffer srcImpl && src.order() == order()) {
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + offset * 4,
+                    byteBuffer.array, start + index * 4, length * 4);
         } else {
             while (length-- > 0) {
                 putElement(index++, src.getElement(offset++));

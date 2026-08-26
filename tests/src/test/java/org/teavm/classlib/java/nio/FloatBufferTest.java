@@ -628,4 +628,19 @@ public class FloatBufferTest {
         assertArrayEquals(new float[] { 2, 5, 6 }, arr, 0.1f);
         assertEquals(3, buffer.position());
     }
+
+    @Test
+    public void putsBufferViewToView() {
+        var dst = ByteBuffer.allocate(32).asFloatBuffer();
+        dst.put(1);
+        var src = ByteBuffer.allocate(16).asFloatBuffer();
+        src.put(new float[] { 2, 3 });
+        src.flip();
+        dst.put(src);
+        dst.flip();
+
+        var check = new float[3];
+        dst.get(0, check);
+        assertArrayEquals(new float[] { 1, 2, 3 }, check, 0.1f);
+    }
 }

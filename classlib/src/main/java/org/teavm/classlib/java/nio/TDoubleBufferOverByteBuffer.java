@@ -66,10 +66,9 @@ abstract class TDoubleBufferOverByteBuffer extends TDoubleBufferImpl {
 
     @Override
     void putImpl(int index, TDoubleBuffer src, int offset, int length) {
-        if (src instanceof TDoubleBufferOverByteBuffer && src.order() == order()) {
-            var srcImpl = (TDoubleBufferOverByteBuffer) src;
-            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 8,
-                    byteBuffer.array, start + offset * 8, length * 8);
+        if (src instanceof TDoubleBufferOverByteBuffer srcImpl && src.order() == order()) {
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + offset * 8,
+                    byteBuffer.array, start + index * 8, length * 8);
         } else {
             while (length-- > 0) {
                 putElement(index++, src.getElement(offset++));

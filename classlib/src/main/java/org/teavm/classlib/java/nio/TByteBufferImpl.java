@@ -120,7 +120,7 @@ class TByteBufferImpl extends TByteBuffer {
     @Override
     void putImpl(int index, TByteBuffer src, int offset, int length) {
         if (src.hasArray()) {
-            System.arraycopy(src.array(), src.position(), array, start + offset, length);
+            System.arraycopy(src.array(), src.arrayOffset() + offset, array, start + index, length);
         } else {
             for (var i = 0; i < length; i++) {
                 put(index + i, src.get(offset + i));

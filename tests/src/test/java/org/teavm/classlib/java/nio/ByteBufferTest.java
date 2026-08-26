@@ -422,6 +422,19 @@ public class ByteBufferTest {
         assertThat(buffer.position(), is(1));
         assertThat(array, is(new byte[]{0, 0, 0, 0}));
     }
+    
+    @Test
+    public void putsOtherBuffer() {
+        var dst = ByteBuffer.allocate(16);
+        dst.putShort((short) 0x1234);
+        var src = ByteBuffer.wrap(new byte[] { 1, 2, 3, 4 });
+        dst.put(src);
+        dst.flip();
+        
+        var check = new byte[6];
+        dst.get(0, check);
+        assertArrayEquals(new byte[] { 0x12, 0x34, 1, 2, 3, 4 }, check);
+    }
 
     @Test
     public void compacts() {

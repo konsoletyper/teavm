@@ -653,4 +653,19 @@ public class CharBufferTest {
         assertArrayEquals(new char[] { 'B', 'E', 'F' }, chars);
         assertEquals(3, buffer.position());
     }
+    
+    @Test
+    public void putsBufferViewToView() {
+        var dst = ByteBuffer.allocate(16).asCharBuffer();
+        dst.put((char) 1);
+        var src = ByteBuffer.allocate(8).asCharBuffer();
+        src.put(new char[] { 2, 3 });
+        src.flip();
+        dst.put(src);
+        dst.flip();
+
+        var check = new char[3];
+        dst.get(0, check);
+        assertArrayEquals(new char[] { 1, 2, 3 }, check);
+    }
 }

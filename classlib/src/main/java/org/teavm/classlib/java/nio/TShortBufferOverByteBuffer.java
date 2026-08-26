@@ -66,10 +66,9 @@ abstract class TShortBufferOverByteBuffer extends TShortBufferImpl {
 
     @Override
     void putImpl(int index, TShortBuffer src, int offset, int length) {
-        if (src instanceof TShortBufferOverByteBuffer && src.order() == order()) {
-            var srcImpl = (TShortBufferOverByteBuffer) src;
-            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 2,
-                    byteBuffer.array, start + offset * 2, length * 2);
+        if (src instanceof TShortBufferOverByteBuffer srcImpl && src.order() == order()) {
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + offset * 2,
+                    byteBuffer.array, start + index * 2, length * 2);
         } else {
             while (length-- > 0) {
                 putElement(index++, src.getElement(offset++));

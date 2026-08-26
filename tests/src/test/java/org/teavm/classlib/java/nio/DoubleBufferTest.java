@@ -625,4 +625,19 @@ public class DoubleBufferTest {
         assertArrayEquals(new double[] { 2, 5, 6 }, arr, 0.1f);
         assertEquals(3, buffer.position());
     }
+    
+    @Test
+    public void putsBufferViewToView() {
+        var dst = ByteBuffer.allocate(32).asDoubleBuffer();
+        dst.put(1);
+        var src = ByteBuffer.allocate(16).asDoubleBuffer();
+        src.put(new double[] { 2, 3 });
+        src.flip();
+        dst.put(src);
+        dst.flip();
+
+        var check = new double[3];
+        dst.get(0, check);
+        assertArrayEquals(new double[] { 1, 2, 3 }, check, 0.1);
+    }
 }

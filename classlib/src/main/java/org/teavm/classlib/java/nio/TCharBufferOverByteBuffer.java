@@ -73,10 +73,9 @@ abstract class TCharBufferOverByteBuffer extends TCharBufferImpl {
 
     @Override
     void putImpl(int index, TCharBuffer src, int offset, int length) {
-        if (src instanceof TCharBufferOverByteBuffer && src.order() == order()) {
-            var srcImpl = (TCharBufferOverByteBuffer) src;
-            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 2,
-                    byteBuffer.array, start + offset * 2, length * 2);
+        if (src instanceof TCharBufferOverByteBuffer srcImpl && src.order() == order()) {
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + offset * 2,
+                    byteBuffer.array, start + index * 2, length * 2);
         } else {
             while (length-- > 0) {
                 putChar(index++, src.getChar(offset++));

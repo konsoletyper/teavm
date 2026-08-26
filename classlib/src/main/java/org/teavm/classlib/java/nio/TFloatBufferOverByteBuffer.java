@@ -66,10 +66,9 @@ abstract class TFloatBufferOverByteBuffer extends TFloatBufferImpl {
 
     @Override
     void putImpl(int index, TFloatBuffer src, int offset, int length) {
-        if (src instanceof TFloatBufferOverByteBuffer && src.order() == order()) {
-            var srcImpl = (TFloatBufferOverByteBuffer) src;
-            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 4,
-                    byteBuffer.array, start + offset * 4, length * 4);
+        if (src instanceof TFloatBufferOverByteBuffer srcImpl && src.order() == order()) {
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + offset * 4,
+                    byteBuffer.array, start + index * 4, length * 4);
         } else {
             while (length-- > 0) {
                 putElement(index++, src.getElement(offset++));

@@ -592,4 +592,19 @@ public class ShortBufferTest {
         assertArrayEquals(new short[] { 2, 5, 6 }, arr);
         assertEquals(3, buffer.position());
     }
+
+    @Test
+    public void putsBufferViewToView() {
+        var dst = ByteBuffer.allocate(16).asShortBuffer();
+        dst.put((short) 1);
+        var src = ByteBuffer.allocate(8).asShortBuffer();
+        src.put(new short[] { 2, 3 });
+        src.flip();
+        dst.put(src);
+        dst.flip();
+
+        var check = new short[3];
+        dst.get(0, check);
+        assertArrayEquals(new short[] { 1, 2, 3 }, check);
+    }
 }
