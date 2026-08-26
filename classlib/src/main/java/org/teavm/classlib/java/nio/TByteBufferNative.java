@@ -109,7 +109,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
             var srcImpl = (TByteBufferNative) src;
             copy(srcImpl.address.add(offset), address.add(index), length);
         } else if (src.hasArray()) {
-            copy(src.array(), offset + src.arrayOffset() + offset, address.add(index), length);
+            copy(src.array(), offset + src.arrayOffset(), address.add(index), length);
         } else {
             var addr = address.add(index);
             while (length-- > 0) {
