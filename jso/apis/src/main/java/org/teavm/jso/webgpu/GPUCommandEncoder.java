@@ -36,7 +36,6 @@ public interface GPUCommandEncoder extends GPU.ObjectBase {
     void insertDebugMarker(String markerLabel);
 
     interface CommandBuffer extends GPU.ObjectBase {
-        // le ✨stub✨
     }
 }
 

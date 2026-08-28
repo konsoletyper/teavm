@@ -9,7 +9,6 @@ import org.teavm.jso.core.JSNumber;
 
 public abstract class GPUDescriptor implements JSObject {
     protected GPUDescriptor() {
-        // le ✨stub✨
     }
 
     @JSBody(script = "return {};")
@@ -49,7 +48,6 @@ public abstract class GPUDescriptor implements JSObject {
     }
 
     public abstract static class Queue extends ObjectBase {
-        // le ✨stub✨
     }
 
     public abstract static class Buffer extends ObjectBase {
@@ -298,7 +296,6 @@ public abstract class GPUDescriptor implements JSObject {
     }
 
     public abstract static class ExternalTextureBindingLayout extends GPUDescriptor {
-        // le ✨stub✨
     }
 
     public abstract static class BindGroupLayoutEntry extends GPUDescriptor {

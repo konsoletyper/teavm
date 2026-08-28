@@ -94,7 +94,6 @@ public interface GPUTexture extends GPU.ObjectBase {
         public static final String DEPTH32FLOAT_STENCIL8 = "depth32float-stencil8";
 
         private Format() {
-            // le ✨stub✨
         }
     }
 }

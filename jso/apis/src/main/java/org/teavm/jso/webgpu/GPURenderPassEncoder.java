@@ -57,7 +57,6 @@ public interface GPURenderPassEncoder extends GPU.ObjectBase {
     void insertDebugMarker(String markerLabel);
 
     interface Bundle extends GPU.ObjectBase {
-        // le ✨stub✨
     }
 
     interface BundleEncoder extends GPU.ObjectBase {

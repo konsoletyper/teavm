@@ -44,7 +44,6 @@ public interface GPUBuffer extends GPU.ObjectBase {
         public static final int QUERY_RESOLVE = 0x0200;
 
         private Usage() {
-            // le ✨stub✨
         }
     }
 
@@ -53,7 +52,6 @@ public interface GPUBuffer extends GPU.ObjectBase {
         public static final int WRITE = 0x2;
 
         private MapMode() {
-            // le ✨stub✨
         }
     }
 }
