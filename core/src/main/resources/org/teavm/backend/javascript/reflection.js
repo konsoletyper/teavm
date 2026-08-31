@@ -28,7 +28,7 @@ let $rt_isInstance = (obj, cls) => obj instanceof $rt_objcls() && !!obj.construc
     && $rt_isAssignable(obj.constructor, cls);
 let $rt_isAssignable = (from, to) => {
     if (to === $rt_objcls()) {
-        return true;
+        return from[$rt_meta].primitiveKind === 0;
     }
     if (from === to) {
         return true;
