@@ -38,7 +38,7 @@ public class ObjectIntrinsic implements WasmGCInlineIntrinsic {
     public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         switch (invocation.getMethod().getName()) {
-            case "getClassInfo":
+            case "getObjectClassInfo":
                 generateGetClass(invocation, context, builder);
                 break;
             case "getMonitor":

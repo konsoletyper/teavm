@@ -82,7 +82,7 @@ public class WasmGCIntrinsics {
             IntrinsicRegistry<WasmGCBodyIntrinsic> bodyReg) {
         inlineReg.registerIntrinsic(WasmRuntime.class, new WasmRuntimeIntrinsic());
         inlineReg.registerIntrinsic(Object.class, new ObjectIntrinsic(ctx.classInfoProvider(), ctx.functionTypes()),
-                "getClassInfo", "getMonitor", "setMonitor", "wasmGCIdentity", "setWasmGCIdentity",
+                "getObjectClassInfo", "getMonitor", "setMonitor", "wasmGCIdentity", "setWasmGCIdentity",
                 "cloneObject");
         fillSystem(inlineReg, ctx);
         inlineReg.registerIntrinsic(Heap.class, new HeapIntrinsic());

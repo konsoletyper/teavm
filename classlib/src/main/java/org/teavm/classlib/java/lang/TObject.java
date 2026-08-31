@@ -233,10 +233,10 @@ public class TObject {
 
     @Rename("getClass")
     public final TClass<?> getClass0() {
-        return (TClass<?>) (Object) getClassInfo().classObject();
+        return (TClass<?>) (Object) getObjectClassInfo(this).classObject();
     }
 
-    private native ClassInfo getClassInfo();
+    public static native ClassInfo getObjectClassInfo(Object obj);
 
     @Override
     public int hashCode() {

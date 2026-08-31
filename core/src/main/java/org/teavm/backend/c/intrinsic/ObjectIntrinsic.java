@@ -24,7 +24,7 @@ public class ObjectIntrinsic implements Intrinsic {
         if (!method.getClassName().equals(Object.class.getName())) {
             return false;
         }
-        return method.getName().equals("getClassInfo");
+        return method.getName().equals("getObjectClassInfo");
     }
 
     @Override

@@ -23,6 +23,6 @@ import org.teavm.model.MethodReference;
 public class ObjectGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
-        writer.append("return ").append(context.getParameterName(0)).append(".constructor;").softNewLine();
+        writer.append("return ").append(context.getParameterName(1)).append(".constructor;").softNewLine();
     }
 }

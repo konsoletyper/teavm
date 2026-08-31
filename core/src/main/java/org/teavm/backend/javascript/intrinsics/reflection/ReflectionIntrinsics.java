@@ -99,7 +99,8 @@ public class ReflectionIntrinsics {
         applyIntrinsics(WildcardTypeInfo.class, genericTypeGen);
         applyIntrinsics(RawTypeInfo.class, genericTypeGen);
 
-        generators.put(new MethodReference(Object.class, "getClassInfo", ClassInfo.class), new ObjectGenerator());
+        generators.put(new MethodReference(Object.class, "getObjectClassInfo", Object.class, ClassInfo.class),
+                new ObjectGenerator());
         
         var proxyContext = new ProxyGeneratorContext();
         var proxyGen = new ProxyGenerator(reflection, proxyContext);

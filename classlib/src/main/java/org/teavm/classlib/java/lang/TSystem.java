@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.lang.reflect.Array;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -128,11 +127,20 @@ public final class TSystem extends TObject {
     }
 
     static void fastArraycopy(Object src, int srcPos, Object dest, int destPos, int length) {
-        if (srcPos < 0 || destPos < 0 || length < 0 || srcPos + length > Array.getLength(src)
-                || destPos + length > Array.getLength(dest)) {
+        if (srcPos < 0 || destPos < 0 || length < 0 || srcPos + length > fastArrayLength(src)
+                || destPos + length > fastArrayLength(dest)) {
             throw new TIndexOutOfBoundsException();
         }
         doArrayCopy(src, srcPos, dest, destPos, length);
+    }
+
+    private static int fastArrayLength(Object obj) {
+        if (PlatformDetector.isC()) {
+            RuntimeArray runtimeObject = Address.ofObject(obj).toStructure();
+            return runtimeObject.size;
+        } else {
+            return TObject.getObjectClassInfo(obj).arrayLength(obj);
+        }
     }
 
     @GeneratedBy(SystemNativeGenerator.class)
