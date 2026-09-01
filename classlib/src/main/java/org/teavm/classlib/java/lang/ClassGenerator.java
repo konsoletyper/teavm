@@ -43,7 +43,7 @@ public class ClassGenerator implements DependencyPlugin {
             case "getDeclaredClasses":
                 reachGetDeclaredClasses(agent, method);
                 break;
-            case "getEnumConstants":
+            case "getEnumConstantsFast":
                 reachGetEnumConstants(agent, method);
                 break;
             case "newInstance": {

@@ -63,6 +63,7 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     private TMethod[] declaredMethods;
     private TTypeVariable<?>[] typeParameters;
     private TClass<?>[] classesCache;
+    private Object[] enumConstantsCache;
 
     private TClass(ClassInfo classInfo) {
         this.classInfo = classInfo;
@@ -537,19 +538,28 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         }
         return (TClass<? super T>[]) interfaces;
     }
+    @PluggableDependency(ClassGenerator.class)
+    public T[] getEnumConstants() {
+        var result = getEnumConstantsFast();
+        return result != null ? result.clone() : null;
+    }
 
     @SuppressWarnings("unchecked")
     @PluggableDependency(ClassGenerator.class)
-    public T[] getEnumConstants() {
+    public T[] getEnumConstantsFast() {
         if (!isEnum()) {
             return null;
         }
 
-        initialize();
-        var count = classInfo.enumConstantCount();
-        var data = (Object[]) classInfo.newArrayInstance(count);
-        for (var i = 0; i < count; ++i) {
-            data[i] = classInfo.enumConstant(i);
+        Object[] data = enumConstantsCache;
+        if (data == null) {
+            initialize();
+            var count = classInfo.enumConstantCount();
+            data = (Object[]) classInfo.newArrayInstance(count);
+            for (var i = 0; i < count; ++i) {
+                data[i] = classInfo.enumConstant(i);
+            }
+            enumConstantsCache = data;
         }
         return (T[]) data;
     }

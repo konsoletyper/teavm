@@ -181,7 +181,7 @@ public class ClassMetadataRequirements {
             }
         }
 
-        var enumConstantsDep = dependencyInfo.getMethod(new MethodReference(Class.class, "getEnumConstants",
+        var enumConstantsDep = dependencyInfo.getMethod(new MethodReference(Class.class, "getEnumConstantsFast",
                 Object[].class));
         if (enumConstantsDep != null && enumConstantsDep.isUsed()) {
             hasEnumConstants = true;

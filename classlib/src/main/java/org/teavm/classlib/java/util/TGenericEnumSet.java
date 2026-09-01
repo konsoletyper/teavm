@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import org.teavm.classlib.java.lang.TClass;
 
 class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     Class<E> cls;
@@ -40,7 +41,7 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     }
 
     static Enum<?>[] getConstants(Class<?> cls) {
-        return (Enum<?>[]) cls.getEnumConstants();
+        return (Enum<?>[]) ((TClass<?>) (Object) cls).getEnumConstantsFast();
     }
 
     @Override
@@ -48,6 +49,7 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
         return new Iterator<>() {
             private int index = find();
             private int indexToRemove = -1;
+            private Enum<?>[] constantsCache;
 
             private int find() {
                 int overflow = bits.length * Integer.SIZE;
@@ -74,8 +76,9 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
                     throw new TNoSuchElementException();
                 }
                 indexToRemove = index;
+                ensureConstants();
                 @SuppressWarnings("unchecked")
-                E returnValue = (E) getConstants(cls)[index++];
+                E returnValue = (E) constantsCache[index++];
                 index = find();
                 return returnValue;
             }
@@ -88,6 +91,12 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
                 int bitNumber = indexToRemove / Integer.SIZE;
                 bits[bitNumber] &= ~(1 << (indexToRemove % Integer.SIZE));
                 indexToRemove = -1;
+            }
+
+            private void ensureConstants() {
+                if (constantsCache == null) {
+                    constantsCache = getConstants(cls);
+                }
             }
         };
     }
