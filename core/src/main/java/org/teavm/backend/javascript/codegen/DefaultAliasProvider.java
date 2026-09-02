@@ -19,6 +19,7 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.HashSet;
 import java.util.Set;
+import org.teavm.backend.javascript.rendering.RenderingUtil;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -33,6 +34,9 @@ public class DefaultAliasProvider implements AliasProvider {
 
     public DefaultAliasProvider(int maxTopLevelNames) {
         this.maxTopLevelNames = maxTopLevelNames;
+        for (String keyword : RenderingUtil.KEYWORDS) {
+            knowAliasesCounter.put(keyword, 1);
+        }
     }
 
     @Override
@@ -153,14 +157,6 @@ public class DefaultAliasProvider implements AliasProvider {
         return new ScopedName(alias, additionalScopeStarted);
     }
 
-    private static final Set<String> RESERVED_WORDS = Set.of(
-            "await", "break", "case", "catch", "class", "const", "continue", "debugger",
-            "default", "delete", "do", "else", "enum", "export", "extends", "false",
-            "finally", "for", "function", "if", "implements", "import", "in", "instanceof",
-            "interface", "let", "new", "null", "package", "private", "protected", "public",
-            "return", "static", "super", "switch", "this", "throw", "true", "try", "typeof",
-            "var", "void", "while", "with", "yield", "arguments", "eval");
-
     private String sanitize(String s) {
         if (s.isEmpty()) {
             return "_";
@@ -183,14 +179,7 @@ public class DefaultAliasProvider implements AliasProvider {
                 changed = true;
             }
         }
-        var result = changed ? sb.toString() : s;
-        // A class in the default package can be named after a JavaScript reserved word
-        // ("in", "with", ...): valid in bytecode, invalid as a JS identifier. Obfuscated
-        // applications hit this in practice.
-        if (RESERVED_WORDS.contains(result)) {
-            result = result + "_";
-        }
-        return result;
+        return changed ? sb.toString() : s;
     }
 
     private static boolean isIdentifierStart(char c) {

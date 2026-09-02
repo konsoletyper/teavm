@@ -22,9 +22,9 @@ public class DefaultAliasProviderTest {
     @Test
     public void reservedWordClassNamesAreEscaped() {
         var provider = new DefaultAliasProvider(10000);
-        assertEquals("in_", provider.getClassAlias("in").name);
-        assertEquals("with_", provider.getClassAlias("with").name);
-        assertEquals("do_", provider.getClassAlias("do").name);
+        assertEquals("in1", provider.getClassAlias("in").name);
+        assertEquals("with1", provider.getClassAlias("with").name);
+        assertEquals("do1", provider.getClassAlias("do").name);
     }
 
     @Test
