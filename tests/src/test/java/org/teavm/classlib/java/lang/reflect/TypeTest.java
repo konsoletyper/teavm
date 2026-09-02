@@ -27,6 +27,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -232,6 +233,18 @@ public class TypeTest {
         assertEquals(Number.class, pt.getActualTypeArguments()[0]);
     }
     
+    @Test
+    public void innerTypeReference() throws Exception {
+        var type = TypeTest.class.getDeclaredMethod("reflectTest1").getGenericReturnType();
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$Outer<T1>$Inner<T2>", type.getTypeName());
+
+        type = TypeTest.class.getDeclaredMethod("reflectTest2").getGenericReturnType();
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$Outer<T1>$InnerWithoutArgs", type.getTypeName());
+        
+        type = TypeTest.class.getDeclaredMethod("reflectTest3").getGenericReturnType();
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$C", type.getTypeName());
+    }
+    
     interface A<T> {
         @Reflectable
         void foo();
@@ -282,7 +295,27 @@ public class TypeTest {
     static class Outer<T> {
         class Inner<S extends T> {
         }
+        class InnerWithoutArgs {
+        }
     }
+    
+    @Reflectable
+    native <T1, T2 extends T1> Outer<T1>.Inner<T2> reflectTest1();
+
+    @Reflectable
+    native <T1> Outer<T1>.InnerWithoutArgs reflectTest2();
+
+    @Reflectable
+    native C reflectTest3();
+    
+    @Reflectable
+    native <T1, T2 extends T1> Consumer<Outer<T1>.Inner<T2>> reflectTest4();
+
+    @Reflectable
+    native <T1> Consumer<Outer<T1>.InnerWithoutArgs> reflectTest5();
+
+    @Reflectable
+    native Consumer<C> reflectTest6();
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface SomeAnnot {

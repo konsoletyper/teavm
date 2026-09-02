@@ -790,24 +790,16 @@ class ClassReflectionGenerator {
 
     private void generateGenericType(GenericValueType type, ClassReader contextClass, MethodReader contextMethod) {
         includes.includePath("reflection.h");
-        if (type instanceof GenericValueType.Object objectType) {
-            var args = objectType.getArguments();
-            if (args.length == 0) {
-                generateRawType(ValueType.object(objectType.getFullClassName()));
-            } else {
-                generateParameterizedType(objectType, contextClass, contextMethod);
-            }
+        if (type.canBeRepresentedAsRaw()) {
+            generateRawType(type.asValueType());
+        } else if (type instanceof GenericValueType.Object objectType) {
+            generateParameterizedType(objectType, contextClass, contextMethod);
         } else if (type instanceof GenericValueType.Variable varType) {
             generateTypeVariableRef(varType.getName(), contextClass, contextMethod);
         } else if (type instanceof GenericValueType.Array arrayType) {
-            var nonGeneric = type.asValueType();
-            if (nonGeneric != null) {
-                generateRawType(nonGeneric);
-            } else {
-                writer.print("&(TeaVM_GenericTypeInfo) { .kind = 2, .itemType = ");
-                generateGenericType(arrayType.getItemType(), contextClass, contextMethod);
-                writer.print(" }");
-            }
+            writer.print("&(TeaVM_GenericTypeInfo) { .kind = 2, .itemType = ");
+            generateGenericType(arrayType.getItemType(), contextClass, contextMethod);
+            writer.print(" }");
         } else {
             throw new IllegalArgumentException("Unsupported generic type: " + type);
         }
@@ -824,17 +816,23 @@ class ClassReflectionGenerator {
         writer.print(".rawType = (TeaVM_Class*) &")
                 .print(context.getNames().forClassInstance(vt)).println(",");
         writer.print(".actualTypeArgumentCount = ").print(String.valueOf(args.length)).println(",");
-        writer.print(".actualTypeArguments = (TeaVM_GenericTypeInfo*[")
-                .print(String.valueOf(args.length)).print("]) {").indent();
-        for (var i = 0; i < args.length; ++i) {
-            writer.println();
-            if (i > 0) {
-                writer.println(",");
+        writer.print(".actualTypeArguments = ");
+        if (args.length > 0) {
+            writer.print("(TeaVM_GenericTypeInfo*[")
+                    .print(String.valueOf(args.length)).print("]) {").indent();
+            for (var i = 0; i < args.length; ++i) {
+                writer.println();
+                if (i > 0) {
+                    writer.println(",");
+                }
+                generateTypeArgument(args[i], contextClass, contextMethod);
             }
-            generateTypeArgument(args[i], contextClass, contextMethod);
+            writer.println();
+            writer.outdent().print("}");
+        } else {
+            writer.print("NULL");
         }
-        writer.println();
-        writer.outdent().println("},");
+        writer.println(",");
         var parent = objectType.getParent();
         if (parent != null) {
             writer.print(".ownerType = ");

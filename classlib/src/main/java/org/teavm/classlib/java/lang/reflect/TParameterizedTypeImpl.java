@@ -87,10 +87,13 @@ class TParameterizedTypeImpl implements TParameterizedType {
         } else {
             sb.append(info.rawType().classObject().getName());
         }
-        sb.append('<').append(args[0].getTypeName());
-        for (int i = 1; i < args.length; i++) {
-            sb.append(',').append(args[i].getTypeName());
+        if (args.length > 0) {
+            sb.append('<').append(args[0].getTypeName());
+            for (int i = 1; i < args.length; i++) {
+                sb.append(',').append(args[i].getTypeName());
+            }
+            sb.append(">");
         }
-        return sb.append(">").toString();
+        return sb.toString();
     }
 }

@@ -224,7 +224,7 @@ public abstract class GenericValueType {
 
         @Override
         public ValueType asValueType() {
-            return arguments == null || arguments.length == 0 ? ValueType.object(className) : null;
+            return canBeRepresentedAsRaw() ? ValueType.object(getClassName()) : null;
         }
 
         @Override
@@ -306,7 +306,8 @@ public abstract class GenericValueType {
 
         @Override
         public boolean canBeRepresentedAsRaw() {
-            return arguments == null || arguments.length == 0;
+            return (arguments == null || arguments.length == 0)
+                    && (parent == null || parent.canBeRepresentedAsRaw());
         }
     }
 

@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang.reflect;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.runtime.reflect.ClassInfoUtil;
 import org.teavm.runtime.reflect.GenericTypeInfo;
+import org.teavm.runtime.reflect.ParameterizedTypeInfo;
 import org.teavm.runtime.reflect.TypeVariableReference;
 
 class TGenericTypeFactory {
@@ -28,7 +29,7 @@ class TGenericTypeFactory {
         switch (info.kind()) {
             case GenericTypeInfo.Kind.PARAMETERIZED_TYPE: {
                 var paramType = info.asParameterizedType();
-                if (paramType.actualTypeArgumentCount() == 0) {
+                if (isRawType(paramType)) {
                     return (TClass<?>) (Object) paramType.rawType().classObject();
                 } else {
                     return new TParameterizedTypeImpl(declaration, info.asParameterizedType());
@@ -47,6 +48,11 @@ class TGenericTypeFactory {
             default:
                 throw new IllegalStateException();
         }
+    }
+
+    private static boolean isRawType(ParameterizedTypeInfo type) {
+        return type.actualTypeArgumentCount() == 0
+                && (type.ownerType() == null || isRawType(type.ownerType().asParameterizedType()));
     }
 
     static TTypeVariable<?> resolve(TGenericDeclaration declaration, TypeVariableReference ref) {
