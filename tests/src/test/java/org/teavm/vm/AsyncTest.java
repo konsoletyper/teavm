@@ -102,7 +102,7 @@ public class AsyncTest {
         for (var i = 0; i < 2; ++i) {
             sb.append(describe(i == 0 ? returnSameObject(this) : "foo", getPrimitive())).append(";");
         }
-        assertEquals("string:23;other:23;other:23;string:23", sb.toString());
+        assertEquals("string:23;other:23;other:23;string:23;", sb.toString());
     }
 
     private static String describe(Object o, int n) {
