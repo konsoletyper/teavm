@@ -17,8 +17,10 @@ package org.teavm.backend.wasm.transformation;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
@@ -83,6 +85,7 @@ public class CoroutineTransformation {
         currentFunction = function;
         collector = new SuspensionPointCollector();
         collector.visitMany(function.getBody());
+        makeLocalsDefaultable(function);
         var originalLocals = function.getLocalVariables().size();
         fiberLocal = new WasmLocal(classInfoProvider.getClassInfo(FIBER).getType(), "coroutine$fiber");
         stateLocal = new WasmLocal(WasmType.INT32, "coroutine$state");
@@ -109,6 +112,22 @@ public class CoroutineTransformation {
         stateLocal = null;
         fiberLocal = null;
         usedBreakTargets.clear();
+    }
+
+    private void makeLocalsDefaultable(WasmFunction function) {
+        var parameterCount = function.getType().getParameterTypes().size();
+        var locals = function.getLocalVariables();
+        var replacedLocals = new HashMap<WasmLocal, WasmType.Reference>();
+        for (var i = parameterCount; i < locals.size(); i++) {
+            var local = locals.get(i);
+            if (local.getType() instanceof WasmType.Reference ref && !ref.isNullable()) {
+                replacedLocals.put(local, ref);
+                local.setType(ref.asNullable());
+            }
+        }
+        if (!replacedLocals.isEmpty()) {
+            new NarrowingCastInserter(replacedLocals).visitMany(function.getBody());
+        }
     }
 
     private void generatePrologue(int localsCount) {
@@ -580,6 +599,35 @@ public class CoroutineTransformation {
     private void emitIsSuspending(WasmInstructionList list, TextLocation location) {
         list.add(new WasmGetLocal(fiberLocal), location);
         list.add(new WasmCall(coroutineFunctions.isSuspending()), location);
+    }
+
+    private static class NarrowingCastInserter extends WasmDefaultInstructionVisitor {
+        private Map<WasmLocal, WasmType.Reference> replacedLocals;
+
+        NarrowingCastInserter(Map<WasmLocal, WasmType.Reference> replacedLocals) {
+            this.replacedLocals = replacedLocals;
+        }
+
+        @Override
+        public void visit(WasmGetLocal instruction) {
+            super.visit(instruction);
+            insertCast(instruction, instruction.getLocal());
+        }
+
+        @Override
+        public void visit(WasmTeeLocal instruction) {
+            super.visit(instruction);
+            insertCast(instruction, instruction.getLocal());
+        }
+
+        private void insertCast(WasmInstruction instruction, WasmLocal local) {
+            var originalType = replacedLocals.get(local);
+            if (originalType != null) {
+                var cast = new WasmCast(originalType);
+                cast.setLocation(instruction.getLocation());
+                instruction.insertNext(cast);
+            }
+        }
     }
 
     private class BreakTargetCollector extends WasmDefaultInstructionVisitor {
