@@ -279,11 +279,12 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     private static native StringResource acquireUpperCaseMapping();
 
     public static int toTitleCase(int codePoint) {
-        codePoint = mapChar(getTitleCaseMapping(), codePoint);
-        if (codePoint == codePoint) {
-            codePoint = toUpperCase(codePoint);
+        if (!isValidCodePoint(codePoint) || isTitleCase(codePoint)) {
+            return codePoint;
         }
-        return codePoint;
+        // TeaVM stores only title-case mappings that differ from uppercase.
+        int titleCase = mapChar(getTitleCaseMapping(), codePoint);
+        return titleCase != codePoint ? titleCase : toUpperCase(codePoint);
     }
 
     public static char toTitleCase(char c) {
