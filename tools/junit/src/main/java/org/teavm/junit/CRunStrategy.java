@@ -20,10 +20,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class CRunStrategy implements TestRunStrategy {
     private String compilerCommand;
@@ -56,7 +59,12 @@ class CRunStrategy implements TestRunStrategy {
                 try {
                     List<String> runCommand = new ArrayList<>();
                     if (wrapperCommand != null && !wrapperCommand.isEmpty()) {
-                        runCommand.addAll(List.of(wrapperCommand.split(" ")));
+                        var wrapperParts = new ArrayList<>(List.of(wrapperCommand.split(" ")));
+                        var wrapperExecutable = new File(wrapperParts.get(0));
+                        if (wrapperExecutable.exists()) {
+                            wrapperParts.set(0, wrapperExecutable.getAbsolutePath());
+                        }
+                        runCommand.addAll(wrapperParts);
                     }
                     runCommand.add(outputFile.getPath());
                     if (run.getArgument() != null) {
@@ -76,14 +84,8 @@ class CRunStrategy implements TestRunStrategy {
                     stdoutThread.join();
                     stderrThread.join();
 
-                    if (stdoutBytes.size() > 0) {
-                        System.out.write(stdoutBytes.toByteArray());
-                        System.out.flush();
-                    }
-                    if (stderrBytes.size() > 0) {
-                        System.err.write(stderrBytes.toByteArray());
-                        System.err.flush();
-                    }
+                    printCaptured(System.out, stdoutBytes);
+                    printCaptured(System.err, stderrBytes);
 
                     if (exitCode != 0) {
                         Throwable parsed = parseExceptionFile(exceptionFile);
@@ -328,15 +330,47 @@ class CRunStrategy implements TestRunStrategy {
         var stderrThread = captureStream(process.getErrorStream(), stderrBytes);
         stdoutThread.join();
         stderrThread.join();
-        if (stdoutBytes.size() > 0) {
-            System.out.write(stdoutBytes.toByteArray());
-            System.out.flush();
-        }
-        if (stderrBytes.size() > 0) {
-            System.err.write(stderrBytes.toByteArray());
-            System.err.flush();
-        }
+        printCaptured(System.out, stdoutBytes);
+        printCaptured(System.err, stderrBytes);
         return process.waitFor() == 0;
+    }
+
+    private static void printCaptured(java.io.PrintStream target, ByteArrayOutputStream bytes) {
+        if (bytes.size() == 0) {
+            return;
+        }
+        target.print(new String(bytes.toByteArray(), nativeConsoleCharset()));
+        target.flush();
+    }
+
+    private static volatile Charset nativeConsoleCharset;
+
+    private static Charset nativeConsoleCharset() {
+        Charset result = nativeConsoleCharset;
+        if (result == null) {
+            result = detectNativeConsoleCharset();
+            nativeConsoleCharset = result;
+        }
+        return result;
+    }
+
+    private static Charset detectNativeConsoleCharset() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            return Charset.defaultCharset();
+        }
+        try {
+            var process = new ProcessBuilder("cmd", "/c", "chcp").start();
+            var output = new ByteArrayOutputStream();
+            process.getInputStream().transferTo(output);
+            process.waitFor();
+            Matcher matcher = Pattern.compile("(\\d+)\\s*$").matcher(output.toString().trim());
+            if (matcher.find()) {
+                return Charset.forName("Cp" + matcher.group(1));
+            }
+        } catch (IOException | InterruptedException | RuntimeException e) {
+            // fall back to default charset below
+        }
+        return Charset.defaultCharset();
     }
 
     @Override
