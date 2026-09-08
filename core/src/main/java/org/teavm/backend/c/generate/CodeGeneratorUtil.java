@@ -56,9 +56,9 @@ public final class CodeGeneratorUtil {
         } else if (value instanceof Long) {
             writeValue(writer, (Long) value);
         } else if (value instanceof Float) {
-            writeValue(writer, (Float) value);
+            writeValue(writer, includes, (Float) value);
         } else if (value instanceof Double) {
-            writeValue(writer, (Double) value);
+            writeValue(writer, includes, (Double) value);
         } else if (value instanceof Boolean) {
             writer.print((Boolean) value ? "1" : "0");
         } else if (value instanceof Character) {
@@ -86,14 +86,19 @@ public final class CodeGeneratorUtil {
         }
     }
 
-    public static void writeValue(CodeWriter writer, float value) {
+    public static void writeValue(CodeWriter writer, IncludeManager includes, float value) {
         if (Float.isInfinite(value)) {
             if (value < 0) {
                 writer.print("-");
             }
             writer.print("INFINITY");
         } else if (Float.isNaN(value)) {
-            writer.print("NAN");
+            // Not using the NAN macro here, since its sign bit is compiler-dependent (e.g. negative on MSVC),
+            // while Java requires NaN produced from a bit pattern with sign bit unset in the common case
+            includes.includePath("core.h");
+            writer.print("teavm_reinterpretIntToFloat(");
+            writeIntValue(writer, Float.floatToRawIntBits(value));
+            writer.print(")");
         } else  if ((int) value == value) {
             writer.print(value + "f");
         } else {
@@ -101,14 +106,19 @@ public final class CodeGeneratorUtil {
         }
     }
 
-    public static void writeValue(CodeWriter writer, double value) {
+    public static void writeValue(CodeWriter writer, IncludeManager includes, double value) {
         if (Double.isInfinite(value)) {
             if (value < 0) {
                 writer.print("-");
             }
             writer.print("INFINITY");
         } else if (Double.isNaN(value)) {
-            writer.print("NAN");
+            // Not using the NAN macro here, since its sign bit is compiler-dependent (e.g. negative on MSVC),
+            // while Java requires NaN produced from a bit pattern with sign bit unset in the common case
+            includes.includePath("core.h");
+            writer.print("teavm_reinterpretLongToDouble(");
+            writeValue(writer, Double.doubleToRawLongBits(value));
+            writer.print(")");
         } else if ((long) value == value) {
             writer.print(String.valueOf(value));
         } else {

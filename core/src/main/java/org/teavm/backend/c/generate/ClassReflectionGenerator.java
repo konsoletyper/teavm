@@ -586,10 +586,10 @@ class ClassReflectionGenerator {
                 CodeGeneratorUtil.writeValue(writer, value.getLong());
                 break;
             case AnnotationValue.FLOAT:
-                CodeGeneratorUtil.writeValue(writer, value.getFloat());
+                CodeGeneratorUtil.writeValue(writer, includes, value.getFloat());
                 break;
             case AnnotationValue.DOUBLE:
-                CodeGeneratorUtil.writeValue(writer, value.getDouble());
+                CodeGeneratorUtil.writeValue(writer, includes, value.getDouble());
                 break;
             case AnnotationValue.STRING:
                 writer.print("(TeaVM_Object**) TEAVM_GET_STRING_ADDRESS("
