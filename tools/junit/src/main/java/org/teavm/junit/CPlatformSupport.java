@@ -19,6 +19,7 @@ import static org.teavm.junit.PropertyNames.C_COMPILER;
 import static org.teavm.junit.PropertyNames.C_ENABLED;
 import static org.teavm.junit.PropertyNames.C_LINE_NUMBERS;
 import static org.teavm.junit.PropertyNames.C_RUN_WRAPPER;
+import static org.teavm.junit.PropertyNames.C_SHORT_FILE_NAMES;
 import static org.teavm.junit.PropertyNames.OPTIMIZED;
 import static org.teavm.junit.TestUtil.resourceToFile;
 import java.io.File;
@@ -34,6 +35,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
+import org.teavm.backend.c.generate.ShorteningFileNameProvider;
+import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.vm.TeaVM;
@@ -147,6 +150,9 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
     private CTarget createCTarget() {
         CTarget cTarget = new CTarget(new CNameProvider());
         cTarget.setLineNumbersGenerated(Boolean.parseBoolean(System.getProperty(C_LINE_NUMBERS, "false")));
+        if (System.getProperty(C_SHORT_FILE_NAMES, "false").equals("true")) {
+            cTarget.setFileNames(new ShorteningFileNameProvider(new SimpleFileNameProvider()));
+        }
         return cTarget;
     }
 

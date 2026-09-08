@@ -22,6 +22,8 @@ import java.util.Set;
 import org.teavm.model.ValueType;
 
 public class ShorteningFileNameProvider implements FileNameProvider {
+    private static final int MAX_NAME_LENGTH = 40;
+
     private final FileNameProvider nameProvider;
     private final Map<String, String> names = new HashMap<>();
     private final Set<String> usedNames = new HashSet<>();
@@ -76,6 +78,13 @@ public class ShorteningFileNameProvider implements FileNameProvider {
             sb.append('/');
             index = next + 1;
         }
-        return sb.append(name, index, name.length()).toString();
+        return sb.append(shortenBaseName(name.substring(index))).toString();
+    }
+
+    private static String shortenBaseName(String baseName) {
+        if (baseName.length() <= MAX_NAME_LENGTH) {
+            return baseName;
+        }
+        return baseName.substring(0, MAX_NAME_LENGTH);
     }
 }

@@ -85,6 +85,8 @@ tasks.test {
             .orElse("compile-c-unix-fast.sh").get())
     systemProperty("teavm.junit.c.runWrapper", providers.gradleProperty("teavm.tests.c.runWrapper")
         .orElse("bash run-process-unix-gdb.sh").get())
+    systemProperty("teavm.junit.c.shortFileNames", providers.gradleProperty("teavm.tests.c.shortFileNames")
+        .orElse("false").get())
 
     val dependencies = configurations.testRuntimeClasspath.get()
             .incoming.resolutionResult.allDependencies
