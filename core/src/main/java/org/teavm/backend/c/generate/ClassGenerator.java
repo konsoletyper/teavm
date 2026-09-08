@@ -126,22 +126,35 @@ public class ClassGenerator {
         includes = new SimpleIncludeManager(context.getFileNames(), writer);
         includes.init(fileName + ".c");
 
-        writer.println("typedef struct {").indent();
         var cls = context.getClassSource().get(className.substring(0, className.length()
                 - AnnotationGenerationHelper.ANNOTATION_DATA_SUFFIX.length()));
+        var fields = getAnnotationDataFields(context, cls);
+        if (fields.isEmpty()) {
+            writer.print("typedef void ").print(context.getNames().forClass(className)).println(";");
+        } else {
+            writer.println("typedef struct {").indent();
+            for (var method : fields) {
+                includes.includePath("reflection.h");
+                var fieldName =
+                        context.getNames().forMemberField(new FieldReference(cls.getName(), method.getName()));
+                generateAnnotationFieldType(context, includes, writer, method.getResultType());
+                writer.print(" ").print(fieldName).println(";");
+            }
+            writer.outdent().print("} ").print(context.getNames().forClass(className)).println(";");
+        }
+        includes = null;
+    }
+
+    static List<MethodReader> getAnnotationDataFields(GenerationContext context, ClassReader cls) {
+        var result = new ArrayList<MethodReader>();
         if (cls != null) {
             for (var method : cls.getMethods()) {
                 if (context.getDependencies().getMethod(method.getReference()) != null) {
-                    includes.includePath("reflection.h");
-                    var fieldName =
-                            context.getNames().forMemberField(new FieldReference(cls.getName(), method.getName()));
-                    generateAnnotationFieldType(context, includes, writer, method.getResultType());
-                    writer.print(" ").print(fieldName).println(";");
+                    result.add(method);
                 }
             }
         }
-        writer.outdent().print("} ").print(context.getNames().forClass(className)).println(";");
-        includes = null;
+        return result;
     }
 
     static void generateAnnotationFieldType(GenerationContext context, IncludeManager includes, CodeWriter writer,

@@ -531,12 +531,18 @@ class ClassReflectionGenerator {
             return;
         }
 
+        var fields = ClassGenerator.getAnnotationDataFields(context, cls);
+        if (fields.isEmpty()) {
+            writer.print("NULL");
+            return;
+        }
+
         var dataClass = annotation.getType() + AnnotationGenerationHelper.ANNOTATION_DATA_SUFFIX;
         includes.includeClass(dataClass);
         writer.print("&(").print(context.getNames().forClass(dataClass)).println(") {").indent();
 
         var first = true;
-        for (var method : cls.getMethods()) {
+        for (var method : fields) {
             if (!first) {
                 writer.println(",");
             }
