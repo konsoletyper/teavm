@@ -281,6 +281,14 @@ public class MethodTest {
         assertEquals(25, result);
     }
 
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void asyncReflectionWithSeveralParameters() throws Exception {
+        var method = ClassWithAsyncMethodWithSeveralParameters.class.getMethod("foo", int.class, int.class);
+        var result = method.invoke(null, 23, 42);
+        assertEquals(67, result);
+    }
+
     private void callMethods() {
         new Foo().bar(null);
         new Foo().baz();
@@ -529,6 +537,17 @@ public class MethodTest {
             Thread.sleep(1);
             ++x;
             return x;
+        }
+    }
+
+    static class ClassWithAsyncMethodWithSeveralParameters {
+        @Reflectable
+        public static int foo(int x, int y) throws InterruptedException {
+            Thread.sleep(1);
+            ++x;
+            Thread.sleep(1);
+            ++y;
+            return x + y;
         }
     }
 }
