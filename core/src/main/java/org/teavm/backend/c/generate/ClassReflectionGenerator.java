@@ -478,6 +478,10 @@ class ClassReflectionGenerator {
                     paramGenericType = pt;
                 }
             }
+            if (annots.isEmpty() && paramGenericType == null) {
+                writer.print("{ 0 }");
+                continue;
+            }
             writer.print("{");
             if (!annots.isEmpty()) {
                 writer.print(" .annotations = ");
