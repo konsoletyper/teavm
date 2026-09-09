@@ -38,7 +38,7 @@ public class TThrowable extends RuntimeException {
     private TThrowable cause;
     private boolean suppressionEnabled;
     private boolean writableStackTrace;
-    private TThrowable[] suppressed = new TThrowable[0];
+    private TThrowable[] suppressed;
     private TStackTraceElement[] stackTrace;
     private LazyStackSupplier lazyStackTrace;
 
@@ -49,6 +49,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     public void init(String message, TThrowable cause, boolean enableSuppression, boolean writableStackTrace) {
+        suppressed = new TThrowable[0];
         initNativeException();
         if (writableStackTrace) {
             fillInStackTrace();
@@ -65,6 +66,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init() {
+        suppressed = new TThrowable[0];
         initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
@@ -77,6 +79,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(String message) {
+        suppressed = new TThrowable[0];
         initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
@@ -91,6 +94,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(String message, TThrowable cause) {
+        suppressed = new TThrowable[0];
         initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
@@ -106,6 +110,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(TThrowable cause) {
+        suppressed = new TThrowable[0];
         initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
