@@ -27,6 +27,7 @@ final class PropertyNames {
     static final String WASM_GC_DISASM = "teavm.junit.wasm-gc.disasm";
     static final String C_COMPILER = "teavm.junit.c.compiler";
     static final String C_RUN_WRAPPER = "teavm.junit.c.runWrapper";
+    static final String C_ENV_SCRIPT = "teavm.junit.c.envScript";
     static final String C_LINE_NUMBERS = "teavm.junit.c.lineNumbers";
     static final String C_SHORT_FILE_NAMES = "teavm.junit.c.shortFileNames";
     static final String MINIFIED = "teavm.junit.minified";

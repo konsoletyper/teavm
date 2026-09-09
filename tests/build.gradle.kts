@@ -65,8 +65,12 @@ dependencies {
 }
 
 val isWindowsOs = System.getProperty("os.name").lowercase().contains("win")
+val cCompilerOverridden = providers.gradleProperty("teavm.tests.c.compiler").isPresent
 val defaultCCompiler = if (isWindowsOs) "compile-c-windows-fast.bat" else "compile-c-unix-fast.sh"
 val defaultCRunWrapper = if (isWindowsOs) "" else "bash run-process-unix-gdb.sh"
+// only run our own env setup script when we're compiling with our own default Windows compiler
+// script; a custom teavm.tests.c.compiler is expected to set up whatever environment it needs itself.
+val defaultCEnvScript = if (isWindowsOs && !cCompilerOverridden) "setup-msvc-env.bat" else ""
 
 tasks.test {
     systemProperty("teavm.junit.target", layout.buildDirectory.dir("teavm-tests").get().asFile.absolutePath)
@@ -89,6 +93,8 @@ tasks.test {
             .orElse(defaultCCompiler).get())
     systemProperty("teavm.junit.c.runWrapper", providers.gradleProperty("teavm.tests.c.runWrapper")
         .orElse(defaultCRunWrapper).get())
+    systemProperty("teavm.junit.c.envScript", providers.gradleProperty("teavm.tests.c.envScript")
+        .orElse(defaultCEnvScript).get())
     systemProperty("teavm.junit.c.shortFileNames", providers.gradleProperty("teavm.tests.c.shortFileNames")
         .orElse("false").get())
 

@@ -22,7 +22,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
@@ -31,11 +33,21 @@ import java.util.regex.Pattern;
 class CRunStrategy implements TestRunStrategy {
     private String compilerCommand;
     private String wrapperCommand;
+    private String envScript;
+    private Map<String, String> capturedEnvironment;
     private ConcurrentMap<String, Compilation> compilationMap = new ConcurrentHashMap<>();
 
-    CRunStrategy(String compilerCommand, String wrapperCommand) {
+    CRunStrategy(String compilerCommand, String wrapperCommand, String envScript) {
         this.compilerCommand = compilerCommand;
         this.wrapperCommand = wrapperCommand;
+        this.envScript = envScript;
+    }
+
+    @Override
+    public void beforeAll() {
+        if (envScript != null && !envScript.isEmpty()) {
+            capturedEnvironment = captureEnvironmentFromScript(envScript);
+        }
     }
 
     @Override
@@ -321,9 +333,11 @@ class CRunStrategy implements TestRunStrategy {
 
     private boolean doCompile(File inputDir) throws IOException, InterruptedException {
         String command = new File(compilerCommand).getAbsolutePath();
-        var process = new ProcessBuilder(command)
-                .directory(inputDir)
-                .start();
+        var pb = new ProcessBuilder(command).directory(inputDir);
+        if (capturedEnvironment != null) {
+            pb.environment().putAll(capturedEnvironment);
+        }
+        var process = pb.start();
         var stdoutBytes = new ByteArrayOutputStream();
         var stderrBytes = new ByteArrayOutputStream();
         var stdoutThread = captureStream(process.getInputStream(), stdoutBytes);
@@ -371,6 +385,52 @@ class CRunStrategy implements TestRunStrategy {
             // fall back to default charset below
         }
         return Charset.defaultCharset();
+    }
+
+    // Runs a user-configured script (teavm.junit.c.envScript) that may set up extra environment
+    // variables (e.g. an MSVC dev environment) and captures the resulting environment, so it can be
+    // merged into subsequent compiler invocations instead of setting it up again for every one of them.
+    private static Map<String, String> captureEnvironmentFromScript(String envScript) {
+        var scriptFile = new File(envScript);
+        String path = scriptFile.exists() ? scriptFile.getAbsolutePath() : envScript;
+        String output;
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            output = runAndCaptureOutput("cmd", "/c", "call \"" + path + "\" && set");
+        } else {
+            output = runAndCaptureOutput("bash", "-c", "source \"" + path + "\" && env");
+        }
+        return parseEnvironment(output);
+    }
+
+    private static Map<String, String> parseEnvironment(String output) {
+        var result = new HashMap<String, String>();
+        for (var line : output.split("\\r?\\n")) {
+            int eq = line.indexOf('=');
+            if (eq > 0) {
+                result.put(line.substring(0, eq), line.substring(eq + 1));
+            }
+        }
+        return result;
+    }
+
+    private static String runAndCaptureOutput(String... command) {
+        try {
+            var process = new ProcessBuilder(command).start();
+            var stdoutBytes = new ByteArrayOutputStream();
+            var stderrBytes = new ByteArrayOutputStream();
+            var stdoutThread = captureStream(process.getInputStream(), stdoutBytes);
+            var stderrThread = captureStream(process.getErrorStream(), stderrBytes);
+            stdoutThread.join();
+            stderrThread.join();
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new RuntimeException("Command '" + String.join(" ", command) + "' failed with exit code "
+                        + exitCode + ": " + stderrBytes);
+            }
+            return stdoutBytes.toString();
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Failed to run command '" + String.join(" ", command) + "'", e);
+        }
     }
 
     @Override
