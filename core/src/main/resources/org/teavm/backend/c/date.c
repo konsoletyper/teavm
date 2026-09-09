@@ -20,6 +20,7 @@
 #include "definitions.h"
 
 #if TEAVM_WINDOWS
+    #include <errno.h>
     #define timegm _mkgmtime
     #define localtime_r(a, b) localtime_s(b, a)
 #endif
@@ -28,6 +29,68 @@ static time_t teavm_epochStart;
 static struct tm teavm_epochStartTm;
 static char teavm_date_formatBuffer[512];
 static char* teavm_date_defaultFormat = "%a %b %d %H:%M:%S %Z %Y";
+
+#if TEAVM_WINDOWS
+// MSVC's mktime/_mkgmtime only support years 1970 through 3000 (they fail with EINVAL
+// outside that range, unlike glibc's, which has no such limit). As a fallback for years
+// outside that range, do proleptic Gregorian calendar <-> days-since-epoch conversion
+// ourselves. Algorithm by Howard Hinnant, see http://howardhinnant.github.io/date_algorithms.html
+static int64_t teavm_date_localOffsetSeconds;
+
+static int64_t teavm_date_daysFromCivil(int64_t y, int m, int d) {
+    y -= m <= 2 ? 1 : 0;
+    int64_t era = (y >= 0 ? y : y - 399) / 400;
+    int64_t yoe = y - era * 400;
+    int64_t doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+    int64_t doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    return era * 146097 + doe - 719468;
+}
+
+static void teavm_date_civilFromDays(int64_t z, int64_t *y, int *m, int *d) {
+    z += 719468;
+    int64_t era = (z >= 0 ? z : z - 146096) / 146097;
+    int64_t doe = z - era * 146097;
+    int64_t yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    int64_t yyyy = yoe + era * 400;
+    int64_t doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    int64_t mp = (5 * doy + 2) / 153;
+    *d = (int) (doy - (153 * mp + 2) / 5 + 1);
+    *m = (int) (mp < 10 ? mp + 3 : mp - 9);
+    *y = yyyy + (*m <= 2 ? 1 : 0);
+}
+
+// Treats the given broken-down time as UTC and returns the corresponding number of
+// milliseconds since the Unix epoch, without relying on the platform's CRT.
+static int64_t teavm_date_toEpochMillis(struct tm *t) {
+    int64_t days = teavm_date_daysFromCivil(1900 + (int64_t) t->tm_year, t->tm_mon + 1, t->tm_mday);
+    int64_t seconds = days * INT64_C(86400) + t->tm_hour * INT64_C(3600) + t->tm_min * INT64_C(60) + t->tm_sec;
+    return seconds * INT64_C(1000);
+}
+
+// Fills in broken-down UTC time fields from the given number of milliseconds since the Unix
+// epoch, without relying on the platform's CRT.
+static void teavm_date_fromEpochMillis(int64_t millis, struct tm *t) {
+    int64_t seconds = millis >= 0 ? millis / 1000 : -((-millis + 999) / 1000);
+    int64_t days = seconds / 86400;
+    int64_t secondsOfDay = seconds % 86400;
+    if (secondsOfDay < 0) {
+        secondsOfDay += 86400;
+        days -= 1;
+    }
+    int64_t y;
+    int m;
+    int d;
+    teavm_date_civilFromDays(days, &y, &m, &d);
+    t->tm_year = (int) (y - 1900);
+    t->tm_mon = m - 1;
+    t->tm_mday = d;
+    t->tm_hour = (int) (secondsOfDay / 3600);
+    t->tm_min = (int) ((secondsOfDay / 60) % 60);
+    t->tm_sec = (int) (secondsOfDay % 60);
+    t->tm_wday = (int) ((((days % 7) + 7) % 7 + 4) % 7);
+    t->tm_isdst = 0;
+}
+#endif
 
 void teavm_date_init() {
     struct tm epochStart = {
@@ -45,10 +108,22 @@ void teavm_date_init() {
     teavm_epochStart = timegm(&epochStart);
 #endif
     localtime_r(&teavm_epochStart, &teavm_epochStartTm);
+#if TEAVM_WINDOWS
+    teavm_date_localOffsetSeconds = teavm_date_toEpochMillis(&teavm_epochStartTm) / 1000;
+#endif
 }
 
 inline static int64_t teavm_date_timestamp(struct tm *t) {
+#if TEAVM_WINDOWS
+    errno = 0;
     time_t result = mktime(t);
+    if (result == (time_t) -1 && errno != 0) {
+        int64_t utcMillis = teavm_date_toEpochMillis(t) - teavm_date_localOffsetSeconds * INT64_C(1000);
+        return utcMillis - (int64_t) 1000 * teavm_epochStart;
+    }
+#else
+    time_t result = mktime(t);
+#endif
     return (int64_t) (1000 * difftime(result, teavm_epochStart));
 }
 
@@ -80,7 +155,16 @@ inline static struct tm* teavm_date_decompose(int64_t timestamp, struct tm *t) {
     t->tm_sec += (int) (seconds % 60);
     t->tm_min += (int) ((seconds / 60) % 60);
     t->tm_hour += (int) (seconds / 3600);
+#if TEAVM_WINDOWS
+    errno = 0;
+    time_t result = mktime(t);
+    if (result == (time_t) -1 && errno != 0) {
+        int64_t localMillis = timestamp + teavm_date_localOffsetSeconds * INT64_C(1000);
+        teavm_date_fromEpochMillis(localMillis, t);
+    }
+#else
     mktime(t);
+#endif
     return t;
 }
 
@@ -109,6 +193,12 @@ int64_t teavm_date_createUtc(int32_t year, int32_t month, int32_t day, int32_t h
     };
 #if TEAVM_PSP
     time_t result = mktime(&t);  // Approximate with mktime for PSP
+#elif TEAVM_WINDOWS
+    errno = 0;
+    time_t result = timegm(&t);
+    if (result == (time_t) -1 && errno != 0) {
+        return teavm_date_toEpochMillis(&t) - (int64_t) 1000 * teavm_epochStart;
+    }
 #else
     time_t result = timegm(&t);
 #endif
@@ -199,12 +289,7 @@ int64_t teavm_date_setSeconds(int64_t time, int32_t seconds) {
 
 char* teavm_date_format(int64_t time) {
     struct tm t;
-    t = teavm_epochStartTm;
-    int64_t seconds = (time / 1000);
-    t.tm_sec += (int) (seconds % 60);
-    t.tm_min += (int) ((seconds / 60) % 60);
-    t.tm_hour += (int) (seconds / 3600);
-    mktime(&t);
+    teavm_date_decompose(time, &t);
     strftime(teavm_date_formatBuffer, 512, teavm_date_defaultFormat, &t);
     return teavm_date_formatBuffer;
 }
