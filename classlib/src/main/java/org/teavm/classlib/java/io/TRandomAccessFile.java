@@ -89,7 +89,7 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         ensureOpened();
         byte[] buffer = new byte[1];
         int read = accessor.read(buffer, 0, 1);
-        return read > 0 ? buffer[0] : -1;
+        return read > 0 ? buffer[0] & 0xFF : -1;
     }
 
     @Override
