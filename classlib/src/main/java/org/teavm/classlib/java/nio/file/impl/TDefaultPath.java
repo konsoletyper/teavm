@@ -38,18 +38,7 @@ public class TDefaultPath implements TPath {
 
     @Override
     public boolean isAbsolute() {
-        if (!fs.vfs.isWindows()) {
-            return pathString.startsWith("/");
-        } else {
-            if (pathString.length() < 3) {
-                return false;
-            }
-            var c = Character.toUpperCase(pathString.charAt(0));
-            if (c < 'A' || c > 'Z') {
-                return false;
-            }
-            return pathString.charAt(1) == ':' && pathString.charAt(2) == '\\';
-        }
+        return pathString.startsWith("/");
     }
 
     @Override
@@ -57,11 +46,7 @@ public class TDefaultPath implements TPath {
         if (!isAbsolute()) {
             return null;
         }
-        if (fs.vfs.isWindows()) {
-            return new TDefaultPath(fs, pathString.substring(0, 2));
-        } else {
-            return new TDefaultPath(fs, "/");
-        }
+        return new TDefaultPath(fs, "/");
     }
 
     @Override
@@ -120,8 +105,8 @@ public class TDefaultPath implements TPath {
             return pathString.isEmpty();
         }
         if (fs.vfs.isWindows()) {
-            if (pathString.length() <= otherPath.pathString.length()
-                    && pathString.regionMatches(true, 0, otherPath.pathString, 0, otherPath.pathString.length())) {
+            if (pathString.length() < otherPath.pathString.length()
+                    || !pathString.regionMatches(true, 0, otherPath.pathString, 0, otherPath.pathString.length())) {
                 return false;
             }
         } else {
@@ -144,8 +129,8 @@ public class TDefaultPath implements TPath {
         }
         var otherPath = (TDefaultPath) other;
         if (fs.vfs.isWindows()) {
-            if (pathString.length() <= otherPath.pathString.length()
-                    && pathString.regionMatches(true, pathString.length() - otherPath.pathString.length(),
+            if (pathString.length() < otherPath.pathString.length()
+                    || !pathString.regionMatches(true, pathString.length() - otherPath.pathString.length(),
                     otherPath.pathString, 0, otherPath.pathString.length())) {
                 return false;
             }
@@ -259,20 +244,18 @@ public class TDefaultPath implements TPath {
 
     private String toAbsolutePathString() {
         var userdir = fs.vfs.getUserDir();
+        if (fs.vfs.isWindows()) {
+            userdir = userdir.replace('\\', '/');
+        }
 
         if (pathString.isEmpty()) {
             return userdir;
         }
-        int length = userdir.length();
 
         var separatorChar = fs.getSeparatorChar();
         var result = new StringBuilder(userdir);
-        if (userdir.charAt(length - 1) != separatorChar) {
-            if (pathString.charAt(0) != separatorChar) {
-                result.append(separatorChar);
-            }
-        } else if (fs.vfs.isWindows() && pathString.charAt(0) == separatorChar) {
-            result.setLength(3);
+        if (result.charAt(result.length() - 1) != separatorChar) {
+            result.append(separatorChar);
         }
         result.append(pathString);
 

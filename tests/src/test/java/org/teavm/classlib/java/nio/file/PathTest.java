@@ -50,6 +50,7 @@ public class PathTest {
     }
 
     @Test
+    @SkipJVM
     public void parent() {
         var path = FileSystems.getDefault().getPath("/a", "b", "c");
         assertEquals("/a/b", path.getParent().toString());

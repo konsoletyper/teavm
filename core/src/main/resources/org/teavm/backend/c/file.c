@@ -413,9 +413,11 @@ int32_t teavm_file_exists(char16_t* name, int32_t nameSize) {
 static int32_t teavm_file_checkExistingFileAccess(char16_t* name, int32_t nameSize, DWORD desiredAccess) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     #if TEAVM_WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, desiredAccess, FILE_SHARE_READ, OPEN_EXISTING, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, desiredAccess,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, OPEN_EXISTING, NULL);
     #else
-        HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, FILE_SHARE_READ, 0, OPEN_EXISTING,
+        HANDLE fileHandle = CreateFileW(nativeName, desiredAccess,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING,
                 FILE_ATTRIBUTE_NORMAL, 0);
     #endif
     int32_t result = fileHandle != INVALID_HANDLE_VALUE;
@@ -443,9 +445,11 @@ int32_t teavm_file_createDirectory(char16_t* name, int32_t nameSize) {
 int32_t teavm_file_createFile(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     #if TEAVM_WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, OPEN_EXISTING, NULL);
     #else
-        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
     #endif
     int32_t result = 2;
     free(nativeName);
@@ -460,6 +464,9 @@ int32_t teavm_file_createFile(char16_t* name, int32_t nameSize) {
 int32_t teavm_file_delete(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     int attributes = GetFileAttributesW(nativeName);
+    if (attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_READONLY)) {
+        SetFileAttributesW(nativeName, attributes & ~FILE_ATTRIBUTE_READONLY);
+    }
     int32_t result;
     if (attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
         result = RemoveDirectoryW(nativeName);
@@ -473,7 +480,7 @@ int32_t teavm_file_delete(char16_t* name, int32_t nameSize) {
 int32_t teavm_file_rename(char16_t* name, int32_t nameSize, char16_t* newName, int32_t newNameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     WCHAR* nativeNewName = teavm_file_convertPath(newName, newNameSize);
-    int32_t result = MoveFileExW(nativeName, nativeNewName, 0);
+    int32_t result = MoveFileExW(nativeName, nativeNewName, MOVEFILE_REPLACE_EXISTING);
     free(nativeName);
     free(nativeNewName);
     return result;
@@ -500,9 +507,11 @@ int64_t teavm_file_lastModified(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     FILETIME modified;
     #if TEAVM_WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_READ,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, OPEN_EXISTING, NULL);
     #else
-        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_READ,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     #endif
 	free(nativeName);
 	if (fileHandle == INVALID_HANDLE_VALUE) {
@@ -523,9 +532,11 @@ int32_t teavm_file_setLastModified(char16_t* name, int32_t nameSize, int64_t las
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
 
     #if TEAVM_WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, OPEN_EXISTING, NULL);
     #else
-        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     #endif
 	free(nativeName);
 	if (fileHandle == INVALID_HANDLE_VALUE) {
@@ -560,9 +571,11 @@ int64_t teavm_file_open(char16_t* name, int32_t nameSize, int32_t mode) {
 
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     #if TEAVM_WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, desiredAccess, FILE_SHARE_READ, creationDisposition, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, desiredAccess,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, creationDisposition, NULL);
     #else
-        HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, 0, 0, creationDisposition,
+        HANDLE fileHandle = CreateFileW(nativeName, desiredAccess,
+         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, creationDisposition,
          FILE_ATTRIBUTE_NORMAL, 0);
     #endif
     free(nativeName);

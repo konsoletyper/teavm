@@ -89,11 +89,11 @@ public class TDefaultFileSystem extends TFileSystem {
 
     @Override
     public String getSeparator() {
-        return vfs.isWindows() ? "\\" : "/";
+        return "/";
     }
 
     char getSeparatorChar() {
-        return vfs.isWindows() ? '\\' : '/';
+        return '/';
     }
 
     @Override
