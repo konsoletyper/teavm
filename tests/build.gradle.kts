@@ -96,7 +96,7 @@ tasks.test {
     systemProperty("teavm.junit.c.envScript", providers.gradleProperty("teavm.tests.c.envScript")
         .orElse(defaultCEnvScript).get())
     systemProperty("teavm.junit.c.shortFileNames", providers.gradleProperty("teavm.tests.c.shortFileNames")
-        .orElse("false").get())
+        .getOrElse(isWindowsOs.toString()))
 
     val dependencies = configurations.testRuntimeClasspath.get()
             .incoming.resolutionResult.allDependencies
