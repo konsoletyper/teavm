@@ -47,7 +47,6 @@ public class MacRemoteTestPlugin implements Plugin<Project> {
 
         project.getTasks().named("test", Test.class, test -> {
             test.dependsOn(prepareTask);
-            test.getOutputs().dir(project.getLayout().getBuildDirectory().dir(TESTS_C_OUTPUT));
             test.systemProperty(CLASS_LIST_FILE_PROPERTY,
                     classListFile.get().getAsFile().getAbsolutePath());
             var macTests = project.getProviders().gradleProperty("teavm.mac.tests");
