@@ -115,6 +115,7 @@ public class TThrowable extends RuntimeException {
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
         fillInStackTrace();
+        this.message = cause != null ? cause.toString() : null;
         this.cause = cause;
     }
 

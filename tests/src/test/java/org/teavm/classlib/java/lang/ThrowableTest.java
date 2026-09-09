@@ -40,6 +40,14 @@ public class ThrowableTest {
     }
 
     @Test
+    public void causeOnlyConstructorAdoptsCauseMessage() {
+        RuntimeException cause = new RuntimeException("original");
+        RuntimeException wrapper = new RuntimeException(cause);
+        assertEquals(cause.toString(), wrapper.getMessage());
+        assertEquals("java.lang.RuntimeException: " + cause.toString(), wrapper.toString());
+    }
+
+    @Test
     public void suppressedExceptionsInitiallyEmpty() {
         for (Throwable exception : createThrowables()) {
             assertEquals(0, exception.getSuppressed().length);
