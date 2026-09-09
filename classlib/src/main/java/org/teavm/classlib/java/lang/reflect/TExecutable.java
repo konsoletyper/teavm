@@ -108,6 +108,7 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
 
     public TAnnotation[][] getParameterAnnotations() {
         if (parameterAnnotations == null) {
+            resolveParameterTypes();
             parameterAnnotations = new TAnnotation[parameterTypes.length][];
             var reflection = methodInfo.reflection();
             if (reflection != null) {
