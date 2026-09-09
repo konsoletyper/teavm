@@ -174,7 +174,7 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
 
     void validateArgs(Object[] args) {
         resolveParameterTypes();
-        for (int i = 0; i < args.length; ++i) {
+        for (int i = 0; i < parameterTypes.length; ++i) {
             var parameterType = parameterType(i);
             if (parameterType.getClassInfo().primitiveKind() == ClassInfo.PrimitiveKind.NOT) {
                 if (args[i] != null && !parameterType.isInstance(args[i])) {

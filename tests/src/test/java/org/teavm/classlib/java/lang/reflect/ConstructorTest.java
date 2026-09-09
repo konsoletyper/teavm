@@ -82,6 +82,10 @@ public class ConstructorTest {
         ReflectableType instance = constructor.newInstance();
         assertEquals(0, instance.getA());
         assertNull(instance.getB());
+
+        instance = constructor.newInstance((Object[]) null);
+        assertEquals(0, instance.getA());
+        assertNull(instance.getB());
     }
 
     @Test

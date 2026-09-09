@@ -119,6 +119,7 @@ public class MethodTest {
         foo.bar("42");
         Method method = foo.getClass().getDeclaredMethod("baz");
         assertEquals("42", method.invoke(foo));
+        assertEquals("42", method.invoke(foo, (Object[]) null));
     }
 
     @Test

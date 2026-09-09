@@ -73,7 +73,8 @@ public class TMethod extends TExecutable implements TMember {
 
     public Object invoke(Object obj, Object... args) throws TIllegalAccessException, TIllegalArgumentException,
             TInvocationTargetException {
-        if (args.length != methodInfo.parameterCount()) {
+        var actualCount = args != null ? args.length : 0;
+        if (actualCount != methodInfo.parameterCount()) {
             throw new TIllegalArgumentException();
         }
 

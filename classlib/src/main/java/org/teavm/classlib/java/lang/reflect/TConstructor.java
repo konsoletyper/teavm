@@ -57,7 +57,8 @@ public class TConstructor<T> extends TExecutable implements TMember {
             throw new TInstantiationException();
         }
 
-        if (initargs.length != methodInfo.parameterCount()) {
+        var actualCount = initargs != null ? initargs.length : 0;
+        if (actualCount != methodInfo.parameterCount()) {
             throw new TIllegalArgumentException();
         }
         validateArgs(initargs);
