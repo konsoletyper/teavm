@@ -292,7 +292,7 @@ public class TDefaultPath implements TPath {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
-            return false;
+            return true;
         }
         if (!(obj instanceof TDefaultPath)) {
             return false;

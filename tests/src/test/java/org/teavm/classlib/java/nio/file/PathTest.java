@@ -226,4 +226,13 @@ public class PathTest {
         var path = FileSystems.getDefault().getPath("");
         assertEquals("", path.toString());
     }
+    
+    @Test
+    public void equalsWorks() {
+        var fs = FileSystems.getDefault();
+        var path = fs.getPath("/a/b/c");
+        assertTrue(path.equals(path));
+        assertTrue(path.equals(fs.getPath("/a/b/c")));
+        assertFalse(path.equals(fs.getPath("/a/b")));
+    }
 }
