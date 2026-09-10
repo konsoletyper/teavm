@@ -353,14 +353,14 @@ public class ReflectionMetadataGenerator {
 
             if (methodInfoStruct.checkedExceptionTypesIndex() >= 0) {
                 var thrownTypes = method.getThrownTypes();
-                var derivedClassInfoStruct = classInfoProvider.reflectionTypes().derivedClassInfo();
+                var classInfoStruct = classInfoProvider.reflectionTypes().classInfo();
                 if (thrownTypes == null || thrownTypes.isEmpty()) {
-                    builder.nullConst(derivedClassInfoStruct.array().getReference());
+                    builder.nullConst(classInfoStruct.array().getReference());
                 } else {
                     for (var thrownType : thrownTypes) {
-                        generateDerivedClass(builder, ValueType.object(thrownType));
+                        builder.getGlobal(classInfoProvider.getClassInfo(thrownType).getPointer());
                     }
-                    builder.arrayNewFixed(derivedClassInfoStruct.array(), thrownTypes.size());
+                    builder.arrayNewFixed(classInfoStruct.array(), thrownTypes.size());
                 }
             }
 

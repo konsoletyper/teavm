@@ -76,7 +76,7 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
         var count = methodInfo.checkedExceptionCount();
         var result = new TClass<?>[count];
         for (var i = 0; i < count; ++i) {
-            result[i] = (TClass<?>) (Object) ClassInfoUtil.resolve(methodInfo.checkedExceptionType(i)).classObject();
+            result[i] = (TClass<?>) (Object) methodInfo.checkedExceptionType(i).classObject();
         }
         return result;
     }

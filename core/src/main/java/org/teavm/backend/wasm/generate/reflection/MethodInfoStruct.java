@@ -90,7 +90,7 @@ public class MethodInfoStruct {
         }
         if (dependencies.getMethod(new MethodReference(MethodInfo.class, "checkedExceptionCount", int.class)) != null) {
             checkedExceptionTypesIndex = fields.size();
-            var infoType = classInfoProvider.reflectionTypes().derivedClassInfo().array().getReference();
+            var infoType = classInfoProvider.reflectionTypes().classInfo().array().getReference();
             fields.add(new WasmField(infoType, "checkedExceptionTypes"));
         }
         if (dependencies.getMethod(new MethodReference(MethodInfo.class, "call", Object.class, Object[].class,

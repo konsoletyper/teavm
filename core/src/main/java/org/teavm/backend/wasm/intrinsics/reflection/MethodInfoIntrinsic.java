@@ -70,7 +70,7 @@ public class MethodInfoIntrinsic implements WasmGCInlineIntrinsic {
                 });
                 break;
             case "checkedExceptionType": {
-                var exceptionTypesArray = classInfoProvider.reflectionTypes().derivedClassInfo().array();
+                var exceptionTypesArray = classInfoProvider.reflectionTypes().classInfo().array();
                 context.generate(builder, invocation.getArguments().get(0));
                 builder.structGet(infoStruct.structure(), infoStruct.checkedExceptionTypesIndex());
                 context.generate(builder, invocation.getArguments().get(1));
