@@ -107,7 +107,7 @@ let $rt_callMethod = (method, instance, args) => {
     if (isCalledDirectly) {
         argsToPass.push(instance);
     }
-    for (let i = 0; i < args.data.length; ++i) {
+    for (let i = 0; i < method.parameterTypes.length; ++i) {
         argsToPass.push(method.parameterTypes[i][$rt_meta].objectToValue(args.data[i]));
     }
     let caller = isStatic || isCalledDirectly ? method.caller : method.caller(instance);
