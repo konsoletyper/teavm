@@ -18,10 +18,13 @@ package org.teavm.classlib.java.nio.file;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.nio.file.FileSystems;
-import org.junit.Assert;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -203,10 +206,10 @@ public class PathTest {
         assertEquals("", fs.getPath("/a/b/c").relativize(fs.getPath("/a/b/c")).toString());
         assertEquals("../../c/d", fs.getPath("a/b").relativize(fs.getPath("c/d")).toString());
 
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             fs.getPath("/a/b").relativize(fs.getPath("a/b/c")).toString();
         });
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             fs.getPath("a/b").relativize(fs.getPath("/a/b/c")).toString();
         });
     }
@@ -228,11 +231,32 @@ public class PathTest {
     }
     
     @Test
+    @SkipJVM
     public void equalsWorks() {
         var fs = FileSystems.getDefault();
         var path = fs.getPath("/a/b/c");
         assertTrue(path.equals(path));
         assertTrue(path.equals(fs.getPath("/a/b/c")));
         assertFalse(path.equals(fs.getPath("/a/b")));
+    }
+    
+    @Test
+    @SkipJVM
+    public void iteratorWorks() {
+        var path = FileSystems.getDefault().getPath("/a/b");
+        var parts = new ArrayList<Path>();
+        for (var part : path) {
+            parts.add(part);
+        }
+        assertEquals(2, parts.size());
+        assertEquals(Path.of("a"), parts.get(0));
+        assertEquals(Path.of("b"), parts.get(1));
+
+        path = FileSystems.getDefault().getPath("/a");
+        var iter = path.iterator();
+        assertTrue(iter.hasNext());
+        iter.next();
+        assertFalse(iter.hasNext());
+        assertThrows(NoSuchElementException.class, () -> iter.next());
     }
 }

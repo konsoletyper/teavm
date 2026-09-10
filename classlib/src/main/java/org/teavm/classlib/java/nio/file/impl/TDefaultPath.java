@@ -17,6 +17,7 @@ package org.teavm.classlib.java.nio.file.impl;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import org.teavm.classlib.java.net.TURI;
 import org.teavm.classlib.java.nio.file.TLinkOption;
 import org.teavm.classlib.java.nio.file.TPath;
@@ -286,7 +287,26 @@ public class TDefaultPath implements TPath {
 
     @Override
     public Iterator<TPath> iterator() {
-        return null;
+        initSegments();
+        return new Iterator<>() {
+            int index;
+            int count = segments.length - 1;
+
+            @Override
+            public boolean hasNext() {
+                return index < count;
+            }
+
+            @Override
+            public TPath next() {
+                if (index >= count) {
+                    throw new NoSuchElementException();
+                }
+                var result = new TDefaultPath(fs, pathString.substring(segments[index] + 1, segments[index + 1]));
+                ++index;
+                return result;
+            }
+        };
     }
 
     @Override
