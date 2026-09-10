@@ -91,6 +91,9 @@ public class TInputStreamReader extends TReader {
                 return 0;
             }
             ensureBufferHasData(true);
+            if (!outBuffer.hasRemaining() && eof) {
+                return -1;
+            }
         } else if (len == 0) {
             return 0;
         }
@@ -137,7 +140,10 @@ public class TInputStreamReader extends TReader {
                 break;
             }
             if (!fillReadBuffer()) {
+                var posBefore = outBuffer.position();
                 decoder.decode(inBuffer, outBuffer, true);
+                decoderCalled = true;
+                readSomething |= outBuffer.position() > posBefore;
                 break;
             }
         }

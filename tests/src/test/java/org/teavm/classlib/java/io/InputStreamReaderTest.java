@@ -103,6 +103,20 @@ public class InputStreamReaderTest {
     }
 
     @Test
+    public void readReturnsEofNotZeroAtCleanBoundary() throws IOException {
+        String str = "foo bar baz";
+        byte[] bytes = new byte[str.length()];
+        for (int i = 0; i < str.length(); ++i) {
+            bytes[i] = (byte) str.charAt(i);
+        }
+        var stream = new ByteArrayInputStream(bytes);
+        var reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
+        char[] chars = new char[str.length()];
+        assertEquals(str.length(), reader.read(chars, 0, chars.length));
+        assertEquals(-1, reader.read(chars, 0, chars.length));
+    }
+
+    @Test
     public void nonGreedyRead() throws IOException {
         var in = new TestInputStream();
         var reader = new InputStreamReader(in, StandardCharsets.UTF_8);
