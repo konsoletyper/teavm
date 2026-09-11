@@ -182,8 +182,18 @@ public class Fiber {
     }
 
     @Unmanaged
+    public static boolean isPresentAndSuspending(Fiber fiber) {
+        return fiber != null && fiber.isSuspending();
+    }
+
+    @Unmanaged
     public boolean isResuming() {
         return state == STATE_RESUMING;
+    }
+
+    @Unmanaged
+    public static boolean isPresentAndResuming(Fiber fiber) {
+        return fiber != null && fiber.isResuming();
     }
 
     @Unmanaged
@@ -228,6 +238,11 @@ public class Fiber {
 
     public static Object suspend(AsyncCall call) throws Throwable {
         Fiber fiber = current();
+        if (fiber == null) {
+            throw new IllegalStateException("Suspension point reached from non-threading context "
+                    + "(perhaps, from native JS method). See https://teavm.org/docs/runtime/coroutines.html "
+                    + "('Interaction with JavaScript' section)");
+        }
         Thread javaThread = Thread.currentThread();
         if (fiber.isResuming()) {
             fiber.state = STATE_RUNNING;
