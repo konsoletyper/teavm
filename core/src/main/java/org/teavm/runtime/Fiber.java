@@ -21,7 +21,7 @@ import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
 
 @StaticInit
-public class Fiber {
+public final class Fiber {
     public static final int STATE_RUNNING = 0;
     public static final int STATE_SUSPENDING = 1;
     public static final int STATE_RESUMING = 2;
