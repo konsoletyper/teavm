@@ -16,8 +16,9 @@
 package org.teavm.jso.dom.xml;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.xml.mixin.ParentNode;
 
-public interface Document extends Node {
+public interface Document extends Node, ParentNode {
     @JSProperty
     DocumentType getDoctype();
 
@@ -54,8 +55,4 @@ public interface Document extends Node {
     NodeList<Element> getElementsByTagNameNS(String namespaceURI, String localName);
 
     Element getElementById(String elementId);
-
-    Element querySelector(String selectors);
-
-    NodeList<? extends Element> querySelectorAll(String selectors);
 }
