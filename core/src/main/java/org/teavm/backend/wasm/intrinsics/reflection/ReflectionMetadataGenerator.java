@@ -884,7 +884,8 @@ public class ReflectionMetadataGenerator {
         function.add(thisVar);
         var argsVar = new WasmLocal(objectArrayClass.getType(), "args");
         function.add(argsVar);
-        var argsDataVar = new WasmLocal(dataField.getUnpackedType(), "argsData");
+        var argsDataVar = new WasmLocal(((WasmType.Reference) dataField.getUnpackedType()).asNullable(),
+                "argsData");
         var body = function.getBody().builder();
         var args = new WasmInstructionList().builder();
 
