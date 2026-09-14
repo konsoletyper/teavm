@@ -24,14 +24,19 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.process.ExecOperations;
 
+@CacheableTask
 public abstract class EmscriptenTask extends DefaultTask {
     @InputFiles
+    @PathSensitive(PathSensitivity.ABSOLUTE)
     public abstract ConfigurableFileCollection getInputFiles();
 
     @Internal

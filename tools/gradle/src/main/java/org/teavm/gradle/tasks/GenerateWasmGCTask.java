@@ -17,15 +17,19 @@ package org.teavm.gradle.tasks;
 
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.teavm.gradle.api.SourceFilePolicy;
 import org.teavm.gradle.api.WasmDebugInfoLevel;
 import org.teavm.gradle.api.WasmDebugInfoLocation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildStrategy;
 
+@CacheableTask
 public abstract class GenerateWasmGCTask extends TeaVMTask {
     public GenerateWasmGCTask() {
         getStrict().convention(true);
@@ -54,6 +58,7 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
     public abstract Property<Boolean> getSourceMap();
 
     @InputFiles
+    @PathSensitive(PathSensitivity.ABSOLUTE)
     public abstract ConfigurableFileCollection getSourceFiles();
 
     @Input

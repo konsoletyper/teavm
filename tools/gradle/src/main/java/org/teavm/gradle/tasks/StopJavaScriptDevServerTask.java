@@ -20,7 +20,9 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
+@DisableCachingByDefault(because = "Runs dev server (or triggers rebuild in the existing one)")
 public abstract class StopJavaScriptDevServerTask extends DefaultTask {
     @Internal
     public abstract SetProperty<String> getAllProjectPaths();
