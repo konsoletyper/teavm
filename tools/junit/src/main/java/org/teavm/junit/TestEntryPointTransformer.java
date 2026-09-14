@@ -38,6 +38,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReader;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -51,6 +52,12 @@ import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
+    private static final String JUNIT4_RULE = "org.junit.Rule";
+    private static final String TEST_RULE = "org.junit.rules.TestRule";
+    private static final String METHOD_RULE = "org.junit.rules.MethodRule";
+    private static final String STATEMENT = "org.junit.runners.model.Statement";
+    private static final String DESCRIPTION = "org.junit.runner.Description";
+
     private String testClassName;
     private int suffixGenerator;
 
@@ -83,6 +90,10 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
                         break;
                     case "after":
                         generateAfterProgram(method, context.getHierarchy());
+                        method.getModifiers().remove(ElementModifier.NATIVE);
+                        break;
+                    case "applyRules":
+                        generateApplyRulesProgram(method, context.getHierarchy());
                         method.getModifiers().remove(ElementModifier.NATIVE);
                         break;
                 }
@@ -131,6 +142,117 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
 
         pe.exit();
         return pe.getProgram();
+    }
+
+    /** Emits the body of {@code applyRules}, wrapping the statement in each rule in turn. */
+    private void generateApplyRulesProgram(MethodHolder method, ClassHierarchy hierarchy) {
+        ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
+        // Variable 0 is the receiver slot, so a static method's parameters start at 1.
+        ValueEmitter statement = pe.var(1, ValueType.object(STATEMENT));
+        ValueEmitter name = pe.var(2, ValueType.object("java.lang.String"));
+
+        List<RuleEntry> rules = collectRules(pe.getClassSource());
+        if (rules.isEmpty()) {
+            statement.returnValue();
+            return;
+        }
+
+        ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
+        ValueEmitter description = pe.invoke(TestEntryPoint.class.getName(), "describe",
+                ValueType.object(DESCRIPTION), pe.constant(testClassName), name);
+
+        for (RuleEntry rule : rules) {
+            ValueEmitter owner = testCaseVar.cast(ValueType.object(rule.ownerName));
+            ValueEmitter ruleValue = rule.field != null
+                    ? owner.getField(rule.field.getName(), rule.field.getType())
+                    : owner.invokeVirtual(rule.method.getReference());
+            statement = ruleValue
+                    .cast(ValueType.object(TEST_RULE))
+                    .invokeVirtual("apply", ValueType.object(STATEMENT), statement, description);
+        }
+
+        statement.returnValue();
+    }
+
+    /**
+     * Collects the fields and methods a test class annotates with {@code @Rule}, in the order
+     * they are applied.
+     *
+     * <p>A higher {@code order} is applied first and so ends up inner. Where the order is equal,
+     * methods come before fields, and within either group, declaration order with superclasses
+     * first.
+     */
+    private List<RuleEntry> collectRules(ClassReaderSource classSource) {
+        List<ClassReader> classes = collectSuperClasses(classSource, testClassName);
+        Collections.reverse(classes);
+
+        List<RuleEntry> rules = new ArrayList<>();
+        for (ClassReader cls : classes) {
+            for (MethodReader method : cls.getMethods()) {
+                AnnotationReader annotation = method.getAnnotations().get(JUNIT4_RULE);
+                if (annotation == null || method.hasModifier(ElementModifier.STATIC)
+                        || method.parameterCount() > 0) {
+                    continue;
+                }
+                if (isTestRule(classSource, method.getResultType(), cls.getName(),
+                        method.getName())) {
+                    rules.add(new RuleEntry(cls.getName(), null, method, orderOf(annotation), 0));
+                }
+            }
+            for (FieldReader field : cls.getFields()) {
+                AnnotationReader annotation = field.getAnnotations().get(JUNIT4_RULE);
+                if (annotation == null || field.hasModifier(ElementModifier.STATIC)) {
+                    continue;
+                }
+                if (isTestRule(classSource, field.getType(), cls.getName(), field.getName())) {
+                    rules.add(new RuleEntry(cls.getName(), field, null, orderOf(annotation), 1));
+                }
+            }
+        }
+
+        rules.sort((first, second) -> first.order != second.order
+                ? Integer.compare(second.order, first.order)
+                : Integer.compare(first.kind, second.kind));
+        return rules;
+    }
+
+    private boolean isTestRule(ClassReaderSource classSource, ValueType type, String owner,
+            String member) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
+        }
+        String typeName = ((ValueType.Object) type).getClassName();
+        if (classSource.isSuperType(TEST_RULE, typeName).orElse(false)) {
+            return true;
+        }
+        if (classSource.isSuperType(METHOD_RULE, typeName).orElse(false)) {
+            throw new IllegalStateException(owner + "." + member + " of type " + typeName
+                    + " is a MethodRule, which TeaVM cannot run because it needs"
+                    + " java.lang.reflect.Method. Use a TestRule.");
+        }
+        return false;
+    }
+
+    private static int orderOf(AnnotationReader annotation) {
+        AnnotationValue order = annotation.getValue("order");
+        return order != null ? order.getInt() : -1;
+    }
+
+    private static final class RuleEntry {
+        private final String ownerName;
+        private final FieldReader field;
+        private final MethodReader method;
+        private final int order;
+        private final int kind;
+
+        private RuleEntry(String ownerName, FieldReader field, MethodReader method, int order,
+                int kind) {
+            this.ownerName = ownerName;
+            this.field = field;
+            this.method = method;
+            this.order = order;
+            this.kind = kind;
+        }
     }
 
     private List<ClassReader> collectSuperClasses(ClassReaderSource classSource, String className) {

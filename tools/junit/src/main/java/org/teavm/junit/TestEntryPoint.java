@@ -17,6 +17,8 @@ package org.teavm.junit;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 final class TestEntryPoint {
     private static Object testCase;
@@ -29,16 +31,7 @@ final class TestEntryPoint {
         testCase = createTestCase();
         launchers(name, launchers);
         for (Launcher launcher : launchers) {
-            before();
-            try {
-                launcher.launch(testCase);
-            } finally {
-                try {
-                    after();
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
+            applyRules(new LaunchStatement(launcher), name).evaluate();
         }
     }
 
@@ -50,11 +43,51 @@ final class TestEntryPoint {
 
     private static native void after();
 
+    /**
+     * Wraps the statement in the test case's rules, and returns it unchanged when there are none.
+     */
+    private static native Statement applyRules(Statement base, String name);
+
+    static Description describe(String className, String name) {
+        return Description.createTestDescription(className, name != null ? name : className);
+    }
+
     public static void main(String[] args) throws Throwable {
         run(args.length == 1 ? args[0] : null);
     }
 
     interface Launcher {
         void launch(Object testCase) throws Throwable;
+    }
+
+    private static final class LaunchStatement extends Statement {
+        private final Launcher launcher;
+
+        LaunchStatement(Launcher launcher) {
+            this.launcher = launcher;
+        }
+
+        @Override
+        public void evaluate() throws Throwable {
+            before();
+            Throwable failure = null;
+            try {
+                launcher.launch(testCase);
+            } catch (Throwable e) {
+                failure = e;
+            }
+            try {
+                after();
+            } catch (Throwable e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+            }
+            if (failure != null) {
+                throw failure;
+            }
+        }
     }
 }
