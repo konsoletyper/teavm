@@ -16,10 +16,12 @@
 package org.teavm.gradle.tasks;
 
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildStrategy;
 
+@CacheableTask
 public abstract class GenerateCTask extends TeaVMTask {
     private static final int MB = 1024 * 1024;
 

@@ -29,12 +29,16 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
+import org.gradle.work.DisableCachingByDefault;
 import org.teavm.devserver.client.DevServerTarget;
 import org.teavm.gradle.api.DevServerTargetType;
 import org.teavm.gradle.api.JSModuleType;
 
+@DisableCachingByDefault(because = "Runs dev server (or triggers rebuild in the existing one)")
 public abstract class DevServerTask extends DefaultTask {
     @Internal
     public abstract SetProperty<String> getAllProjectPaths();
@@ -93,6 +97,7 @@ public abstract class DevServerTask extends DefaultTask {
     public abstract Property<Integer> getPort();
 
     @InputFiles
+    @PathSensitive(PathSensitivity.ABSOLUTE)
     public abstract ConfigurableFileCollection getSourceFiles();
 
     @Input
@@ -118,6 +123,7 @@ public abstract class DevServerTask extends DefaultTask {
     public abstract Property<Integer> getServerDebugPort();
 
     @InputFiles
+    @PathSensitive(PathSensitivity.ABSOLUTE)
     public abstract ConfigurableFileCollection getStaticDirs();
 
     @Input

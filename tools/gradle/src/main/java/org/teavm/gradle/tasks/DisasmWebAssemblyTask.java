@@ -22,20 +22,25 @@ import java.nio.file.Files;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.teavm.backend.wasm.disasm.Disassembler;
 import org.teavm.backend.wasm.disasm.DisassemblyHTMLWriter;
 import org.teavm.backend.wasm.disasm.DisassemblyTextWriter;
 
+@CacheableTask
 public abstract class DisasmWebAssemblyTask extends DefaultTask {
     public DisasmWebAssemblyTask() {
         getHtml().convention(false);
     }
 
     @InputFile
+    @PathSensitive(PathSensitivity.ABSOLUTE)
     public abstract RegularFileProperty getInputFile();
 
     @OutputFile
