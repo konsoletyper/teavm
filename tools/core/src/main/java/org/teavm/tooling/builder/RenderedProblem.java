@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,19 +15,28 @@
  */
 package org.teavm.tooling.builder;
 
-import java.util.List;
-import org.teavm.tooling.TeaVMProblemRenderer;
-import org.teavm.vm.TeaVM;
+import org.teavm.diagnostics.ProblemSeverity;
 
-public class SimpleBuildResult implements BuildResult {
-    private final List<RenderedProblem> problems;
+public final class RenderedProblem {
+    private final ProblemSeverity severity;
+    private final String text;
+    private final String stackTrace;
 
-    public SimpleBuildResult(TeaVM vm) {
-        problems = TeaVMProblemRenderer.render(vm.getDependencyInfo().getCallGraph(), vm.getProblemProvider());
+    public RenderedProblem(ProblemSeverity severity, String text, String stackTrace) {
+        this.severity = severity;
+        this.text = text;
+        this.stackTrace = stackTrace;
     }
 
-    @Override
-    public List<RenderedProblem> getProblems() {
-        return problems;
+    public ProblemSeverity getSeverity() {
+        return severity;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public String getStackTrace() {
+        return stackTrace;
     }
 }

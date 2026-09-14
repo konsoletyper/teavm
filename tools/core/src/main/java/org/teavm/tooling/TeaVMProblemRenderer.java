@@ -15,8 +15,10 @@
  */
 package org.teavm.tooling;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
@@ -26,10 +28,24 @@ import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
+import org.teavm.tooling.builder.RenderedProblem;
 import org.teavm.vm.TeaVM;
 
 public final class TeaVMProblemRenderer {
     private TeaVMProblemRenderer() {
+    }
+
+    public static List<RenderedProblem> render(CallGraph cg, ProblemProvider problems) {
+        var consumer = new DefaultProblemTextConsumer();
+        var result = new ArrayList<RenderedProblem>();
+        for (var problem : problems.getProblems()) {
+            consumer.clear();
+            problem.render(consumer);
+            var sb = new StringBuilder();
+            renderCallStack(cg, problem.getLocation(), sb);
+            result.add(new RenderedProblem(problem.getSeverity(), consumer.getText(), sb.toString()));
+        }
+        return result;
     }
 
     public static void describeProblems(TeaVM vm, TeaVMToolLog log) {

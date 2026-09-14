@@ -26,6 +26,10 @@ dependencies {
     compileOnly(project(":jso:apis"))
 
     api(project(":core"))
+    implementation(libs.commons.cli)
+
+    testImplementation(libs.junit)
+    testRuntimeOnly(project(":classlib"))
 }
 
 teavmPublish {

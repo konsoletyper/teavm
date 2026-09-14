@@ -16,9 +16,6 @@
 package org.teavm.gradle.tasks;
 
 import java.io.File;
-import java.io.IOException;
-import java.rmi.NotBoundException;
-import java.rmi.registry.LocateRegistry;
 import java.util.ArrayList;
 import java.util.Properties;
 import javax.inject.Inject;
@@ -36,15 +33,12 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.internal.logging.progress.ProgressLogger;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
+import org.teavm.diagnostics.ProblemSeverity;
 import org.teavm.gradle.api.OptimizationLevel;
-import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.builder.BuildException;
 import org.teavm.tooling.builder.BuildStrategy;
+import org.teavm.tooling.builder.DaemonBuildStrategy;
 import org.teavm.tooling.builder.InProcessBuildStrategy;
-import org.teavm.tooling.builder.RemoteBuildStrategy;
-import org.teavm.tooling.daemon.BuildDaemon;
-import org.teavm.tooling.daemon.DaemonLog;
-import org.teavm.tooling.daemon.RemoteBuildService;
 import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
@@ -111,7 +105,7 @@ public abstract class TeaVMTask extends DefaultTask {
     protected abstract ProgressLoggerFactory getProgressLoggerFactory();
 
     @TaskAction
-    public void execute() throws BuildException, IOException, NotBoundException {
+    public void execute() throws BuildException {
         if (getOutOfProcess().get()) {
             executeInSeparateProcess();
         } else {
@@ -119,19 +113,10 @@ public abstract class TeaVMTask extends DefaultTask {
         }
     }
 
-    private void executeInSeparateProcess() throws BuildException, IOException, NotBoundException {
+    private void executeInSeparateProcess() throws BuildException {
         var debugPort = getDaemonDebugPort().isPresent() ? getDaemonDebugPort().get() : 0;
-        var daemon = BuildDaemon.start(debugPort, false, getProcessMemory().get(), new DaemonLogImpl(),
-                createDaemonClassPath());
-
-        try {
-            var registry = LocateRegistry.getRegistry("localhost", daemon.getPort());
-            var buildService = (RemoteBuildService) registry.lookup(RemoteBuildService.ID);
-            var builder = new RemoteBuildStrategy(buildService);
-            executeWithBuilder(builder);
-        } finally {
-            daemon.getProcess().destroy();
-        }
+        var builder = new DaemonBuildStrategy(null, getProcessMemory().get(), debugPort, createDaemonClassPath());
+        executeWithBuilder(builder);
     }
 
     private void executeWithBuilder(BuildStrategy builder) throws BuildException {
@@ -160,8 +145,17 @@ public abstract class TeaVMTask extends DefaultTask {
         builder.setProgressListener(createProgressListener());
         setupBuilder(builder);
         var result = builder.build();
-        TeaVMProblemRenderer.describeProblems(result.getCallGraph(), result.getProblems(), toolLog);
-        if (!result.getProblems().getSevereProblems().isEmpty()) {
+        var hasErrors = false;
+        for (var problem : result.getProblems()) {
+            var text = problem.getText() + problem.getStackTrace();
+            if (problem.getSeverity() == ProblemSeverity.ERROR) {
+                hasErrors = true;
+                toolLog.error(text);
+            } else {
+                toolLog.warning(text);
+            }
+        }
+        if (hasErrors) {
             throw new GradleException("Errors occurred during TeaVM build");
         }
     }
@@ -236,22 +230,5 @@ public abstract class TeaVMTask extends DefaultTask {
             result.add(file.getAbsolutePath());
         }
         return result.toArray(new String[0]);
-    }
-
-    class DaemonLogImpl implements DaemonLog {
-        @Override
-        public void error(String message) {
-            getLogger().error(message);
-        }
-
-        @Override
-        public void error(String message, Throwable e) {
-            getLogger().error(message, e);
-        }
-
-        @Override
-        public void info(String message) {
-            getLogger().info(message);
-        }
     }
 }

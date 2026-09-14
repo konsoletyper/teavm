@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,22 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling.daemon;
+package org.teavm.tooling.builder;
 
-public class DaemonInfo {
-    private int port;
-    private Process process;
-
-    DaemonInfo(int port, Process process) {
-        this.port = port;
-        this.process = process;
+// Compiled by DaemonBuildStrategyTest to verify that DaemonBuildStrategy can drive an actual build.
+public final class DaemonBuildStrategyTestApplication {
+    private DaemonBuildStrategyTestApplication() {
     }
 
-    public int getPort() {
-        return port;
-    }
-
-    public Process getProcess() {
-        return process;
+    public static void main(String[] args) {
+        System.out.println("Hello from daemon build strategy test");
     }
 }
