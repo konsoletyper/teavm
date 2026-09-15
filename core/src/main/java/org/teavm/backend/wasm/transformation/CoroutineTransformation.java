@@ -194,7 +194,7 @@ public class CoroutineTransformation {
             this.inputTypes = inputTypes;
             this.outputTypes = outputTypes;
             this.suspendLabel = suspendLabel;
-            typeInference = new WasmTypeInference();
+            typeInference = new WasmTypeInference(true);
             typeInference.typeStack.addAll(inputTypes);
             minDepth = inputTypes.size();
         }

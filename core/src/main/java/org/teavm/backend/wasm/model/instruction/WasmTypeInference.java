@@ -21,7 +21,16 @@ import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmTypeInference implements WasmInstructionVisitor {
     public final List<WasmType> typeStack = new ArrayList<>();
+    private final boolean forceNullable;
     private int depthBeforeLastInstructionOut;
+
+    public WasmTypeInference() {
+        this(false);
+    }
+
+    public WasmTypeInference(boolean forceNullable) {
+        this.forceNullable = forceNullable;
+    }
 
     public int getDepthBeforeLastInstructionOut() {
         return depthBeforeLastInstructionOut;
@@ -167,7 +176,7 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     @Override
     public void visit(WasmGetGlobal instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
-        typeStack.add(instruction.getGlobal().getType());
+        typeStack.add(mapToNullable(instruction.getGlobal().getType()));
     }
 
     @Override
@@ -395,20 +404,21 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     public void visit(WasmStructNew instruction) {
         popN(instruction.getType().getFields().size());
         depthBeforeLastInstructionOut = typeStack.size();
-        typeStack.add(instruction.getType().getReference());
+        typeStack.add(mapToNullable(instruction.getType().getReference()));
     }
 
     @Override
     public void visit(WasmStructNewDefault instruction) {
         depthBeforeLastInstructionOut = typeStack.size();
-        typeStack.add(instruction.getType().getReference());
+        typeStack.add(mapToNullable(instruction.getType().getReference()));
     }
 
     @Override
     public void visit(WasmStructGet instruction) {
         pop();
         depthBeforeLastInstructionOut = typeStack.size();
-        typeStack.add(instruction.getType().getFields().get(instruction.getFieldIndex()).getUnpackedType());
+        typeStack.add(mapToNullable(instruction.getType().getFields().get(instruction.getFieldIndex())
+                .getUnpackedType()));
     }
 
     @Override
@@ -484,5 +494,15 @@ public class WasmTypeInference implements WasmInstructionVisitor {
     private void popN(int count) {
         var removeFrom = typeStack.size() - count;
         typeStack.subList(removeFrom, typeStack.size()).clear();
+    }
+
+    private WasmType mapToNullable(WasmType type) {
+        if (!forceNullable) {
+            return type;
+        }
+        if (type instanceof WasmType.Reference) {
+            type = ((WasmType.Reference) type).asNullable();
+        }
+        return type;
     }
 }
