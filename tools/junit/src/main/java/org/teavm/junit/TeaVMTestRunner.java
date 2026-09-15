@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -333,21 +334,21 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             cls = cls.getSuperclass();
         }
 
-        List<Method> afterMethods = new ArrayList<>();
+        Map<String, Method> afterMethods = new LinkedHashMap<>();
         for (Class<?> c : classes) {
-            for (Method method : c.getMethods()) {
+            for (Method method : c.getDeclaredMethods()) {
                 if (getAnnotation(method, JUNIT4_AFTER) != null || getAnnotation(method, TESTNG_AFTER) != null) {
-                    afterMethods.add(method);
+                    afterMethods.putIfAbsent(signatureOf(method), method);
                 }
             }
         }
 
-        List<Method> beforeMethods = new ArrayList<>();
+        Map<String, Method> beforeMethods = new LinkedHashMap<>();
         Collections.reverse(classes);
         for (Class<?> c : classes) {
-            for (Method method : c.getMethods()) {
+            for (Method method : c.getDeclaredMethods()) {
                 if (getAnnotation(method, JUNIT4_BEFORE) != null || getAnnotation(method, TESTNG_BEFORE) != null) {
-                    beforeMethods.add(method);
+                    beforeMethods.putIfAbsent(signatureOf(method), method);
                 }
             }
         }
@@ -356,8 +357,17 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             return runner;
         }
 
-        return new WithBeforeAndAfterRunner(runner, instance, beforeMethods.toArray(new Method[0]),
-                afterMethods.toArray(new Method[0]));
+        return new WithBeforeAndAfterRunner(runner, instance,
+                beforeMethods.values().toArray(new Method[0]),
+                afterMethods.values().toArray(new Method[0]));
+    }
+
+    private static String signatureOf(Method method) {
+        StringBuilder signature = new StringBuilder(method.getName());
+        for (Class<?> parameter : method.getParameterTypes()) {
+            signature.append(':').append(parameter.getName());
+        }
+        return signature.toString();
     }
 
     private Runner wrapWithDataProvider(Runner runner, Object instance, Method testMethod) throws Throwable {
