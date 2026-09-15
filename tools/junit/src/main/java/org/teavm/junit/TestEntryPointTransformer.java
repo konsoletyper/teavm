@@ -26,7 +26,9 @@ import static org.teavm.junit.TeaVMTestRunner.TESTNG_PROVIDER;
 import static org.teavm.junit.TeaVMTestRunner.TESTNG_TEST;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.BasicBlock;
@@ -38,6 +40,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -105,10 +108,12 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
 
         List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
         Collections.reverse(classes);
+        Set<MethodDescriptor> seen = new HashSet<>();
         classes.stream()
                 .flatMap(cls -> cls.getMethods().stream())
                 .filter(m -> m.getAnnotations().get(JUNIT4_BEFORE) != null
                         || m.getAnnotations().get(TESTNG_BEFORE) != null)
+                .filter(m -> seen.add(m.getDescriptor()))
                 .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
 
         pe.exit();
@@ -119,10 +124,12 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
 
         List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
+        Set<MethodDescriptor> seen = new HashSet<>();
         classes.stream()
                 .flatMap(cls -> cls.getMethods().stream())
                 .filter(m -> m.getAnnotations().get(JUNIT4_AFTER) != null
                         || m.getAnnotations().get(TESTNG_AFTER) != null)
+                .filter(m -> seen.add(m.getDescriptor()))
                 .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
 
         if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testClassName, false)) {
