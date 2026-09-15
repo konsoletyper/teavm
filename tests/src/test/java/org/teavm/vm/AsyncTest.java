@@ -113,6 +113,19 @@ public class AsyncTest {
     }
 
     @Test
+    public void constantBeneathSuspendingConditional() {
+        var sb = new StringBuilder();
+        for (var i = 0; i < 2; ++i) {
+            sb.append(describeValue("foo", i == 0 ? getPrimitive() : 5)).append(";");
+        }
+        assertEquals("foo:23;foo:5;", sb.toString());
+    }
+
+    private static String describeValue(Object o, int n) {
+        return o + ":" + n;
+    }
+
+    @Test
     public void passStringConstant() {
         assertEquals("foo", returnSamePrimitive("foo"));
     }
