@@ -27,6 +27,7 @@ public class ReferenceCache {
     private Map<String, String> stringCache = new HashMap<>();
     private Map<String, MethodDescriptor> descriptorParseCache = new HashMap<>();
     private Map<String, ValueType> valueTypeParseCache = new HashMap<>();
+    private Map<String, GenericValueType> genericValueTypeParseCache = new HashMap<>();
 
     public MethodReference getCached(MethodReference reference) {
         return getCached(reference.getClassName(), reference.getDescriptor());
@@ -187,6 +188,15 @@ public class ReferenceCache {
         if (result == null) {
             result = getCached(ValueType.parse(value));
             valueTypeParseCache.put(value, result);
+        }
+        return result;
+    }
+
+    public GenericValueType parseGenericValueTypeCached(String value) {
+        GenericValueType result = genericValueTypeParseCache.get(value);
+        if (result == null) {
+            result = getCached(GenericValueType.parse(value, new GenericValueType.ParsePosition()));
+            genericValueTypeParseCache.put(value, result);
         }
         return result;
     }
