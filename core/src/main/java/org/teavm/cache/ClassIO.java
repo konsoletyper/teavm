@@ -33,6 +33,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.ReferenceCache;
@@ -66,6 +67,15 @@ public class ClassIO {
         output.writeUnsigned(cls.getInterfaces().size());
         for (String iface : cls.getInterfaces()) {
             output.writeUnsigned(symbolTable.lookup(iface));
+        }
+        if (cls.getGenericParent() != null) {
+            output.writeUnsigned(symbolTable.lookup(cls.getGenericParent().toString()) + 1);
+        } else {
+            output.writeUnsigned(0);
+        }
+        output.writeUnsigned(cls.getGenericInterfaces().size());
+        for (var genericIface : cls.getGenericInterfaces()) {
+            output.writeUnsigned(symbolTable.lookup(genericIface.toString()));
         }
         annotationIO.writeAnnotations(output, cls.getAnnotations());
         output.writeUnsigned(cls.getFields().size());
@@ -103,6 +113,21 @@ public class ClassIO {
             interfaces.add(referenceCache.getCached(symbolTable.at(input.readUnsigned())));
         }
         cls.interfaces = Collections.unmodifiableSet(interfaces);
+
+        var genericParentIndex = input.readUnsigned();
+        if (genericParentIndex > 0) {
+            var genericParent = referenceCache.parseGenericValueTypeCached(symbolTable.at(genericParentIndex - 1));
+            cls.genericParent = (GenericValueType.Object) genericParent;
+        }
+
+        var genericInterfaces = new LinkedHashSet<GenericValueType.Object>();
+        int genericIfaceCount = input.readUnsigned();
+        for (int i = 0; i < genericIfaceCount; ++i) {
+            var genericItf = referenceCache.parseGenericValueTypeCached(symbolTable.at(input.readUnsigned()));
+            genericInterfaces.add((GenericValueType.Object) genericItf);
+        }
+        cls.genericInterfaces = Collections.unmodifiableSet(genericInterfaces);
+
         cls.annotations = annotationIO.readAnnotations(input);
 
         Map<String, CachedField> fields = new LinkedHashMap<>();
