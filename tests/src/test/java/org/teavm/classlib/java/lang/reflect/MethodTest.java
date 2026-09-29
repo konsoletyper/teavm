@@ -114,6 +114,14 @@ public class MethodTest {
     }
 
     @Test
+    public void voidMethodInvocationReturnsNull() throws NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException {
+        Foo foo = new Foo();
+        Method method = foo.getClass().getMethod("bar", Object.class);
+        assertNull(method.invoke(foo, "23"));
+    }
+
+    @Test
     public void methodInvoked2() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Foo foo = new Foo();
         foo.bar("42");

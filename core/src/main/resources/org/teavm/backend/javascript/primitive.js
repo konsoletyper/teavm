@@ -94,4 +94,7 @@ let $rt_doublecls = $rt_createPrimitiveCls("double", "D", 8, meta => {
         meta.objectToValue = o => teavm_javaMethod("java.lang.Double", "doubleValue()D")(o);
     }
 });
-let $rt_voidcls = $rt_createPrimitiveCls("void", "V", 9);
+let $rt_voidcls = $rt_createPrimitiveCls("void", "V", 9, meta => {
+    // A void call yields JS undefined; Method.invoke must report it as Java null.
+    meta.valueToObject = () => null;
+});
