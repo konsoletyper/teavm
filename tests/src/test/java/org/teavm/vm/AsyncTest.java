@@ -181,6 +181,14 @@ public class AsyncTest {
         assertThrows(RuntimeException.class, () -> wrapWithJsCall(() -> perhapsSuspend(true, 42)));
     }
 
+    @Test
+    public void monitorTest() {
+        dummySyncStaticMethod();
+    }
+
+    private static synchronized void dummySyncStaticMethod() {
+    }
+
     @Async
     private native JSString getJsString();
 

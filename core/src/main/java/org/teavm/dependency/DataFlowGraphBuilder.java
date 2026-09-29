@@ -238,6 +238,6 @@ public class DataFlowGraphBuilder extends AbstractInstructionReader {
 
     @Override
     public void monitorExit(VariableReader objectRef) {
-        escaping.add(exceptionIndex);
+        escaping.add(objectRef.getIndex());
     }
 }
