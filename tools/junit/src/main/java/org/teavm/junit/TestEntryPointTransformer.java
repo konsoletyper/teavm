@@ -20,6 +20,9 @@ import static org.teavm.junit.TeaVMTestRunner.JUNIT3_BASE_CLASS;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT3_BEFORE;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT4_AFTER;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT4_BEFORE;
+import static org.teavm.junit.TeaVMTestRunner.JUNIT4_TEST;
+import static org.teavm.junit.TeaVMTestRunner.JUPITER_AFTER_EACH;
+import static org.teavm.junit.TeaVMTestRunner.JUPITER_BEFORE_EACH;
 import static org.teavm.junit.TeaVMTestRunner.TESTNG_AFTER;
 import static org.teavm.junit.TeaVMTestRunner.TESTNG_BEFORE;
 import static org.teavm.junit.TeaVMTestRunner.TESTNG_PROVIDER;
@@ -108,7 +111,8 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         classes.stream()
                 .flatMap(cls -> cls.getMethods().stream())
                 .filter(m -> m.getAnnotations().get(JUNIT4_BEFORE) != null
-                        || m.getAnnotations().get(TESTNG_BEFORE) != null)
+                        || m.getAnnotations().get(TESTNG_BEFORE) != null
+                        || m.getAnnotations().get(JUPITER_BEFORE_EACH) != null)
                 .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
 
         pe.exit();
@@ -122,7 +126,8 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         classes.stream()
                 .flatMap(cls -> cls.getMethods().stream())
                 .filter(m -> m.getAnnotations().get(JUNIT4_AFTER) != null
-                        || m.getAnnotations().get(TESTNG_AFTER) != null)
+                        || m.getAnnotations().get(TESTNG_AFTER) != null
+                        || m.getAnnotations().get(JUPITER_AFTER_EACH) != null)
                 .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
 
         if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testClassName, false)) {
@@ -311,7 +316,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
                 .invokeSpecial(testMethod, arguments.toArray(new ValueEmitter[0]));
 
         MethodReader testMethodReader = hierarchy.getClassSource().resolve(testMethod);
-        String[] expectedExceptions = TeaVMTestRunner.getExpectedExceptions(testMethodReader);
+        String[] expectedExceptions = getExpectedExceptions(testMethodReader);
         if (expectedExceptions.length != 0) {
             BasicBlock handler = pe.getProgram().createBasicBlock();
 
@@ -329,5 +334,35 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
 
             pe.enter(handler);
         }
+    }
+
+    static String[] getExpectedExceptions(MethodReader method) {
+        AnnotationReader annot = method.getAnnotations().get(JUNIT4_TEST);
+        if (annot != null) {
+            AnnotationValue expected = annot.getValue("expected");
+            if (expected == null) {
+                return new String[0];
+            }
+
+            ValueType result = expected.getJavaClass();
+            return new String[] { ((ValueType.Object) result).getClassName() };
+        }
+
+        annot = method.getAnnotations().get(TESTNG_TEST);
+        if (annot != null) {
+            AnnotationValue expected = annot.getValue("expectedExceptions");
+            if (expected == null) {
+                return new String[0];
+            }
+
+            List<AnnotationValue> list = expected.getList();
+            String[] result = new String[list.size()];
+            for (int i = 0; i < list.size(); ++i) {
+                result[i] = ((ValueType.Object) list.get(i).getJavaClass()).getClassName();
+            }
+            return result;
+        }
+
+        return new String[0];
     }
 }

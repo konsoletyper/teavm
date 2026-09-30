@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,28 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.junit;
 
-plugins {
-    `java-library`
-    `teavm-publish`
-}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-description = "Test runner for JUnit and TestNG annotations"
-
-
-dependencies {
-    compileOnly(libs.junit)
-    compileOnly(libs.testng)
-    compileOnly(libs.junit.jupiter.api)
-    compileOnly(project(":jso:core"))
-    compileOnly(project(":classlib"))
-
-    implementation(project(":core"))
-    implementation(project(":tools:core"))
-    implementation(project(":tools:browser-runner"))
-    runtimeOnly(project(":tools:deobfuscator-wasm-gc"))
-}
-
-teavmPublish {
-    artifactId = "teavm-junit"
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@ExtendWith(TeaVMJupiterExtension.class)
+public @interface TeaVMTest {
 }

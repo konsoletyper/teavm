@@ -73,7 +73,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
         File outputFile = getOutputFile(path, baseName, configuration.getSuffix(), extension);
         result.file = outputFile;
 
-        ClassLoader classLoader = TeaVMTestRunner.class.getClassLoader();
+        ClassLoader classLoader = TeaVMTestInfrastructure.classLoader;
 
         var target = targetSupplier.get();
         configuration.apply(target);

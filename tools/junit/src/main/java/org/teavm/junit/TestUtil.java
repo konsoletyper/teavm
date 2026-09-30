@@ -55,13 +55,13 @@ final class TestUtil {
     static void resourceToFile(String resource, File file, Map<String, String> properties) throws IOException {
         file.getParentFile().mkdirs();
         if (properties.isEmpty()) {
-            try (InputStream input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource);
+            try (InputStream input = TeaVMTestInfrastructure.classLoader.getResourceAsStream(resource);
                     OutputStream output = new BufferedOutputStream(new FileOutputStream(file))) {
                 input.transferTo(output);
             }
         } else {
             String content;
-            try (var input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource);
+            try (var input = TeaVMTestInfrastructure.classLoader.getResourceAsStream(resource);
                     var reader = new BufferedReader(new InputStreamReader(input, UTF_8))) {
                 content = reader.lines().collect(Collectors.joining("\n"));
             }
