@@ -529,7 +529,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         Map<String, Method> afterMethods = new LinkedHashMap<>();
         for (Class<?> c : classes) {
-            for (Method method : c.getMethods()) {
+            for (Method method : c.getDeclaredMethods()) {
                 if (getAnnotation(method, JUNIT4_AFTER) != null || getAnnotation(method, TESTNG_AFTER) != null) {
                     afterMethods.putIfAbsent(signatureOf(method), method);
                 }
@@ -539,7 +539,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         Map<String, Method> beforeMethods = new LinkedHashMap<>();
         Collections.reverse(classes);
         for (Class<?> c : classes) {
-            for (Method method : c.getMethods()) {
+            for (Method method : c.getDeclaredMethods()) {
                 if (getAnnotation(method, JUNIT4_BEFORE) != null || getAnnotation(method, TESTNG_BEFORE) != null) {
                     beforeMethods.putIfAbsent(signatureOf(method), method);
                 }
