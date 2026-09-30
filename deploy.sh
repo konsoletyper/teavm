@@ -17,7 +17,7 @@
 mkdir -p build-dir
 
 git fetch
-git archive master | tar -x -C build-dir || { echo 'Git archive failed' ; exit 1; }
+git archive HEAD | tar -x -C build-dir || { echo 'Git archive failed' ; exit 1; }
 
 function deploy_teavm {
   TEAVM_DEPLOY_VERSION=`sed -En 's/teavm\.project\.version\s*=\s*([0-9]+\.[0-9]+)\..*/\1/p' gradle.properties`
