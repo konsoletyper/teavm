@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -165,8 +166,13 @@ public abstract class SimpleReflectionPolicy implements ReflectionPolicy {
         return predicate.negate();
     }
 
-    protected static <T> Predicate<IntrospectElement> named(String name) {
+    protected static Predicate<IntrospectElement> named(String name) {
         return elem -> elem.name().equals(name);
+    }
+
+    protected static Predicate<IntrospectElement> namedEither(String... names) {
+        var nameSet = Set.of(names);
+        return elem -> nameSet.contains(elem.name());
     }
 
     protected static Predicate<IntrospectElement> namePattern(String pattern) {
