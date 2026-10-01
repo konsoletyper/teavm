@@ -314,6 +314,21 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
         public int size() {
             return TAbstractMap.this.size();
         }
+
+        @Override
+        public boolean contains(Object o) {
+            return TAbstractMap.this.containsKey(o);
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return TAbstractMap.this.remove(o) != null;
+        }
+
+        @Override
+        public void clear() {
+            TAbstractMap.this.clear();
+        }
     }
 
     private class Values extends TAbstractCollection<V> {
