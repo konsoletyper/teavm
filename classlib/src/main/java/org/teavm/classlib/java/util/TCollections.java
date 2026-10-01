@@ -513,17 +513,46 @@ public final class TCollections extends TObject {
             @Override public boolean remove(Object o) {
                 throw new UnsupportedOperationException();
             }
+            @Override public boolean contains(Object o) {
+                return s.contains(o);
+            }
+            @Override public boolean containsAll(TCollection<?> c) {
+                return s.containsAll(c);
+            }
+            @Override public boolean isEmpty() {
+                return s.isEmpty();
+            }
         };
     }
 
     public static <K, V> TMap<K, V> unmodifiableMap(final TMap<? extends K, ? extends V> m) {
         TObjects.requireNonNull(m);
         return new TAbstractMap<>() {
+            private TSet<Entry<K, V>> entrySetCache;
+
             @Override public TSet<Entry<K, V>> entrySet() {
-                return unmodifiableMapEntrySet(m.entrySet());
+                if (entrySetCache == null) {
+                    entrySetCache = unmodifiableMapEntrySet(m.entrySet());
+                }
+                return entrySetCache;
             }
             @Override public V remove(Object o) {
                 throw new UnsupportedOperationException();
+            }
+            @Override public boolean containsKey(Object key) {
+                return m.containsKey(key);
+            }
+            @Override public boolean containsValue(Object value) {
+                return m.containsValue(value);
+            }
+            @Override public int size() {
+                return m.size();
+            }
+            @Override public V get(Object key) {
+                return m.get(key);
+            }
+            @Override public boolean isEmpty() {
+                return m.isEmpty();
             }
         };
     }
