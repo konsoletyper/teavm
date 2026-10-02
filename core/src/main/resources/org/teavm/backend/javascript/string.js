@@ -28,9 +28,15 @@ let $rt_s = index => $rt_stringPool_instance[index];
 let $rt_charArrayToString = (array, offset, count) => {
     let result = "";
     let limit = offset + count;
-    for (let i = offset; i < limit; i = (i + 1024) | 0) {
-        let next = teavm_globals.Math.min(limit, (i + 1024) | 0);
-        result += teavm_globals.String.fromCharCode.apply(null, array.subarray(i, next));
+    if (count <= 16) {
+        for (let i = offset; i < limit; i = i + 1 | 0) {
+            result += String.fromCharCode(array[i]);
+        }
+    } else {
+        for (let i = offset; i < limit; i = (i + 1024) | 0) {
+            let next = teavm_globals.Math.min(limit, (i + 1024) | 0);
+            result += teavm_globals.String.fromCharCode.apply(null, array.subarray(i, next));
+        }
     }
     return result;
 }
