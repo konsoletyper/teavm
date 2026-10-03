@@ -16,8 +16,9 @@
 package org.teavm.jso.dom.xml;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.xml.mixin.ChildNode;
 
-public interface CharacterData extends Node {
+public interface CharacterData extends Node, ChildNode {
     @JSProperty
     String getData();
 
