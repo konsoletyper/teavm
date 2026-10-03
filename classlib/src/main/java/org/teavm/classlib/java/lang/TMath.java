@@ -780,7 +780,7 @@ public final class TMath extends TObject {
             // after rescaling down we get subnormal number
             mantissa = (mantissa | 0x10000000000000L) >> Math.min(-scaleFactor - exponent + 1, 53);
             exponent = 0;
-        } else if (scaleFactor > 0x77E - exponent) {
+        } else if (scaleFactor > 0x7FE - exponent) {
             // after rescaling up we get infinity
             return d < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         } else {
