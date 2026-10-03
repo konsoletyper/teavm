@@ -26,29 +26,9 @@ final class TestJsEntryPoint {
             TestEntryPoint.run(args.length > 0 ? args[0] : null);
         } catch (Throwable e) {
             StringBuilder sb = new StringBuilder();
-            printStackTrace(e, sb);
+            TestEntryPoint.printStackTrace(e, sb);
             saveJavaException(sb.toString());
             throw e;
-        }
-    }
-
-    private static void printStackTrace(Throwable e, StringBuilder stream) {
-        stream.append(e.getClass().getName());
-        String message = e.getLocalizedMessage();
-        if (message != null) {
-            stream.append(": " + message);
-        }
-        stream.append("\n");
-        StackTraceElement[] stackTrace = e.getStackTrace();
-        if (stackTrace != null) {
-            for (StackTraceElement element : stackTrace) {
-                stream.append("\tat ");
-                stream.append(element).append("\n");
-            }
-        }
-        if (e.getCause() != null && e.getCause() != e) {
-            stream.append("Caused by: ");
-            printStackTrace(e.getCause(), stream);
         }
     }
 

@@ -60,6 +60,10 @@ dependencies {
     testImplementation(libs.rhino)
     testImplementation(libs.junit)
     testImplementation(libs.testng)
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.kotlin.serialization.json)
     testAnnotationProcessor(project(":extension:processor"))
 }
@@ -72,7 +76,7 @@ val defaultCRunWrapper = if (isWindowsOs) "" else "bash run-process-unix-gdb.sh"
 // script; a custom teavm.tests.c.compiler is expected to set up whatever environment it needs itself.
 val defaultCEnvScript = if (isWindowsOs && !cCompilerOverridden) "setup-msvc-env.bat" else ""
 
-tasks.test {
+tasks.withType<Test>().configureEach {
     systemProperty("teavm.junit.target", layout.buildDirectory.dir("teavm-tests").get().asFile.absolutePath)
     val browser = providers.gradleProperty("teavm.tests.browser").orElse("browser-chrome").get()
 
@@ -118,6 +122,19 @@ tasks.test {
 
     maxParallelForks = (Runtime.getRuntime().availableProcessors() * 2 / 3).coerceAtLeast(1)
     maxHeapSize = "800m"
+}
+
+// The default test task runs JUnit 4/TestNG tests, this one runs tests written against JUnit Jupiter API
+val jupiterTest = tasks.register<Test>("jupiterTest") {
+    description = "Runs JUnit Jupiter tests."
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+}
+
+tasks.check {
+    dependsOn(jupiterTest)
 }
 
 tasks.withType<KotlinJvmCompile>().configureEach {

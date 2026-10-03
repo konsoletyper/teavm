@@ -16,6 +16,7 @@
 package org.teavm.junit;
 
 import java.util.List;
+import java.util.Map;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
@@ -27,8 +28,9 @@ import org.teavm.model.instructions.BranchingCondition;
 class TestEntryPointTransformerForWholeClass extends TestEntryPointTransformer {
     private List<MethodReference> testMethods;
 
-    TestEntryPointTransformerForWholeClass(List<MethodReference> testMethods, String testClassName) {
-        super(testClassName);
+    TestEntryPointTransformerForWholeClass(List<MethodReference> testMethods, String testClassName,
+            Map<MethodReference, JupiterArgumentsPlan> parameterizedPlans) {
+        super(testClassName, parameterizedPlans);
         this.testMethods = testMethods;
     }
 

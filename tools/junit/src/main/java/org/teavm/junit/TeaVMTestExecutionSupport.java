@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +85,7 @@ final class TeaVMTestExecutionSupport {
      * {@code tests.json} descriptor) without duplicating this compile/run/cleanup loop.
      */
     static void runOnAllPlatforms(Method method, Class<?> testClass, Consumer<TestRun> onCompiled) throws Throwable {
-        var compiled = compileSingleMethod(method, testClass);
+        var compiled = compileSingleMethod(method, testClass, null);
         for (var platform : TeaVMTestInfrastructure.platforms) {
             var runs = compiled.get(platform.getPlatform());
             if (runs == null) {
@@ -107,9 +108,12 @@ final class TeaVMTestExecutionSupport {
      * {@code TeaVMTestRunner.prepareCompiledTest}. Returns the compiled {@link TestRun}s (one per
      * configuration) grouped by platform, ready to be submitted by the caller — which also decides
      * how to report a compile failure (this method itself just throws).
+     *
+     * <p>{@code plan}, if not null, describes the arguments of a Jupiter parameterized test.
      */
     @SuppressWarnings("unchecked")
-    static Map<TestPlatform, List<TestRun>> compileSingleMethod(Method method, Class<?> testClass) throws Throwable {
+    static Map<TestPlatform, List<TestRun>> compileSingleMethod(Method method, Class<?> testClass,
+            JupiterArgumentsPlan plan) throws Throwable {
         var result = new LinkedHashMap<TestPlatform, List<TestRun>>();
         if (TeaVMTestInfrastructure.outputDir == null) {
             return result;
@@ -129,8 +133,8 @@ final class TeaVMTestExecutionSupport {
                 var castPlatform = (TestPlatformSupport<TeaVMTarget>) platform;
                 var castConfig = (TeaVMTestConfiguration<TeaVMTarget>) configuration;
 
-                var compileResult = castPlatform.compile(singleTestEntryPoint(method, testClass), "test", castConfig,
-                        outputPath, method);
+                var compileResult = castPlatform.compile(singleTestEntryPoint(method, testClass, plan), "test",
+                        castConfig, outputPath, method);
                 if (!compileResult.success) {
                     throw compileResult.throwable != null
                             ? compileResult.throwable
@@ -164,10 +168,12 @@ final class TeaVMTestExecutionSupport {
      * rather than a fixed annotation check here, since the two front ends recognize different,
      * framework-specific annotations, and this class must stay loadable on a classpath that has
      * only one of the two frameworks present.
+     *
+     * <p>{@code plans} describes arguments of Jupiter parameterized tests among {@code methods}.
      */
     @SuppressWarnings("unchecked")
     static Map<TestPlatform, Map<Method, List<TestRun>>> compileWholeClass(List<Method> methods, Class<?> testClass,
-            Predicate<Method> ignored) throws Throwable {
+            Predicate<Method> ignored, Map<Method, JupiterArgumentsPlan> plans) throws Throwable {
         var result = new LinkedHashMap<TestPlatform, Map<Method, List<TestRun>>>();
         if (TeaVMTestInfrastructure.outputDir == null) {
             return result;
@@ -187,7 +193,7 @@ final class TeaVMTestExecutionSupport {
                 var runs = new ArrayList<TestRun>();
 
                 var compileResult = castPlatform.compile(wholeClassEntryPoint(methods, platform.getPlatform(),
-                        configuration, testClass, runs, ignored), "classTest", castConfig, path, testClass);
+                        configuration, testClass, runs, ignored, plans), "classTest", castConfig, path, testClass);
                 if (!compileResult.success) {
                     throw compileResult.throwable != null
                             ? compileResult.throwable
@@ -363,13 +369,14 @@ final class TeaVMTestExecutionSupport {
 
     private static Consumer<TeaVM> wholeClassEntryPoint(List<Method> methods, TestPlatform platform,
             TeaVMTestConfiguration<?> configuration, Class<?> testClass, List<TestRun> runs,
-            Predicate<Method> ignored) {
+            Predicate<Method> ignored, Map<Method, JupiterArgumentsPlan> plans) {
         return vm -> {
             var properties = new Properties();
             applyProperties(testClass, properties);
             vm.setProperties(properties);
 
             var methodReferences = new ArrayList<MethodReference>();
+            var referencePlans = new HashMap<MethodReference, JupiterArgumentsPlan>();
             for (var method : methods) {
                 if (!isPlatformPresent(method, platform) || ignored.test(method)) {
                     continue;
@@ -377,11 +384,16 @@ final class TeaVMTestExecutionSupport {
                 var classHolder = TeaVMTestInfrastructure.classSource.get(method.getDeclaringClass().getName());
                 var methodHolder = classHolder.getMethod(getDescriptor(method));
                 methodReferences.add(methodHolder.getReference());
+                var plan = plans.get(method);
+                if (plan != null) {
+                    referencePlans.put(methodHolder.getReference(), plan);
+                }
                 var run = new TestRun(generateName(method.getName(), configuration), method,
                         methodHolder.getReference().toString());
                 runs.add(run);
             }
-            new TestEntryPointTransformerForWholeClass(methodReferences, testClass.getName()).install(vm);
+            new TestEntryPointTransformerForWholeClass(methodReferences, testClass.getName(), referencePlans)
+                    .install(vm);
         };
     }
 
@@ -392,15 +404,19 @@ final class TeaVMTestExecutionSupport {
         return path;
     }
 
-    private static Consumer<TeaVM> singleTestEntryPoint(Method method, Class<?> testClass) {
+    private static Consumer<TeaVM> singleTestEntryPoint(Method method, Class<?> testClass,
+            JupiterArgumentsPlan plan) {
         ClassHolder classHolder = TeaVMTestInfrastructure.classSource.get(method.getDeclaringClass().getName());
         MethodHolder methodHolder = classHolder.getMethod(getDescriptor(method));
+        var plans = plan != null
+                ? Map.of(methodHolder.getReference(), plan)
+                : Map.<MethodReference, JupiterArgumentsPlan>of();
 
         return vm -> {
             var properties = new Properties();
             applyProperties(method.getDeclaringClass(), properties);
             vm.setProperties(properties);
-            new TestEntryPointTransformerForSingleMethod(methodHolder.getReference(), testClass.getName())
+            new TestEntryPointTransformerForSingleMethod(methodHolder.getReference(), testClass.getName(), plans)
                     .install(vm);
         };
     }

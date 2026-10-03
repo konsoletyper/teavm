@@ -19,7 +19,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class TestEntryPoint {
+    static final String INVOCATION_FAILURES_START = "@@teavm-invocation-failures@@";
+    static final String INVOCATION_FAILURE_PREFIX = "@@teavm-invocation-failure#";
+    static final String INVOCATION_FAILURES_END = "@@teavm-invocation-failures-end@@";
+
     private static Object testCase;
+
+    /**
+     * Set by generated {@link #launchers} code for tests where every invocation is reported separately
+     * (Jupiter parameterized tests). In this case all invocations run even if some of them fail, and failures
+     * are reported together, see {@link #reportInvocationFailures(List, List)}.
+     */
+    private static boolean collectInvocationFailures;
+
+    /**
+     * Set by generated {@link #launchers} code when every invocation must run against a fresh test instance,
+     * like Jupiter does by default.
+     */
+    private static boolean instancePerInvocation;
 
     private TestEntryPoint() {
     }
@@ -28,17 +45,76 @@ final class TestEntryPoint {
         List<Launcher> launchers = new ArrayList<>();
         testCase = createTestCase();
         launchers(name, launchers);
-        for (Launcher launcher : launchers) {
-            before();
-            try {
-                launcher.launch(testCase);
-            } finally {
-                try {
-                    after();
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
+        if (!collectInvocationFailures) {
+            for (Launcher launcher : launchers) {
+                launch(launcher);
             }
+            return;
+        }
+
+        List<Integer> failedIndexes = new ArrayList<>();
+        List<Throwable> failures = new ArrayList<>();
+        for (int i = 0; i < launchers.size(); ++i) {
+            try {
+                if (instancePerInvocation && i > 0) {
+                    testCase = createTestCase();
+                }
+                launch(launchers.get(i));
+            } catch (Throwable e) {
+                failedIndexes.add(i);
+                failures.add(e);
+            }
+        }
+        if (!failures.isEmpty()) {
+            reportInvocationFailures(failedIndexes, failures);
+        }
+    }
+
+    private static void launch(Launcher launcher) throws Throwable {
+        before();
+        try {
+            launcher.launch(testCase);
+        } finally {
+            try {
+                after();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Encodes failures of individual invocations into a message of a single exception. Message is the only
+     * part of an exception that reliably survives the trip from every backend back to the JVM, where
+     * {@link InvocationResults} decodes it.
+     */
+    private static void reportInvocationFailures(List<Integer> indexes, List<Throwable> failures) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(failures.size()).append(" invocation(s) failed\n").append(INVOCATION_FAILURES_START).append('\n');
+        for (int i = 0; i < failures.size(); ++i) {
+            sb.append(INVOCATION_FAILURE_PREFIX).append(indexes.get(i)).append("@@\n");
+            printStackTrace(failures.get(i), sb);
+        }
+        sb.append(INVOCATION_FAILURES_END);
+        throw new AssertionError(sb.toString());
+    }
+
+    static void printStackTrace(Throwable e, StringBuilder sb) {
+        sb.append(e.getClass().getName());
+        String message = e.getLocalizedMessage();
+        if (message != null) {
+            sb.append(": ").append(message);
+        }
+        sb.append("\n");
+        StackTraceElement[] stackTrace = e.getStackTrace();
+        if (stackTrace != null) {
+            for (StackTraceElement element : stackTrace) {
+                sb.append("\tat ").append(element).append("\n");
+            }
+        }
+        if (e.getCause() != null && e.getCause() != e) {
+            sb.append("Caused by: ");
+            printStackTrace(e.getCause(), sb);
         }
     }
 

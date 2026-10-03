@@ -16,6 +16,8 @@
 package org.teavm.junit;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -29,13 +31,54 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  */
 final class TeaVMWholeClassCompilation implements ExtensionContext.Store.CloseableResource {
     private final Map<TestPlatform, Map<Method, List<TestRun>>> runsByPlatform;
+    private final Map<Method, Throwable> errors;
+    private final Map<Method, InvocationResults> invocationResults = new HashMap<>();
 
-    TeaVMWholeClassCompilation(Map<TestPlatform, Map<Method, List<TestRun>>> runsByPlatform) {
+    /**
+     * @param errors methods that were left out of compilation because of an error that is specific to them
+     *               (e.g. unsupported argument source of a parameterized test); the error is reported when the
+     *               method runs, so that it doesn't break other methods of the class.
+     */
+    TeaVMWholeClassCompilation(Map<TestPlatform, Map<Method, List<TestRun>>> runsByPlatform,
+            Map<Method, Throwable> errors) {
         this.runsByPlatform = runsByPlatform;
+        this.errors = errors;
     }
 
     void runMethod(Method method) throws Throwable {
+        checkErrors(method);
         TeaVMTestExecutionSupport.runWholeClassMethod(runsByPlatform, method);
+    }
+
+    /**
+     * Reports result of one invocation of a parameterized test. All invocations are run by the first call,
+     * subsequent calls take results from the cache.
+     */
+    void runInvocation(Method method, int invocationIndex) throws Throwable {
+        checkErrors(method);
+        InvocationResults results;
+        synchronized (invocationResults) {
+            results = invocationResults.get(method);
+            if (results == null) {
+                var runs = new ArrayList<TestRun>();
+                for (var platform : TeaVMTestInfrastructure.platforms) {
+                    var methodRuns = runsByPlatform.get(platform.getPlatform());
+                    if (methodRuns != null && methodRuns.containsKey(method)) {
+                        runs.addAll(methodRuns.get(method));
+                    }
+                }
+                results = InvocationResults.collect(runs, false);
+                invocationResults.put(method, results);
+            }
+        }
+        results.check(invocationIndex);
+    }
+
+    private void checkErrors(Method method) throws Throwable {
+        var error = errors.get(method);
+        if (error != null) {
+            throw error;
+        }
     }
 
     @Override

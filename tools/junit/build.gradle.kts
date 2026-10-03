@@ -26,6 +26,7 @@ dependencies {
     compileOnly(libs.junit)
     compileOnly(libs.testng)
     compileOnly(libs.junit.jupiter.api)
+    compileOnly(libs.junit.jupiter.params)
     compileOnly(project(":jso:core"))
     compileOnly(project(":classlib"))
 

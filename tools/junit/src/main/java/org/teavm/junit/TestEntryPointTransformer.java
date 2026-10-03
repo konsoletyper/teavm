@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
@@ -58,10 +59,12 @@ import org.teavm.vm.spi.TeaVMPlugin;
 
 abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
     private String testClassName;
+    private Map<MethodReference, JupiterArgumentsPlan> parameterizedPlans;
     private int suffixGenerator;
 
-    TestEntryPointTransformer(String testClassName) {
+    TestEntryPointTransformer(String testClassName, Map<MethodReference, JupiterArgumentsPlan> parameterizedPlans) {
         this.testClassName = testClassName;
+        this.parameterizedPlans = parameterizedPlans;
     }
 
     @Override
@@ -167,6 +170,12 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         ValueEmitter list = pe.var(2, List.class);
 
         MethodReader testMethodReader = context.getHierarchy().getClassSource().resolve(testMethod);
+        JupiterArgumentsPlan plan = parameterizedPlans.get(testMethod);
+        if (plan != null) {
+            generateAddLaunchersWithJupiterPlan(testMethodReader, pe, list, plan, launcherClass.getName());
+            return;
+        }
+
         AnnotationReader testNgAnnot = testMethodReader.getAnnotations().get(TESTNG_TEST);
         if (testNgAnnot != null) {
             AnnotationValue dataProviderValue = testNgAnnot.getValue("dataProvider");
@@ -198,9 +207,58 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
                 .invokeSpecial(providerMethod.getReference());
         if (data.getType() instanceof ValueType.Array) {
             generateAddLaunchersWithProviderArray(testMethodReader, pe, list, data, launcherClassName);
+            pe.exit();
         } else {
             generateAddLaunchersWithProviderIterator(testMethodReader, pe, list, data, launcherClassName);
         }
+    }
+
+    private void generateAddLaunchersWithJupiterPlan(MethodReader testMethodReader, ProgramEmitter pe,
+            ValueEmitter list, JupiterArgumentsPlan plan, String launcherClassName) {
+        pe.setField(TestEntryPoint.class, "collectInvocationFailures", pe.constant(1).cast(boolean.class));
+        if (!plan.sharedInstance) {
+            pe.setField(TestEntryPoint.class, "instancePerInvocation", pe.constant(1).cast(boolean.class));
+        }
+        for (var segment : plan.segments) {
+            if (segment instanceof JupiterArgumentsPlan.StaticRow) {
+                List<JupiterArgumentsPlan.StaticValue> values = ((JupiterArgumentsPlan.StaticRow) segment).values;
+                ValueEmitter[] arguments = new ValueEmitter[testMethodReader.parameterCount()];
+                for (int i = 0; i < arguments.length; ++i) {
+                    arguments[i] = values.get(i).emit(pe, testMethodReader.parameterType(i));
+                }
+                list.invokeVirtual("add", boolean.class, pe.construct(launcherClassName, arguments)
+                        .cast(Object.class));
+            } else {
+                ValueEmitter source;
+                String converterName;
+                if (segment instanceof JupiterArgumentsPlan.FactoryMethod factory) {
+                    if (factory.isStatic) {
+                        source = pe.invoke(factory.method);
+                    } else {
+                        ValueEmitter instance = pe.getField(TestEntryPoint.class, "testCase", Object.class)
+                                .cast(ValueType.object(factory.method.getClassName()));
+                        source = factory.isPrivate
+                                ? instance.invokeSpecial(factory.method)
+                                : instance.invokeVirtual(factory.method);
+                    }
+                    converterName = "fromMethod";
+                } else {
+                    var factory = (JupiterArgumentsPlan.FactoryField) segment;
+                    if (factory.isStatic) {
+                        source = pe.getField(factory.field, factory.type);
+                    } else {
+                        source = pe.getField(TestEntryPoint.class, "testCase", Object.class)
+                                .cast(ValueType.object(factory.field.getClassName()))
+                                .getField(factory.field.getFieldName(), factory.type);
+                    }
+                    converterName = "fromField";
+                }
+                ValueEmitter data = pe.invoke(JupiterArgumentsRuntime.class, converterName, Object[][].class,
+                        source.cast(Object.class), pe.constant(testMethodReader.parameterCount()));
+                generateAddLaunchersWithProviderArray(testMethodReader, pe, list, data, launcherClassName);
+            }
+        }
+        pe.exit();
     }
 
     private void generateAddLaunchersWithProviderArray(MethodReader testMethodReader, ProgramEmitter pe,
@@ -225,7 +283,6 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         pe.jump(loopHead);
 
         pe.enter(loopExit);
-        pe.exit();
     }
 
     private void generateAddLaunchersWithProviderIterator(MethodReader testMethodReader, ProgramEmitter pe,
@@ -271,7 +328,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
                 case BYTE:
                     return value.cast(Number.class).invokeVirtual("byteValue", byte.class);
                 case SHORT:
-                    return value.cast(Number.class).invokeVirtual("shortValue", byte.class);
+                    return value.cast(Number.class).invokeVirtual("shortValue", short.class);
                 case INTEGER:
                     return value.cast(Number.class).invokeVirtual("intValue", int.class);
                 case LONG:

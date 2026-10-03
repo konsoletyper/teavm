@@ -109,7 +109,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private void runWithWholeClassCompilation(List<Method> children, RunNotifier notifier) {
         Map<TestPlatform, Map<Method, List<TestRun>>> tests;
         try {
-            tests = TeaVMTestExecutionSupport.compileWholeClass(children, testClass, this::isIgnored);
+            tests = TeaVMTestExecutionSupport.compileWholeClass(children, testClass, this::isIgnored,
+                    Map.of());
         } catch (Throwable t) {
             notifier.fireTestFailure(new Failure(getDescription(), t));
             failAllClasses(children, notifier);
@@ -266,7 +267,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private void prepareCompiledTest(Method child, RunNotifier notifier, List<TestRun> runs) {
         try {
-            var compiled = TeaVMTestExecutionSupport.compileSingleMethod(child, testClass);
+            var compiled = TeaVMTestExecutionSupport.compileSingleMethod(child, testClass, null);
             for (var platform : platforms) {
                 var platformRuns = compiled.get(platform.getPlatform());
                 if (platformRuns != null) {
