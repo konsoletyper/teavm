@@ -15,6 +15,7 @@
  */
 package org.teavm.junit;
 
+import java.util.Map;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
@@ -24,18 +25,46 @@ import org.teavm.model.ValueType;
 import org.teavm.model.instructions.InvokeInstruction;
 
 /**
- * Replaces calls from JUnit Jupiter assertions to {@code org.junit.platform.commons.util.ReflectionUtils}
- * with calls to {@link JupiterAssertionsSupport}. Static initializer of {@code ReflectionUtils} pulls
- * logging infrastructure and lots of reflection, which can't be compiled by TeaVM, while assertions only
- * need a trivial check whether an object is an array.
+ * Replaces calls from JUnit Jupiter assertions to some utility methods with calls to lightweight equivalents
+ * in {@link JupiterAssertionsSupport}:
+ *
+ * <ul>
+ *   <li>static initializer of {@code org.junit.platform.commons.util.ReflectionUtils} pulls logging
+ *     infrastructure and lots of reflection, which can't be compiled by TeaVM;</li>
+ *   <li>static initializer of {@code org.junit.platform.commons.util.StringUtils} compiles regular expressions,
+ *     which brings the whole regex engine to every test. Apart from direct calls, {@code StringUtils} is reached
+ *     via {@code UnrecoverableExceptions}, {@code ExceptionUtils} and {@code Preconditions};</li>
+ *   <li>{@code String.format} brings {@code java.util.Formatter} with its dependencies, while assertions only
+ *     use {@code %s} specifiers.</li>
+ * </ul>
+ *
+ * <p>Without these replacements every compiled test becomes several times larger,
+ * which makes tests compile much longer.
  */
 class JupiterAssertionsTransformer implements ClassHolderTransformer {
     private static final String JUPITER_API_PACKAGE = "org.junit.jupiter.api.";
+    private static final String COMMONS_UTIL = "org.junit.platform.commons.util.";
     private static final ValueType OBJECT = ValueType.object("java.lang.Object");
-    private static final MethodReference IS_ARRAY = new MethodReference(
-            "org.junit.platform.commons.util.ReflectionUtils", "isArray", OBJECT, ValueType.BOOLEAN);
-    private static final MethodReference IS_ARRAY_REPLACEMENT = new MethodReference(
-            JupiterAssertionsSupport.class.getName(), "isArray", OBJECT, ValueType.BOOLEAN);
+    private static final ValueType STRING = ValueType.object("java.lang.String");
+    private static final ValueType OBJECT_ARRAY = ValueType.arrayOf(OBJECT);
+    private static final ValueType THROWABLE = ValueType.object("java.lang.Throwable");
+    private static final Map<MethodReference, MethodReference> REPLACEMENTS = Map.of(
+            new MethodReference(COMMONS_UTIL + "ReflectionUtils", "isArray", OBJECT, ValueType.BOOLEAN),
+            replacement("isArray", OBJECT, ValueType.BOOLEAN),
+            new MethodReference(COMMONS_UTIL + "StringUtils", "isNotBlank", STRING, ValueType.BOOLEAN),
+            replacement("isNotBlank", STRING, ValueType.BOOLEAN),
+            new MethodReference(COMMONS_UTIL + "StringUtils", "nullSafeToString", OBJECT, STRING),
+            replacement("nullSafeToString", OBJECT, STRING),
+            new MethodReference(COMMONS_UTIL + "UnrecoverableExceptions", "rethrowIfUnrecoverable", THROWABLE,
+                    ValueType.VOID),
+            replacement("rethrowIfUnrecoverable", THROWABLE, ValueType.VOID),
+            new MethodReference("java.lang.String", "format", STRING, OBJECT_ARRAY, STRING),
+            replacement("format", STRING, OBJECT_ARRAY, STRING)
+    );
+
+    private static MethodReference replacement(String name, ValueType... signature) {
+        return new MethodReference(JupiterAssertionsSupport.class.getName(), name, signature);
+    }
 
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
@@ -51,8 +80,9 @@ class JupiterAssertionsTransformer implements ClassHolderTransformer {
                 for (var instruction : block) {
                     if (instruction instanceof InvokeInstruction) {
                         var invoke = (InvokeInstruction) instruction;
-                        if (invoke.getMethod().equals(IS_ARRAY)) {
-                            invoke.setMethod(IS_ARRAY_REPLACEMENT);
+                        var replacement = REPLACEMENTS.get(invoke.getMethod());
+                        if (replacement != null) {
+                            invoke.setMethod(replacement);
                         }
                     }
                 }
