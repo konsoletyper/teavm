@@ -328,6 +328,12 @@ public class MathTest {
         assertEquals(1.807872510037101e-308, Math.scalb(1.03e-321, 44), Double.MIN_VALUE);
         assertEquals(3.6157450200742022E-308, Math.scalb(1.03e-321, 45), Double.MIN_VALUE);
         assertEquals(1.03e-321, Math.scalb(3.6157450200742022E-308, -45), Double.MIN_VALUE);
+        assertEquals(0x1p1000, Math.scalb(1.0, 1000), 0.0);
+        assertEquals(0x1p1023, Math.scalb(1.0, 1023), 0.0);
+        assertEquals(Double.MAX_VALUE, Math.scalb(Double.MAX_VALUE / 2, 1), 0.0);
+        assertEquals(Double.POSITIVE_INFINITY, Math.scalb(1.0, 1024), 1.0);
+        assertEquals(Double.NEGATIVE_INFINITY, Math.scalb(-1.0, 1024), 1.0);
+        assertEquals(Double.POSITIVE_INFINITY, Math.scalb(Double.MAX_VALUE, 1), 1.0);
     }
     
     @Test
