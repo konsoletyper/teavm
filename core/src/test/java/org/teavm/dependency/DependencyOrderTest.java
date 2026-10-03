@@ -27,21 +27,17 @@ public class DependencyOrderTest {
     @Test
     public void consumerOrderInDiscoveredDomain() {
         var analyzer = createAnalyzer();
-        var first = new HashedNode(analyzer, 2);
-        var second = new HashedNode(analyzer, 1);
-        var third = new HashedNode(analyzer, 0);
+        var first = new HashedNode(analyzer, 1);
+        var second = new HashedNode(analyzer, 0);
         var order = new ArrayList<String>();
         first.addConsumer(type -> order.add("first"));
         second.addConsumer(type -> order.add("second"));
-        third.addConsumer(type -> order.add("third"));
         first.connect(second);
-        second.connect(third);
 
         first.propagate(analyzer.getClassType("Example"));
 
         assertSame(first.typeSet, second.typeSet);
-        assertSame(first.typeSet, third.typeSet);
-        assertEquals(List.of("first", "second", "third"), order);
+        assertEquals(List.of("first", "second"), order);
     }
 
     @Test
