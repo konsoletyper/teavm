@@ -48,12 +48,12 @@
 
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,13 +67,12 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.MapTest2Support;
 import org.teavm.classlib.support.UnmodifiableCollectionTestSupport;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class HashtableTest {
 
     private Hashtable<String, String> ht10;
@@ -111,7 +110,7 @@ public class HashtableTest {
 
         Hashtable<String, String> h = new Hashtable<>();
 
-        assertEquals("Created incorrect hashtable", 0, h.size());
+        assertEquals(0, h.size(), "Created incorrect hashtable");
     }
 
     @Test
@@ -119,24 +118,24 @@ public class HashtableTest {
         // Test for method java.util.Hashtable(int)
         Hashtable<String, String> h = new Hashtable<>(9);
 
-        assertEquals("Created incorrect hashtable", 0, h.size());
+        assertEquals(0, h.size(), "Created incorrect hashtable");
 
         Hashtable<String, String> empty = new Hashtable<>(0);
-        assertNull("Empty hashtable access", empty.get("nothing"));
+        assertNull(empty.get("nothing"), "Empty hashtable access");
         empty.put("something", "here");
-        assertEquals("cannot get element", "here", empty.get("something"));
+        assertEquals("here", empty.get("something"), "cannot get element");
     }
 
     @Test
     public void test_ConstructorIF() {
         // Test for method java.util.Hashtable(int, float)
         Hashtable<String, String> h = new Hashtable<>(10, 0.5f);
-        assertEquals("Created incorrect hashtable", 0, h.size());
+        assertEquals(0, h.size(), "Created incorrect hashtable");
 
         Hashtable<String, String> empty = new Hashtable<>(0, 0.75f);
-        assertNull("Empty hashtable access", empty.get("nothing"));
+        assertNull(empty.get("nothing"), "Empty hashtable access");
         empty.put("something", "here");
-        assertEquals("cannot get element", "here", empty.get("something"));
+        assertEquals("here", empty.get("something"), "cannot get element");
     }
 
     @Test
@@ -148,8 +147,8 @@ public class HashtableTest {
         map.put("Gah", firstVal);
         map.put("Ooga", secondVal);
         Hashtable<String, Object> ht = new Hashtable<>(map);
-        assertSame("a) Incorrect Hashtable constructed", firstVal, ht.get("Gah"));
-        assertSame("b) Incorrect Hashtable constructed", secondVal, ht.get("Ooga"));
+        assertSame(firstVal, ht.get("Gah"), "a) Incorrect Hashtable constructed");
+        assertSame(secondVal, ht.get("Ooga"), "b) Incorrect Hashtable constructed");
     }
 
     public void test_HashTable_Constructor() {
@@ -163,10 +162,10 @@ public class HashtableTest {
         // Test for method void java.util.Hashtable.clear()
         Hashtable<String, String> h = hashtableClone(htfull);
         h.clear();
-        assertEquals("Hashtable was not cleared", 0, h.size());
+        assertEquals(0, h.size(), "Hashtable was not cleared");
         Enumeration<String> el = h.elements();
         Enumeration<String> keys = h.keys();
-        assertTrue("Hashtable improperly cleared", !el.hasMoreElements() && !(keys.hasMoreElements()));
+        assertTrue(!el.hasMoreElements() && !(keys.hasMoreElements()), "Hashtable improperly cleared");
     }
 
     @Test
@@ -175,7 +174,7 @@ public class HashtableTest {
 
         @SuppressWarnings("unchecked")
         Hashtable<String, String> h = (Hashtable<String, String>) htfull.clone();
-        assertTrue("Clone different size than original", h.size() == htfull.size());
+        assertTrue(h.size() == htfull.size(), "Clone different size than original");
 
         Enumeration<String> org = htfull.keys();
         Enumeration<String> cpy = h.keys();
@@ -185,18 +184,18 @@ public class HashtableTest {
         while (org.hasMoreElements()) {
             okey = org.nextElement();
             ckey = cpy.nextElement();
-            assertTrue("Key comparison failed", okey.equals(ckey));
-            assertTrue("Value comparison failed", (htfull.get(okey)).equals(h.get(ckey)));
+            assertTrue(okey.equals(ckey), "Key comparison failed");
+            assertTrue((htfull.get(okey)).equals(h.get(ckey)), "Value comparison failed");
         }
-        assertTrue("Copy has more keys than original", !cpy.hasMoreElements());
+        assertTrue(!cpy.hasMoreElements(), "Copy has more keys than original");
     }
 
     @Test
     public void test_containsLjava_lang_Object() {
         // Test for method boolean
         // java.util.Hashtable.contains(java.lang.Object)
-        assertTrue("Element not found", ht10.contains("Val 7"));
-        assertTrue("Invalid element found", !ht10.contains("ZZZZZZZZZZZZZZZZ"));
+        assertTrue(ht10.contains("Val 7"), "Element not found");
+        assertTrue(!ht10.contains("ZZZZZZZZZZZZZZZZ"), "Invalid element found");
     }
 
     @Test
@@ -204,8 +203,8 @@ public class HashtableTest {
         // Test for method boolean
         // java.util.Hashtable.containsKey(java.lang.Object)
 
-        assertTrue("Failed to find key", htfull.containsKey("FKey 4"));
-        assertTrue("Failed to find key", !htfull.containsKey("FKey 99"));
+        assertTrue(htfull.containsKey("FKey 4"), "Failed to find key");
+        assertTrue(!htfull.containsKey("FKey 99"), "Failed to find key");
     }
 
     @Test
@@ -214,9 +213,9 @@ public class HashtableTest {
         // java.util.Hashtable.containsValue(java.lang.Object)
         Enumeration<String> e = elmVector.elements();
         while (e.hasMoreElements()) {
-            assertTrue("Returned false for valid value", ht10.containsValue(e.nextElement()));
+            assertTrue(ht10.containsValue(e.nextElement()), "Returned false for valid value");
         }
-        assertTrue("Returned true for invalid value", !ht10.containsValue(new Object()));
+        assertTrue(!ht10.containsValue(new Object()), "Returned true for invalid value");
     }
 
     @Test
@@ -225,10 +224,10 @@ public class HashtableTest {
         Enumeration<String> elms = ht10.elements();
         while (elms.hasMoreElements()) {
             String s = elms.nextElement();
-            assertTrue("Missing key from enumeration", elmVector.contains(s));
+            assertTrue(elmVector.contains(s), "Missing key from enumeration");
         }
 
-        assertEquals("All keys not retrieved", 10, ht10.size());
+        assertEquals(10, ht10.size(), "All keys not retrieved");
 
         // cast Enumeration to Iterator
         @SuppressWarnings("unchecked")
@@ -271,7 +270,7 @@ public class HashtableTest {
         }
         Enumeration<String> e = elmVector.elements();
         while (e.hasMoreElements()) {
-            assertTrue("Returned incorrect entry set", s2.contains(e.nextElement()));
+            assertTrue(s2.contains(e.nextElement()), "Returned incorrect entry set");
         }
 
         boolean exception = false;
@@ -280,15 +279,15 @@ public class HashtableTest {
         } catch (NullPointerException e1) {
             exception = true;
         }
-        assertTrue("Should not be able to assign null to a Hashtable entrySet() Map.Entry", exception);
+        assertTrue(exception, "Should not be able to assign null to a Hashtable entrySet() Map.Entry");
     }
 
     @Test
     public void test_equalsLjava_lang_Object() {
         // Test for method boolean java.util.Hashtable.equals(java.lang.Object)
         Hashtable<String, String> h = hashtableClone(ht10);
-        assertTrue("Returned false for equal tables", ht10.equals(h));
-        assertTrue("Returned true for unequal tables", !ht10.equals(htfull));
+        assertTrue(ht10.equals(h), "Returned false for equal tables");
+        assertTrue(!ht10.equals(htfull), "Returned true for unequal tables");
     }
 
     @Test
@@ -296,7 +295,7 @@ public class HashtableTest {
         // Test for method java.lang.Object
         // java.util.Hashtable.get(java.lang.Object)
         Hashtable<String, String> h = hashtableClone(htfull);
-        assertEquals("Could not retrieve element", "FVal 2", h.get("FKey 2"));
+        assertEquals("FVal 2", h.get("FKey 2"), "Could not retrieve element");
 
         // Regression for HARMONY-262
         ReusableKey k = new ReusableKey();
@@ -320,16 +319,16 @@ public class HashtableTest {
         for (expectedHash = 0; iterator.hasNext(); expectedHash += iterator.next().hashCode()) {
             // do nothing
         }
-        assertTrue("Incorrect hashCode returned.  Wanted: " + expectedHash + " got: " + ht10.hashCode(),
-                expectedHash == ht10.hashCode());
+        assertTrue(expectedHash == ht10.hashCode(),
+                "Incorrect hashCode returned.  Wanted: " + expectedHash + " got: " + ht10.hashCode());
     }
 
     @Test
     public void test_isEmpty() {
         // Test for method boolean java.util.Hashtable.isEmpty()
 
-        assertTrue("isEmpty returned incorrect value", !ht10.isEmpty());
-        assertTrue("isEmpty returned incorrect value", new Hashtable<String, String>().isEmpty());
+        assertTrue(!ht10.isEmpty(), "isEmpty returned incorrect value");
+        assertTrue(new Hashtable<String, String>().isEmpty(), "isEmpty returned incorrect value");
     }
 
     @Test
@@ -339,10 +338,10 @@ public class HashtableTest {
         Enumeration<String> keys = ht10.keys();
         while (keys.hasMoreElements()) {
             String s = keys.nextElement();
-            assertTrue("Missing key from enumeration", keyVector.contains(s));
+            assertTrue(keyVector.contains(s), "Missing key from enumeration");
         }
 
-        assertEquals("All keys not retrieved", 10, ht10.size());
+        assertEquals(10, ht10.size(), "All keys not retrieved");
 
         // cast Enumeration to Iterator
         @SuppressWarnings("unchecked")
@@ -367,11 +366,11 @@ public class HashtableTest {
         boolean exception = false;
         try {
             Object result = en.nextElement();
-            assertTrue("unexpected: " + result, "initial".equals(result));
+            assertTrue("initial".equals(result), "unexpected: " + result);
         } catch (NoSuchElementException e) {
             exception = true;
         }
-        assertTrue("unexpected NoSuchElementException", !exception);
+        assertTrue(!exception, "unexpected NoSuchElementException");
     }
 
     @Test
@@ -380,7 +379,7 @@ public class HashtableTest {
         Set<String> s = ht10.keySet();
         Enumeration<String> e = keyVector.elements();
         while (e.hasMoreElements()) {
-            assertTrue("Returned incorrect key set", s.contains(e.nextElement()));
+            assertTrue(s.contains(e.nextElement()), "Returned incorrect key set");
         }
 
         Map<Integer, String> map = new Hashtable<>(101);
@@ -395,9 +394,9 @@ public class HashtableTest {
         ArrayList<Integer> list = new ArrayList<>(Arrays.asList(new Integer[] { 1, 102, 203 }));
         list.remove(remove1);
         list.remove(remove2);
-        assertTrue("Wrong result", it.next().equals(list.get(0)));
-        assertEquals("Wrong size", 1, map.size());
-        assertTrue("Wrong contents", map.keySet().iterator().next().equals(list.get(0)));
+        assertTrue(it.next().equals(list.get(0)), "Wrong result");
+        assertEquals(1, map.size(), "Wrong size");
+        assertTrue(map.keySet().iterator().next().equals(list.get(0)), "Wrong contents");
 
         Map<Integer, String> map2 = new Hashtable<>(101);
         map2.put(1, "1");
@@ -412,9 +411,9 @@ public class HashtableTest {
         }
         it2.hasNext();
         it2.remove();
-        assertTrue("Wrong result 2", it2.next().equals(next));
-        assertEquals("Wrong size 2", 1, map2.size());
-        assertTrue("Wrong contents 2", map2.keySet().iterator().next().equals(next));
+        assertTrue(it2.next().equals(next), "Wrong result 2");
+        assertEquals(1, map2.size(), "Wrong size 2");
+        assertTrue(map2.keySet().iterator().next().equals(next), "Wrong contents 2");
 
         // cast Iterator to Enumeration
         @SuppressWarnings("unchecked")
@@ -425,8 +424,8 @@ public class HashtableTest {
     @Test
     public void test_keySet_subtest0() {
         Set<String> s1 = ht10.keySet();
-        assertTrue("should contain key", s1.remove("Key 0"));
-        assertTrue("should not contain key", !s1.remove("Key 0"));
+        assertTrue(s1.remove("Key 0"), "should contain key");
+        assertTrue(!s1.remove("Key 0"), "should not contain key");
     }
 
     @Test
@@ -466,7 +465,7 @@ public class HashtableTest {
         } catch (NoSuchElementException e) {
             exception = true;
         }
-        assertTrue("unexpected NoSuchElementException", !exception);
+        assertTrue(!exception, "unexpected NoSuchElementException");
     }
 
     @Test
@@ -476,7 +475,7 @@ public class HashtableTest {
         Hashtable<String, Integer> h = hashtableClone(ht100);
         Integer key = 100;
         h.put("Value 100", key);
-        assertTrue("Key/Value not inserted", h.size() == 1 && (h.contains(key)));
+        assertTrue(h.size() == 1 && (h.contains(key)), "Key/Value not inserted");
     }
 
     @Test
@@ -487,7 +486,7 @@ public class HashtableTest {
         Enumeration<String> e = keyVector.elements();
         while (e.hasMoreElements()) {
             Object x = e.nextElement();
-            assertTrue("Failed to put all elements", h.get(x).equals(ht10.get(x)));
+            assertTrue(h.get(x).equals(ht10.get(x)), "Failed to put all elements");
         }
     }
 
@@ -497,7 +496,7 @@ public class HashtableTest {
         // java.util.Hashtable.remove(java.lang.Object)
         Hashtable<String, String> h = hashtableClone(htfull);
         Object k = h.remove("FKey 0");
-        assertTrue("Remove failed", !h.containsKey("FKey 0") || k == null);
+        assertTrue(!h.containsKey("FKey 0") || k == null, "Remove failed");
     }
 
     @Test
@@ -528,21 +527,21 @@ public class HashtableTest {
     @Test
     public void test_size() {
         // Test for method int java.util.Hashtable.size()
-        assertTrue("Returned invalid size", ht10.size() == 10 && (ht100.size() == 0));
+        assertTrue(ht10.size() == 10 && (ht100.size() == 0), "Returned invalid size");
     }
 
     @Test
     public void test_toString() {
         // Test for method java.lang.String java.util.Hashtable.toString()
         Hashtable<Serializable, Serializable> h = new Hashtable<>();
-        assertEquals("Incorrect toString for Empty table", "{}", h.toString());
+        assertEquals("{}", h.toString(), "Incorrect toString for Empty table");
 
         h.put("one", "1");
         h.put("two", h);
         h.put(h, "3");
         h.put(h, h);
         String result = h.toString();
-        assertTrue("should contain self ref", result.indexOf("(this") > -1);
+        assertTrue(result.indexOf("(this") > -1, "should contain self ref");
     }
 
     @Test
@@ -551,7 +550,7 @@ public class HashtableTest {
         Collection<String> c = ht10.values();
         Enumeration<String> e = elmVector.elements();
         while (e.hasMoreElements()) {
-            assertTrue("Returned incorrect values", c.contains(e.nextElement()));
+            assertTrue(c.contains(e.nextElement()), "Returned incorrect values");
         }
 
         Hashtable<Integer, Integer> myHashtable = new Hashtable<>();
@@ -561,8 +560,8 @@ public class HashtableTest {
         Collection<Integer> values = myHashtable.values();
         new UnmodifiableCollectionTestSupport(values).runTest();
         values.remove(0);
-        assertTrue("Removing from the values collection should remove from the original map",
-                !myHashtable.containsValue(0));
+        assertTrue(!myHashtable.containsValue(0),
+                "Removing from the values collection should remove from the original map");
     }
 
     @Test
@@ -735,9 +734,9 @@ public class HashtableTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly changed", "changed", ht10.get("Key" + i));
+                assertEquals("changed", ht10.get("Key" + i), "Value was incorrectly changed");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -754,9 +753,9 @@ public class HashtableTest {
         assertEquals(11, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
-        assertEquals("New value expected", "added", ht10.get("absent key"));
+        assertEquals("added", ht10.get("absent key"), "New value expected");
     }
 
     @Test
@@ -772,9 +771,9 @@ public class HashtableTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was unexpectedly present in map", null, ht10.get("Key" + i));
+                assertEquals(null, ht10.get("Key" + i), "Value was unexpectedly present in map");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -791,9 +790,9 @@ public class HashtableTest {
         assertEquals(11, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
-        assertEquals("New value expected", "added", ht10.get("absent key"));
+        assertEquals("added", ht10.get("absent key"), "New value expected");
     }
 
     @Test
@@ -808,7 +807,7 @@ public class HashtableTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 
@@ -824,7 +823,7 @@ public class HashtableTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 
@@ -841,9 +840,9 @@ public class HashtableTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+                assertEquals("changed", ht10.get("Key" + i), "Value was incorrectly updated");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -860,7 +859,7 @@ public class HashtableTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 
@@ -877,9 +876,9 @@ public class HashtableTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertNull("Value unexpectedly present", ht10.get("Key" + i));
+                assertNull(ht10.get("Key" + i), "Value unexpectedly present");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -896,9 +895,9 @@ public class HashtableTest {
         assertEquals(11, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
-        assertEquals("New value expected", "changed", ht10.get("absent key"));
+        assertEquals("changed", ht10.get("absent key"), "New value expected");
     }
 
     @Test
@@ -914,9 +913,9 @@ public class HashtableTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly updated", "remapped", ht10.get("Key" + i));
+                assertEquals("remapped", ht10.get("Key" + i), "Value was incorrectly updated");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -933,9 +932,9 @@ public class HashtableTest {
         assertEquals(11, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
-        assertEquals("New value expected", "changed", ht10.get("absent key"));
+        assertEquals("changed", ht10.get("absent key"), "New value expected");
     }
 
     @Test
@@ -951,9 +950,9 @@ public class HashtableTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertNull("Null value expected", ht10.get("Key" + i));
+                assertNull(ht10.get("Key" + i), "Null value expected");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -971,9 +970,9 @@ public class HashtableTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+                assertEquals("changed", ht10.get("Key" + i), "Value was incorrectly updated");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -990,7 +989,7 @@ public class HashtableTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 
@@ -1007,9 +1006,9 @@ public class HashtableTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+                assertEquals("changed", ht10.get("Key" + i), "Value was incorrectly updated");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -1026,7 +1025,7 @@ public class HashtableTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 

@@ -15,15 +15,15 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class IntegerTest {
     @Test
     public void testRightUnsignedShift() {
@@ -117,14 +117,14 @@ public class IntegerTest {
         }
     }
 
-    @Test(expected = NumberFormatException.class)
+    @Test
     public void rejectsTooBigInteger() {
-        Integer.parseInt("2147483648", 10);
+        assertThrows(NumberFormatException.class, () -> Integer.parseInt("2147483648", 10));
     }
 
-    @Test(expected = NumberFormatException.class)
+    @Test
     public void rejectsIntegerWithDigitsOutOfRadix() {
-        Integer.parseInt("99", 8);
+        assertThrows(NumberFormatException.class, () -> Integer.parseInt("99", 8));
     }
 
     @Test

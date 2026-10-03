@@ -31,23 +31,22 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.CharArrayReader;
 import java.io.FilterReader;
 import java.io.IOException;
 import java.io.PushbackReader;
 import java.io.Reader;
 import java.io.StringReader;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 @SuppressWarnings("resource")
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class PushbackReaderTest {
 
     PushbackReader pbr;
@@ -79,7 +78,7 @@ public class PushbackReaderTest {
     @Test
     public void test_ConstructorLjava_io_ReaderI() {
         // Test for method java.io.PushbackReader(java.io.Reader, int)
-        assertTrue("Used to test", true);
+        assertTrue(true, "Used to test");
     }
 
     /**
@@ -117,7 +116,7 @@ public class PushbackReaderTest {
     @Test
     public void test_markSupported() {
         // Test for method boolean java.io.PushbackReader.markSupported()
-        assertTrue("markSupported returned true", !pbr.markSupported());
+        assertTrue(!pbr.markSupported(), "markSupported returned true");
     }
 
     /**
@@ -130,10 +129,10 @@ public class PushbackReaderTest {
             char c;
             pbr.read();
             c = (char) pbr.read();
-            assertTrue("Failed to read char: " + c, c == pbString.charAt(1));
+            assertTrue(c == pbString.charAt(1), "Failed to read char: " + c);
             Reader reader = new PushbackReader(new CharArrayReader(
                     new char[] { '\u8765' }));
-            assertTrue("Wrong double byte character", reader.read() == '\u8765');
+            assertTrue(reader.read() == '\u8765', "Wrong double byte character");
         } catch (IOException e) {
             fail("IOException during read test : " + e.getMessage());
         }
@@ -148,8 +147,7 @@ public class PushbackReaderTest {
         try {
             char[] c = new char[5];
             pbr.read(c, 0, 5);
-            assertTrue("Failed to read chars", new String(c).equals(pbString
-                    .substring(0, 5)));
+            assertTrue(new String(c).equals(pbString.substring(0, 5)), "Failed to read chars");
         } catch (IOException e) {
             fail("IOException during read test : " + e.getMessage());
         }
@@ -222,7 +220,7 @@ public class PushbackReaderTest {
         // Test for method boolean java.io.PushbackReader.ready()
         try {
             char[] c = new char[11];
-            assertTrue("Ready stream returned false to ready()", pbr.ready());
+            assertTrue(pbr.ready(), "Ready stream returned false to ready()");
         } catch (IOException e) {
             fail("IOException during ready() test : " + e.getMessage());
         }
@@ -253,8 +251,7 @@ public class PushbackReaderTest {
             pbr.read(c, 0, 5);
             pbr.unread(c);
             pbr.read(c, 0, 5);
-            assertTrue("Failed to unread chars", new String(c).equals(pbString
-                    .substring(0, 5)));
+            assertTrue(new String(c).equals(pbString.substring(0, 5)), "Failed to unread chars");
         } catch (IOException e) {
             fail("IOException during read test : " + e.getMessage());
         }
@@ -298,8 +295,7 @@ public class PushbackReaderTest {
                 numSkipped += pReader2.skip(10);
                 numSkipped += pReader2.skip(10);
                 numSkipped += pReader2.skip(10);
-                assertEquals("Did not skip correct number of characters",
-                        7, numSkipped);
+                assertEquals(7, numSkipped, "Did not skip correct number of characters");
                 numSkipped = 0;
                 numSkipped += pReader.skip(2);
                 pReader.unread('i');
@@ -310,7 +306,7 @@ public class PushbackReaderTest {
                 fail("Failed to throw "
                         + new IllegalArgumentException().getClass().getName());
             } catch (IllegalArgumentException e) {
-                assertTrue("Failed to skip characters" + e, skipped);
+                assertTrue(skipped, "Failed to skip characters" + e);
             } catch (IOException e) {
                 fail("Failed to skip characters" + e);
             }
@@ -318,9 +314,9 @@ public class PushbackReaderTest {
                 numSkipped += pReader.skip(1);
                 numSkipped += pReader.skip(1);
                 numSkipped += pReader.skip(1);
-                assertEquals("Failed to skip all characters", 6, numSkipped);
+                assertEquals(6, numSkipped, "Failed to skip all characters");
                 long nextSkipped = pReader.skip(1);
-                assertEquals("skipped empty reader", 0, nextSkipped);
+                assertEquals(0, nextSkipped, "skipped empty reader");
             } catch (IOException e) {
                 fail("Failed to skip more characters" + e);
             }
@@ -338,9 +334,8 @@ public class PushbackReaderTest {
             pbr.read(c, 0, 5);
             pbr.unread(c, 0, 2);
             pbr.read(c, 0, 5);
-            assertTrue("Failed to unread chars", new String(c).equals(pbString
-                    .substring(0, 2)
-                    + pbString.substring(5, 8)));
+            assertTrue(new String(c).equals(pbString.substring(0, 2) + pbString.substring(5, 8)),
+                    "Failed to unread chars");
         } catch (IOException e) {
             fail("IOException during unread test : " + e.getMessage());
         }
@@ -407,7 +402,7 @@ public class PushbackReaderTest {
             pbr.read();
             c = pbr.read();
             pbr.unread(c);
-            assertTrue("Failed to unread char", pbr.read() == c);
+            assertTrue(pbr.read() == c, "Failed to unread char");
         } catch (IOException e) {
             fail("IOException during unread test : " + e.getMessage());
         }
@@ -417,7 +412,7 @@ public class PushbackReaderTest {
      * Sets up the fixture, for example, open a network connection. This method
      * is called before a test is executed.
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         pbr = new PushbackReader(new StringReader(pbString), 10);
     }
@@ -426,7 +421,7 @@ public class PushbackReaderTest {
      * Tears down the fixture, for example, close a network connection. This
      * method is called after a test is executed.
      */
-    @After
+    @AfterEach
     public void tearDown() {
         try {
             pbr.close();

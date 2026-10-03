@@ -15,16 +15,15 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class MathTest {
     private static void sameDouble(double a, double b) {
         assertEquals(Double.valueOf(a), Double.valueOf(b));

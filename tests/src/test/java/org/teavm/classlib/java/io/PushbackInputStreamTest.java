@@ -32,18 +32,17 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PushbackInputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 @SuppressWarnings("resource")
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class PushbackInputStreamTest {
     PushbackInputStream pis;
 
@@ -122,7 +121,7 @@ public class PushbackInputStreamTest {
     @Test
     public void test_available() {
         try {
-            assertEquals("Available returned incorrect number of bytes", 1000, pis.available());
+            assertEquals(1000, pis.available(), "Available returned incorrect number of bytes");
         } catch (IOException e) {
             fail("Exception during available test: " + e.toString());
         }
@@ -130,13 +129,13 @@ public class PushbackInputStreamTest {
 
     @Test
     public void test_markSupported() {
-        assertTrue("markSupported returned true", !pis.markSupported());
+        assertTrue(!pis.markSupported(), "markSupported returned true");
     }
 
     @Test
     public void test_read() {
         try {
-            assertEquals("Incorrect byte read", 0, pis.read());
+            assertEquals(0, pis.read(), "Incorrect byte read");
         } catch (IOException e) {
             fail("Exception during read test : " + e.getMessage());
         }
@@ -210,9 +209,9 @@ public class PushbackInputStreamTest {
     public void test_unreadI() {
         try {
             int x = pis.read();
-            assertEquals("Incorrect byte read", 0, x);
+            assertEquals(0, x, "Incorrect byte read");
             pis.unread(x);
-            assertEquals("Failed to unread", x, pis.read());
+            assertEquals(x, pis.read(), "Failed to unread");
         } catch (IOException e) {
             fail("IOException during read test : " + e.getMessage());
         }

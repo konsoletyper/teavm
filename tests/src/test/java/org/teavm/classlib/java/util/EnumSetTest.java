@@ -15,12 +15,12 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -28,19 +28,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class EnumSetTest {
     @Test
     public void emptyCreated() {
         EnumSet<L> set = EnumSet.noneOf(L.class);
-        assertEquals("Size", 0, set.size());
-        assertFalse("Iterator.hasNext must return false", set.iterator().hasNext());
-        assertFalse("Does not contain E1", set.contains(L.E1));
-        assertFalse("Does not contain E36", set.contains(L.E36));
+        assertEquals(0, set.size(), "Size");
+        assertFalse(set.iterator().hasNext(), "Iterator.hasNext must return false");
+        assertFalse(set.contains(L.E1), "Does not contain E1");
+        assertFalse(set.contains(L.E36), "Does not contain E36");
 
         try {
             set.iterator().next();
@@ -53,33 +52,33 @@ public class EnumSetTest {
     @Test
     public void allItemsCreated() {
         EnumSet<L> set = EnumSet.allOf(L.class);
-        assertEquals("Size", 36, set.size());
-        assertTrue("Iterator.hasNext must return true", set.iterator().hasNext());
-        assertEquals("Iterator.next must return E1", L.E1, set.iterator().next());
-        assertTrue("Contains E1", set.contains(L.E1));
-        assertTrue("Contains E36", set.contains(L.E36));
+        assertEquals(36, set.size(), "Size");
+        assertTrue(set.iterator().hasNext(), "Iterator.hasNext must return true");
+        assertEquals(L.E1, set.iterator().next(), "Iterator.next must return E1");
+        assertTrue(set.contains(L.E1), "Contains E1");
+        assertTrue(set.contains(L.E36), "Contains E36");
     }
 
     @Test
     public void itemAdded() {
         EnumSet<L> set = EnumSet.noneOf(L.class);
-        assertTrue("Adding absent E2 must return true", set.add(L.E2));
-        assertEquals("Iterator must return E2", L.E2, set.iterator().next());
-        assertTrue("Set must contain E2", set.contains(L.E2));
-        assertEquals("Size must be 1 after first addition", 1, set.size());
+        assertTrue(set.add(L.E2), "Adding absent E2 must return true");
+        assertEquals(L.E2, set.iterator().next(), "Iterator must return E2");
+        assertTrue(set.contains(L.E2), "Set must contain E2");
+        assertEquals(1, set.size(), "Size must be 1 after first addition");
 
-        assertFalse("Adding existing E2 must return false", set.add(L.E2));
-        assertEquals("Iterator must return E2 after repeated addition", L.E2, set.iterator().next());
-        assertTrue("Set must contain E2 after repeated addition", set.contains(L.E2));
-        assertEquals("Size must be 1 after repeated addition", 1, set.size());
+        assertFalse(set.add(L.E2), "Adding existing E2 must return false");
+        assertEquals(L.E2, set.iterator().next(), "Iterator must return E2 after repeated addition");
+        assertTrue(set.contains(L.E2), "Set must contain E2 after repeated addition");
+        assertEquals(1, set.size(), "Size must be 1 after repeated addition");
 
-        assertTrue("Adding absent E4 must return true", set.add(L.E4));
-        assertTrue("Set must contain E4", set.contains(L.E4));
-        assertEquals("Size must be 2", 2, set.size());
+        assertTrue(set.add(L.E4), "Adding absent E4 must return true");
+        assertTrue(set.contains(L.E4), "Set must contain E4");
+        assertEquals(2, set.size(), "Size must be 2");
 
-        assertTrue("Adding absent E33 must return true", set.add(L.E33));
-        assertTrue("Set must contain E4", set.contains(L.E33));
-        assertEquals("Size must be 3", 3, set.size());
+        assertTrue(set.add(L.E33), "Adding absent E33 must return true");
+        assertTrue(set.contains(L.E33), "Set must contain E4");
+        assertEquals(3, set.size(), "Size must be 3");
     }
 
     @Test
@@ -214,21 +213,21 @@ public class EnumSetTest {
         set.add(EnumFoo.b);
         Iterator<EnumFoo> iterator = set.iterator();
         Iterator<EnumFoo> anotherIterator = set.iterator();
-        assertNotSame("Should not be same", iterator, anotherIterator);
+        assertNotSame(iterator, anotherIterator, "Should not be same");
         try {
             iterator.remove();
             fail("Should throw IllegalStateException");
         } catch (IllegalStateException e) {
             // expectedd
         }
-        assertTrue("Should has next element:", iterator.hasNext());
-        assertSame("Should be identical", EnumFoo.a, iterator.next());
+        assertTrue(iterator.hasNext(), "Should has next element:");
+        assertSame(EnumFoo.a, iterator.next(), "Should be identical");
         iterator.remove();
-        assertTrue("Should has next element:", iterator.hasNext());
-        assertSame("Should be identical", EnumFoo.b, iterator.next());
-        assertFalse("Should not has next element:", iterator.hasNext());
-        assertFalse("Should not has next element:", iterator.hasNext());
-        assertEquals("Size should be 1:", 1, set.size());
+        assertTrue(iterator.hasNext(), "Should has next element:");
+        assertSame(EnumFoo.b, iterator.next(), "Should be identical");
+        assertFalse(iterator.hasNext(), "Should not has next element:");
+        assertFalse(iterator.hasNext(), "Should not has next element:");
+        assertEquals(1, set.size(), "Size should be 1:");
         try {
             iterator.next();
             fail("Should throw NoSuchElementException");
@@ -238,7 +237,7 @@ public class EnumSetTest {
         set = EnumSet.noneOf(EnumFoo.class);
         set.add(EnumFoo.a);
         iterator = set.iterator();
-        assertEquals("Should be equal", EnumFoo.a, iterator.next());
+        assertEquals(EnumFoo.a, iterator.next(), "Should be equal");
         iterator.remove();
         try {
             iterator.remove();
@@ -259,17 +258,17 @@ public class EnumSetTest {
         setWithSubclass.remove(EnumWithInnerClass.e);
         Iterator<EnumWithInnerClass> iteratorWithSubclass = setWithSubclass
                 .iterator();
-        assertSame("Should be same", EnumWithInnerClass.a, iteratorWithSubclass.next());
-        assertTrue("Should return true", iteratorWithSubclass.hasNext());
-        assertSame("Should be same", EnumWithInnerClass.b, iteratorWithSubclass.next());
+        assertSame(EnumWithInnerClass.a, iteratorWithSubclass.next(), "Should be same");
+        assertTrue(iteratorWithSubclass.hasNext(), "Should return true");
+        assertSame(EnumWithInnerClass.b, iteratorWithSubclass.next(), "Should be same");
         setWithSubclass.remove(EnumWithInnerClass.c);
-        assertTrue("Should return true", iteratorWithSubclass.hasNext());
-        assertSame("Should be same", EnumWithInnerClass.c, iteratorWithSubclass.next());
-        assertTrue("Should return true", iteratorWithSubclass.hasNext());
-        assertSame("Should be same", EnumWithInnerClass.d, iteratorWithSubclass.next());
+        assertTrue(iteratorWithSubclass.hasNext(), "Should return true");
+        assertSame(EnumWithInnerClass.c, iteratorWithSubclass.next(), "Should be same");
+        assertTrue(iteratorWithSubclass.hasNext(), "Should return true");
+        assertSame(EnumWithInnerClass.d, iteratorWithSubclass.next(), "Should be same");
         setWithSubclass.add(EnumWithInnerClass.e);
-        assertTrue("Should return true", iteratorWithSubclass.hasNext());
-        assertSame("Should be same", EnumWithInnerClass.f, iteratorWithSubclass.next());
+        assertTrue(iteratorWithSubclass.hasNext(), "Should return true");
+        assertSame(EnumWithInnerClass.f, iteratorWithSubclass.next(), "Should be same");
         set = EnumSet.noneOf(EnumFoo.class);
         iterator = set.iterator();
         try {
@@ -280,15 +279,15 @@ public class EnumSetTest {
         }
         set.add(EnumFoo.a);
         iterator = set.iterator();
-        assertEquals("Should return EnumFoo.a", EnumFoo.a, iterator.next());
-        assertEquals("Size of set should be 1", 1, set.size());
+        assertEquals(EnumFoo.a, iterator.next(), "Should return EnumFoo.a");
+        assertEquals(1, set.size(), "Size of set should be 1");
         iterator.remove();
-        assertEquals("Size of set should be 0", 0, set.size());
-        assertFalse("Should return false", set.contains(EnumFoo.a));
+        assertEquals(0, set.size(), "Size of set should be 0");
+        assertFalse(set.contains(EnumFoo.a), "Should return false");
         set.add(EnumFoo.a);
         set.add(EnumFoo.b);
         iterator = set.iterator();
-        assertEquals("Should be equals", EnumFoo.a, iterator.next());
+        assertEquals(EnumFoo.a, iterator.next(), "Should be equals");
         iterator.remove();
         try {
             iterator.remove();
@@ -296,21 +295,21 @@ public class EnumSetTest {
         } catch (IllegalStateException e) {
             // expected
         }
-        assertTrue("Should have next element", iterator.hasNext());
+        assertTrue(iterator.hasNext(), "Should have next element");
         try {
             iterator.remove();
             fail("Should throw IllegalStateException");
         } catch (IllegalStateException e) {
             // expected
         }
-        assertEquals("Size of set should be 1", 1, set.size());
-        assertTrue("Should have next element", iterator.hasNext());
-        assertEquals("Should return EnumFoo.b", EnumFoo.b, iterator.next());
+        assertEquals(1, set.size(), "Size of set should be 1");
+        assertTrue(iterator.hasNext(), "Should have next element");
+        assertEquals(EnumFoo.b, iterator.next(), "Should return EnumFoo.b");
         set.remove(EnumFoo.b);
-        assertEquals("Size of set should be 0", 0, set.size());
+        assertEquals(0, set.size(), "Size of set should be 0");
         iterator.remove();
-        assertFalse("Should return false", set.contains(EnumFoo.a));
-        assertFalse("Should return false", set.contains(EnumFoo.b));
+        assertFalse(set.contains(EnumFoo.a), "Should return false");
+        assertFalse(set.contains(EnumFoo.b), "Should return false");
         // test enum type with more than 64 elements
         Set<HugeEnum> hugeSet = EnumSet.noneOf(HugeEnum.class);
         hugeSet.add(HugeEnum.a);
@@ -387,7 +386,7 @@ public class EnumSetTest {
         assertEquals(0, hugeSet.size());
         hIterator.remove();
         assertFalse(hugeSet.contains(HugeEnum.a));
-        assertFalse("Should return false", set.contains(EnumFoo.b));
+        assertFalse(set.contains(EnumFoo.b), "Should return false");
     }
 
     @Test

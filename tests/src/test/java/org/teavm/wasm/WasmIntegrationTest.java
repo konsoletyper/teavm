@@ -22,9 +22,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
@@ -49,14 +49,14 @@ public class WasmIntegrationTest {
     );
 
 
-    @BeforeClass
+    @BeforeAll
     public static void start() {
         if (wasmGCNeeded) {
             browserRunner.start();
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void stop() {
         if (wasmGCNeeded) {
             browserRunner.stop();

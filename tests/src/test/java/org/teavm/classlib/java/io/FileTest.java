@@ -16,11 +16,11 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -32,13 +32,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.teavm.interop.PlatformMarker;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class FileTest {
     private static String platformId = "JDK" + System.getProperty("java.vm.version").replace('.', '-');
     
@@ -183,7 +182,7 @@ public class FileTest {
         tempDirectory.mkdirs();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (tempDirectory != null) {
             deleteTempFolder(tempDirectory);
@@ -194,7 +193,7 @@ public class FileTest {
     @Test
     public void constructorLjava_io_FileLjava_lang_String0() {
         File f = new File(tempDirectory.getPath(), "input.tst");
-        assertEquals("Created Incorrect File ", addTrailingSlash(tempDirectory.getPath()) + "input.tst", f.getPath());
+        assertEquals(addTrailingSlash(tempDirectory.getPath()) + "input.tst", f.getPath(), "Created Incorrect File ");
     }
 
     @Test
@@ -210,14 +209,14 @@ public class FileTest {
     @Test
     public void constructorLjava_io_FileLjava_lang_String2() throws IOException {
         File f = new File((File) null, "input.tst");
-        assertEquals("Created Incorrect File", new File("input.tst").getAbsolutePath(), f.getAbsolutePath());
+        assertEquals(new File("input.tst").getAbsolutePath(), f.getAbsolutePath(), "Created Incorrect File");
     }
 
     @Test
     public void constructorLjava_io_FileLjava_lang_String3() {
         File f = new File("/abc");
         File d = new File((File) null, "/abc");
-        assertEquals("Test3: Created Incorrect File", d.getAbsolutePath(), f.getAbsolutePath());
+        assertEquals(d.getAbsolutePath(), f.getAbsolutePath(), "Test3: Created Incorrect File");
     }
 
     @Test
@@ -225,11 +224,11 @@ public class FileTest {
         File path = new File("/dir/file");
         File root = new File("/");
         File file = new File(root, "/dir/file");
-        assertEquals("Assert 1: wrong path result ", path.getPath(), file.getPath());
+        assertEquals(path.getPath(), file.getPath(), "Assert 1: wrong path result ");
         if (File.separatorChar == '\\') {
-            assertTrue("Assert 1.1: path not absolute ", new File("c:\\\\\\a\b").isAbsolute());
+            assertTrue(new File("c:\\\\\\a\b").isAbsolute(), "Assert 1.1: path not absolute ");
         } else {
-            assertFalse("Assert 1.1: path absolute ", new File("\\\\\\a\b").isAbsolute());
+            assertFalse(new File("\\\\\\a\b").isAbsolute(), "Assert 1.1: path absolute ");
         }
     }
 
@@ -244,7 +243,7 @@ public class FileTest {
         File f = new File(d, fileName);
         dirName = addTrailingSlash(dirName);
         dirName += fileName;
-        assertEquals("Assert 1: Created incorrect file ", dirName, f.getPath());
+        assertEquals(dirName, f.getPath(), "Assert 1: Created incorrect file ");
 
         // Check null argument is handled
         try {
@@ -259,7 +258,7 @@ public class FileTest {
     public void constructorLjava_io_FileLjava_lang_String6() {
         File f1 = new File("a");
         File f2 = new File("a/");
-        assertEquals("Trailing slash file name is incorrect", f1, f2);
+        assertEquals(f1, f2, "Trailing slash file name is incorrect");
     }
 
     @Test
@@ -276,7 +275,7 @@ public class FileTest {
         fileName += "input.tst";
 
         File f = new File(fileName);
-        assertEquals("Created incorrect File", fileName, f.getPath());
+        assertEquals(fileName, f.getPath(), "Created incorrect File");
     }
 
     @Test
@@ -284,7 +283,7 @@ public class FileTest {
         String dirName = null;
         String fileName = "input.tst";
         File f = new File(dirName, fileName);
-        assertEquals("Test 1: Created Incorrect File", new File("input.tst").getAbsolutePath(), f.getAbsolutePath());
+        assertEquals(new File("input.tst").getAbsolutePath(), f.getAbsolutePath(), "Test 1: Created Incorrect File");
 
         dirName = tempDirectory.getPath();
         fileName = null;
@@ -297,14 +296,14 @@ public class FileTest {
 
         fileName = "input.tst";
         f = new File(dirName, fileName);
-        assertEquals("Test 2: Created Incorrect File",  addTrailingSlash(tempDirectory.getPath()) + "input.tst",
-                f.getPath());
+        assertEquals(addTrailingSlash(tempDirectory.getPath()) + "input.tst", f.getPath(),
+                "Test 2: Created Incorrect File");
 
         // Regression test for HARMONY-382
         String s = null;
         f = new File("/abc");
         File d = new File(s, "/abc");
-        assertEquals("Test3: Created Incorrect File", d.getAbsolutePath(), f.getAbsolutePath());
+        assertEquals(d.getAbsolutePath(), f.getAbsolutePath(), "Test3: Created Incorrect File");
     }
 
     @Test
@@ -312,20 +311,20 @@ public class FileTest {
         File ref1 = new File("/dir1/file1");
 
         File file1 = new File("/", "/dir1/file1");
-        assertEquals("wrong result 1", ref1.getPath(), file1.getPath());
+        assertEquals(ref1.getPath(), file1.getPath(), "wrong result 1");
         File file2 = new File("/", "//dir1/file1");
-        assertEquals("wrong result 2", ref1.getPath(), file2.getPath());
+        assertEquals(ref1.getPath(), file2.getPath(), "wrong result 2");
 
         if (File.separatorChar == '\\') {
             File file3 = new File("\\", "\\dir1\\file1");
-            assertEquals("wrong result 3", ref1.getPath(), file3.getPath());
+            assertEquals(ref1.getPath(), file3.getPath(), "wrong result 3");
             File file4 = new File("\\", "\\\\dir1\\file1");
-            assertEquals("wrong result 4", ref1.getPath(), file4.getPath());
+            assertEquals(ref1.getPath(), file4.getPath(), "wrong result 4");
         }
 
         File ref2 = new File("/lib/content-types.properties");
         File file5 = new File("/", "lib/content-types.properties");
-        assertEquals("wrong result 5", ref2.getPath(), file5.getPath());
+        assertEquals(ref2.getPath(), file5.getPath(), "wrong result 5");
     }
 
     @Test
@@ -334,20 +333,20 @@ public class FileTest {
 
         File root = new File("/");
         File file1 = new File(root, "/dir1/file1");
-        assertEquals("wrong result 1", ref1.getPath(), file1.getPath());
+        assertEquals(ref1.getPath(), file1.getPath(), "wrong result 1");
         File file2 = new File(root, "//dir1/file1");
-        assertEquals("wrong result 2", ref1.getPath(), file2.getPath());
+        assertEquals(ref1.getPath(), file2.getPath(), "wrong result 2");
 
         if (File.separatorChar == '\\') {
             File file3 = new File(root, "\\dir1\\file1");
-            assertEquals("wrong result 3", ref1.getPath(), file3.getPath());
+            assertEquals(ref1.getPath(), file3.getPath(), "wrong result 3");
             File file4 = new File(root, "\\\\dir1\\file1");
-            assertEquals("wrong result 4", ref1.getPath(), file4.getPath());
+            assertEquals(ref1.getPath(), file4.getPath(), "wrong result 4");
         }
 
         File ref2 = new File("/lib/content-types.properties");
         File file5 = new File(root, "lib/content-types.properties");
-        assertEquals("wrong result 5", ref2.getPath(), file5.getPath());
+        assertEquals(ref2.getPath(), file5.getPath(), "wrong result 5");
     }
 
     @Test
@@ -376,8 +375,9 @@ public class FileTest {
 
         // a valid File URI
         File f = new File(new URI("file:///pa%20th/another\u20ac/pa%25th"));
-        assertTrue("Created incorrect File " + f.getPath(), f.getPath().equals(
-                File.separator + "pa th" + File.separator + "another\u20ac" + File.separator + "pa%th"));
+        assertTrue(f.getPath().equals(
+                File.separator + "pa th" + File.separator + "another\u20ac" + File.separator + "pa%th"),
+                "Created incorrect File " + f.getPath());
     }
 
     @Test
@@ -387,7 +387,7 @@ public class FileTest {
         try {
             FileOutputStream fos = new FileOutputStream(f);
             fos.close();
-            assertTrue("canRead returned false", f.canRead());
+            assertTrue(f.canRead(), "canRead returned false");
         } finally {
             f.delete();
         }
@@ -400,7 +400,7 @@ public class FileTest {
         try {
             FileOutputStream fos = new FileOutputStream(f);
             fos.close();
-            assertTrue("canWrite returned false", f.canWrite());
+            assertTrue(f.canWrite(), "canWrite returned false");
         } finally {
             f.delete();
         }
@@ -411,9 +411,9 @@ public class FileTest {
         File f1 = new File("thisFile.file");
         File f2 = new File("thisFile.file");
         File f3 = new File("thatFile.file");
-        assertEquals("Equal files did not answer zero for compareTo", 0, f1.compareTo(f2));
-        assertTrue("f3.compareTo(f1) did not result in value < 0", f3.compareTo(f1) < 0);
-        assertTrue("f1.compareTo(f3) did not result in value > 0", f1.compareTo(f3) > 0);
+        assertEquals(0, f1.compareTo(f2), "Equal files did not answer zero for compareTo");
+        assertTrue(f3.compareTo(f1) < 0, "f3.compareTo(f1) did not result in value < 0");
+        assertTrue(f1.compareTo(f3) > 0, "f1.compareTo(f3) did not result in value > 0");
     }
 
     @Test
@@ -463,19 +463,19 @@ public class FileTest {
         f1.deleteOnExit();
         f2.deleteOnExit();
         dir.deleteOnExit();
-        assertFalse("File Should Not Exist", f1.isFile());
+        assertFalse(f1.isFile(), "File Should Not Exist");
         f1.createNewFile();
-        assertTrue("File Should Exist.", f1.isFile());
-        assertTrue("File Should Exist.", f2.isFile());
+        assertTrue(f1.isFile(), "File Should Exist.");
+        assertTrue(f2.isFile(), "File Should Exist.");
         String dirName = f1.getParent();
         if (!dirName.endsWith(File.separator)) {
             dirName += File.separator;
         }
-        assertEquals("File Saved To Wrong Directory.", dir.getPath() + File.separator, dirName);
-        assertEquals("File Saved With Incorrect Name.", "tempfile.tst", f1.getName());
+        assertEquals(dir.getPath() + File.separator, dirName, "File Saved To Wrong Directory.");
+        assertEquals("tempfile.tst", f1.getName(), "File Saved With Incorrect Name.");
 
         // Test for creating a file that already exists.
-        assertFalse("File Already Exists, createNewFile Should Return False.", f2.createNewFile());
+        assertFalse(f2.createNewFile(), "File Already Exists, createNewFile Should Return False.");
     }
 
     @Test
@@ -490,7 +490,7 @@ public class FileTest {
             String fileLocation = addTrailingSlash(f1.getParent());
             String tempDir = addTrailingSlash(System.getProperty("java.io.tmpdir"));
             
-            assertEquals("File did not save to the default temporary-file location.", tempDir, fileLocation);
+            assertEquals(tempDir, fileLocation, "File did not save to the default temporary-file location.");
 
             // Test to see if correct suffix was used to create the tempfile.
             File currentFile;
@@ -499,17 +499,17 @@ public class FileTest {
             for (int i = 0; i < 2; i++) {
                 currentFile = i == 0 ? f1 : f2;
                 fileName = currentFile.getPath();
-                assertTrue("File Created With Incorrect Suffix.", fileName.endsWith(".tmp"));
+                assertTrue(fileName.endsWith(".tmp"), "File Created With Incorrect Suffix.");
             }
 
             // Tests to see if the correct prefix was used to create the
             // tempfiles.
             fileName = f1.getName();
-            assertTrue("Test 1: File Created With Incorrect Prefix.",
-                    fileName.startsWith("harmony-test-FileTest_tempFile_abc"));
+            assertTrue(fileName.startsWith("harmony-test-FileTest_tempFile_abc"),
+                    "Test 1: File Created With Incorrect Prefix.");
             fileName = f2.getName();
-            assertTrue("Test 2: File Created With Incorrect Prefix.",
-                    fileName.startsWith("harmony-test-FileTest_tempFile_tf"));
+            assertTrue(fileName.startsWith("harmony-test-FileTest_tempFile_tf"),
+                    "Test 2: File Created With Incorrect Prefix.");
 
             // Tests for creating a tempfile with a filename shorter than 3
             // characters.
@@ -562,11 +562,11 @@ public class FileTest {
                 currentFile = i == 0 ? f1 : f2;
                 fileLocation = addTrailingSlash(currentFile.getParent());
                 base = addTrailingSlash(base);
-                assertEquals("File not created in the default temporary-file location.", base, fileLocation);
+                assertEquals(base, fileLocation, "File not created in the default temporary-file location.");
                 fileName = currentFile.getName();
-                assertTrue("File created with incorrect suffix.", fileName.endsWith(".tmp"));
-                assertTrue("File created with incorrect prefix.",
-                        fileName.startsWith("harmony-test-FileTest_tempFile2_tf"));
+                assertTrue(fileName.endsWith(".tmp"), "File created with incorrect suffix.");
+                assertTrue(fileName.startsWith("harmony-test-FileTest_tempFile2_tf"),
+                        "File created with incorrect prefix.");
                 currentFile.delete();
             }
 
@@ -636,18 +636,18 @@ public class FileTest {
     public void delete() throws IOException {
         File dir = new File(tempDirectory, platformId + "filechk");
         dir.mkdir();
-        assertTrue("Directory does not exist", dir.exists());
-        assertTrue("Directory is not directory", dir.isDirectory());
+        assertTrue(dir.exists(), "Directory does not exist");
+        assertTrue(dir.isDirectory(), "Directory is not directory");
         File f = new File(dir, "filechk.tst");
         FileOutputStream fos = new FileOutputStream(f);
         fos.close();
-        assertTrue("Error Creating File For Delete Test", f.exists());
+        assertTrue(f.exists(), "Error Creating File For Delete Test");
         dir.delete();
-        assertTrue("Directory Should Not Have Been Deleted.", dir.exists());
+        assertTrue(dir.exists(), "Directory Should Not Have Been Deleted.");
         f.delete();
-        assertTrue("File Was Not Deleted", !f.exists());
+        assertTrue(!f.exists(), "File Was Not Deleted");
         dir.delete();
-        assertTrue("Directory Was Not Deleted", !dir.exists());
+        assertTrue(!dir.exists(), "Directory Was Not Deleted");
     }
 
     @Test
@@ -656,14 +656,14 @@ public class FileTest {
         File f2 = new File("filechk.tst");
         File f3 = new File("xxxx");
 
-        assertTrue("Equality test failed", f1.equals(f2));
-        assertTrue("Files Should Not Return Equal.", !f1.equals(f3));
+        assertTrue(f1.equals(f2), "Equality test failed");
+        assertTrue(!f1.equals(f3), "Files Should Not Return Equal.");
 
         f3 = new File("FiLeChK.tst");
         boolean onWindows = File.separatorChar == '\\';
         boolean onUnix = File.separatorChar == '/';
         if (onWindows) {
-            assertTrue("Files Should Return Equal.", f1.equals(f3));
+            assertTrue(f1.equals(f3), "Files Should Return Equal.");
         } else if (onUnix) {
             // We can't test it right now, since there are OS with `/` separator but with case-insensitive 
             // file names. Perhaps, we need to support other ways to detect OS.
@@ -688,7 +688,7 @@ public class FileTest {
             } catch (IOException e) {
                 exception = true;
             }
-            assertTrue("File system is case insensitive", exception);
+            assertTrue(exception, "File system is case insensitive");
         }
         f1.delete();
     }
@@ -696,10 +696,10 @@ public class FileTest {
     @Test
     public void exists() throws IOException {
         File f = new File(tempDirectory, platformId + "exists.tst");
-        assertTrue("Exists returned true for non-existent file", !f.exists());
+        assertTrue(!f.exists(), "Exists returned true for non-existent file");
         FileOutputStream fos = new FileOutputStream(f);
         fos.close();
-        assertTrue("Exists returned false file", f.exists());
+        assertTrue(f.exists(), "Exists returned false file");
         f.delete();
     }
 
@@ -708,13 +708,13 @@ public class FileTest {
         String base = addTrailingSlash(tempDirectory.getPath());
         File f = new File(base, "temp.tst");
         File f2 = f.getAbsoluteFile();
-        assertEquals("Test 1: Incorrect File Returned.", 0, f2.compareTo(f.getAbsoluteFile()));
+        assertEquals(0, f2.compareTo(f.getAbsoluteFile()), "Test 1: Incorrect File Returned.");
         f = new File(base + "Temp" + File.separator + File.separator + "temp.tst");
         f2 = f.getAbsoluteFile();
-        assertEquals("Test 2: Incorrect File Returned.", 0, f2.compareTo(f.getAbsoluteFile()));
+        assertEquals(0, f2.compareTo(f.getAbsoluteFile()), "Test 2: Incorrect File Returned.");
         f = new File(base + File.separator + ".." + File.separator + "temp.tst");
         f2 = f.getAbsoluteFile();
-        assertEquals("Test 3: Incorrect File Returned.", 0, f2.compareTo(f.getAbsoluteFile()));
+        assertEquals(0, f2.compareTo(f.getAbsoluteFile()), "Test 3: Incorrect File Returned.");
         f.delete();
         f2.delete();
     }
@@ -723,17 +723,16 @@ public class FileTest {
     public void getAbsolutePath() {
         String base = addTrailingSlash(tempDirectory.getPath());
         File f = new File(base, "temp.tst");
-        assertEquals("Test 1: Incorrect Path Returned.", base + "temp.tst", f.getAbsolutePath());
+        assertEquals(base + "temp.tst", f.getAbsolutePath(), "Test 1: Incorrect Path Returned.");
 
         f = new File(base + "Temp" + File.separator + File.separator + File.separator + "Testing" + File.separator
                 + "temp.tst");
-        assertEquals("Test 2: Incorrect Path Returned.",
-                base + "Temp" + File.separator + "Testing" + File.separator + "temp.tst", f.getAbsolutePath());
+        assertEquals(base + "Temp" + File.separator + "Testing" + File.separator + "temp.tst", f.getAbsolutePath(),
+                "Test 2: Incorrect Path Returned.");
 
         f = new File(base + "a" + File.separator + File.separator + ".." + File.separator + "temp.tst");
-        assertEquals("Test 3: Incorrect Path Returned.",
-                     base + "a" + File.separator + ".." + File.separator + "temp.tst",
-                     f.getAbsolutePath());
+        assertEquals(base + "a" + File.separator + ".." + File.separator + "temp.tst", f.getAbsolutePath(),
+                "Test 3: Incorrect Path Returned.");
         f.delete();
     }
 
@@ -742,13 +741,13 @@ public class FileTest {
         String base = addTrailingSlash(tempDirectory.getPath());
         File f = new File(base, "temp.tst");
         File f2 = f.getCanonicalFile();
-        assertEquals("Test 1: Incorrect File Returned.", 0, f2.getCanonicalFile().compareTo(f.getCanonicalFile()));
+        assertEquals(0, f2.getCanonicalFile().compareTo(f.getCanonicalFile()), "Test 1: Incorrect File Returned.");
         f = new File(base + "Temp" + File.separator + File.separator + "temp.tst");
         f2 = f.getCanonicalFile();
-        assertEquals("Test 2: Incorrect File Returned.", 0, f2.getCanonicalFile().compareTo(f.getCanonicalFile()));
+        assertEquals(0, f2.getCanonicalFile().compareTo(f.getCanonicalFile()), "Test 2: Incorrect File Returned.");
         f = new File(base + "Temp" + File.separator + File.separator + ".." + File.separator + "temp.tst");
         f2 = f.getCanonicalFile();
-        assertEquals("Test 3: Incorrect File Returned.", 0, f2.getCanonicalFile().compareTo(f.getCanonicalFile()));
+        assertEquals(0, f2.getCanonicalFile().compareTo(f.getCanonicalFile()), "Test 3: Incorrect File Returned.");
 
         // Test for when long directory/file names in Windows
         boolean onWindows = File.separatorChar == '\\';
@@ -760,8 +759,8 @@ public class FileTest {
                 dir.mkdir();
                 f = new File(dir, "longfilename.tst");
                 f2 = f.getCanonicalFile();
-                assertEquals("Test 4: Incorrect File Returned.", 0,
-                        f2.getCanonicalFile().compareTo(f.getCanonicalFile()));
+                assertEquals(0, f2.getCanonicalFile().compareTo(f.getCanonicalFile()),
+                        "Test 4: Incorrect File Returned.");
                 FileOutputStream fos = new FileOutputStream(f);
                 fos.close();
                 f2 = new File(testdir + File.separator + "longdi~1" + File.separator + "longfi~1.tst");
@@ -771,8 +770,8 @@ public class FileTest {
                  * 8.3 file name compatibility is disabled.
                  */
                 if (canonicalf2.exists()) {
-                    assertTrue("Test 5: Incorrect File Returned: " + canonicalf2,
-                            canonicalf2.compareTo(f.getCanonicalFile()) == 0);
+                    assertTrue(canonicalf2.compareTo(f.getCanonicalFile()) == 0,
+                            "Test 5: Incorrect File Returned: " + canonicalf2);
                 }
             } finally {
                 f.delete();
@@ -790,9 +789,9 @@ public class FileTest {
         String base = tempDirectory.getCanonicalPath();
         base = addTrailingSlash(base);
         File f = new File(base, "temp.tst");
-        assertEquals("Test 1: Incorrect Path Returned.", base + "temp.tst", f.getCanonicalPath());
+        assertEquals(base + "temp.tst", f.getCanonicalPath(), "Test 1: Incorrect Path Returned.");
         f = new File(base + "Temp" + File.separator + dots + File.separator + "temp.tst");
-        assertEquals("Test 2: Incorrect Path Returned.", base + "temp.tst", f.getCanonicalPath());
+        assertEquals(base + "temp.tst", f.getCanonicalPath(), "Test 2: Incorrect Path Returned.");
 
         // Finding a non-existent directory for tests 3 and 4
         // This is necessary because getCanonicalPath is case sensitive and
@@ -811,15 +810,15 @@ public class FileTest {
         }
         f = new File(base + dirNumber + File.separator + dots + File.separator + dirNumber
                 + File.separator + "temp.tst");
-        assertEquals("Test 3: Incorrect Path Returned.", base + dirNumber
-                + File.separator + "temp.tst", f.getCanonicalPath());
+        assertEquals(base + dirNumber + File.separator + "temp.tst", f.getCanonicalPath(),
+                "Test 3: Incorrect Path Returned.");
         f = new File(base + dirNumber + File.separator + "Temp" + File.separator + dots + File.separator
                 + "Test" + File.separator + "temp.tst");
-        assertEquals("Test 4: Incorrect Path Returned.", base + dirNumber
-                + File.separator + "Test" + File.separator + "temp.tst", f.getCanonicalPath());
+        assertEquals(base + dirNumber + File.separator + "Test" + File.separator + "temp.tst", f.getCanonicalPath(),
+                "Test 4: Incorrect Path Returned.");
 
         f = new File(base + "1234.567");
-        assertEquals("Test 5: Incorrect Path Returned.", base + "1234.567", f.getCanonicalPath());
+        assertEquals(base + "1234.567", f.getCanonicalPath(), "Test 5: Incorrect Path Returned.");
 
         // Test for long file names on Windows
         boolean onWindows = File.separatorChar == '\\';
@@ -841,10 +840,10 @@ public class FileTest {
                  */
                 if (f4.exists()) {
                     String dirName2 = f4.getCanonicalPath();
-                    assertEquals("Test 6: Incorrect Path Returned.", dirName1, dirName2);
+                    assertEquals(dirName1, dirName2, "Test 6: Incorrect Path Returned.");
                     dir2 = new File(testdir, "longdirectory" + platformId);
                     if (!dir2.exists()) {
-                        assertTrue("Could not create dir: " + dir2, dir2.mkdir());
+                        assertTrue(dir2.mkdir(), "Could not create dir: " + dir2);
                     }
                     f2 = new File(testdir.getPath() + File.separator + "longdirectory"
                             + platformId + File.separator + "Test" + File.separator + dots
@@ -856,7 +855,7 @@ public class FileTest {
                             + File.separator + "Test" + File.separator + dots + File.separator
                             + "longfi~1.tst");
                     dirName2 = f3.getCanonicalPath();
-                    assertEquals("Test 7: Incorrect Path Returned.", dirName1, dirName2);
+                    assertEquals(dirName1, dirName2, "Test 7: Incorrect Path Returned.");
                 }
             } finally {
                 f1.delete();
@@ -874,10 +873,10 @@ public class FileTest {
     @Test
     public void getName() {
         File f = new File("name.tst");
-        assertEquals("Test 1: Returned incorrect name", "name.tst", f.getName());
+        assertEquals("name.tst", f.getName(), "Test 1: Returned incorrect name");
 
         f = new File("");
-        assertEquals("Test 2: Returned incorrect name", "", f.getName());
+        assertEquals("", f.getName(), "Test 2: Returned incorrect name");
 
         f.delete();
     }
@@ -885,45 +884,43 @@ public class FileTest {
     @Test
     public void getParent() {
         File f = new File("p.tst");
-        assertNull("Incorrect path returned", f.getParent());
+        assertNull(f.getParent(), "Incorrect path returned");
         f = new File(System.getProperty("user.home"), "p.tst");
-        assertEquals("Incorrect path returned", System.getProperty("user.home"), f.getParent());
+        assertEquals(System.getProperty("user.home"), f.getParent(), "Incorrect path returned");
         f.delete();
 
         File f1 = new File("/directory");
-        assertEquals("Wrong parent test 1", File.separator, f1.getParent());
+        assertEquals(File.separator, f1.getParent(), "Wrong parent test 1");
         f1 = new File("/directory/file");
-        assertEquals("Wrong parent test 2",
-                     File.separator + "directory", f1.getParent());
+        assertEquals(File.separator + "directory", f1.getParent(), "Wrong parent test 2");
         f1 = new File("directory/file");
-        assertEquals("Wrong parent test 3", "directory", f1.getParent());
+        assertEquals("directory", f1.getParent(), "Wrong parent test 3");
         f1 = new File("/");
-        assertNull("Wrong parent test 4", f1.getParent());
+        assertNull(f1.getParent(), "Wrong parent test 4");
         f1 = new File("directory");
-        assertNull("Wrong parent test 5", f1.getParent());
+        assertNull(f1.getParent(), "Wrong parent test 5");
 
         if (File.separatorChar == '\\' && new File("d:/").isAbsolute()) {
             f1 = new File("d:/directory");
-            assertEquals("Wrong parent test 1a", "d:" + File.separator, f1.getParent());
+            assertEquals("d:" + File.separator, f1.getParent(), "Wrong parent test 1a");
             f1 = new File("d:/directory/file");
-            assertEquals("Wrong parent test 2a",
-                         "d:" + File.separator + "directory", f1.getParent());
+            assertEquals("d:" + File.separator + "directory", f1.getParent(), "Wrong parent test 2a");
             f1 = new File("d:directory/file");
-            assertEquals("Wrong parent test 3a", "d:directory", f1.getParent());
+            assertEquals("d:directory", f1.getParent(), "Wrong parent test 3a");
             f1 = new File("d:/");
-            assertNull("Wrong parent test 4a", f1.getParent());
+            assertNull(f1.getParent(), "Wrong parent test 4a");
         }
     }
 
     @Test
     public void getParentFile() {
         File f = new File("tempfile.tst");
-        assertNull("Incorrect path returned", f.getParentFile());
+        assertNull(f.getParentFile(), "Incorrect path returned");
         f = new File(tempDirectory, "tempfile1.tmp");
         File f2 = new File(tempDirectory, "tempfile2.tmp");
         File f3 = new File(tempDirectory, "/a/tempfile.tmp");
-        assertEquals("Incorrect File Returned", 0, f.getParentFile().compareTo(f2.getParentFile()));
-        assertTrue("Incorrect File Returned", f.getParentFile().compareTo(f3.getParentFile()) != 0);
+        assertEquals(0, f.getParentFile().compareTo(f2.getParentFile()), "Incorrect File Returned");
+        assertTrue(f.getParentFile().compareTo(f3.getParentFile()) != 0, "Incorrect File Returned");
         f.delete();
         f2.delete();
         f3.delete();
@@ -942,12 +939,11 @@ public class FileTest {
         File f2 = new File("filechk.tst");
         File f3 = new File("c:");
         File f4 = new File(base + "a" + File.separator + File.separator + ".." + File.separator + "filechk.tst");
-        assertEquals("getPath returned incorrect path(f1)", fname, f1.getPath());
-        assertEquals("getPath returned incorrect path(f2)", "filechk.tst", f2.getPath());
-        assertEquals("getPath returned incorrect path(f3)", "c:", f3.getPath());
-        assertEquals("getPath returned incorrect path(f4)",
-                     base + "a" + File.separator + ".." + File.separator + "filechk.tst",
-                     f4.getPath());
+        assertEquals(fname, f1.getPath(), "getPath returned incorrect path(f1)");
+        assertEquals("filechk.tst", f2.getPath(), "getPath returned incorrect path(f2)");
+        assertEquals("c:", f3.getPath(), "getPath returned incorrect path(f3)");
+        assertEquals(base + "a" + File.separator + ".." + File.separator + "filechk.tst", f4.getPath(),
+                "getPath returned incorrect path(f4)");
         f1.delete();
         f2.delete();
         f3.delete();
@@ -994,9 +990,9 @@ public class FileTest {
         File lfile = new File("some filename"); // Lower case
 
         if (mfile.equals(lfile)) {
-            assertTrue("Assert 0: wrong hashcode", mfile.hashCode() == lfile.hashCode());
+            assertTrue(mfile.hashCode() == lfile.hashCode(), "Assert 0: wrong hashcode");
         } else {
-            assertFalse("Assert 1: wrong hashcode", mfile.hashCode() == lfile.hashCode());
+            assertFalse(mfile.hashCode() == lfile.hashCode(), "Assert 1: wrong hashcode");
         }
     }
 
@@ -1006,8 +1002,8 @@ public class FileTest {
             File f = new File("c:\\test");
             File f1 = new File("\\test");
             // One or the other should be absolute on Windows or CE
-            assertTrue("Absolute returned false", (f.isAbsolute() && !f1.isAbsolute())
-                    || (!f.isAbsolute() && f1.isAbsolute()));
+            assertTrue((f.isAbsolute() && !f1.isAbsolute()) || (!f.isAbsolute() && f1.isAbsolute()),
+                    "Absolute returned false");
 
             assertTrue(new File("C:/").isAbsolute());
             assertTrue(new File("f:/").isAbsolute());
@@ -1017,8 +1013,8 @@ public class FileTest {
         } else {
             File f = new File("/test");
             File f1 = new File("\\test");
-            assertTrue("Absolute returned false", f.isAbsolute());
-            assertFalse("Absolute returned true", f1.isAbsolute());
+            assertTrue(f.isAbsolute(), "Absolute returned false");
+            assertFalse(f1.isAbsolute(), "Absolute returned true");
             assertTrue(new File("//test").isAbsolute());
             assertFalse(new File("test").isAbsolute());
             assertFalse(new File("c:/").isAbsolute());
@@ -1027,19 +1023,19 @@ public class FileTest {
             assertFalse(new File("\\").isAbsolute());
             assertFalse(new File("\\\\").isAbsolute());
         }
-        assertTrue("Non-Absolute returned true", !new File("../test").isAbsolute());
+        assertTrue(!new File("../test").isAbsolute(), "Non-Absolute returned true");
     }
 
     @Test
     public void isDirectory() {
         String base = addTrailingSlash(tempDirectory.getPath());
         File f = new File(base);
-        assertTrue("Test 1: Directory Returned False", f.isDirectory());
+        assertTrue(f.isDirectory(), "Test 1: Directory Returned False");
         f = new File(base + "zxzxzxz" + platformId);
-        assertTrue("Test 2: (Not Created) Directory Returned True.", !f.isDirectory());
+        assertTrue(!f.isDirectory(), "Test 2: (Not Created) Directory Returned True.");
         f.mkdir();
         try {
-            assertTrue("Test 3: Directory Returned False.", f.isDirectory());
+            assertTrue(f.isDirectory(), "Test 3: Directory Returned False.");
         } finally {
             f.delete();
         }
@@ -1049,14 +1045,14 @@ public class FileTest {
     public void isFile() throws IOException {
         String base = tempDirectory.getPath();
         File f = new File(base);
-        assertFalse("Directory Returned True As Being A File.", f.isFile());
+        assertFalse(f.isFile(), "Directory Returned True As Being A File.");
         
         base = addTrailingSlash(base);
         f = new File(base, platformId + "amiafile");
-        assertTrue("Non-existent File Returned True", !f.isFile());
+        assertTrue(!f.isFile(), "Non-existent File Returned True");
         FileOutputStream fos = new FileOutputStream(f);
         fos.close();
-        assertTrue("File returned false", f.isFile());
+        assertTrue(f.isFile(), "File returned false");
         f.delete();
     }
 
@@ -1065,23 +1061,23 @@ public class FileTest {
         File f = new File(System.getProperty("java.io.tmpdir"), platformId + "lModTest.tst");
         f.delete();
         long lastModifiedTime = f.lastModified();
-        assertEquals("LastModified Time Should Have Returned 0.", 0, lastModifiedTime);
+        assertEquals(0, lastModifiedTime, "LastModified Time Should Have Returned 0.");
         FileOutputStream fos = new FileOutputStream(f);
         fos.close();
         f.setLastModified(315550800000L);
         lastModifiedTime = f.lastModified();
-        assertEquals("LastModified Time Incorrect", 315550800000L, lastModifiedTime);
+        assertEquals(315550800000L, lastModifiedTime, "LastModified Time Incorrect");
         f.delete();
     }
 
     @Test
     public void length() throws IOException {
         File f = new File(tempDirectory, platformId + "input.tst");
-        assertEquals("File Length Should Have Returned 0.", 0, f.length());
+        assertEquals(0, f.length(), "File Length Should Have Returned 0.");
         FileOutputStream fos = new FileOutputStream(f);
         fos.write(fileString.getBytes());
         fos.close();
-        assertEquals("Incorrect file length returned", fileString.length(), f.length());
+        assertEquals(fileString.length(), f.length(), "Incorrect file length returned");
         f.delete();
 
         // regression test for HARMONY-1497
@@ -1113,21 +1109,21 @@ public class FileTest {
 
         String[] flist = dir.list();
 
-        assertNull("Method list() Should Have Returned null.", flist);
+        assertNull(flist, "Method list() Should Have Returned null.");
 
-        assertTrue("Could not create parent directory for list test", dir.mkdir());
+        assertTrue(dir.mkdir(), "Could not create parent directory for list test");
 
         String[] files = { "mtzz1.xx", "mtzz2.xx", "mtzz3.yy", "mtzz4.yy" };
         try {
-            assertEquals("Method list() Should Have Returned An Array Of Length 0.", Collections.emptyList(),
-                    Arrays.asList(dir.list()));
+            assertEquals(Collections.emptyList(), Arrays.asList(dir.list()),
+                    "Method list() Should Have Returned An Array Of Length 0.");
 
             File file = new File(dir, "notADir.tst");
             try {
                 FileOutputStream fos = new FileOutputStream(file);
                 fos.close();
-                assertNull("listFiles Should Have Returned Null When Used On A File Instead Of A Directory.",
-                        file.list());
+                assertNull(file.list(),
+                        "listFiles Should Have Returned Null When Used On A File Instead Of A Directory.");
             } finally {
                 file.delete();
             }
@@ -1163,14 +1159,14 @@ public class FileTest {
                     checkCount++;
                 }
             }
-            assertEquals("Invalid file returned in listing", 0, checkCount);
+            assertEquals(0, checkCount, "Invalid file returned in listing");
 
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
                 f.delete();
             }
 
-            assertTrue("Could not delete parent directory for list test.", dir.delete());
+            assertTrue(dir.delete(), "Could not delete parent directory for list test.");
         } finally {
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
@@ -1199,20 +1195,20 @@ public class FileTest {
             }
         }
         // Test for attempting to call listFiles on a non-existent directory.
-        assertNull("listFiles Should Return Null.", dir.listFiles());
+        assertNull(dir.listFiles(), "listFiles Should Return Null.");
 
-        assertTrue("Failed To Create Parent Directory.", dir.mkdir());
+        assertTrue(dir.mkdir(), "Failed To Create Parent Directory.");
 
         String[] files = { "1.tst", "2.tst", "3.tst", "" };
         try {
-            assertEquals("listFiles Should Return An Array Of Length 0.", 0, dir.listFiles().length);
+            assertEquals(0, dir.listFiles().length, "listFiles Should Return An Array Of Length 0.");
 
             File file = new File(dir, "notADir.tst");
             try {
                 FileOutputStream fos = new FileOutputStream(file);
                 fos.close();
-                assertNull("listFiles Should Have Returned Null When Used On A File Instead Of A Directory.",
-                        file.listFiles());
+                assertNull(file.listFiles(),
+                        "listFiles Should Have Returned Null When Used On A File Instead Of A Directory.");
             } finally {
                 file.delete();
             }
@@ -1228,7 +1224,7 @@ public class FileTest {
 
             // Test to make sure that only the 3 files that were created are
             // listed.
-            assertEquals("Incorrect Number Of Files Returned.", 3, flist.length);
+            assertEquals(3, flist.length, "Incorrect Number Of Files Returned.");
 
             // Test to make sure that listFiles can read hidden files.
             boolean onWindows = File.separatorChar == '\\';
@@ -1247,7 +1243,7 @@ public class FileTest {
                 fos.close();
             }
             flist = dir.listFiles();
-            assertEquals("Incorrect Number Of Files Returned.", 4, flist.length);
+            assertEquals(4, flist.length, "Incorrect Number Of Files Returned.");
 
             // Checking to make sure the correct files were are listed in
             // the array.
@@ -1269,13 +1265,13 @@ public class FileTest {
                     checkCount++;
                 }
             }
-            assertEquals("Invalid file returned in listing", 0, checkCount);
+            assertEquals(0, checkCount, "Invalid file returned in listing");
 
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
                 f.delete();
             }
-            assertTrue("Parent Directory Not Deleted.", dir.delete());
+            assertTrue(dir.delete(), "Parent Directory Not Deleted.");
         } finally {
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
@@ -1307,21 +1303,21 @@ public class FileTest {
         // Creating a filter that catches directories.
         FileFilter dirFilter = f -> f.isDirectory();
 
-        assertNull("listFiles Should Return Null.", baseDir.listFiles(dirFilter));
+        assertNull(baseDir.listFiles(dirFilter), "listFiles Should Return Null.");
 
-        assertTrue("Failed To Create Parent Directory.", baseDir.mkdir());
+        assertTrue(baseDir.mkdir(), "Failed To Create Parent Directory.");
 
         File dir1 = null;
         String[] files = { "1.tst", "2.tst", "3.tst" };
         try {
-            assertEquals("listFiles Should Return An Array Of Length 0.", 0, baseDir.listFiles(dirFilter).length);
+            assertEquals(0, baseDir.listFiles(dirFilter).length, "listFiles Should Return An Array Of Length 0.");
 
             File file = new File(baseDir, "notADir.tst");
             try {
                 FileOutputStream fos = new FileOutputStream(file);
                 fos.close();
-                assertNull("listFiles Should Have Returned Null When Used On A File Instead Of A Directory.",
-                        file.listFiles(dirFilter));
+                assertNull(file.listFiles(dirFilter),
+                        "listFiles Should Have Returned Null When Used On A File Instead Of A Directory.");
             } finally {
                 file.delete();
             }
@@ -1339,14 +1335,14 @@ public class FileTest {
 
             // Test to see if the correct number of directories are returned.
             File[] directories = baseDir.listFiles(dirFilter);
-            assertEquals("Incorrect Number Of Directories Returned.", 1, directories.length);
+            assertEquals(1, directories.length, "Incorrect Number Of Directories Returned.");
 
             // Test to see if the directory was saved with the correct name.
-            assertEquals("Incorrect Directory Returned.", 0, directories[0].compareTo(dir1));
+            assertEquals(0, directories[0].compareTo(dir1), "Incorrect Directory Returned.");
 
             // Test to see if the correct number of files are returned.
             File[] flist = baseDir.listFiles(fileFilter);
-            assertEquals("Incorrect Number Of Files Returned.", files.length, flist.length);
+            assertEquals(files.length, flist.length, "Incorrect Number Of Files Returned.");
 
             // Checking to make sure the correct files were are listed in the
             // array.
@@ -1368,14 +1364,14 @@ public class FileTest {
                     checkCount++;
                 }
             }
-            assertEquals("Invalid file returned in listing", 0, checkCount);
+            assertEquals(0, checkCount, "Invalid file returned in listing");
 
             for (int i = 0; i < files.length; i++) {
                 File f = new File(baseDir, files[i]);
                 f.delete();
             }
             dir1.delete();
-            assertTrue("Parent Directory Not Deleted.", baseDir.delete());
+            assertTrue(baseDir.delete(), "Parent Directory Not Deleted.");
         } finally {
             for (int i = 0; i < files.length; i++) {
                 File f = new File(baseDir, files[i]);
@@ -1410,21 +1406,20 @@ public class FileTest {
         // Creating a filter that catches "*.tst" files.
         FilenameFilter tstFilter = (f, fileName) -> fileName.endsWith(".tst");
 
-        assertNull("listFiles Should Return Null.", dir.listFiles(tstFilter));
+        assertNull(dir.listFiles(tstFilter), "listFiles Should Return Null.");
 
-        assertTrue("Failed To Create Parent Directory.", dir.mkdir());
+        assertTrue(dir.mkdir(), "Failed To Create Parent Directory.");
 
         String[] files = { "1.tst", "2.tst", "3.tmp" };
         try {
-            assertEquals("listFiles Should Return An Array Of Length 0.", 0,
-                    dir.listFiles(tstFilter).length);
+            assertEquals(0, dir.listFiles(tstFilter).length, "listFiles Should Return An Array Of Length 0.");
 
             File file = new File(dir, "notADir.tst");
             try {
                 FileOutputStream fos = new FileOutputStream(file);
                 fos.close();
-                assertNull("listFiles Should Have Returned Null When Used On A File Instead Of A Directory.",
-                        file.listFiles(tstFilter));
+                assertNull(file.listFiles(tstFilter),
+                        "listFiles Should Have Returned Null When Used On A File Instead Of A Directory.");
             } finally {
                 file.delete();
             }
@@ -1440,20 +1435,20 @@ public class FileTest {
 
             // Tests to see if the correct number of files were returned.
             File[] flist = dir.listFiles(tstFilter);
-            assertEquals("Incorrect Number Of Files Passed Through tstFilter.", 2, flist.length);
+            assertEquals(2, flist.length, "Incorrect Number Of Files Passed Through tstFilter.");
             for (int i = 0; i < flist.length; i++) {
-                assertTrue("File Should Not Have Passed The tstFilter.", flist[i].getPath().endsWith(".tst"));
+                assertTrue(flist[i].getPath().endsWith(".tst"), "File Should Not Have Passed The tstFilter.");
             }
 
             flist = dir.listFiles(tmpFilter);
-            assertEquals("Incorrect Number Of Files Passed Through tmpFilter.", 1, flist.length);
-            assertTrue("File Should Not Have Passed The tmpFilter.", flist[0].getPath().endsWith(".tmp"));
+            assertEquals(1, flist.length, "Incorrect Number Of Files Passed Through tmpFilter.");
+            assertTrue(flist[0].getPath().endsWith(".tmp"), "File Should Not Have Passed The tmpFilter.");
 
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
                 f.delete();
             }
-            assertTrue("Parent Directory Not Deleted.", dir.delete());
+            assertTrue(dir.delete(), "Parent Directory Not Deleted.");
         } finally {
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
@@ -1484,9 +1479,9 @@ public class FileTest {
         FilenameFilter filter = (dir1, name) -> !name.equals("mtzz1.xx");
 
         String[] flist = dir.list(filter);
-        assertNull("Method list(FilenameFilter) Should Have Returned Null.", flist);
+        assertNull(flist, "Method list(FilenameFilter) Should Have Returned Null.");
 
-        assertTrue("Could not create parent directory for test", dir.mkdir());
+        assertTrue(dir.mkdir(), "Could not create parent directory for test");
 
         String[] files = { "mtzz1.xx", "mtzz2.xx", "mtzz3.yy", "mtzz4.yy" };
         try {
@@ -1505,7 +1500,7 @@ public class FileTest {
              */
 
             flist = dir.list(filter);
-            assertEquals("Array Of Length 0 Should Have Returned.", 0, flist.length);
+            assertEquals(0, flist.length, "Array Of Length 0 Should Have Returned.");
 
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
@@ -1515,7 +1510,7 @@ public class FileTest {
 
             flist = dir.list(filter);
 
-            assertEquals("Incorrect list returned", flist.length, files.length - 1);
+            assertEquals(flist.length, files.length - 1, "Incorrect list returned");
 
             // Checking to make sure the correct files were are listed in the
             // array.
@@ -1538,13 +1533,13 @@ public class FileTest {
                     checkCount++;
                 }
             }
-            assertEquals("Invalid file returned in listing", 0, checkCount);
+            assertEquals(0, checkCount, "Invalid file returned in listing");
 
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
                 f.delete();
             }
-            assertTrue("Could not delete parent directory for test.", dir.delete());
+            assertTrue(dir.delete(), "Could not delete parent directory for test.");
         } finally {
             for (int i = 0; i < files.length; i++) {
                 File f = new File(dir, files[i]);
@@ -1560,12 +1555,12 @@ public class FileTest {
         boolean onUnix = File.separatorChar == '/';
         boolean onWindows = File.separatorChar == '\\';
         if (onUnix) {
-            assertEquals("Incorrect Number Of Root Directories.", 1, roots.length);
+            assertEquals(1, roots.length, "Incorrect Number Of Root Directories.");
             String fileLoc = roots[0].getPath();
-            assertTrue("Incorrect Root Directory Returned.", fileLoc.startsWith(File.separator));
+            assertTrue(fileLoc.startsWith(File.separator), "Incorrect Root Directory Returned.");
         } else if (onWindows) {
             // Need better test for Windows
-            assertTrue("Incorrect Number Of Root Directories.", roots.length > 0);
+            assertTrue(roots.length > 0, "Incorrect Number Of Root Directories.");
         }
     }
 
@@ -1587,8 +1582,8 @@ public class FileTest {
             }
         }
 
-        assertTrue("mkdir failed", dir.mkdir());
-        assertTrue("mkdir worked but exists check failed", dir.exists());
+        assertTrue(dir.mkdir(), "mkdir failed");
+        assertTrue(dir.exists(), "mkdir worked but exists check failed");
         dir.deleteOnExit();
 
         String longDirName = "abcdefghijklmnopqrstuvwx"; // 24 chars
@@ -1600,16 +1595,16 @@ public class FileTest {
         while (dir.getCanonicalPath().length() < 200 - longDirName.length()) {
             sb.append(longDirName + File.separator);
             dir = new File(sb.toString());
-            assertTrue("mkdir failed", dir.mkdir());
-            assertTrue("mkdir worked but exists check failed", dir.exists());
+            assertTrue(dir.mkdir(), "mkdir failed");
+            assertTrue(dir.exists(), "mkdir worked but exists check failed");
             dir.deleteOnExit();
         }
 
         while (dir.getCanonicalPath().length() < 200) {
             sb.append(0);
             dir = new File(sb.toString());
-            assertTrue("mkdir " + dir.getCanonicalPath() + " failed", dir.mkdir());
-            assertTrue("mkdir " + dir.getCanonicalPath().length() + " worked but exists check failed", dir.exists());
+            assertTrue(dir.mkdir(), "mkdir " + dir.getCanonicalPath() + " failed");
+            assertTrue(dir.exists(), "mkdir " + dir.getCanonicalPath().length() + " worked but exists check failed");
             dir.deleteOnExit();
         }
         dir = new File(sb2.toString());
@@ -1617,8 +1612,8 @@ public class FileTest {
         while (dir.getCanonicalPath().length() < 200) {
             sb2.append(0);
             dir = new File(sb2.toString());
-            assertTrue("mkdir " + dir.getCanonicalPath().length() + " failed", dir.mkdir());
-            assertTrue("mkdir " + dir.getCanonicalPath().length() + " worked but exists check failed", dir.exists());
+            assertTrue(dir.mkdir(), "mkdir " + dir.getCanonicalPath().length() + " failed");
+            assertTrue(dir.exists(), "mkdir " + dir.getCanonicalPath().length() + " worked but exists check failed");
             dir.deleteOnExit();
         }
 
@@ -1628,8 +1623,8 @@ public class FileTest {
                 "\u4E03\u516B\u4E5D" };
         for (int i = 0; i < ss.length; i++) {
             dir = new File(newbase, ss[i]);
-            assertTrue("mkdir " + dir.getCanonicalPath() + " failed", dir.mkdir());
-            assertTrue("mkdir " + dir.getCanonicalPath() + " worked but exists check failed", dir.exists());
+            assertTrue(dir.mkdir(), "mkdir " + dir.getCanonicalPath() + " failed");
+            assertTrue(dir.exists(), "mkdir " + dir.getCanonicalPath() + " worked but exists check failed");
             dir.deleteOnExit();
         }
     }
@@ -1655,9 +1650,9 @@ public class FileTest {
         File h = new File(userHome + "mdtest" + platformId);
         f.mkdirs();
         try {
-            assertTrue("Base Directory not created", h.exists());
-            assertTrue("Directories not created", g.exists());
-            assertTrue("File not created", f.exists());
+            assertTrue(h.exists(), "Base Directory not created");
+            assertTrue(g.exists(), "Directories not created");
+            assertTrue(f.exists(), "File not created");
         } finally {
             f.delete();
             g.delete();
@@ -1681,16 +1676,16 @@ public class FileTest {
 
             rfile.delete(); // in case it already exists
 
-            assertTrue("Test 1: File Rename Failed", f.renameTo(rfile));
-            assertTrue("Test 2: File Rename Failed.", rfile.exists());
-            assertEquals("Test 3: Size Of File Changed.", lengthOfFile, rfile.length());
+            assertTrue(f.renameTo(rfile), "Test 1: File Rename Failed");
+            assertTrue(rfile.exists(), "Test 2: File Rename Failed.");
+            assertEquals(lengthOfFile, rfile.length(), "Test 3: Size Of File Changed.");
 
             fos = new FileOutputStream(rfile);
             fos.close();
 
             f2.delete(); // in case it already exists
-            assertTrue("Test 4: File Rename Failed", rfile.renameTo(f2));
-            assertTrue("Test 5: File Rename Failed.", f2.exists());
+            assertTrue(rfile.renameTo(f2), "Test 4: File Rename Failed");
+            assertTrue(f2.exists(), "Test 5: File Rename Failed.");
         } finally {
             f.delete();
             rfile.delete();
@@ -1708,23 +1703,23 @@ public class FileTest {
             // Subtracting 100 000 milliseconds from the orgTime of File f1
             f1.setLastModified(orgTime - 100000);
             long lastModified = f1.lastModified();
-            assertEquals("Test 1: LastModifed time incorrect", orgTime - 100000, lastModified);
+            assertEquals(orgTime - 100000, lastModified, "Test 1: LastModifed time incorrect");
             // Subtracting 10 000 000 milliseconds from the orgTime of File f1
             f1.setLastModified(orgTime - 10000000);
             lastModified = f1.lastModified();
-            assertEquals("Test 2: LastModifed time incorrect", orgTime - 10000000, lastModified);
+            assertEquals(orgTime - 10000000, lastModified, "Test 2: LastModifed time incorrect");
             // Adding 100 000 milliseconds to the orgTime of File f1
             f1.setLastModified(orgTime + 100000);
             lastModified = f1.lastModified();
-            assertEquals("Test 3: LastModifed time incorrect", orgTime + 100000, lastModified);
+            assertEquals(orgTime + 100000, lastModified, "Test 3: LastModifed time incorrect");
             // Adding 10 000 000 milliseconds from the orgTime of File f1
             f1.setLastModified(orgTime + 10000000);
             lastModified = f1.lastModified();
-            assertEquals("Test 4: LastModifed time incorrect", orgTime + 10000000, lastModified);
+            assertEquals(orgTime + 10000000, lastModified, "Test 4: LastModifed time incorrect");
             // Trying to set time to an exact number
             f1.setLastModified(315550800000L);
             lastModified = f1.lastModified();
-            assertEquals("Test 5: LastModified time incorrect", 315550800000L, lastModified);
+            assertEquals(315550800000L, lastModified, "Test 5: LastModified time incorrect");
             String osName = System.getProperty("os.name", "unknown");
             if (osName.equals("Windows 2000") || osName.equals("Windows NT")) {
                 // Trying to set time to a large exact number
@@ -1733,7 +1728,7 @@ public class FileTest {
                 // Dec 31 23:59:59 EST 2107 is overflow on FAT file systems, and
                 // the call fails
                 if (result) {
-                    assertEquals("Test 6: LastModified time incorrect", 4354837199000L, next);
+                    assertEquals(4354837199000L, next, "Test 6: LastModified time incorrect");
                 }
             }
             // Trying to set time to a negative number
@@ -1791,13 +1786,13 @@ public class FileTest {
 
             if (File.separatorChar == '/') {
                 f2.setReadOnly();
-                assertTrue("File f2 Did Not Delete", f2.delete());
+                assertTrue(f2.delete(), "File f2 Did Not Delete");
                 // Similarly, trying to delete a read-only directory should succeed
                 f2 = new File(tempDirectory, "deltestdir");
                 f2.mkdir();
                 f2.setReadOnly();
-                assertTrue("Directory f2 Did Not Delete", f2.delete());
-                assertTrue("Directory f2 Did Not Delete", !f2.exists());
+                assertTrue(f2.delete(), "Directory f2 Did Not Delete");
+                assertTrue(!f2.exists(), "Directory f2 Did Not Delete");
             }
         } finally {
             if (f1 != null) {
@@ -1816,11 +1811,11 @@ public class FileTest {
             fileName = fileName.substring(1);
         }
         File f = new File(fileName);
-        assertEquals("Incorrect string returned", fileName, f.toString());
+        assertEquals(fileName, f.toString(), "Incorrect string returned");
 
         if (File.separatorChar == '\\') {
             String result = new File("c:\\").toString();
-            assertEquals("Removed backslash", "c:\\", result);
+            assertEquals("c:\\", result, "Removed backslash");
         }
     }
 
@@ -1840,8 +1835,8 @@ public class FileTest {
         }
 
         URI uri = dir.toURI();
-        assertEquals("Test 1A: Incorrect URI Returned.", dir.getAbsoluteFile(), new File(uri));
-        assertEquals("Test 1B: Incorrect URI Returned.", new URI("file", null, newURIPath, null, null), uri);
+        assertEquals(dir.getAbsoluteFile(), new File(uri), "Test 1A: Incorrect URI Returned.");
+        assertEquals(new URI("file", null, newURIPath, null, null), uri, "Test 1B: Incorrect URI Returned.");
 
         // Test for toURI with a file name with illegal chars.
         File f = new File(dir, "te% \u20ac st.tst");
@@ -1852,13 +1847,13 @@ public class FileTest {
         }
 
         uri = f.toURI();
-        assertEquals("Test 2A: Incorrect URI Returned.", f.getAbsoluteFile(), new File(uri));
-        assertEquals("Test 2B: Incorrect URI Returned.", new URI("file", null, newURIPath, null, null), uri);
+        assertEquals(f.getAbsoluteFile(), new File(uri), "Test 2A: Incorrect URI Returned.");
+        assertEquals(new URI("file", null, newURIPath, null, null), uri, "Test 2B: Incorrect URI Returned.");
 
         // Regression test for HARMONY-3207
         dir = new File(""); // current directory
         uri = dir.toURI();
-        assertTrue("Test current dir: URI does not end with slash.", uri .toString().endsWith("/"));
+        assertTrue(uri .toString().endsWith("/"), "Test current dir: URI does not end with slash.");
     }
 
     @Test
@@ -1873,7 +1868,7 @@ public class FileTest {
 
         URI uri1 = new URI("file", null, path, null);
         URI uri2 = f.toURI();
-        assertEquals("uris not equal", uri1, uri2);
+        assertEquals(uri1, uri2, "uris not equal");
     }
 
     @Test

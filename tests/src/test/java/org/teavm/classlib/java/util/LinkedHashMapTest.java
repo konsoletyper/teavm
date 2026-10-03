@@ -32,15 +32,15 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,13 +54,12 @@ import java.util.SequencedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.MapTest2Support;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class LinkedHashMapTest {
 
     private LinkedHashMap<Object, Object> hm;
@@ -94,13 +93,13 @@ public class LinkedHashMapTest {
         new MapTest2Support(new LinkedHashMap<>()).runTest();
 
         var hm2 = new LinkedHashMap<>();
-        assertEquals("Created incorrect LinkedHashMap", 0, hm2.size());
+        assertEquals(0, hm2.size(), "Created incorrect LinkedHashMap");
     }
 
     @Test
     public void test_ConstructorI() {
         var hm2 = new LinkedHashMap<>(5);
-        assertEquals("Created incorrect LinkedHashMap", 0, hm2.size());
+        assertEquals(0, hm2.size(), "Created incorrect LinkedHashMap");
         try {
             new LinkedHashMap<>(-1);
             fail("Failed to throw IllegalArgumentException for initial capacity < 0");
@@ -109,17 +108,17 @@ public class LinkedHashMapTest {
         }
 
         var empty = new LinkedHashMap<>(0);
-        assertNull("Empty LinkedHashMap access", empty.get("nothing"));
+        assertNull(empty.get("nothing"), "Empty LinkedHashMap access");
         empty.put("something", "here");
 
-        assertSame("cannot get element", "here", empty.get("something"));
+        assertSame("here", empty.get("something"), "cannot get element");
     }
 
     @Test
     public void test_ConstructorIF() {
         // Test for method java.util.LinkedHashMap(int, float)
         var hm2 = new LinkedHashMap<>(5, (float) 0.5);
-        assertEquals("Created incorrect LinkedHashMap", 0, hm2.size());
+        assertEquals(0, hm2.size(), "Created incorrect LinkedHashMap");
         try {
             new LinkedHashMap<>(0, 0);
             fail("Failed to throw IllegalArgumentException for initial load factor <= 0");
@@ -127,10 +126,10 @@ public class LinkedHashMapTest {
             // as expected
         }
         var empty = new LinkedHashMap<String, String>(0, 0.75f);
-        assertNull("Empty hashtable access", empty.get("nothing"));
+        assertNull(empty.get("nothing"), "Empty hashtable access");
         empty.put("something", "here");
 
-        assertSame("cannot get element", "here", empty.get("something"));
+        assertSame("here", empty.get("something"), "cannot get element");
     }
 
     @Test
@@ -142,34 +141,34 @@ public class LinkedHashMapTest {
         }
         var hm2 = new LinkedHashMap<>(myMap);
         for (int counter = 0; counter < hmSize; counter++) {
-            assertSame("Failed to construct correct LinkedHashMap", hm.get(objArray2[counter]),
-                    hm2.get(objArray2[counter]));
+            assertSame(hm.get(objArray2[counter]), hm2.get(objArray2[counter]),
+                    "Failed to construct correct LinkedHashMap");
         }
     }
 
     @Test
     public void test_getLjava_lang_Object() {
-        assertNull("Get returned non-null for non existent key", hm.get("T"));
+        assertNull(hm.get("T"), "Get returned non-null for non existent key");
         hm.put("T", "HELLO");
-        assertEquals("Get returned incorrect value for existing key", "HELLO", hm.get("T"));
+        assertEquals("HELLO", hm.get("T"), "Get returned incorrect value for existing key");
 
         var m = new LinkedHashMap<Object, String>();
         m.put(null, "test");
-        assertEquals("Failed with null key", "test", m.get(null));
-        assertNull("Failed with missing key matching null hash", m.get(0));
+        assertEquals("test", m.get(null), "Failed with null key");
+        assertNull(m.get(0), "Failed with missing key matching null hash");
     }
 
     @Test
     public void test_putLjava_lang_ObjectLjava_lang_Object() {
         hm.put("KEY", "VALUE");
-        assertEquals("Failed to install key/value pair", "VALUE", hm.get("KEY"));
+        assertEquals("VALUE", hm.get("KEY"), "Failed to install key/value pair");
 
         var m = new LinkedHashMap<Number, String>();
         m.put((short) 0, "short");
         m.put(null, "test");
         m.put(0, "int");
-        assertEquals("Failed adding to bucket containing null", "short", m.get((short) 0));
-        assertEquals("Failed adding to bucket containing null2", "int", m.get(0));
+        assertEquals("short", m.get((short) 0), "Failed adding to bucket containing null");
+        assertEquals("int", m.get(0), "Failed adding to bucket containing null2");
     }
 
     @Test
@@ -177,15 +176,15 @@ public class LinkedHashMapTest {
         var hm2 = new LinkedHashMap<>();
         hm2.putAll(hm);
         for (int i = 0; i < 1000; i++) {
-            assertEquals("Failed to clear all elements", hm2.get(String.valueOf(i)), i);
+            assertEquals(hm2.get(String.valueOf(i)), i, "Failed to clear all elements");
         }
     }
 
     @Test
     public void test_entrySet() {
-        assertEquals("Returned set of incorrect size", hm.size(), hm.entrySet().size());
+        assertEquals(hm.size(), hm.entrySet().size(), "Returned set of incorrect size");
         for (var m : hm.entrySet()) {
-            assertTrue("Returned incorrect entry set", hm.containsKey(m.getKey()) && hm.containsValue(m.getValue()));
+            assertTrue(hm.containsKey(m.getKey()) && hm.containsValue(m.getValue()), "Returned incorrect entry set");
         }
     }
 
@@ -193,15 +192,15 @@ public class LinkedHashMapTest {
     public void test_keySet() {
         // Test for method java.util.Set java.util.LinkedHashMap.keySet()
         var s = hm.keySet();
-        assertEquals("Returned set of incorrect size()", s.size(), hm.size());
+        assertEquals(s.size(), hm.size(), "Returned set of incorrect size()");
         for (int i = 0; i < objArray.length; i++) {
-            assertTrue("Returned set does not contain all keys", s.contains(objArray[i].toString()));
+            assertTrue(s.contains(objArray[i].toString()), "Returned set does not contain all keys");
         }
 
         var m = new LinkedHashMap<Object, String>();
         m.put(null, "org/teavm/metaprogramming/test");
-        assertTrue("Failed with null key", m.keySet().contains(null));
-        assertNull("Failed with null key", m.keySet().iterator().next());
+        assertTrue(m.keySet().contains(null), "Failed with null key");
+        assertNull(m.keySet().iterator().next(), "Failed with null key");
 
         var map = new LinkedHashMap<Integer, String>(101);
         map.put(1, "1");
@@ -216,9 +215,9 @@ public class LinkedHashMapTest {
         var list = new ArrayList<>(Arrays.asList(1, 102, 203));
         list.remove(remove1);
         list.remove(remove2);
-        assertEquals("Wrong result", it.next(), list.get(0));
-        assertEquals("Wrong size", 1, map.size());
-        assertEquals("Wrong contents", map.keySet().iterator().next(), list.get(0));
+        assertEquals(it.next(), list.get(0), "Wrong result");
+        assertEquals(1, map.size(), "Wrong size");
+        assertEquals(map.keySet().iterator().next(), list.get(0), "Wrong contents");
 
         var map2 = new LinkedHashMap<Integer, String>(101);
         map2.put(1, "1");
@@ -233,18 +232,18 @@ public class LinkedHashMapTest {
         }
         it2.hasNext();
         it2.remove();
-        assertEquals("Wrong result 2", it2.next(), next);
-        assertEquals("Wrong size 2", 1, map2.size());
-        assertEquals("Wrong contents 2", map2.keySet().iterator().next(), next);
+        assertEquals(it2.next(), next, "Wrong result 2");
+        assertEquals(1, map2.size(), "Wrong size 2");
+        assertEquals(map2.keySet().iterator().next(), next, "Wrong contents 2");
     }
 
     @Test
     public void test_values() {
         // Test for method java.util.Collection java.util.LinkedHashMap.values()
         var c = hm.values();
-        assertEquals("Returned collection of incorrect size()", c.size(), hm.size());
+        assertEquals(c.size(), hm.size(), "Returned collection of incorrect size()");
         for (int i = 0; i < objArray.length; i++) {
-            assertTrue("Returned collection does not contain all keys", c.contains(objArray[i]));
+            assertTrue(c.contains(objArray[i]), "Returned collection does not contain all keys");
         }
 
         var myLinkedHashMap = new LinkedHashMap<>();
@@ -253,8 +252,8 @@ public class LinkedHashMapTest {
         }
         var values = myLinkedHashMap.values();
         values.remove(0);
-        assertFalse("Removing from the values collection should remove from the original map",
-                myLinkedHashMap.containsValue(0));
+        assertFalse(myLinkedHashMap.containsValue(0),
+                "Removing from the values collection should remove from the original map");
     }
 
     @Test
@@ -262,23 +261,23 @@ public class LinkedHashMapTest {
         int size = hm.size();
         var y = Integer.valueOf(9);
         var x = (Integer) hm.remove(y.toString());
-        assertEquals("Remove returned incorrect value", x, Integer.valueOf(9));
-        assertNull("Failed to remove given key", hm.get(9));
-        assertEquals("Failed to decrement size", hm.size(), size - 1);
-        assertNull("Remove of non-existent key returned non-null", hm.remove("LCLCLC"));
+        assertEquals(x, Integer.valueOf(9), "Remove returned incorrect value");
+        assertNull(hm.get(9), "Failed to remove given key");
+        assertEquals(hm.size(), size - 1, "Failed to decrement size");
+        assertNull(hm.remove("LCLCLC"), "Remove of non-existent key returned non-null");
 
         var m = new LinkedHashMap<Object, String>();
         m.put(null, "org/teavm/metaprogramming/test");
-        assertNull("Failed with same hash as null", m.remove(0));
-        assertEquals("Failed with null key", "org/teavm/metaprogramming/test", m.remove(null));
+        assertNull(m.remove(0), "Failed with same hash as null");
+        assertEquals("org/teavm/metaprogramming/test", m.remove(null), "Failed with null key");
     }
 
     @Test
     public void test_clear() {
         hm.clear();
-        assertEquals("Clear failed to reset size", 0, hm.size());
+        assertEquals(0, hm.size(), "Clear failed to reset size");
         for (int i = 0; i < hmSize; i++) {
-            assertNull("Failed to clear all elements", hm.get(objArray2[i]));
+            assertNull(hm.get(objArray2[i]), "Failed to clear all elements");
         }
     }
 
@@ -286,9 +285,9 @@ public class LinkedHashMapTest {
     public void test_clone() {
         @SuppressWarnings("unchecked")
         var hm2 = (LinkedHashMap<Object, Object>) hm.clone();
-        assertNotSame("Clone answered equivalent LinkedHashMap", hm2, hm);
+        assertNotSame(hm2, hm, "Clone answered equivalent LinkedHashMap");
         for (int counter = 0; counter < hmSize; counter++) {
-            assertSame("Clone answered unequal LinkedHashMap", hm.get(objArray2[counter]), hm2.get(objArray2[counter]));
+            assertSame(hm.get(objArray2[counter]), hm2.get(objArray2[counter]), "Clone answered unequal LinkedHashMap");
         }
 
         var map = new LinkedHashMap<String, String>();
@@ -296,21 +295,21 @@ public class LinkedHashMapTest {
         // get the keySet() and values() on the original Map
         var keys = map.keySet();
         var values = map.values();
-        assertEquals("values() does not work", "value", values.iterator().next());
-        assertEquals("keySet() does not work", "key", keys.iterator().next());
+        assertEquals("value", values.iterator().next(), "values() does not work");
+        assertEquals("key", keys.iterator().next(), "keySet() does not work");
         @SuppressWarnings("unchecked")
         var map2 = (AbstractMap<String, String>) map.clone();
         map2.put("key", "value2");
         var values2 = map2.values();
-        assertNotSame("values() is identical", values2, values);
+        assertNotSame(values2, values, "values() is identical");
 
         // values() and keySet() on the cloned() map should be different
-        assertEquals("values() was not cloned", "value2", values2.iterator().next());
+        assertEquals("value2", values2.iterator().next(), "values() was not cloned");
         map2.clear();
         map2.put("key2", "value3");
         var key2 = map2.keySet();
-        assertNotSame("keySet() is identical", key2, keys);
-        assertEquals("keySet() was not cloned", "key2", key2.iterator().next());
+        assertNotSame(key2, keys, "keySet() is identical");
+        assertEquals("key2", key2.iterator().next(), "keySet() was not cloned");
     }
 
     @Test
@@ -344,30 +343,30 @@ public class LinkedHashMapTest {
 
     @Test
     public void test_containsKeyLjava_lang_Object() {
-        assertTrue("Returned false for valid key", hm.containsKey(String.valueOf(876)));
-        assertFalse("Returned true for invalid key", hm.containsKey("KKDKDKD"));
+        assertTrue(hm.containsKey(String.valueOf(876)), "Returned false for valid key");
+        assertFalse(hm.containsKey("KKDKDKD"), "Returned true for invalid key");
 
         var m = new LinkedHashMap<Object, String>();
         m.put(null, "test");
-        assertTrue("Failed with null key", m.containsKey(null));
-        assertFalse("Failed with missing key matching null hash", m.containsKey(0));
+        assertTrue(m.containsKey(null), "Failed with null key");
+        assertFalse(m.containsKey(0), "Failed with missing key matching null hash");
     }
 
     @Test
     public void test_containsValueLjava_lang_Object() {
-        assertTrue("Returned false for valid value", hm.containsValue(875));
-        assertFalse("Returned true for invalid valie", hm.containsValue(-9));
+        assertTrue(hm.containsValue(875), "Returned false for valid value");
+        assertFalse(hm.containsValue(-9), "Returned true for invalid valie");
     }
 
     @Test
     public void test_isEmpty() {
-        assertTrue("Returned false for new map", new LinkedHashMap<>().isEmpty());
-        assertFalse("Returned true for non-empty", hm.isEmpty());
+        assertTrue(new LinkedHashMap<>().isEmpty(), "Returned false for new map");
+        assertFalse(hm.isEmpty(), "Returned true for non-empty");
     }
 
     @Test
     public void test_size() {
-        assertEquals("Returned incorrect size", hm.size(), objArray.length + 2);
+        assertEquals(hm.size(), objArray.length + 2, "Returned incorrect size");
     }
 
     @Test
@@ -380,11 +379,11 @@ public class LinkedHashMapTest {
             lhm.put(ii, ii.toString());
         }
 
-        assertEquals("Returned set of incorrect size 1", lhm.size(), lhm.entrySet().size());
+        assertEquals(lhm.size(), lhm.entrySet().size(), "Returned set of incorrect size 1");
         i = 0;
         for (var m : lhm.entrySet()) {
             var jj = m.getKey();
-            assertEquals("Returned incorrect entry set 1", jj.intValue(), i++);
+            assertEquals(jj.intValue(), i++, "Returned incorrect entry set 1");
         }
 
         var lruhm = new LinkedHashMap<Integer, String>(200, .75f, true);
@@ -395,10 +394,10 @@ public class LinkedHashMapTest {
 
         var s3 = lruhm.entrySet();
         var it3 = s3.iterator();
-        assertEquals("Returned set of incorrect size 2", lruhm.size(), s3.size());
+        assertEquals(lruhm.size(), s3.size(), "Returned set of incorrect size 2");
         for (i = 0; i < sz && it3.hasNext(); i++) {
             var m = it3.next();
-            assertEquals("Returned incorrect entry set 2", m.getKey().intValue(), i);
+            assertEquals(m.getKey().intValue(), i, "Returned incorrect entry set 2");
         }
 
         /* fetch the even numbered entries to affect traversal order */
@@ -407,20 +406,20 @@ public class LinkedHashMapTest {
             var ii = lruhm.get(i);
             p = p + Integer.parseInt(ii);
         }
-        assertEquals("invalid sum of even numbers", 2450, p);
+        assertEquals(2450, p, "invalid sum of even numbers");
 
         var s2 = lruhm.entrySet();
         var it2 = s2.iterator();
-        assertEquals("Returned set of incorrect size 3", lruhm.size(), s2.size());
+        assertEquals(lruhm.size(), s2.size(), "Returned set of incorrect size 3");
         for (i = 1; i < sz && it2.hasNext(); i += 2) {
             var m = it2.next();
-            assertEquals("Returned incorrect entry set 3", m.getKey().intValue(), i);
+            assertEquals(m.getKey().intValue(), i, "Returned incorrect entry set 3");
         }
         for (i = 0; i < sz && it2.hasNext(); i += 2) {
             var m = it2.next();
-            assertEquals("Returned incorrect entry set 4", m.getKey().intValue(), i);
+            assertEquals(m.getKey().intValue(), i, "Returned incorrect entry set 4");
         }
-        assertFalse("Entries left to iterate on", it2.hasNext());
+        assertFalse(it2.hasNext(), "Entries left to iterate on");
     }
 
     @Test
@@ -435,10 +434,10 @@ public class LinkedHashMapTest {
 
         var s1 = lhm.keySet();
         var it1 = s1.iterator();
-        assertEquals("Returned set of incorrect size", lhm.size(), s1.size());
+        assertEquals(lhm.size(), s1.size(), "Returned set of incorrect size");
         for (i = 0; it1.hasNext(); i++) {
             var jj = it1.next();
-            assertEquals("Returned incorrect entry set", jj.intValue(), i);
+            assertEquals(jj.intValue(), i, "Returned incorrect entry set");
         }
 
         var lruhm = new LinkedHashMap<Integer, String>(200, .75f, true);
@@ -449,10 +448,10 @@ public class LinkedHashMapTest {
 
         var s3 = lruhm.keySet();
         var it3 = s3.iterator();
-        assertEquals("Returned set of incorrect size", lruhm.size(), s3.size());
+        assertEquals(lruhm.size(), s3.size(), "Returned set of incorrect size");
         for (i = 0; i < sz && it3.hasNext(); i++) {
             Integer jj = it3.next();
-            assertEquals("Returned incorrect entry set", jj.intValue(), i);
+            assertEquals(jj.intValue(), i, "Returned incorrect entry set");
         }
 
         /* fetch the even numbered entries to affect traversal order */
@@ -461,20 +460,20 @@ public class LinkedHashMapTest {
             var ii = lruhm.get(i);
             p = p + Integer.parseInt(ii);
         }
-        assertEquals("invalid sum of even numbers", 2450, p);
+        assertEquals(2450, p, "invalid sum of even numbers");
 
         var s2 = lruhm.keySet();
         var it2 = s2.iterator();
-        assertEquals("Returned set of incorrect size", lruhm.size(), s2.size());
+        assertEquals(lruhm.size(), s2.size(), "Returned set of incorrect size");
         for (i = 1; i < sz && it2.hasNext(); i += 2) {
             var jj = it2.next();
-            assertEquals("Returned incorrect entry set", jj.intValue(), i);
+            assertEquals(jj.intValue(), i, "Returned incorrect entry set");
         }
         for (i = 0; i < sz && it2.hasNext(); i += 2) {
             var jj = it2.next();
-            assertEquals("Returned incorrect entry set", jj.intValue(), i);
+            assertEquals(jj.intValue(), i, "Returned incorrect entry set");
         }
-        assertFalse("Entries left to iterate on", it2.hasNext());
+        assertFalse(it2.hasNext(), "Entries left to iterate on");
     }
 
     @Test
@@ -488,10 +487,10 @@ public class LinkedHashMapTest {
 
         var s1 = lhm.values();
         var it1 = s1.iterator();
-        assertEquals("Returned set of incorrect size 1", lhm.size(), s1.size());
+        assertEquals(lhm.size(), s1.size(), "Returned set of incorrect size 1");
         for (i = 0; it1.hasNext(); i++) {
             var jj = it1.next();
-            assertEquals("Returned incorrect entry set 1", jj.intValue(), i * 2);
+            assertEquals(jj.intValue(), i * 2, "Returned incorrect entry set 1");
         }
 
         var lruhm = new LinkedHashMap<Integer, Integer>(200, .75f, true);
@@ -501,10 +500,10 @@ public class LinkedHashMapTest {
 
         var s3 = lruhm.values();
         var it3 = s3.iterator();
-        assertEquals("Returned set of incorrect size", lruhm.size(), s3.size());
+        assertEquals(lruhm.size(), s3.size(), "Returned set of incorrect size");
         for (i = 0; i < sz && it3.hasNext(); i++) {
             var jj = it3.next();
-            assertEquals("Returned incorrect entry set", jj.intValue(), i * 2);
+            assertEquals(jj.intValue(), i * 2, "Returned incorrect entry set");
         }
 
         // fetch the even numbered entries to affect traversal order
@@ -513,20 +512,20 @@ public class LinkedHashMapTest {
             var ii = lruhm.get(i);
             p = p + ii.intValue();
         }
-        assertEquals("invalid sum of even numbers", 2450 * 2, p);
+        assertEquals(2450 * 2, p, "invalid sum of even numbers");
 
         var s2 = lruhm.values();
         var it2 = s2.iterator();
-        assertEquals("Returned set of incorrect size", lruhm.size(), s2.size());
+        assertEquals(lruhm.size(), s2.size(), "Returned set of incorrect size");
         for (i = 1; i < sz && it2.hasNext(); i += 2) {
             var jj = it2.next();
-            assertEquals("Returned incorrect entry set", jj.intValue(), i * 2);
+            assertEquals(jj.intValue(), i * 2, "Returned incorrect entry set");
         }
         for (i = 0; i < sz && it2.hasNext(); i += 2) {
             var jj = it2.next();
-            assertEquals("Returned incorrect entry set", jj.intValue(), i * 2);
+            assertEquals(jj.intValue(), i * 2, "Returned incorrect entry set");
         }
-        assertFalse("Entries left to iterate on", it2.hasNext());
+        assertFalse(it2.hasNext(), "Entries left to iterate on");
     }
 
     @Test

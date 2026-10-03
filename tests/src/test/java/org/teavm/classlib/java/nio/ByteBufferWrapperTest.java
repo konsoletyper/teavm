@@ -15,20 +15,17 @@
  */
 package org.teavm.classlib.java.nio;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class ByteBufferWrapperTest {
     @Test
     public void wrapsIntoCharBuffer() {
@@ -62,14 +59,14 @@ public class ByteBufferWrapperTest {
         buffer.put(1, (byte) 0x24);
 
         ShortBuffer wrapper = buffer.asShortBuffer();
-        assertThat(wrapper.capacity(), is(35));
-        assertThat(wrapper.position(), is(0));
-        assertThat(wrapper.limit(), is(35));
-        assertThat(wrapper.get(0), is((short) 0x2324));
+        assertEquals(35, wrapper.capacity());
+        assertEquals(0, wrapper.position());
+        assertEquals(35, wrapper.limit());
+        assertEquals((short) 0x2324, wrapper.get(0));
 
         wrapper.put(0, (short) 0x2526);
-        assertThat(buffer.get(0), is((byte) 0x25));
-        assertThat(buffer.get(1), is((byte) 0x26));
+        assertEquals((byte) 0x25, buffer.get(0));
+        assertEquals((byte) 0x26, buffer.get(1));
     }
 
     @Test
@@ -84,16 +81,16 @@ public class ByteBufferWrapperTest {
         buffer.put(2, (byte) 0x25);
 
         IntBuffer wrapper = buffer.asIntBuffer();
-        assertThat(wrapper.capacity(), is(15));
-        assertThat(wrapper.position(), is(0));
-        assertThat(wrapper.limit(), is(15));
-        assertThat(wrapper.get(0), is(0x23242500));
+        assertEquals(15, wrapper.capacity());
+        assertEquals(0, wrapper.position());
+        assertEquals(15, wrapper.limit());
+        assertEquals(0x23242500, wrapper.get(0));
 
         wrapper.put(0, 0x26272829);
-        assertThat(buffer.get(0), is((byte) 0x26));
-        assertThat(buffer.get(1), is((byte) 0x27));
-        assertThat(buffer.get(2), is((byte) 0x28));
-        assertThat(buffer.get(3), is((byte) 0x29));
+        assertEquals((byte) 0x26, buffer.get(0));
+        assertEquals((byte) 0x27, buffer.get(1));
+        assertEquals((byte) 0x28, buffer.get(2));
+        assertEquals((byte) 0x29, buffer.get(3));
     }
 
     @Test
@@ -113,20 +110,20 @@ public class ByteBufferWrapperTest {
         buffer.put(7, (byte) 0x2A);
 
         LongBuffer wrapper = buffer.asLongBuffer();
-        assertThat(wrapper.capacity(), is(5));
-        assertThat(wrapper.position(), is(0));
-        assertThat(wrapper.limit(), is(5));
-        assertThat(wrapper.get(0), is(0x232425262728292AL));
+        assertEquals(5, wrapper.capacity());
+        assertEquals(0, wrapper.position());
+        assertEquals(5, wrapper.limit());
+        assertEquals(0x232425262728292AL, wrapper.get(0));
 
         wrapper.put(0, 0x2B2C2D2E2F303132L);
-        assertThat(buffer.get(0), is((byte) 0x2B));
-        assertThat(buffer.get(1), is((byte) 0x2C));
-        assertThat(buffer.get(2), is((byte) 0x2D));
-        assertThat(buffer.get(3), is((byte) 0x2E));
-        assertThat(buffer.get(4), is((byte) 0x2F));
-        assertThat(buffer.get(5), is((byte) 0x30));
-        assertThat(buffer.get(6), is((byte) 0x31));
-        assertThat(buffer.get(7), is((byte) 0x32));
+        assertEquals((byte) 0x2B, buffer.get(0));
+        assertEquals((byte) 0x2C, buffer.get(1));
+        assertEquals((byte) 0x2D, buffer.get(2));
+        assertEquals((byte) 0x2E, buffer.get(3));
+        assertEquals((byte) 0x2F, buffer.get(4));
+        assertEquals((byte) 0x30, buffer.get(5));
+        assertEquals((byte) 0x31, buffer.get(6));
+        assertEquals((byte) 0x32, buffer.get(7));
     }
 
     @Test
@@ -142,16 +139,16 @@ public class ByteBufferWrapperTest {
         buffer.put(3, (byte) 0xD0);
 
         FloatBuffer wrapper = buffer.asFloatBuffer();
-        assertThat(wrapper.capacity(), is(15));
-        assertThat(wrapper.position(), is(0));
-        assertThat(wrapper.limit(), is(15));
+        assertEquals(15, wrapper.capacity());
+        assertEquals(0, wrapper.position());
+        assertEquals(15, wrapper.limit());
         assertEquals(3.14159, wrapper.get(0), 0.00001);
 
         wrapper.put(0, 2.71828F);
-        assertThat(buffer.get(0), is((byte) 0x40));
-        assertThat(buffer.get(1), is((byte) 0x2D));
-        assertThat(buffer.get(2), is((byte) 0xF8));
-        assertThat(buffer.get(3) & 0xF0, is(0x40));
+        assertEquals((byte) 0x40, buffer.get(0));
+        assertEquals((byte) 0x2D, buffer.get(1));
+        assertEquals((byte) 0xF8, buffer.get(2));
+        assertEquals(0x40, buffer.get(3) & 0xF0);
     }
 
     @Test
@@ -193,7 +190,7 @@ public class ByteBufferWrapperTest {
         buffer.put(0, (byte) 0x23);
         buffer.put(1, (byte) 0x24);
         ShortBuffer wrapper = buffer.asShortBuffer();
-        assertThat(wrapper.get(0), is((short) 0x2423));
+        assertEquals((short) 0x2423, wrapper.get(0));
     }
 
     @Test
@@ -206,7 +203,7 @@ public class ByteBufferWrapperTest {
         buffer.put(2, (byte) 0x25);
         buffer.put(3, (byte) 0x26);
         IntBuffer wrapper = buffer.asIntBuffer();
-        assertThat(wrapper.get(0), is(0x26252423));
+        assertEquals(0x26252423, wrapper.get(0));
     }
 
     @Test
@@ -215,8 +212,8 @@ public class ByteBufferWrapperTest {
         ByteBuffer buffer = ByteBuffer.wrap(array);
         ShortBuffer wrapper = buffer.asShortBuffer();
         wrapper.put(0, (short) 0x2324);
-        assertThat(buffer.get(0), is((byte) 0x23));
-        assertThat(buffer.get(1), is((byte) 0x24));
+        assertEquals((byte) 0x23, buffer.get(0));
+        assertEquals((byte) 0x24, buffer.get(1));
     }
 
     @Test
@@ -225,6 +222,6 @@ public class ByteBufferWrapperTest {
         ByteBuffer buffer = ByteBuffer.wrap(array);
         ShortBuffer wrapper = buffer.asShortBuffer();
         buffer.put(1, (byte) 0x24);
-        assertThat(wrapper.get(0), is((short) 0x0024));
+        assertEquals((short) 0x0024, wrapper.get(0));
     }
 }

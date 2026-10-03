@@ -15,17 +15,17 @@
  */
 package org.teavm.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class RttiTest {
     @Test
@@ -79,17 +79,19 @@ public class RttiTest {
         assertEquals("ttftftffff", sb.toString());
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test
     public void castToWrongReferenceArrayFails() {
         Object o = new String[] { "a" };
-        Integer[] integers = (Integer[]) o;
-        assertEquals(0, integers.length);
+        assertThrows(ClassCastException.class, () -> {
+            Integer[] integers = (Integer[]) o;
+            assertEquals(0, integers.length);
+        });
     }
 
     private void checkImplements(Object o, boolean i, boolean j, boolean k) {
-        assertTrue(predicate(o, i, "I"), !i ^ o instanceof I);
-        assertTrue(predicate(o, j, "J"), !j ^ o instanceof J);
-        assertTrue(predicate(o, k, "K"), !k ^ o instanceof K);
+        assertTrue(!i ^ o instanceof I, predicate(o, i, "I"));
+        assertTrue(!j ^ o instanceof J, predicate(o, j, "J"));
+        assertTrue(!k ^ o instanceof K, predicate(o, k, "K"));
     }
 
     private String predicate(Object o, boolean b, String name) {

@@ -46,31 +46,33 @@
  */
 package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.LocalDate;
 import java.time.Period;
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestPeriod extends AbstractTest {
     //-----------------------------------------------------------------------
     // factories
     //-----------------------------------------------------------------------
     public void factory_zeroSingleton() {
         assertSame(Period.ZERO, Period.ZERO);
-        assertSame(Period.of(0, 0, 0), Period.ZERO);
-        assertSame(Period.ofYears(0), Period.ZERO);
-        assertSame(Period.ofMonths(0), Period.ZERO);
-        assertSame(Period.ofDays(0), Period.ZERO);
+        assertSame(Period.ZERO, Period.of(0, 0, 0));
+        assertSame(Period.ZERO, Period.ofYears(0));
+        assertSame(Period.ZERO, Period.ofMonths(0));
+        assertSame(Period.ZERO, Period.ofDays(0));
     }
 
     //-----------------------------------------------------------------------
@@ -112,8 +114,7 @@ public class TestPeriod extends AbstractTest {
     //-----------------------------------------------------------------------
     // between
     //-----------------------------------------------------------------------
-    @DataProvider(name = "between")
-    Object[][] data_between() {
+    static Object[][] data_between() {
         return new Object[][] {
             {2010, 1, 1, 2010, 1, 1, 0, 0, 0},
             {2010, 1, 1, 2010, 1, 2, 0, 0, 1},
@@ -199,7 +200,8 @@ public class TestPeriod extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "between")
+    @ParameterizedTest
+    @MethodSource("data_between")
     public void factory_between_LocalDate(int y1, int m1, int d1, int y2, int m2, int d2, int ye, int me, int de) {
         LocalDate start = LocalDate.of(y1, m1, d1);
         LocalDate end = LocalDate.of(y2, m2, d2);
@@ -208,21 +210,20 @@ public class TestPeriod extends AbstractTest {
         //assertEquals(start.plus(test), end);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_between_LocalDate_nullFirst() {
-        Period.between((LocalDate) null, LocalDate.of(2010, 1, 1));
+        assertThrows(NullPointerException.class, () -> Period.between((LocalDate) null, LocalDate.of(2010, 1, 1)));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_between_LocalDate_nullSecond() {
-        Period.between(LocalDate.of(2010, 1, 1), (LocalDate) null);
+        assertThrows(NullPointerException.class, () -> Period.between(LocalDate.of(2010, 1, 1), (LocalDate) null));
     }
 
     //-----------------------------------------------------------------------
     // parse()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "parse")
-    Object[][] data_parse() {
+    static Object[][] data_parse() {
         return new Object[][] {
             {"P0D", Period.ZERO},
             {"P0W", Period.ZERO},
@@ -270,113 +271,125 @@ public class TestPeriod extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "parse")
+    @ParameterizedTest
+    @MethodSource("data_parse")
     public void test_parse(String text, Period expected) {
-        assertEquals(Period.parse(text), expected);
+        assertEquals(expected, Period.parse(text));
     }
 
-    @Test(dataProvider = "toStringAndParse")
+    @ParameterizedTest
+    @MethodSource("data_toString")
     public void test_parse_toString(Period test, String expected) {
-        assertEquals(test, Period.parse(expected));
+        assertEquals(Period.parse(expected), test);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_parse_nullText() {
-        Period.parse((String) null);
+        assertThrows(NullPointerException.class, () -> Period.parse((String) null));
     }
 
     //-----------------------------------------------------------------------
     // isZero()
     //-----------------------------------------------------------------------
+    @Test
     public void test_isZero() {
-        assertEquals(Period.of(1, 2, 3).isZero(), false);
-        assertEquals(Period.of(1, 0, 0).isZero(), false);
-        assertEquals(Period.of(0, 2, 0).isZero(), false);
-        assertEquals(Period.of(0, 0, 3).isZero(), false);
-        assertEquals(Period.of(0, 0, 0).isZero(), true);
+        assertFalse(Period.of(1, 2, 3).isZero());
+        assertFalse(Period.of(1, 0, 0).isZero());
+        assertFalse(Period.of(0, 2, 0).isZero());
+        assertFalse(Period.of(0, 0, 3).isZero());
+        assertTrue(Period.of(0, 0, 0).isZero());
     }
 
     //-----------------------------------------------------------------------
     // isNegative()
     //-----------------------------------------------------------------------
-    @Ignore
+    @Test
+    @Disabled
     // TODO: it's a bug in optimizer, find and fix
     public void test_isNegative() {
-        assertEquals(Period.of(0, 0, 0).isNegative(), false);
+        assertFalse(Period.of(0, 0, 0).isNegative());
         
-        assertEquals(Period.of(1, 2, 3).isNegative(), false);
-        assertEquals(Period.of(1, 0, 0).isNegative(), false);
-        assertEquals(Period.of(0, 2, 0).isNegative(), false);
-        assertEquals(Period.of(0, 0, 3).isNegative(), false);
+        assertFalse(Period.of(1, 2, 3).isNegative());
+        assertFalse(Period.of(1, 0, 0).isNegative());
+        assertFalse(Period.of(0, 2, 0).isNegative());
+        assertFalse(Period.of(0, 0, 3).isNegative());
         
-        assertEquals(Period.of(-1, -2, -3).isNegative(), true);
-        assertEquals(Period.of(-1, 0, 0).isNegative(), true);
-        assertEquals(Period.of(0, -2, 0).isNegative(), true);
-        assertEquals(Period.of(0, 0, -3).isNegative(), true);
-        assertEquals(Period.of(-1, 2, 3).isNegative(), true);
-        assertEquals(Period.of(1, -2, 3).isNegative(), true);
-        assertEquals(Period.of(1, 2, -3).isNegative(), true);
+        assertTrue(Period.of(-1, -2, -3).isNegative());
+        assertTrue(Period.of(-1, 0, 0).isNegative());
+        assertTrue(Period.of(0, -2, 0).isNegative());
+        assertTrue(Period.of(0, 0, -3).isNegative());
+        assertTrue(Period.of(-1, 2, 3).isNegative());
+        assertTrue(Period.of(1, -2, 3).isNegative());
+        assertTrue(Period.of(1, 2, -3).isNegative());
     }
 
     //-----------------------------------------------------------------------
     // withYears()
     //-----------------------------------------------------------------------
+    @Test
     public void test_withYears() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.withYears(10), 10, 2, 3);
     }
 
+    @Test
     public void test_withYears_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.withYears(1), test);
+        assertSame(test, test.withYears(1));
     }
 
+    @Test
     public void test_withYears_toZero() {
         Period test = Period.ofYears(1);
-        assertSame(test.withYears(0), Period.ZERO);
+        assertSame(Period.ZERO, test.withYears(0));
     }
 
     //-----------------------------------------------------------------------
     // withMonths()
     //-----------------------------------------------------------------------
+    @Test
     public void test_withMonths() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.withMonths(10), 1, 10, 3);
     }
 
+    @Test
     public void test_withMonths_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.withMonths(2), test);
+        assertSame(test, test.withMonths(2));
     }
 
+    @Test
     public void test_withMonths_toZero() {
         Period test = Period.ofMonths(1);
-        assertSame(test.withMonths(0), Period.ZERO);
+        assertSame(Period.ZERO, test.withMonths(0));
     }
 
     //-----------------------------------------------------------------------
     // withDays()
     //-----------------------------------------------------------------------
+    @Test
     public void test_withDays() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.withDays(10), 1, 2, 10);
     }
 
+    @Test
     public void test_withDays_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.withDays(3), test);
+        assertSame(test, test.withDays(3));
     }
 
+    @Test
     public void test_withDays_toZero() {
         Period test = Period.ofDays(1);
-        assertSame(test.withDays(0), Period.ZERO);
+        assertSame(Period.ZERO, test.withDays(0));
     }
 
     //-----------------------------------------------------------------------
     // plus(Period)
     //-----------------------------------------------------------------------
-    @DataProvider(name = "plus")
-    Object[][] data_plus() {
+    static Object[][] data_plus() {
         return new Object[][] {
             {pymd(0, 0, 0), pymd(0, 0, 0), pymd(0, 0, 0)},
             {pymd(0, 0, 0), pymd(5, 0, 0), pymd(5, 0, 0)},
@@ -393,112 +406,121 @@ public class TestPeriod extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "plus")
+    @ParameterizedTest
+    @MethodSource("data_plus")
     public void test_plus(Period base, Period add, Period expected) {
-        assertEquals(base.plus(add), expected);
+        assertEquals(expected, base.plus(add));
     }
 
     //-----------------------------------------------------------------------
     // plusYears()
     //-----------------------------------------------------------------------
+    @Test
     public void test_plusYears() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.plusYears(10), 11, 2, 3);
         assertPeriod(test.plus(Period.ofYears(10)), 11, 2, 3);
     }
 
+    @Test
     public void test_plusYears_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.plusYears(0), test);
+        assertSame(test, test.plusYears(0));
         assertPeriod(test.plus(Period.ofYears(0)), 1, 2, 3);
     }
 
+    @Test
     public void test_plusYears_toZero() {
         Period test = Period.ofYears(-1);
-        assertSame(test.plusYears(1), Period.ZERO);
-        assertSame(test.plus(Period.ofYears(1)), Period.ZERO);
+        assertSame(Period.ZERO, test.plusYears(1));
+        assertSame(Period.ZERO, test.plus(Period.ofYears(1)));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_plusYears_overflowTooBig() {
         Period test = Period.ofYears(Integer.MAX_VALUE);
-        test.plusYears(1);
+        assertThrows(ArithmeticException.class, () -> test.plusYears(1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_plusYears_overflowTooSmall() {
         Period test = Period.ofYears(Integer.MIN_VALUE);
-        test.plusYears(-1);
+        assertThrows(ArithmeticException.class, () -> test.plusYears(-1));
     }
 
     //-----------------------------------------------------------------------
     // plusMonths()
     //-----------------------------------------------------------------------
+    @Test
     public void test_plusMonths() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.plusMonths(10), 1, 12, 3);
         assertPeriod(test.plus(Period.ofMonths(10)), 1, 12, 3);
     }
 
+    @Test
     public void test_plusMonths_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.plusMonths(0), test);
-        assertEquals(test.plus(Period.ofMonths(0)), test);
+        assertSame(test, test.plusMonths(0));
+        assertEquals(test, test.plus(Period.ofMonths(0)));
     }
 
+    @Test
     public void test_plusMonths_toZero() {
         Period test = Period.ofMonths(-1);
-        assertSame(test.plusMonths(1), Period.ZERO);
-        assertSame(test.plus(Period.ofMonths(1)), Period.ZERO);
+        assertSame(Period.ZERO, test.plusMonths(1));
+        assertSame(Period.ZERO, test.plus(Period.ofMonths(1)));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_plusMonths_overflowTooBig() {
         Period test = Period.ofMonths(Integer.MAX_VALUE);
-        test.plusMonths(1);
+        assertThrows(ArithmeticException.class, () -> test.plusMonths(1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_plusMonths_overflowTooSmall() {
         Period test = Period.ofMonths(Integer.MIN_VALUE);
-        test.plusMonths(-1);
+        assertThrows(ArithmeticException.class, () -> test.plusMonths(-1));
     }
 
     //-----------------------------------------------------------------------
     // plusDays()
     //-----------------------------------------------------------------------
+    @Test
     public void test_plusDays() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.plusDays(10), 1, 2, 13);
     }
 
+    @Test
     public void test_plusDays_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.plusDays(0), test);
+        assertSame(test, test.plusDays(0));
     }
 
+    @Test
     public void test_plusDays_toZero() {
         Period test = Period.ofDays(-1);
-        assertSame(test.plusDays(1), Period.ZERO);
+        assertSame(Period.ZERO, test.plusDays(1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_plusDays_overflowTooBig() {
         Period test = Period.ofDays(Integer.MAX_VALUE);
-        test.plusDays(1);
+        assertThrows(ArithmeticException.class, () -> test.plusDays(1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_plusDays_overflowTooSmall() {
         Period test = Period.ofDays(Integer.MIN_VALUE);
-        test.plusDays(-1);
+        assertThrows(ArithmeticException.class, () -> test.plusDays(-1));
     }
 
     //-----------------------------------------------------------------------
     // minus(Period)
     //-----------------------------------------------------------------------
-    @DataProvider(name = "minus")
-    Object[][] data_minus() {
+    static Object[][] data_minus() {
         return new Object[][] {
             {pymd(0, 0, 0), pymd(0, 0, 0), pymd(0, 0, 0)},
             {pymd(0, 0, 0), pymd(5, 0, 0), pymd(-5, 0, 0)},
@@ -515,162 +537,178 @@ public class TestPeriod extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "minus")
+    @ParameterizedTest
+    @MethodSource("data_minus")
     public void test_minus(Period base, Period subtract, Period expected) {
-        assertEquals(base.minus(subtract), expected);
+        assertEquals(expected, base.minus(subtract));
     }
 
     //-----------------------------------------------------------------------
     // minusYears()
     //-----------------------------------------------------------------------
+    @Test
     public void test_minusYears() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.minusYears(10), -9, 2, 3);
     }
 
+    @Test
     public void test_minusYears_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.minusYears(0), test);
+        assertSame(test, test.minusYears(0));
     }
 
+    @Test
     public void test_minusYears_toZero() {
         Period test = Period.ofYears(1);
-        assertSame(test.minusYears(1), Period.ZERO);
+        assertSame(Period.ZERO, test.minusYears(1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_minusYears_overflowTooBig() {
         Period test = Period.ofYears(Integer.MAX_VALUE);
-        test.minusYears(-1);
+        assertThrows(ArithmeticException.class, () -> test.minusYears(-1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_minusYears_overflowTooSmall() {
         Period test = Period.ofYears(Integer.MIN_VALUE);
-        test.minusYears(1);
+        assertThrows(ArithmeticException.class, () -> test.minusYears(1));
     }
 
     //-----------------------------------------------------------------------
     // minusMonths()
     //-----------------------------------------------------------------------
+    @Test
     public void test_minusMonths() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.minusMonths(10), 1, -8, 3);
     }
 
+    @Test
     public void test_minusMonths_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.minusMonths(0), test);
+        assertSame(test, test.minusMonths(0));
     }
 
+    @Test
     public void test_minusMonths_toZero() {
         Period test = Period.ofMonths(1);
-        assertSame(test.minusMonths(1), Period.ZERO);
+        assertSame(Period.ZERO, test.minusMonths(1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_minusMonths_overflowTooBig() {
         Period test = Period.ofMonths(Integer.MAX_VALUE);
-        test.minusMonths(-1);
+        assertThrows(ArithmeticException.class, () -> test.minusMonths(-1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_minusMonths_overflowTooSmall() {
         Period test = Period.ofMonths(Integer.MIN_VALUE);
-        test.minusMonths(1);
+        assertThrows(ArithmeticException.class, () -> test.minusMonths(1));
     }
 
     //-----------------------------------------------------------------------
     // minusDays()
     //-----------------------------------------------------------------------
+    @Test
     public void test_minusDays() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.minusDays(10), 1, 2, -7);
     }
 
+    @Test
     public void test_minusDays_noChange() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.minusDays(0), test);
+        assertSame(test, test.minusDays(0));
     }
 
+    @Test
     public void test_minusDays_toZero() {
         Period test = Period.ofDays(1);
-        assertSame(test.minusDays(1), Period.ZERO);
+        assertSame(Period.ZERO, test.minusDays(1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_minusDays_overflowTooBig() {
         Period test = Period.ofDays(Integer.MAX_VALUE);
-        test.minusDays(-1);
+        assertThrows(ArithmeticException.class, () -> test.minusDays(-1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_minusDays_overflowTooSmall() {
         Period test = Period.ofDays(Integer.MIN_VALUE);
-        test.minusDays(1);
+        assertThrows(ArithmeticException.class, () -> test.minusDays(1));
     }
 
     //-----------------------------------------------------------------------
     // multipliedBy()
     //-----------------------------------------------------------------------
+    @Test
     public void test_multipliedBy() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.multipliedBy(2), 2, 4, 6);
         assertPeriod(test.multipliedBy(-3), -3, -6, -9);
     }
 
+    @Test
     public void test_multipliedBy_zeroBase() {
-        assertSame(Period.ZERO.multipliedBy(2), Period.ZERO);
+        assertSame(Period.ZERO, Period.ZERO.multipliedBy(2));
     }
 
+    @Test
     public void test_multipliedBy_zero() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.multipliedBy(0), Period.ZERO);
+        assertSame(Period.ZERO, test.multipliedBy(0));
     }
 
+    @Test
     public void test_multipliedBy_one() {
         Period test = Period.of(1, 2, 3);
-        assertSame(test.multipliedBy(1), test);
+        assertSame(test, test.multipliedBy(1));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_multipliedBy_overflowTooBig() {
         Period test = Period.ofYears(Integer.MAX_VALUE / 2 + 1);
-        test.multipliedBy(2);
+        assertThrows(ArithmeticException.class, () -> test.multipliedBy(2));
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_multipliedBy_overflowTooSmall() {
         Period test = Period.ofYears(Integer.MIN_VALUE / 2 - 1);
-        test.multipliedBy(2);
+        assertThrows(ArithmeticException.class, () -> test.multipliedBy(2));
     }
 
     //-----------------------------------------------------------------------
     // negated()
     //-----------------------------------------------------------------------
+    @Test
     public void test_negated() {
         Period test = Period.of(1, 2, 3);
         assertPeriod(test.negated(), -1, -2, -3);
     }
 
+    @Test
     public void test_negated_zero() {
-        assertSame(Period.ZERO.negated(), Period.ZERO);
+        assertSame(Period.ZERO, Period.ZERO.negated());
     }
 
+    @Test
     public void test_negated_max() {
         assertPeriod(Period.ofYears(Integer.MAX_VALUE).negated(), -Integer.MAX_VALUE, 0, 0);
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_negated_overflow() {
-        Period.ofYears(Integer.MIN_VALUE).negated();
+        assertThrows(ArithmeticException.class, () -> Period.ofYears(Integer.MIN_VALUE).negated());
     }
 
     //-----------------------------------------------------------------------
     // normalized()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "normalized")
-    Object[][] data_normalized() {
+    static Object[][] data_normalized() {
         return new Object[][] {
             {0, 0,  0, 0},
             {1, 0,  1, 0},
@@ -712,28 +750,28 @@ public class TestPeriod extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "normalized")
+    @ParameterizedTest
+    @MethodSource("data_normalized")
     public void test_normalized(int inputYears, int inputMonths, int expectedYears, int expectedMonths) {
         assertPeriod(Period.of(inputYears, inputMonths, 0).normalized(), expectedYears, expectedMonths, 0);
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_normalizedMonthsISO_min() {
         Period base = Period.of(Integer.MIN_VALUE, -12, 0);
-        base.normalized();
+        assertThrows(ArithmeticException.class, () -> base.normalized());
     }
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test
     public void test_normalizedMonthsISO_max() {
         Period base = Period.of(Integer.MAX_VALUE, 12, 0);
-        base.normalized();
+        assertThrows(ArithmeticException.class, () -> base.normalized());
     }
 
     //-----------------------------------------------------------------------
     // addTo()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "addTo")
-    Object[][] data_addTo() {
+    static Object[][] data_addTo() {
         return new Object[][] {
             {pymd(0, 0, 0),  date(2012, 6, 30), date(2012, 6, 30)},
 
@@ -761,31 +799,32 @@ public class TestPeriod extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "addTo")
+    @ParameterizedTest
+    @MethodSource("data_addTo")
     public void test_addTo(Period period, LocalDate baseDate, LocalDate expected) {
-        assertEquals(period.addTo(baseDate), expected);
+        assertEquals(expected, period.addTo(baseDate));
     }
 
-    @Test(dataProvider = "addTo")
+    @ParameterizedTest
+    @MethodSource("data_addTo")
     public void test_addTo_usingLocalDatePlus(Period period, LocalDate baseDate, LocalDate expected) {
-        assertEquals(baseDate.plus(period), expected);
+        assertEquals(expected, baseDate.plus(period));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_addTo_nullZero() {
-        Period.ZERO.addTo(null);
+        assertThrows(NullPointerException.class, () -> Period.ZERO.addTo(null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_addTo_nullNonZero() {
-        Period.ofDays(2).addTo(null);
+        assertThrows(NullPointerException.class, () -> Period.ofDays(2).addTo(null));
     }
 
     //-----------------------------------------------------------------------
     // subtractFrom()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "subtractFrom")
-    Object[][] data_subtractFrom() {
+    static Object[][] data_subtractFrom() {
         return new Object[][] {
             {pymd(0, 0, 0),  date(2012, 6, 30), date(2012, 6, 30)},
 
@@ -814,82 +853,88 @@ public class TestPeriod extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "subtractFrom")
+    @ParameterizedTest
+    @MethodSource("data_subtractFrom")
     public void test_subtractFrom(Period period, LocalDate baseDate, LocalDate expected) {
-        assertEquals(period.subtractFrom(baseDate), expected);
+        assertEquals(expected, period.subtractFrom(baseDate));
     }
 
-    @Test(dataProvider = "subtractFrom")
+    @ParameterizedTest
+    @MethodSource("data_subtractFrom")
     public void test_subtractFrom_usingLocalDateMinus(Period period, LocalDate baseDate, LocalDate expected) {
-        assertEquals(baseDate.minus(period), expected);
+        assertEquals(expected, baseDate.minus(period));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_subtractFrom_nullZero() {
-        Period.ZERO.subtractFrom(null);
+        assertThrows(NullPointerException.class, () -> Period.ZERO.subtractFrom(null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_subtractFrom_nullNonZero() {
-        Period.ofDays(2).subtractFrom(null);
+        assertThrows(NullPointerException.class, () -> Period.ofDays(2).subtractFrom(null));
     }
 
     //-----------------------------------------------------------------------
     // equals() / hashCode()
     //-----------------------------------------------------------------------
+    @Test
     public void test_equals() {
-        assertEquals(Period.of(1, 0, 0).equals(Period.ofYears(1)), true);
-        assertEquals(Period.of(0, 1, 0).equals(Period.ofMonths(1)), true);
-        assertEquals(Period.of(0, 0, 1).equals(Period.ofDays(1)), true);
-        assertEquals(Period.of(1, 2, 3).equals(Period.of(1, 2, 3)), true);
+        assertTrue(Period.of(1, 0, 0).equals(Period.ofYears(1)));
+        assertTrue(Period.of(0, 1, 0).equals(Period.ofMonths(1)));
+        assertTrue(Period.of(0, 0, 1).equals(Period.ofDays(1)));
+        assertTrue(Period.of(1, 2, 3).equals(Period.of(1, 2, 3)));
 
-        assertEquals(Period.ofYears(1).equals(Period.ofYears(1)), true);
-        assertEquals(Period.ofYears(1).equals(Period.ofYears(2)), false);
+        assertTrue(Period.ofYears(1).equals(Period.ofYears(1)));
+        assertFalse(Period.ofYears(1).equals(Period.ofYears(2)));
 
-        assertEquals(Period.ofMonths(1).equals(Period.ofMonths(1)), true);
-        assertEquals(Period.ofMonths(1).equals(Period.ofMonths(2)), false);
+        assertTrue(Period.ofMonths(1).equals(Period.ofMonths(1)));
+        assertFalse(Period.ofMonths(1).equals(Period.ofMonths(2)));
 
-        assertEquals(Period.ofDays(1).equals(Period.ofDays(1)), true);
-        assertEquals(Period.ofDays(1).equals(Period.ofDays(2)), false);
+        assertTrue(Period.ofDays(1).equals(Period.ofDays(1)));
+        assertFalse(Period.ofDays(1).equals(Period.ofDays(2)));
 
-        assertEquals(Period.of(1, 2, 3).equals(Period.of(1, 2, 3)), true);
-        assertEquals(Period.of(1, 2, 3).equals(Period.of(0, 2, 3)), false);
-        assertEquals(Period.of(1, 2, 3).equals(Period.of(1, 0, 3)), false);
-        assertEquals(Period.of(1, 2, 3).equals(Period.of(1, 2, 0)), false);
+        assertTrue(Period.of(1, 2, 3).equals(Period.of(1, 2, 3)));
+        assertFalse(Period.of(1, 2, 3).equals(Period.of(0, 2, 3)));
+        assertFalse(Period.of(1, 2, 3).equals(Period.of(1, 0, 3)));
+        assertFalse(Period.of(1, 2, 3).equals(Period.of(1, 2, 0)));
     }
 
+    @Test
     public void test_equals_self() {
         Period test = Period.of(1, 2, 3);
-        assertEquals(test.equals(test), true);
+        assertTrue(test.equals(test));
     }
 
+    @Test
     public void test_equals_null() {
         Period test = Period.of(1, 2, 3);
-        assertEquals(test.equals(null), false);
+        assertFalse(test.equals(null));
     }
 
+    @Test
     public void test_equals_otherClass() {
         Period test = Period.of(1, 2, 3);
-        assertEquals(test.equals(""), false);
+        assertFalse(test.equals(""));
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_hashCode() {
         Period test5 = Period.ofDays(5);
         Period test6 = Period.ofDays(6);
         Period test5M = Period.ofMonths(5);
         Period test5Y = Period.ofYears(5);
-        assertEquals(test5.hashCode() == test5.hashCode(), true);
-        assertEquals(test5.hashCode() == test6.hashCode(), false);
-        assertEquals(test5.hashCode() == test5M.hashCode(), false);
-        assertEquals(test5.hashCode() == test5Y.hashCode(), false);
+        assertTrue(test5.hashCode() == test5.hashCode());
+        assertFalse(test5.hashCode() == test6.hashCode());
+        assertFalse(test5.hashCode() == test5M.hashCode());
+        assertFalse(test5.hashCode() == test5Y.hashCode());
     }
 
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "toStringAndParse")
-    Object[][] data_toString() {
+    static Object[][] data_toString() {
         return new Object[][] {
             {Period.ZERO, "P0D"},
             {Period.ofDays(0), "P0D"},
@@ -900,16 +945,17 @@ public class TestPeriod extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "toStringAndParse")
+    @ParameterizedTest
+    @MethodSource("data_toString")
     public void test_toString(Period input, String expected) {
-        assertEquals(input.toString(), expected);
+        assertEquals(expected, input.toString());
     }
 
     //-----------------------------------------------------------------------
     private void assertPeriod(Period test, int y, int mo, int d) {
-        assertEquals(test.getYears(), y, "years");
-        assertEquals(test.getMonths(), mo, "months");
-        assertEquals(test.getDays(), d, "days");
+        assertEquals(y, test.getYears(), "years");
+        assertEquals(mo, test.getMonths(), "months");
+        assertEquals(d, test.getDays(), "days");
     }
 
     private static Period pymd(int y, int m, int d) {

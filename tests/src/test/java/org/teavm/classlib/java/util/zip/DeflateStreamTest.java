@@ -15,8 +15,8 @@
  */
 package org.teavm.classlib.java.util.zip;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.teavm.classlib.java.util.zip.ZipTestUtil.readHex;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,11 +27,10 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class DeflateStreamTest {
     private static final String longString = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
             + "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "

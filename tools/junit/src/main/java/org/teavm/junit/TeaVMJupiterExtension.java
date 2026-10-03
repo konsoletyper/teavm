@@ -133,6 +133,35 @@ public final class TeaVMJupiterExtension implements InvocationInterceptor, Execu
     }
 
     @Override
+    public void interceptBeforeEachMethod(Invocation<Void> invocation,
+            ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext)
+            throws Throwable {
+        interceptLifecycleMethod(invocation, extensionContext);
+    }
+
+    @Override
+    public void interceptAfterEachMethod(Invocation<Void> invocation,
+            ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext)
+            throws Throwable {
+        interceptLifecycleMethod(invocation, extensionContext);
+    }
+
+    /**
+     * When a test does not run on JVM, its {@code @BeforeEach}/{@code @AfterEach} methods should not run
+     * on JVM either. In TeaVM backends they are called by the generated entry point.
+     */
+    private void interceptLifecycleMethod(Invocation<Void> invocation, ExtensionContext extensionContext)
+            throws Throwable {
+        var testMethod = extensionContext.getTestMethod();
+        if (testMethod.isPresent() && TeaVMTestExecutionSupport.isSkipJvm(testMethod.get(),
+                extensionContext.getRequiredTestClass())) {
+            invocation.skip();
+        } else {
+            invocation.proceed();
+        }
+    }
+
+    @Override
     public void interceptTestTemplateMethod(Invocation<Void> invocation,
             ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext)
             throws Throwable {

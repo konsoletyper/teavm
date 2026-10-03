@@ -46,7 +46,10 @@
  */
 package org.teavm.classlib.java.time.zone;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
@@ -56,16 +59,14 @@ import java.time.ZoneOffset;
 import java.time.zone.ZoneOffsetTransition;
 import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.java.time.AbstractTest;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test ZoneOffsetTransitionRule.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     private static final LocalTime TIME_0100 = LocalTime.of(1, 0);
@@ -75,74 +76,74 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
     //-----------------------------------------------------------------------
     // factory
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_nullMonth() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
                 null, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_nullTime() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, null, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_nullTimeDefinition() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, null,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_nullStandardOffset() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                null, OFFSET_0200, OFFSET_0300);
+                null, OFFSET_0200, OFFSET_0300));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_nullOffsetBefore() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, null, OFFSET_0300);
+                OFFSET_0200, null, OFFSET_0300));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_nullOffsetAfter() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, null);
+                OFFSET_0200, OFFSET_0200, null));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_factory_invalidDayOfMonthIndicator_tooSmall() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, -29, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_factory_invalidDayOfMonthIndicator_zero() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, 0, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_factory_invalidDayOfMonthIndicator_tooLarge() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, 32, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_factory_invalidMidnightFlag() {
-        ZoneOffsetTransitionRule.of(
+        assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, true, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     //-----------------------------------------------------------------------
@@ -153,15 +154,15 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.getMonth(), Month.MARCH);
-        assertEquals(test.getDayOfMonthIndicator(), 20);
-        assertEquals(test.getDayOfWeek(), DayOfWeek.SUNDAY);
-        assertEquals(test.getLocalTime(), TIME_0100);
-        assertEquals(test.isMidnightEndOfDay(), false);
-        assertEquals(test.getTimeDefinition(), TimeDefinition.WALL);
-        assertEquals(test.getStandardOffset(), OFFSET_0200);
-        assertEquals(test.getOffsetBefore(), OFFSET_0200);
-        assertEquals(test.getOffsetAfter(), OFFSET_0300);
+        assertEquals(Month.MARCH, test.getMonth());
+        assertEquals(20, test.getDayOfMonthIndicator());
+        assertEquals(DayOfWeek.SUNDAY, test.getDayOfWeek());
+        assertEquals(TIME_0100, test.getLocalTime());
+        assertFalse(test.isMidnightEndOfDay());
+        assertEquals(TimeDefinition.WALL, test.getTimeDefinition());
+        assertEquals(OFFSET_0200, test.getStandardOffset());
+        assertEquals(OFFSET_0200, test.getOffsetBefore());
+        assertEquals(OFFSET_0300, test.getOffsetAfter());
     }
 
     @Test
@@ -169,15 +170,15 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -1, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.getMonth(), Month.MARCH);
-        assertEquals(test.getDayOfMonthIndicator(), -1);
-        assertEquals(test.getDayOfWeek(), DayOfWeek.SUNDAY);
-        assertEquals(test.getLocalTime(), TIME_0100);
-        assertEquals(test.isMidnightEndOfDay(), false);
-        assertEquals(test.getTimeDefinition(), TimeDefinition.WALL);
-        assertEquals(test.getStandardOffset(), OFFSET_0200);
-        assertEquals(test.getOffsetBefore(), OFFSET_0200);
-        assertEquals(test.getOffsetAfter(), OFFSET_0300);
+        assertEquals(Month.MARCH, test.getMonth());
+        assertEquals(-1, test.getDayOfMonthIndicator());
+        assertEquals(DayOfWeek.SUNDAY, test.getDayOfWeek());
+        assertEquals(TIME_0100, test.getLocalTime());
+        assertFalse(test.isMidnightEndOfDay());
+        assertEquals(TimeDefinition.WALL, test.getTimeDefinition());
+        assertEquals(OFFSET_0200, test.getStandardOffset());
+        assertEquals(OFFSET_0200, test.getOffsetBefore());
+        assertEquals(OFFSET_0300, test.getOffsetAfter());
     }
 
     @Test
@@ -185,15 +186,15 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.getMonth(), Month.MARCH);
-        assertEquals(test.getDayOfMonthIndicator(), 20);
-        assertEquals(test.getDayOfWeek(), null);
-        assertEquals(test.getLocalTime(), TIME_0100);
-        assertEquals(test.isMidnightEndOfDay(), false);
-        assertEquals(test.getTimeDefinition(), TimeDefinition.WALL);
-        assertEquals(test.getStandardOffset(), OFFSET_0200);
-        assertEquals(test.getOffsetBefore(), OFFSET_0200);
-        assertEquals(test.getOffsetAfter(), OFFSET_0300);
+        assertEquals(Month.MARCH, test.getMonth());
+        assertEquals(20, test.getDayOfMonthIndicator());
+        assertEquals(null, test.getDayOfWeek());
+        assertEquals(TIME_0100, test.getLocalTime());
+        assertFalse(test.isMidnightEndOfDay());
+        assertEquals(TimeDefinition.WALL, test.getTimeDefinition());
+        assertEquals(OFFSET_0200, test.getStandardOffset());
+        assertEquals(OFFSET_0200, test.getOffsetBefore());
+        assertEquals(OFFSET_0300, test.getOffsetAfter());
     }
 
     @Test
@@ -236,7 +237,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
         ZoneOffsetTransition trans = ZoneOffsetTransition.of(
                 LocalDateTime.of(2000, Month.MARCH, 26, 1, 0), OFFSET_0200, OFFSET_0300);
-        assertEquals(test.createTransition(2000), trans);
+        assertEquals(trans, test.createTransition(2000));
     }
 
     @Test
@@ -246,7 +247,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
                 OFFSET_0200, OFFSET_0300, OFFSET_0200);
         ZoneOffsetTransition trans = ZoneOffsetTransition.of(
                 LocalDateTime.of(2000, Month.MARCH, 27, 0, 0), OFFSET_0300, OFFSET_0200);
-        assertEquals(test.createTransition(2000), trans);
+        assertEquals(trans, test.createTransition(2000));
     }
 
     @Test
@@ -256,7 +257,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
         ZoneOffsetTransition trans = ZoneOffsetTransition.of(
                 LocalDateTime.of(2000, Month.MARCH, 26, 1, 0), OFFSET_0200, OFFSET_0300);
-        assertEquals(test.createTransition(2000), trans);
+        assertEquals(trans, test.createTransition(2000));
     }
 
     @Test
@@ -266,7 +267,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
         ZoneOffsetTransition trans = ZoneOffsetTransition.of(
                 LocalDateTime.of(2000, Month.MARCH, 19, 1, 0), OFFSET_0200, OFFSET_0300);
-        assertEquals(test.createTransition(2000), trans);
+        assertEquals(trans, test.createTransition(2000));
     }
 
     @Test
@@ -276,7 +277,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
         ZoneOffsetTransition trans = ZoneOffsetTransition.of(
                 LocalDateTime.of(2000, Month.MARCH, 26, 1, 0), OFFSET_0200, OFFSET_0300);
-        assertEquals(test.createTransition(2000), trans);
+        assertEquals(trans, test.createTransition(2000));
     }
 
     @Test
@@ -286,7 +287,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
         ZoneOffsetTransition trans = ZoneOffsetTransition.of(
                 LocalDateTime.of(2000, Month.MARCH, 20, 1, 0), OFFSET_0200, OFFSET_0300);
-        assertEquals(test.createTransition(2000), trans);
+        assertEquals(trans, test.createTransition(2000));
     }
 
     //-----------------------------------------------------------------------
@@ -300,10 +301,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.APRIL, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -314,10 +315,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 21, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -328,10 +329,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SATURDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -342,10 +343,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -356,10 +357,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, LocalTime.MIDNIGHT, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -370,10 +371,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, LocalTime.MIDNIGHT, true, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -384,10 +385,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.STANDARD,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -398,10 +399,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0300, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -412,10 +413,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0300, OFFSET_0300);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -426,10 +427,10 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0200);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+        assertTrue(b.equals(b));
     }
 
     @Test
@@ -437,7 +438,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals("TZDB"), false);
+        assertFalse(a.equals("TZDB"));
     }
 
     @Test
@@ -445,7 +446,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.equals(null), false);
+        assertFalse(a.equals(null));
     }
 
     //-----------------------------------------------------------------------
@@ -459,7 +460,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(b.hashCode(), a.hashCode());
     }
 
     @Test
@@ -470,7 +471,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.OCTOBER, 20, null, LocalTime.MIDNIGHT, true, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0300, OFFSET_0200);
-        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(b.hashCode(), a.hashCode());
     }
 
     @Test
@@ -481,7 +482,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -1, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(b.hashCode(), a.hashCode());
     }
 
     @Test
@@ -492,7 +493,7 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule b = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(b.hashCode(), a.hashCode());
     }
 
     //-----------------------------------------------------------------------
@@ -503,8 +504,8 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, "
-                + "SUNDAY on or after MARCH 20 at 01:00 WALL, standard offset +02:00]");
+        assertEquals("TransitionRule[Gap +02:00 to +03:00, "
+                + "SUNDAY on or after MARCH 20 at 01:00 WALL, standard offset +02:00]", test.toString());
     }
 
     @Test
@@ -512,8 +513,8 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.OCTOBER, 20, DayOfWeek.SUNDAY, LocalTime.MIDNIGHT, true, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0300, OFFSET_0200);
-        assertEquals(test.toString(), "TransitionRule[Overlap +03:00 to +02:00, "
-                + "SUNDAY on or after OCTOBER 20 at 24:00 WALL, standard offset +02:00]");
+        assertEquals("TransitionRule[Overlap +03:00 to +02:00, "
+                + "SUNDAY on or after OCTOBER 20 at 24:00 WALL, standard offset +02:00]", test.toString());
     }
 
     @Test
@@ -521,8 +522,8 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -1, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, "
-                + "SUNDAY on or before last day of MARCH at 01:00 WALL, standard offset +02:00]");
+        assertEquals("TransitionRule[Gap +02:00 to +03:00, "
+                + "SUNDAY on or before last day of MARCH at 01:00 WALL, standard offset +02:00]", test.toString());
     }
 
     @Test
@@ -530,8 +531,9 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -2, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, "
-                + "SUNDAY on or before last day minus 1 of MARCH at 01:00 WALL, standard offset +02:00]");
+        assertEquals("TransitionRule[Gap +02:00 to +03:00, "
+                + "SUNDAY on or before last day minus 1 of MARCH at 01:00 WALL, standard offset +02:00]",
+                test.toString());
     }
 
     @Test
@@ -539,8 +541,8 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, MARCH 20 at 01:00 STANDARD, "
-                + "standard offset +02:00]");
+        assertEquals("TransitionRule[Gap +02:00 to +03:00, MARCH 20 at 01:00 STANDARD, " + "standard offset +02:00]",
+                test.toString());
     }
 
 }

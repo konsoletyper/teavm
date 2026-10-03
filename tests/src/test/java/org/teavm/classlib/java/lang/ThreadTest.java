@@ -15,18 +15,17 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class ThreadTest {
     @Test
@@ -34,7 +33,7 @@ public class ThreadTest {
         long start = System.currentTimeMillis();
         Thread.sleep(100);
         long duration = System.currentTimeMillis() - start;
-        assertTrue("Thread.sleep did not wait enough: " + duration, duration >= 100);
+        assertTrue(duration >= 100, "Thread.sleep did not wait enough: " + duration);
     }
 
     @Test
@@ -56,7 +55,7 @@ public class ThreadTest {
             long end = System.currentTimeMillis();
             assertEquals(Thread.currentThread(), mainThread);
             assertFalse(mainThread.isInterrupted());
-            assertTrue("Wait time " + (end - start), end - start < 5000);
+            assertTrue(end - start < 5000, "Wait time " + (end - start));
         }
     }
 

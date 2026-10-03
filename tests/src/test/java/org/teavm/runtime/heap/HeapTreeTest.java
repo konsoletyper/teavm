@@ -15,18 +15,17 @@
  */
 package org.teavm.runtime.heap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.interop.Address;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @OnlyPlatform(TestPlatform.WEBASSEMBLY_GC)
 @SkipJVM
 public class HeapTreeTest {

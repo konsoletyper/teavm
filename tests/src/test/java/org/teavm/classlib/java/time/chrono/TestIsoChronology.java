@@ -49,10 +49,11 @@ package org.teavm.classlib.java.time.chrono;
 import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -66,17 +67,16 @@ import java.time.chrono.IsoChronology;
 import java.time.chrono.IsoEra;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAdjusters;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestIsoChronology {
 
     //-----------------------------------------------------------------------
@@ -86,10 +86,10 @@ public class TestIsoChronology {
     public void test_chrono_byName() {
         Chronology c = IsoChronology.INSTANCE;
         Chronology test = Chronology.of("ISO");
-        Assert.assertNotNull(test, "The ISO calendar could not be found byName");
-        Assert.assertEquals(test.getId(), "ISO", "ID mismatch");
-        Assert.assertEquals(test.getCalendarType(), "iso8601", "Type mismatch");
-        Assert.assertEquals(test, c);
+        Assertions.assertNotNull(test, "The ISO calendar could not be found byName");
+        Assertions.assertEquals("ISO", test.getId(), "ID mismatch");
+        Assertions.assertEquals("iso8601", test.getCalendarType(), "Type mismatch");
+        Assertions.assertEquals(c, test);
     }
 
     //-----------------------------------------------------------------------
@@ -105,15 +105,14 @@ public class TestIsoChronology {
     //-----------------------------------------------------------------------
     @Test
     public void test_eraOf() {
-        assertEquals(IsoChronology.INSTANCE.eraOf(0), IsoEra.BCE);
-        assertEquals(IsoChronology.INSTANCE.eraOf(1), IsoEra.CE);
+        assertEquals(IsoEra.BCE, IsoChronology.INSTANCE.eraOf(0));
+        assertEquals(IsoEra.CE, IsoChronology.INSTANCE.eraOf(1));
     }
 
     //-----------------------------------------------------------------------
     // creation, toLocalDate()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "samples")
-    Object[][] data_samples() {
+    static Object[][] data_samples() {
         return new Object[][] {
             {IsoChronology.INSTANCE.date(1, 7, 8), LocalDate.of(1, 7, 8)},
             {IsoChronology.INSTANCE.date(1, 7, 20), LocalDate.of(1, 7, 20)},
@@ -132,18 +131,19 @@ public class TestIsoChronology {
         };
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_toLocalDate(ChronoLocalDate isoDate, LocalDate iso) {
-        assertEquals(LocalDate.from(isoDate), iso);
+        assertEquals(iso, LocalDate.from(isoDate));
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_fromCalendrical(ChronoLocalDate isoDate, LocalDate iso) {
-        assertEquals(IsoChronology.INSTANCE.date(iso), isoDate);
+        assertEquals(isoDate, IsoChronology.INSTANCE.date(iso));
     }
 
-    @DataProvider(name = "badDates")
-    Object[][] data_badDates() {
+    static Object[][] data_badDates() {
         return new Object[][] {
             {2012, 0, 0},
 
@@ -162,9 +162,10 @@ public class TestIsoChronology {
         };
     }
 
-    @Test(dataProvider = "badDates", expectedExceptions = DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        IsoChronology.INSTANCE.date(year, month, dom);
+        assertThrows(DateTimeException.class, () -> IsoChronology.INSTANCE.date(year, month, dom));
     }
 
     @Test
@@ -173,19 +174,19 @@ public class TestIsoChronology {
         int month = 5;
         int dayOfMonth = 5;
         ChronoLocalDate test = IsoChronology.INSTANCE.date(IsoEra.BCE, year, month, dayOfMonth);
-        assertEquals(test.getEra(), IsoEra.BCE);
-        assertEquals(test.get(ChronoField.YEAR_OF_ERA), year);
-        assertEquals(test.get(ChronoField.MONTH_OF_YEAR), month);
-        assertEquals(test.get(ChronoField.DAY_OF_MONTH), dayOfMonth);
+        assertEquals(IsoEra.BCE, test.getEra());
+        assertEquals(year, test.get(ChronoField.YEAR_OF_ERA));
+        assertEquals(month, test.get(ChronoField.MONTH_OF_YEAR));
+        assertEquals(dayOfMonth, test.get(ChronoField.DAY_OF_MONTH));
 
-        assertEquals(test.get(YEAR), 1 + (-1 * year));
-        assertEquals(test.get(ERA), 0);
-        assertEquals(test.get(YEAR_OF_ERA), year);
+        assertEquals(1 + (-1 * year), test.get(YEAR));
+        assertEquals(0, test.get(ERA));
+        assertEquals(year, test.get(YEAR_OF_ERA));
     }
 
-    @Test(expectedExceptions = ClassCastException.class)
+    @Test
     public void test_date_withEra_withWrongEra() {
-        IsoChronology.INSTANCE.date((Era) HijrahEra.AH, 1, 1, 1);
+        assertThrows(ClassCastException.class, () -> IsoChronology.INSTANCE.date((Era) HijrahEra.AH, 1, 1, 1));
     }
 
     //-----------------------------------------------------------------------
@@ -195,14 +196,14 @@ public class TestIsoChronology {
     public void test_adjust1() {
         ChronoLocalDate base = IsoChronology.INSTANCE.date(1728, 10, 28);
         ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, IsoChronology.INSTANCE.date(1728, 10, 31));
+        assertEquals(IsoChronology.INSTANCE.date(1728, 10, 31), test);
     }
 
     @Test
     public void test_adjust2() {
         ChronoLocalDate base = IsoChronology.INSTANCE.date(1728, 12, 2);
         ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, IsoChronology.INSTANCE.date(1728, 12, 31));
+        assertEquals(IsoChronology.INSTANCE.date(1728, 12, 31), test);
     }
 
     //-----------------------------------------------------------------------
@@ -212,13 +213,13 @@ public class TestIsoChronology {
     public void test_adjust_toLocalDate() {
         ChronoLocalDate isoDate = IsoChronology.INSTANCE.date(1726, 1, 4);
         ChronoLocalDate test = isoDate.with(LocalDate.of(2012, 7, 6));
-        assertEquals(test, IsoChronology.INSTANCE.date(2012, 7, 6));
+        assertEquals(IsoChronology.INSTANCE.date(2012, 7, 6), test);
     }
 
     @Test
     public void test_adjust_toMonth() {
         ChronoLocalDate isoDate = IsoChronology.INSTANCE.date(1726, 1, 4);
-        assertEquals(IsoChronology.INSTANCE.date(1726, 4, 4), isoDate.with(Month.APRIL));
+        assertEquals(isoDate.with(Month.APRIL), IsoChronology.INSTANCE.date(1726, 4, 4));
     }
 
     //-----------------------------------------------------------------------
@@ -228,21 +229,20 @@ public class TestIsoChronology {
     public void test_LocalDate_adjustToISODate() {
         ChronoLocalDate isoDate = IsoChronology.INSTANCE.date(1728, 10, 29);
         LocalDate test = LocalDate.MIN.with(isoDate);
-        assertEquals(test, LocalDate.of(1728, 10, 29));
+        assertEquals(LocalDate.of(1728, 10, 29), test);
     }
 
     @Test
     public void test_LocalDateTime_adjustToISODate() {
         ChronoLocalDate isoDate = IsoChronology.INSTANCE.date(1728, 10, 29);
         LocalDateTime test = LocalDateTime.MIN.with(isoDate);
-        assertEquals(test, LocalDateTime.of(1728, 10, 29, 0, 0));
+        assertEquals(LocalDateTime.of(1728, 10, 29, 0, 0), test);
     }
 
     //-----------------------------------------------------------------------
     // isLeapYear()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "leapYears")
-    Object[][] leapYearInformation() {
+    static Object[][] leapYearInformation() {
         return new Object[][] {
                 {2000, true},
                 {1996, true},
@@ -272,9 +272,10 @@ public class TestIsoChronology {
         };
     }
 
-    @Test(dataProvider = "leapYears")
+    @ParameterizedTest
+    @MethodSource("leapYearInformation")
     public void test_isLeapYear(int year, boolean isLeapYear) {
-        assertEquals(IsoChronology.INSTANCE.isLeapYear(year), isLeapYear);
+        assertEquals(isLeapYear, IsoChronology.INSTANCE.isLeapYear(year));
     }
 
     //-----------------------------------------------------------------------
@@ -282,14 +283,13 @@ public class TestIsoChronology {
     //-----------------------------------------------------------------------
     @Test
     public void test_now() {
-        assertEquals(LocalDate.from(IsoChronology.INSTANCE.dateNow()), LocalDate.now());
+        assertEquals(LocalDate.now(), LocalDate.from(IsoChronology.INSTANCE.dateNow()));
     }
 
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "toString")
-    Object[][] data_toString() {
+    static Object[][] data_toString() {
         return new Object[][] {
             {IsoChronology.INSTANCE.date(1, 1, 1), "0001-01-01"},
             {IsoChronology.INSTANCE.date(1728, 10, 28), "1728-10-28"},
@@ -299,9 +299,10 @@ public class TestIsoChronology {
         };
     }
 
-    @Test(dataProvider = "toString")
+    @ParameterizedTest
+    @MethodSource("data_toString")
     public void test_toString(ChronoLocalDate isoDate, String expected) {
-        assertEquals(isoDate.toString(), expected);
+        assertEquals(expected, isoDate.toString());
     }
 
     //-----------------------------------------------------------------------

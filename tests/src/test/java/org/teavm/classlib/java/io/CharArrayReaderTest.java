@@ -16,18 +16,17 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class CharArrayReaderTest {
     char[] hw = { 'H', 'e', 'l', 'l', 'o', 'W', 'o', 'r', 'l', 'd' };
     CharArrayReader cr;
@@ -35,16 +34,16 @@ public class CharArrayReaderTest {
     @Test
     public void constructor$C() throws IOException {
         cr = new CharArrayReader(hw);
-        assertTrue("Failed to create reader", cr.ready());
+        assertTrue(cr.ready(), "Failed to create reader");
     }
 
     @Test
     public void constructor$CII() throws IOException {
         cr = new CharArrayReader(hw, 5, 5);
-        assertTrue("Failed to create reader", cr.ready());
+        assertTrue(cr.ready(), "Failed to create reader");
 
         int c = cr.read();
-        assertTrue("Created incorrect reader--returned '" + (char) c + "' instead of 'W'", c == 'W');
+        assertTrue(c == 'W', "Created incorrect reader--returned '" + (char) c + "' instead of 'W'");
     }
 
     @Test
@@ -69,21 +68,21 @@ public class CharArrayReaderTest {
         cr.mark(100);
         cr.read();
         cr.reset();
-        assertEquals("Failed to mark correct position", 'W', cr.read());
+        assertEquals('W', cr.read(), "Failed to mark correct position");
     }
 
     @Test
     public void markSupported() {
         cr = new CharArrayReader(hw);
-        assertTrue("markSupported returned false", cr.markSupported());
+        assertTrue(cr.markSupported(), "markSupported returned false");
     }
 
     @Test
     public void read() throws IOException {
         cr = new CharArrayReader(hw);
-        assertEquals("Read returned incorrect char", 'H', cr.read());
+        assertEquals('H', cr.read(), "Read returned incorrect char");
         cr = new CharArrayReader(new char[] { '\u8765' });
-        assertTrue("Incorrect double byte char", cr.read() == '\u8765');
+        assertTrue(cr.read() == '\u8765', "Incorrect double byte char");
     }
 
     @Test
@@ -91,15 +90,15 @@ public class CharArrayReaderTest {
         char[] c = new char[11];
         cr = new CharArrayReader(hw);
         cr.read(c, 1, 10);
-        assertTrue("Read returned incorrect chars", new String(c, 1, 10).equals(new String(hw, 0, 10)));
+        assertTrue(new String(c, 1, 10).equals(new String(hw, 0, 10)), "Read returned incorrect chars");
     }
 
     @Test
     public void ready() throws IOException {
         cr = new CharArrayReader(hw);
-        assertTrue("ready returned false", cr.ready());
+        assertTrue(cr.ready(), "ready returned false");
         cr.skip(1000);
-        assertTrue("ready returned true", !cr.ready());
+        assertTrue(!cr.ready(), "ready returned true");
         cr.close();
 
         try {
@@ -125,7 +124,7 @@ public class CharArrayReaderTest {
         cr.mark(100);
         cr.read();
         cr.reset();
-        assertEquals("Reset failed to return to marker position", 'W', cr.read());
+        assertEquals('W', cr.read(), "Reset failed to return to marker position");
 
         // Regression for HARMONY-4357
         String str = "offsetHello world!";
@@ -146,8 +145,8 @@ public class CharArrayReaderTest {
         cr = new CharArrayReader(hw);
         long skipped = cr.skip(5L);
 
-        assertEquals("Failed to skip correct number of chars", 5L, skipped);
-        assertEquals("Skip skipped wrong chars", 'W', cr.read());
+        assertEquals(5L, skipped, "Failed to skip correct number of chars");
+        assertEquals('W', cr.read(), "Skip skipped wrong chars");
     }
 
     @Test

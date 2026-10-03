@@ -22,7 +22,6 @@ import org.teavm.jso.JSExport;
 import org.teavm.jso.JSExportClasses;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
-import org.testng.util.Strings;
 
 @JSExportClasses(ModuleWithVararg.A.class)
 public class ModuleWithVararg {
@@ -33,7 +32,7 @@ public class ModuleWithVararg {
     public static String strings(String... values) {
         var sb = new StringBuilder();
         sb.append("strings: ");
-        sb.append(Strings.join(", ", values));
+        sb.append(String.join(", ", values));
         return sb.toString();
     }
 
@@ -41,7 +40,7 @@ public class ModuleWithVararg {
     public static String prefixStrings(int a, String... values) {
         var sb = new StringBuilder();
         sb.append("strings(").append(a).append("): ");
-        sb.append(Strings.join(", ", values));
+        sb.append(String.join(", ", values));
         return sb.toString();
     }
 
@@ -83,7 +82,7 @@ public class ModuleWithVararg {
         public String strings(String... values) {
             var sb = new StringBuilder();
             sb.append("A.strings: ");
-            sb.append(Strings.join(", ", values));
+            sb.append(String.join(", ", values));
             return sb.toString();
         }
     }

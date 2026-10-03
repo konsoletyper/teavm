@@ -15,24 +15,23 @@
  */
 package org.teavm.runtime.heap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @OnlyPlatform(TestPlatform.WEBASSEMBLY_GC)
 @SkipJVM
 public class HeapTest {
@@ -40,14 +39,14 @@ public class HeapTest {
     private int minSizeBackup;
     private int maxSizeBackup;
 
-    @Before
+    @BeforeEach
     public void saveHeapState() {
         startBackup = Heap.getStart();
         minSizeBackup = Heap.getCurrentSize();
         maxSizeBackup = Heap.getMaxSize();
     }
 
-    @After
+    @AfterEach
     public void restoreHeapState() {
         Heap.init(startBackup, minSizeBackup, maxSizeBackup);
     }
@@ -355,8 +354,8 @@ public class HeapTest {
             prev = addr;
             addr = next;
         }
-        assertEquals("Nodes reached through tree links, differ from nodes, reached by direct traversal",
-                reachedInHeap, reachedInTree);
+        assertEquals(reachedInHeap, reachedInTree,
+                "Nodes reached through tree links, differ from nodes, reached by direct traversal");
     }
 
     private static void check(HeapNode node, int min, int max, Set<Integer> reached) {

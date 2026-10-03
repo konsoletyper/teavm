@@ -15,10 +15,10 @@
  */
 package org.teavm.metaprogramming.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.teavm.metaprogramming.Metaprogramming.accessor;
 import static org.teavm.metaprogramming.Metaprogramming.caller;
 import static org.teavm.metaprogramming.Metaprogramming.emit;
@@ -28,20 +28,19 @@ import static org.teavm.metaprogramming.Metaprogramming.handle;
 import static org.teavm.metaprogramming.Metaprogramming.lazy;
 import static org.teavm.metaprogramming.Metaprogramming.unsupportedCase;
 import java.util.function.Consumer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.extension.introspect.IntrospectAnnotation;
 import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
 import org.teavm.metaprogramming.Value;
 import org.teavm.metaprogramming.test.subpackage.MetaprogrammingGenerator;
 
 @CompileTime
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @SkipJVM
 @EachTestCompiledSeparately
 public class MetaprogrammingTest {

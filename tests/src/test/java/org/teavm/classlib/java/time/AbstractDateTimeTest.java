@@ -46,13 +46,15 @@
  */
 package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.time.DateTimeException;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.util.List;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Base test class for {@code DateTime}.
@@ -84,7 +86,7 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     public void basicTest_isSupported_DateTimeField_supported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : validFields()) {
-                assertEquals(sample.isSupported(field), true, "Failed on " + sample + " " + field);
+                assertTrue(sample.isSupported(field), "Failed on " + sample + " " + field);
             }
         }
     }
@@ -93,7 +95,7 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     public void basicTest_isSupported_DateTimeField_unsupported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : invalidFields()) {
-                assertEquals(sample.isSupported(field), false, "Failed on " + sample + " " + field);
+                assertFalse(sample.isSupported(field), "Failed on " + sample + " " + field);
             }
         }
     }
@@ -101,7 +103,7 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_isSupported_DateTimeField_null() {
         for (TemporalAccessor sample : samples()) {
-            assertEquals(sample.isSupported(null), false, "Failed on " + sample);
+            assertFalse(sample.isSupported(null), "Failed on " + sample);
         }
     }
 
@@ -235,7 +237,7 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_query() {
         for (TemporalAccessor sample : samples()) {
-            assertEquals(sample.query(dateTime -> "foo"), "foo");
+            assertEquals("foo", sample.query(dateTime -> "foo"));
         }
     }
 

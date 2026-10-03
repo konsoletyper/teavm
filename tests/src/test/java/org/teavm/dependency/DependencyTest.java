@@ -23,12 +23,12 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.common.DisjointSet;
 import org.teavm.diagnostics.Problem;
@@ -58,19 +58,23 @@ import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
 public class DependencyTest {
-    @Rule
-    public final TestName testName = new TestName();
+    private String testMethodName;
 
     private static ClassHolderSource classSource;
 
-    @BeforeClass
+    @BeforeAll
     public static void prepare() {
         classSource = new ClasspathClassHolderSource(new ReferenceCache());
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() {
         classSource = null;
+    }
+
+    @BeforeEach
+    public void captureTestMethodName(TestInfo testInfo) {
+        testMethodName = testInfo.getTestMethod().orElseThrow().getName();
     }
 
     @Test
@@ -133,18 +137,18 @@ public class DependencyTest {
                 return TeaVMProgressFeedback.CONTINUE;
             }
         });
-        vm.add(new DependencyTestPatcher(DependencyTestData.class.getName(), testName.getMethodName()));
+        vm.add(new DependencyTestPatcher(DependencyTestData.class.getName(), testMethodName));
         vm.installPlugins();
 
         MethodReference testMethod = new MethodReference(DependencyTestData.class,
-                testName.getMethodName(), void.class);
+                testMethodName, void.class);
         vm.setEntryPoint(DependencyTestData.class.getName());
         vm.build(fileName -> new ByteArrayOutputStream(), "out");
 
         List<Problem> problems = vm.getProblemProvider().getSevereProblems();
         if (!problems.isEmpty()) {
             Problem problem = problems.get(0);
-            Assert.fail("Error at " + problem.getLocation().getSourceLocation() + ": " + problem.getText());
+            Assertions.fail("Error at " + problem.getLocation().getSourceLocation() + ": " + problem.getText());
         }
 
         MethodHolder method = classSource.get(testMethod.getClassName()).getMethod(testMethod.getDescriptor());
@@ -165,13 +169,13 @@ public class DependencyTest {
             var expectedTypes = assertion.expectedTypes.clone();
             Arrays.sort(actualTypes, Comparator.comparing(Object::toString));
             Arrays.sort(expectedTypes, Comparator.comparing(Object::toString));
-            Assert.assertArrayEquals("Assertion at " + assertion.location, expectedTypes, actualTypes);
+            Assertions.assertArrayEquals(expectedTypes, actualTypes, "Assertion at " + assertion.location);
 
             if (!classInference.isOverflow(assertion.value)) {
                 var actualTypeSet = new HashSet<>(Arrays.asList(classInference.typesOf(assertion.value)));
-                Assert.assertTrue("Assertion at " + assertion.location + " (class inference), "
-                        + "expected: " + Arrays.toString(expectedTypes) + ", actual: " + actualTypeSet,
-                        actualTypeSet.containsAll(Arrays.asList(expectedTypes)));
+                Assertions.assertTrue(actualTypeSet.containsAll(Arrays.asList(expectedTypes)),
+                        "Assertion at " + assertion.location + " (class inference), "
+                        + "expected: " + Arrays.toString(expectedTypes) + ", actual: " + actualTypeSet);
             }
         }
     }

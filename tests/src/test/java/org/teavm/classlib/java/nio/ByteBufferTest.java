@@ -15,13 +15,13 @@
  */
 package org.teavm.classlib.java.nio;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.lang.ref.WeakReference;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
@@ -29,23 +29,22 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.java.lang.DoubleTest;
 import org.teavm.junit.OnlyPlatform;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class ByteBufferTest {
     @Test
     public void allocatesDirect() {
         ByteBuffer buffer = ByteBuffer.allocateDirect(100);
-        assertThat(buffer.isDirect(), is(true));
-        assertThat(buffer.isReadOnly(), is(false));
-        assertThat(buffer.capacity(), is(100));
-        assertThat(buffer.position(), is(0));
-        assertThat(buffer.limit(), is(100));
+        assertTrue(buffer.isDirect());
+        assertFalse(buffer.isReadOnly());
+        assertEquals(100, buffer.capacity());
+        assertEquals(0, buffer.position());
+        assertEquals(100, buffer.limit());
         try {
             buffer.reset();
             fail("Mark is expected to be undefined");
@@ -79,20 +78,20 @@ public class ByteBufferTest {
                 .put(ByteBuffer.wrap(new byte[] { 4, 5, 6 })));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void errorIfAllocatingDirectOfNegativeSize() {
-        ByteBuffer.allocateDirect(-2);
+        assertThrows(IllegalArgumentException.class, () -> ByteBuffer.allocateDirect(-2));
     }
 
     @Test
     public void allocatesSimple() {
         ByteBuffer buffer = ByteBuffer.allocate(100);
-        assertThat(buffer.isDirect(), is(false));
-        assertThat(buffer.isReadOnly(), is(false));
-        assertThat(buffer.hasArray(), is(true));
-        assertThat(buffer.capacity(), is(100));
-        assertThat(buffer.position(), is(0));
-        assertThat(buffer.limit(), is(100));
+        assertFalse(buffer.isDirect());
+        assertFalse(buffer.isReadOnly());
+        assertTrue(buffer.hasArray());
+        assertEquals(100, buffer.capacity());
+        assertEquals(0, buffer.position());
+        assertEquals(100, buffer.limit());
         try {
             buffer.reset();
             fail("Mark is expected to be undefined");
@@ -101,23 +100,23 @@ public class ByteBufferTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void errorIfAllocatingBufferOfNegativeSize() {
-        ByteBuffer.allocate(-1);
+        assertThrows(IllegalArgumentException.class, () -> ByteBuffer.allocate(-1));
     }
 
     @Test
     public void wrapsArray() {
         byte[] array = new byte[100];
         ByteBuffer buffer = ByteBuffer.wrap(array, 10, 70);
-        assertThat(buffer.isDirect(), is(false));
-        assertThat(buffer.isReadOnly(), is(false));
-        assertThat(buffer.hasArray(), is(true));
-        assertThat(buffer.array(), is(array));
-        assertThat(buffer.arrayOffset(), is(0));
-        assertThat(buffer.capacity(), is(100));
-        assertThat(buffer.position(), is(10));
-        assertThat(buffer.limit(), is(80));
+        assertFalse(buffer.isDirect());
+        assertFalse(buffer.isReadOnly());
+        assertTrue(buffer.hasArray());
+        assertArrayEquals(array, buffer.array());
+        assertEquals(0, buffer.arrayOffset());
+        assertEquals(100, buffer.capacity());
+        assertEquals(10, buffer.position());
+        assertEquals(80, buffer.limit());
         try {
             buffer.reset();
             fail("Mark is expected to be undefined");
@@ -125,9 +124,9 @@ public class ByteBufferTest {
             // ok
         }
         array[0] = 23;
-        assertThat(buffer.get(0), is((byte) 23));
+        assertEquals((byte) 23, buffer.get(0));
         buffer.put(1, (byte) 24);
-        assertThat(array[1], is((byte) 24));
+        assertEquals((byte) 24, array[1]);
     }
 
     @Test
@@ -159,8 +158,8 @@ public class ByteBufferTest {
     public void wrapsArrayWithoutOffset() {
         byte[] array = new byte[100];
         ByteBuffer buffer = ByteBuffer.wrap(array);
-        assertThat(buffer.position(), is(0));
-        assertThat(buffer.limit(), is(100));
+        assertEquals(0, buffer.position());
+        assertEquals(100, buffer.limit());
     }
 
     @Test
@@ -170,18 +169,18 @@ public class ByteBufferTest {
         buffer.flip();
         buffer.put(new byte[15]);
         ByteBuffer slice = buffer.slice();
-        assertThat(slice.array(), is(buffer.array()));
-        assertThat(slice.position(), is(0));
-        assertThat(slice.capacity(), is(45));
-        assertThat(slice.limit(), is(45));
-        assertThat(slice.isDirect(), is(false));
-        assertThat(slice.isReadOnly(), is(false));
+        assertArrayEquals(buffer.array(), slice.array());
+        assertEquals(0, slice.position());
+        assertEquals(45, slice.capacity());
+        assertEquals(45, slice.limit());
+        assertFalse(slice.isDirect());
+        assertFalse(slice.isReadOnly());
         slice.put(3, (byte) 23);
-        assertThat(buffer.get(18), is((byte) 23));
+        assertEquals((byte) 23, buffer.get(18));
         slice.put((byte) 24);
-        assertThat(buffer.get(15), is((byte) 24));
+        assertEquals((byte) 24, buffer.get(15));
         buffer.put(16, (byte) 25);
-        assertThat(slice.get(1), is((byte) 25));
+        assertEquals((byte) 25, slice.get(1));
     }
 
     @Test
@@ -199,9 +198,9 @@ public class ByteBufferTest {
     @Test
     public void slicePropertiesSameWithOriginal() {
         ByteBuffer buffer = ByteBuffer.allocate(100).asReadOnlyBuffer().slice();
-        assertThat(buffer.isReadOnly(), is(true));
+        assertTrue(buffer.isReadOnly());
         buffer = ByteBuffer.allocateDirect(100);
-        assertThat(buffer.isDirect(), is(true));
+        assertTrue(buffer.isDirect());
     }
 
     @Test
@@ -211,30 +210,30 @@ public class ByteBufferTest {
         buffer.flip();
         buffer.put(new byte[15]);
         ByteBuffer duplicate = buffer.duplicate();
-        assertThat(duplicate.array(), is(buffer.array()));
-        assertThat(duplicate.position(), is(15));
-        assertThat(duplicate.capacity(), is(100));
-        assertThat(duplicate.limit(), is(60));
-        assertThat(duplicate.isDirect(), is(false));
-        assertThat(duplicate.isReadOnly(), is(false));
+        assertArrayEquals(buffer.array(), duplicate.array());
+        assertEquals(15, duplicate.position());
+        assertEquals(100, duplicate.capacity());
+        assertEquals(60, duplicate.limit());
+        assertFalse(duplicate.isDirect());
+        assertFalse(duplicate.isReadOnly());
         duplicate.put(3, (byte) 23);
-        assertThat(buffer.get(3), is((byte) 23));
+        assertEquals((byte) 23, buffer.get(3));
         duplicate.put((byte) 24);
-        assertThat(buffer.get(15), is((byte) 24));
+        assertEquals((byte) 24, buffer.get(15));
         buffer.put(1, (byte) 25);
-        assertThat(duplicate.get(1), is((byte) 25));
-        assertThat(duplicate.array(), is(sameInstance(buffer.array())));
+        assertEquals((byte) 25, duplicate.get(1));
+        assertSame(buffer.array(), duplicate.array());
     }
 
     @Test
     public void getsByte() {
         byte[] array = {2, 3, 5, 7};
         ByteBuffer buffer = ByteBuffer.wrap(array);
-        assertThat(buffer.get(), is((byte) 2));
-        assertThat(buffer.get(), is((byte) 3));
+        assertEquals((byte) 2, buffer.get());
+        assertEquals((byte) 3, buffer.get());
         buffer = buffer.slice();
-        assertThat(buffer.get(), is((byte) 5));
-        assertThat(buffer.get(), is((byte) 7));
+        assertEquals((byte) 5, buffer.get());
+        assertEquals((byte) 7, buffer.get());
     }
 
     @Test
@@ -257,7 +256,7 @@ public class ByteBufferTest {
         byte[] array = new byte[4];
         ByteBuffer buffer = ByteBuffer.wrap(array);
         buffer.put((byte) 2).put((byte) 3).put((byte) 5).put((byte) 7);
-        assertThat(array, is(new byte[]{2, 3, 5, 7}));
+        assertArrayEquals(new byte[]{2, 3, 5, 7}, array);
     }
 
     @Test
@@ -270,27 +269,27 @@ public class ByteBufferTest {
             buffer.put((byte) 5);
             fail("Should have thrown error");
         } catch (BufferOverflowException e) {
-            assertThat(array[2], is((byte) 0));
+            assertEquals((byte) 0, array[2]);
         }
     }
 
-    @Test(expected = ReadOnlyBufferException.class)
+    @Test
     public void puttingByteToReadOnlyBufferCausesError() {
         byte[] array = new byte[4];
         ByteBuffer buffer = ByteBuffer.wrap(array).asReadOnlyBuffer();
-        buffer.put((byte) 2);
+        assertThrows(ReadOnlyBufferException.class, () -> buffer.put((byte) 2));
     }
 
     @Test
     public void getsByteFromGivenLocation() {
         byte[] array = {2, 3, 5, 7};
         ByteBuffer buffer = ByteBuffer.wrap(array);
-        assertThat(buffer.get(0), is((byte) 2));
-        assertThat(buffer.get(1), is((byte) 3));
+        assertEquals((byte) 2, buffer.get(0));
+        assertEquals((byte) 3, buffer.get(1));
         buffer.get();
         buffer = buffer.slice();
-        assertThat(buffer.get(1), is((byte) 5));
-        assertThat(buffer.get(2), is((byte) 7));
+        assertEquals((byte) 5, buffer.get(1));
+        assertEquals((byte) 7, buffer.get(2));
     }
 
     @Test
@@ -320,7 +319,7 @@ public class ByteBufferTest {
         buffer = buffer.slice();
         buffer.put(1, (byte) 5);
         buffer.put(2, (byte) 7);
-        assertThat(array, is(new byte[]{2, 3, 5, 7}));
+        assertArrayEquals(new byte[]{2, 3, 5, 7}, array);
     }
 
     @Test
@@ -340,11 +339,11 @@ public class ByteBufferTest {
         }
     }
 
-    @Test(expected = ReadOnlyBufferException.class)
+    @Test
     public void puttingByteToGivenLocationOfReadOnlyBufferCausesError() {
         byte[] array = new byte[4];
         ByteBuffer buffer = ByteBuffer.wrap(array).asReadOnlyBuffer();
-        buffer.put(0, (byte) 2);
+        assertThrows(ReadOnlyBufferException.class, () -> buffer.put(0, (byte) 2));
     }
 
     @Test
@@ -354,8 +353,8 @@ public class ByteBufferTest {
         buffer.get();
         byte[] receiver = new byte[2];
         buffer.get(receiver, 0, 2);
-        assertThat(buffer.position(), is(3));
-        assertThat(receiver, is(new byte[]{3, 5}));
+        assertEquals(3, buffer.position());
+        assertArrayEquals(new byte[]{3, 5}, receiver);
     }
 
     @Test
@@ -368,8 +367,8 @@ public class ByteBufferTest {
             buffer.get(receiver, 0, 4);
             fail("Error expected");
         } catch (BufferUnderflowException e) {
-            assertThat(receiver, is(new byte[4]));
-            assertThat(buffer.position(), is(0));
+            assertArrayEquals(new byte[4], receiver);
+            assertEquals(0, buffer.position());
         }
     }
 
@@ -382,22 +381,22 @@ public class ByteBufferTest {
             buffer.get(receiver, 0, 5);
             fail("Error expected");
         } catch (IndexOutOfBoundsException e) {
-            assertThat(receiver, is(new byte[4]));
-            assertThat(buffer.position(), is(0));
+            assertArrayEquals(new byte[4], receiver);
+            assertEquals(0, buffer.position());
         }
         try {
             buffer.get(receiver, -1, 3);
             fail("Error expected");
         } catch (IndexOutOfBoundsException e) {
-            assertThat(receiver, is(new byte[4]));
-            assertThat(buffer.position(), is(0));
+            assertArrayEquals(new byte[4], receiver);
+            assertEquals(0, buffer.position());
         }
         try {
             buffer.get(receiver, 6, 3);
             fail("Error expected");
         } catch (IndexOutOfBoundsException e) {
-            assertThat(receiver, is(new byte[4]));
-            assertThat(buffer.position(), is(0));
+            assertArrayEquals(new byte[4], receiver);
+            assertEquals(0, buffer.position());
         }
     }
 
@@ -408,8 +407,8 @@ public class ByteBufferTest {
         buffer.get();
         byte[] data = {2, 3};
         buffer.put(data, 0, 2);
-        assertThat(buffer.position(), is(3));
-        assertThat(array, is(new byte[]{0, 2, 3, 0}));
+        assertEquals(3, buffer.position());
+        assertArrayEquals(new byte[]{0, 2, 3, 0}, array);
     }
 
     @Test
@@ -419,8 +418,8 @@ public class ByteBufferTest {
         buffer.get();
         byte[] data = {};
         buffer.put(data, 0, 0);
-        assertThat(buffer.position(), is(1));
-        assertThat(array, is(new byte[]{0, 0, 0, 0}));
+        assertEquals(1, buffer.position());
+        assertArrayEquals(new byte[]{0, 0, 0, 0}, array);
     }
 
     @Test
@@ -443,10 +442,10 @@ public class ByteBufferTest {
         buffer.get();
         buffer.mark();
         buffer.compact();
-        assertThat(array, is(new byte[]{3, 5, 7, 7}));
-        assertThat(buffer.position(), is(3));
-        assertThat(buffer.limit(), is(4));
-        assertThat(buffer.capacity(), is(4));
+        assertArrayEquals(new byte[]{3, 5, 7, 7}, array);
+        assertEquals(3, buffer.position());
+        assertEquals(4, buffer.limit());
+        assertEquals(4, buffer.capacity());
         try {
             buffer.reset();
             fail("Exception expected");
@@ -463,15 +462,15 @@ public class ByteBufferTest {
         buffer.mark();
         buffer.position(2);
         buffer.reset();
-        assertThat(buffer.position(), is(1));
+        assertEquals(1, buffer.position());
     }
 
     @Test
     public void getsChar() {
         byte[] array = {0, 'A', 0, 'B'};
         ByteBuffer buffer = ByteBuffer.wrap(array);
-        assertThat(buffer.getChar(), is('A'));
-        assertThat(buffer.getChar(), is('B'));
+        assertEquals('A', buffer.getChar());
+        assertEquals('B', buffer.getChar());
         try {
             buffer.getChar();
             fail("Exception expected");
@@ -485,8 +484,8 @@ public class ByteBufferTest {
         } catch (BufferUnderflowException e) {
             // expected
         }
-        assertThat(buffer.getChar(0), is('A'));
-        assertThat(buffer.getChar(2), is('B'));
+        assertEquals('A', buffer.getChar(0));
+        assertEquals('B', buffer.getChar(2));
         try {
             buffer.getChar(3);
             fail("Exception expected");
@@ -514,12 +513,12 @@ public class ByteBufferTest {
         } catch (BufferOverflowException e) {
             // expected
         }
-        assertThat(buffer.get(0), is((byte) 0));
-        assertThat(buffer.get(1), is((byte) 'A'));
-        assertThat(buffer.get(2), is((byte) 0));
-        assertThat(buffer.get(3), is((byte) 'B'));
+        assertEquals((byte) 0, buffer.get(0));
+        assertEquals((byte) 'A', buffer.get(1));
+        assertEquals((byte) 0, buffer.get(2));
+        assertEquals((byte) 'B', buffer.get(3));
         buffer.putChar(0, 'E');
-        assertThat(buffer.get(1), is((byte) 'E'));
+        assertEquals((byte) 'E', buffer.get(1));
         try {
             buffer.putChar(3, 'F');
             fail("Exception expected");
@@ -532,8 +531,8 @@ public class ByteBufferTest {
     public void getsShort() {
         byte[] array = {0x23, 0x24, 0x25, 0x26};
         ByteBuffer buffer = ByteBuffer.wrap(array);
-        assertThat(buffer.getShort(), is((short) 0x2324));
-        assertThat(buffer.getShort(), is((short) 0x2526));
+        assertEquals((short) 0x2324, buffer.getShort());
+        assertEquals((short) 0x2526, buffer.getShort());
         try {
             buffer.getShort();
             fail("Exception expected");
@@ -547,8 +546,8 @@ public class ByteBufferTest {
         } catch (BufferUnderflowException e) {
             // expected
         }
-        assertThat(buffer.getShort(0), is((short) 0x2324));
-        assertThat(buffer.getShort(2), is((short) 0x2526));
+        assertEquals((short) 0x2324, buffer.getShort(0));
+        assertEquals((short) 0x2526, buffer.getShort(2));
         try {
             buffer.getShort(3);
             fail("Exception expected");
@@ -576,12 +575,12 @@ public class ByteBufferTest {
         } catch (BufferOverflowException e) {
             // expected
         }
-        assertThat(buffer.get(0), is((byte) 0x23));
-        assertThat(buffer.get(1), is((byte) 0x24));
-        assertThat(buffer.get(2), is((byte) 0x25));
-        assertThat(buffer.get(3), is((byte) 0x26));
+        assertEquals((byte) 0x23, buffer.get(0));
+        assertEquals((byte) 0x24, buffer.get(1));
+        assertEquals((byte) 0x25, buffer.get(2));
+        assertEquals((byte) 0x26, buffer.get(3));
         buffer.putShort(0, (short) 0x2B2C);
-        assertThat(buffer.get(1), is((byte) 0x2C));
+        assertEquals((byte) 0x2C, buffer.get(1));
         try {
             buffer.putShort(3, (short) 0x2D2E);
             fail("Exception expected");
@@ -594,8 +593,8 @@ public class ByteBufferTest {
     public void getsInt() {
         byte[] array = {0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30};
         ByteBuffer buffer = ByteBuffer.wrap(array);
-        assertThat(buffer.getInt(), is(0x23242526));
-        assertThat(buffer.getInt(), is(0x27282930));
+        assertEquals(0x23242526, buffer.getInt());
+        assertEquals(0x27282930, buffer.getInt());
         try {
             buffer.getInt();
             fail("Exception expected");
@@ -609,8 +608,8 @@ public class ByteBufferTest {
         } catch (BufferUnderflowException e) {
             // expected
         }
-        assertThat(buffer.getInt(0), is(0x23242526));
-        assertThat(buffer.getInt(4), is(0x27282930));
+        assertEquals(0x23242526, buffer.getInt(0));
+        assertEquals(0x27282930, buffer.getInt(4));
         try {
             buffer.getInt(7);
             fail("Exception expected");
@@ -706,8 +705,8 @@ public class ByteBufferTest {
     public void getsLong() {
         byte[] array = {0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38};
         ByteBuffer buffer = ByteBuffer.wrap(array);
-        assertThat(buffer.getLong(), is(0x2324252627282930L));
-        assertThat(buffer.getLong(), is(0x3132333435363738L));
+        assertEquals(0x2324252627282930L, buffer.getLong());
+        assertEquals(0x3132333435363738L, buffer.getLong());
         try {
             buffer.getLong();
             fail("Exception expected");
@@ -721,8 +720,8 @@ public class ByteBufferTest {
         } catch (BufferUnderflowException e) {
             // expected
         }
-        assertThat(buffer.getLong(0), is(0x2324252627282930L));
-        assertThat(buffer.getLong(8), is(0x3132333435363738L));
+        assertEquals(0x2324252627282930L, buffer.getLong(0));
+        assertEquals(0x3132333435363738L, buffer.getLong(8));
         try {
             buffer.getLong(16);
             fail("Exception expected");
@@ -750,16 +749,16 @@ public class ByteBufferTest {
         } catch (BufferOverflowException e) {
             // expected
         }
-        assertThat(buffer.get(0), is((byte) 0x23));
-        assertThat(buffer.get(1), is((byte) 0x24));
-        assertThat(buffer.get(2), is((byte) 0x25));
-        assertThat(buffer.get(3), is((byte) 0x26));
-        assertThat(buffer.get(4), is((byte) 0x27));
-        assertThat(buffer.get(5), is((byte) 0x28));
-        assertThat(buffer.get(6), is((byte) 0x29));
-        assertThat(buffer.get(7), is((byte) 0x30));
+        assertEquals((byte) 0x23, buffer.get(0));
+        assertEquals((byte) 0x24, buffer.get(1));
+        assertEquals((byte) 0x25, buffer.get(2));
+        assertEquals((byte) 0x26, buffer.get(3));
+        assertEquals((byte) 0x27, buffer.get(4));
+        assertEquals((byte) 0x28, buffer.get(5));
+        assertEquals((byte) 0x29, buffer.get(6));
+        assertEquals((byte) 0x30, buffer.get(7));
         buffer.putLong(0, 0xAABBCCDDEEFF0000L);
-        assertThat(buffer.get(1), is((byte) 0xBB));
+        assertEquals((byte) 0xBB, buffer.get(1));
         try {
             buffer.putLong(15, 0x0L);
             fail("Exception expected");
@@ -769,14 +768,14 @@ public class ByteBufferTest {
 
         buffer = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN);
         buffer.putLong(1, 0x2324252627282930L);
-        assertThat(buffer.get(1), is((byte) 0x30));
-        assertThat(buffer.get(2), is((byte) 0x29));
-        assertThat(buffer.get(3), is((byte) 0x28));
-        assertThat(buffer.get(4), is((byte) 0x27));
-        assertThat(buffer.get(5), is((byte) 0x26));
-        assertThat(buffer.get(6), is((byte) 0x25));
-        assertThat(buffer.get(7), is((byte) 0x24));
-        assertThat(buffer.get(8), is((byte) 0x23));
+        assertEquals((byte) 0x30, buffer.get(1));
+        assertEquals((byte) 0x29, buffer.get(2));
+        assertEquals((byte) 0x28, buffer.get(3));
+        assertEquals((byte) 0x27, buffer.get(4));
+        assertEquals((byte) 0x26, buffer.get(5));
+        assertEquals((byte) 0x25, buffer.get(6));
+        assertEquals((byte) 0x24, buffer.get(7));
+        assertEquals((byte) 0x23, buffer.get(8));
     }
 
     @Test

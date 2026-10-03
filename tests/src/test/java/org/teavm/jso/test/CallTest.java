@@ -15,8 +15,8 @@
  */
 package org.teavm.jso.test;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
@@ -25,11 +25,10 @@ import org.teavm.junit.AttachJavaScript;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
-import org.testng.annotations.Test;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @SkipJVM
 @OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately

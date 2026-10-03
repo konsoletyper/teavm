@@ -48,9 +48,10 @@ package org.teavm.classlib.java.time.chrono;
 
 import static java.time.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
 import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -62,20 +63,19 @@ import java.time.chrono.HijrahChronology;
 import java.time.chrono.HijrahDate;
 import java.time.chrono.IsoChronology;
 import java.time.temporal.TemporalAdjusters;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Ignore;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
 // TODO: looks like all of these tests don't work on JVM
-@Test
-@Ignore
-@RunWith(TeaVMTestRunner.class)
+@Disabled
+@TeaVMTest
 public class TestHijrahChronology {
 
     //-----------------------------------------------------------------------
@@ -85,17 +85,16 @@ public class TestHijrahChronology {
     public void test_chrono_byName() {
         Chronology c = HijrahChronology.INSTANCE;
         Chronology test = Chronology.of("Hijrah");
-        Assert.assertNotNull(test, "The Hijrah calendar could not be found byName");
-        Assert.assertEquals(test.getId(), "Hijrah-umalqura", "ID mismatch");
-        Assert.assertEquals(test.getCalendarType(), "islamic-umalqura", "Type mismatch");
-        Assert.assertEquals(test, c);
+        Assertions.assertNotNull(test, "The Hijrah calendar could not be found byName");
+        Assertions.assertEquals("Hijrah-umalqura", test.getId(), "ID mismatch");
+        Assertions.assertEquals("islamic-umalqura", test.getCalendarType(), "Type mismatch");
+        Assertions.assertEquals(c, test);
     }
 
     //-----------------------------------------------------------------------
     // creation, toLocalDate()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "samples")
-    Object[][] data_samples() {
+    static Object[][] data_samples() {
         return new Object[][] {
             {HijrahChronology.INSTANCE.date(1, 1, 1), LocalDate.of(622, 7, 19)},
             {HijrahChronology.INSTANCE.date(1, 1, 2), LocalDate.of(622, 7, 20)},
@@ -114,18 +113,19 @@ public class TestHijrahChronology {
         };
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_toLocalDate(ChronoLocalDate hijrahDate, LocalDate iso) {
-        assertEquals(LocalDate.from(hijrahDate), iso);
+        assertEquals(iso, LocalDate.from(hijrahDate));
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_fromCalendrical(ChronoLocalDate hijrahDate, LocalDate iso) {
-        assertEquals(HijrahChronology.INSTANCE.date(iso), hijrahDate);
+        assertEquals(hijrahDate, HijrahChronology.INSTANCE.date(iso));
     }
 
-    @DataProvider(name = "badDates")
-    Object[][] data_badDates() {
+    static Object[][] data_badDates() {
         return new Object[][] {
             {1728, 0, 0},
 
@@ -144,9 +144,10 @@ public class TestHijrahChronology {
         };
     }
 
-    @Test(dataProvider = "badDates", expectedExceptions = DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        HijrahChronology.INSTANCE.date(year, month, dom);
+        assertThrows(DateTimeException.class, () -> HijrahChronology.INSTANCE.date(year, month, dom));
     }
 
     //-----------------------------------------------------------------------
@@ -156,8 +157,8 @@ public class TestHijrahChronology {
     public void test_alignedDayOfWeekInMonth() {
         for (int dom = 1; dom <= 29; dom++) {
             HijrahDate date = HijrahChronology.INSTANCE.date(1728, 10, dom);
-            assertEquals(date.getLong(ALIGNED_WEEK_OF_MONTH), ((dom - 1) / 7) + 1);
-            assertEquals(date.getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH), ((dom - 1) % 7) + 1);
+            assertEquals(((dom - 1) / 7) + 1, date.getLong(ALIGNED_WEEK_OF_MONTH));
+            assertEquals(((dom - 1) % 7) + 1, date.getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
             date = date.plus(Duration.ofDays(1));
         }
     }
@@ -169,14 +170,14 @@ public class TestHijrahChronology {
     public void test_adjust1() {
         ChronoLocalDate base = HijrahChronology.INSTANCE.date(1728, 10, 28);
         ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, HijrahChronology.INSTANCE.date(1728, 10, 29));
+        assertEquals(HijrahChronology.INSTANCE.date(1728, 10, 29), test);
     }
 
     @Test
     public void test_adjust2() {
         ChronoLocalDate base = HijrahChronology.INSTANCE.date(1728, 12, 2);
         ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, HijrahChronology.INSTANCE.date(1728, 12, 30));
+        assertEquals(HijrahChronology.INSTANCE.date(1728, 12, 30), test);
     }
 
     //-----------------------------------------------------------------------
@@ -186,13 +187,13 @@ public class TestHijrahChronology {
     public void test_adjust_toLocalDate() {
         ChronoLocalDate hijrahDate = HijrahChronology.INSTANCE.date(1726, 1, 4);
         ChronoLocalDate test = hijrahDate.with(LocalDate.of(2012, 7, 6));
-        assertEquals(test, HijrahChronology.INSTANCE.date(1433, 8, 16));
+        assertEquals(HijrahChronology.INSTANCE.date(1433, 8, 16), test);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_adjust_toMonth() {
         ChronoLocalDate hijrahDate = HijrahChronology.INSTANCE.date(1726, 1, 4);
-        hijrahDate.with(Month.APRIL);
+        assertThrows(DateTimeException.class, () -> hijrahDate.with(Month.APRIL));
     }
 
     //-----------------------------------------------------------------------
@@ -202,21 +203,20 @@ public class TestHijrahChronology {
     public void test_LocalDate_adjustToHijrahDate() {
         ChronoLocalDate hijrahDate = HijrahChronology.INSTANCE.date(1728, 10, 29);
         LocalDate test = LocalDate.MIN.with(hijrahDate);
-        assertEquals(test, LocalDate.of(2298, 12, 4));
+        assertEquals(LocalDate.of(2298, 12, 4), test);
     }
 
     @Test
     public void test_LocalDateTime_adjustToHijrahDate() {
         ChronoLocalDate hijrahDate = HijrahChronology.INSTANCE.date(1728, 10, 29);
         LocalDateTime test = LocalDateTime.MIN.with(hijrahDate);
-        assertEquals(test, LocalDateTime.of(2298, 12, 4, 0, 0));
+        assertEquals(LocalDateTime.of(2298, 12, 4, 0, 0), test);
     }
 
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "toString")
-    Object[][] data_toString() {
+    static Object[][] data_toString() {
         return new Object[][] {
             {HijrahChronology.INSTANCE.date(1, 1, 1), "Hijrah-umalqura AH 1-01-01"},
             {HijrahChronology.INSTANCE.date(1728, 10, 28), "Hijrah-umalqura AH 1728-10-28"},
@@ -226,9 +226,10 @@ public class TestHijrahChronology {
         };
     }
 
-    @Test(dataProvider = "toString")
+    @ParameterizedTest
+    @MethodSource("data_toString")
     public void test_toString(ChronoLocalDate hijrahDate, String expected) {
-        assertEquals(hijrahDate.toString(), expected);
+        assertEquals(expected, hijrahDate.toString());
     }
 
     //-----------------------------------------------------------------------

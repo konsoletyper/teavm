@@ -31,6 +31,7 @@ class TestExceptionPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
         host.add(new TestExceptionDependencyListener());
+        host.add(new JupiterAssertionsTransformer());
 
         TeaVMJavaScriptHost jsHost = host.getExtension(TeaVMJavaScriptHost.class);
         if (jsHost != null) {

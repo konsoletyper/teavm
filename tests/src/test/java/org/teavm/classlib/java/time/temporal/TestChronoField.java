@@ -46,17 +46,16 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.time.temporal.ChronoField;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestChronoField {
 
     //-------------------------------------------------------------------------
@@ -64,9 +63,9 @@ public class TestChronoField {
     public void test_isDateBased() {
         for (ChronoField field : ChronoField.values()) {
             if (field == ChronoField.INSTANT_SECONDS || field == ChronoField.OFFSET_SECONDS) {
-                assertEquals(field.isTimeBased(), false);
+                assertFalse(field.isTimeBased());
             } else {
-                assertEquals(field.isDateBased(), field.getBaseUnit().isDateBased());
+                assertEquals(field.getBaseUnit().isDateBased(), field.isDateBased());
             }
         }
     }
@@ -75,9 +74,9 @@ public class TestChronoField {
     public void test_isTimeBased() {
         for (ChronoField field : ChronoField.values()) {
             if (field == ChronoField.INSTANT_SECONDS || field == ChronoField.OFFSET_SECONDS) {
-                assertEquals(field.isTimeBased(), false);
+                assertFalse(field.isTimeBased());
             } else {
-                assertEquals(field.isTimeBased(), field.getBaseUnit().isTimeBased());
+                assertEquals(field.getBaseUnit().isTimeBased(), field.isTimeBased());
             }
         }
     }

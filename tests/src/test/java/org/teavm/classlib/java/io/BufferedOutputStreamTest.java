@@ -32,19 +32,18 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class BufferedOutputStreamTest {
     public String fileString = "Test_All_Tests\nTest_java_io_BufferedInputStream\nTest_BufferedOutputStream\n"
             + "Test_java_io_ByteArrayInputStream\nTest_java_io_ByteArrayOutputStream\nTest_java_io_DataInputStream\n"
@@ -92,8 +91,7 @@ public class BufferedOutputStreamTest {
         BufferedOutputStream os = new BufferedOutputStream(baos, 600);
         os.write(fileString.getBytes(), 0, 500);
         os.flush();
-        assertEquals("Bytes not written after flush", 500,
-                ((ByteArrayOutputStream) baos).size());
+        assertEquals(500, ((ByteArrayOutputStream) baos).size(), "Bytes not written after flush");
     }
 
     private static class MockOutputStream extends OutputStream {
@@ -120,31 +118,28 @@ public class BufferedOutputStreamTest {
         BufferedOutputStream os = new BufferedOutputStream(baos, 512);
         os.write(fileString.getBytes(), 0, 500);
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        assertEquals("Bytes written, not buffered", 0, bais.available());
+        assertEquals(0, bais.available(), "Bytes written, not buffered");
         os.flush();
         bais = new ByteArrayInputStream(baos.toByteArray());
-        assertEquals("Bytes not written after flush", 500, bais.available());
+        assertEquals(500, bais.available(), "Bytes not written after flush");
         os.write(fileString.getBytes(), 500, 513);
         bais = new ByteArrayInputStream(baos.toByteArray());
-        assertTrue("Bytes not written when buffer full",
-                bais.available() >= 1000);
+        assertTrue(bais.available() >= 1000, "Bytes not written when buffer full");
         byte[] wbytes = new byte[1013];
         bais.read(wbytes, 0, 1013);
-        assertEquals("Incorrect bytes written", new String(wbytes, 0,
-                wbytes.length), fileString.substring(0, 1013));
+        assertEquals(new String(wbytes, 0, wbytes.length), fileString.substring(0, 1013), "Incorrect bytes written");
 
         // regression test for HARMONY-4177
         MockOutputStream mos = new MockOutputStream(5);
         BufferedOutputStream bos = new BufferedOutputStream(mos, 3);
         bos.write("a".getBytes());
         bos.write("bcde".getBytes());
-        assertEquals("Large data should be written directly", "abcde", mos
-                .getWritten());
+        assertEquals("abcde", mos.getWritten(), "Large data should be written directly");
         mos = new MockOutputStream(4);
         bos = new BufferedOutputStream(mos, 3);
         bos.write("ab".getBytes());
         bos.write("cd".getBytes());
-        assertEquals("Should flush before write", "ab", mos.getWritten());
+        assertEquals("ab", mos.getWritten(), "Should flush before write");
     }
 
     @Test
@@ -328,13 +323,13 @@ public class BufferedOutputStreamTest {
         BufferedOutputStream  os = new BufferedOutputStream(baos);
         os.write('t');
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        assertEquals("Byte written, not buffered", 0, bais.available());
+        assertEquals(0, bais.available(), "Byte written, not buffered");
         os.flush();
         bais = new ByteArrayInputStream(baos.toByteArray());
-        assertEquals("Byte not written after flush", 1, bais.available());
+        assertEquals(1, bais.available(), "Byte not written after flush");
         byte[] wbytes = new byte[1];
         bais.read(wbytes, 0, 1);
-        assertEquals("Incorrect byte written", 't', wbytes[0]);
+        assertEquals('t', wbytes[0], "Incorrect byte written");
     }
 
     @Test
@@ -346,22 +341,20 @@ public class BufferedOutputStreamTest {
         BufferedOutputStream buffos = new BufferedOutputStream(byteArrayos, 10);
         buffos.write(buffer, 0, 10);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 10, byteArrayis.available());
+        assertEquals(10, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 10, byteArrayis
-                .available());
+        assertEquals(10, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 10; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }
 
         buffos.write(buffer, 0, 10);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 20, byteArrayis.available());
+        assertEquals(20, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 20, byteArrayis
-                .available());
+        assertEquals(20, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 10; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }
@@ -371,11 +364,10 @@ public class BufferedOutputStreamTest {
 
         buffos.write(buffer, 0, 10);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 30, byteArrayis.available());
+        assertEquals(30, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 30, byteArrayis
-                .available());
+        assertEquals(30, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 10; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }
@@ -396,11 +388,10 @@ public class BufferedOutputStreamTest {
         BufferedOutputStream buffos = new BufferedOutputStream(byteArrayos, 20);
         buffos.write(buffer, 0, 10);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 0, byteArrayis.available());
+        assertEquals(0, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 10, byteArrayis
-                .available());
+        assertEquals(10, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 10; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }
@@ -408,11 +399,10 @@ public class BufferedOutputStreamTest {
         byte[] buffer2 = new byte[] { 'a', 'b', 'c', 'd' };
         buffos.write(buffer2, 0, 4);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 10, byteArrayis.available());
+        assertEquals(10, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 14, byteArrayis
-                .available());
+        assertEquals(14, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 10; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }
@@ -423,11 +413,10 @@ public class BufferedOutputStreamTest {
         byte[] buffer3 = new byte[] { 'e', 'f', 'g', 'h', 'i' };
         buffos.write(buffer3, 0, 5);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 14, byteArrayis.available());
+        assertEquals(14, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 19, byteArrayis
-                .available());
+        assertEquals(19, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 10; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }
@@ -440,11 +429,10 @@ public class BufferedOutputStreamTest {
 
         buffos.write(new byte[] { 'j', 'k' });
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 19, byteArrayis.available());
+        assertEquals(19, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 21, byteArrayis
-                .available());
+        assertEquals(21, byteArrayis.available(), "Bytes not written after flush");
 
         buffos.close();
     }
@@ -458,22 +446,20 @@ public class BufferedOutputStreamTest {
         BufferedOutputStream buffos = new BufferedOutputStream(byteArrayos, 5);
         buffos.write(buffer, 0, 4);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 0, byteArrayis.available());
+        assertEquals(0, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 4, byteArrayis
-                .available());
+        assertEquals(4, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 4; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }
 
         buffos.write(buffer, 0, 5);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 9, byteArrayis.available());
+        assertEquals(9, byteArrayis.available(), "Bytes written, not buffered");
         buffos.flush();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 9, byteArrayis
-                .available());
+        assertEquals(9, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 4; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }
@@ -491,11 +477,10 @@ public class BufferedOutputStreamTest {
         BufferedOutputStream buffos = new BufferedOutputStream(byteArrayos, 5);
         buffos.write(buffer, 0, 4);
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes written, not buffered", 0, byteArrayis.available());
+        assertEquals(0, byteArrayis.available(), "Bytes written, not buffered");
         buffos.close();
         byteArrayis = new ByteArrayInputStream(byteArrayos.toByteArray());
-        assertEquals("Bytes not written after flush", 4, byteArrayis
-                .available());
+        assertEquals(4, byteArrayis.available(), "Bytes not written after flush");
         for (int i = 0; i < 4; i++) {
             assertEquals(buffer[i], byteArrayis.read());
         }

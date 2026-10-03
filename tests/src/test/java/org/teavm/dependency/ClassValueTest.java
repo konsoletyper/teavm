@@ -15,10 +15,10 @@
  */
 package org.teavm.dependency;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayOutputStream;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -31,9 +31,9 @@ public class ClassValueTest {
     @Test
     public void simple() {
         ValueDependencyInfo info = runTestWithConsume("simpleSnippet").getClassValueNode();
-        assertTrue("Long must be consumed", info.hasType(ValueType.object("java.lang.Long")));
-        assertTrue("String must be consumed", info.hasType(ValueType.object("java.lang.String")));
-        assertTrue("Nothing except Long and String expected", info.getTypes().length == 2);
+        assertTrue(info.hasType(ValueType.object("java.lang.Long")), "Long must be consumed");
+        assertTrue(info.hasType(ValueType.object("java.lang.String")), "String must be consumed");
+        assertTrue(info.getTypes().length == 2, "Nothing except Long and String expected");
     }
 
     @SuppressWarnings("unused")
@@ -45,9 +45,9 @@ public class ClassValueTest {
     @Test
     public void fromGetClass() {
         ValueDependencyInfo info = runTestWithConsume("fromGetClassSnippet").getClassValueNode();
-        assertTrue("Long must be consumed", info.hasType(ValueType.object("java.lang.Long")));
-        assertTrue("String must be consumed", info.hasType(ValueType.object("java.lang.String")));
-        assertTrue("Nothing except Long and String expected", info.getTypes().length == 2);
+        assertTrue(info.hasType(ValueType.object("java.lang.Long")), "Long must be consumed");
+        assertTrue(info.hasType(ValueType.object("java.lang.String")), "String must be consumed");
+        assertTrue(info.getTypes().length == 2, "Nothing except Long and String expected");
     }
 
     @SuppressWarnings("unused")

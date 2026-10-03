@@ -46,10 +46,12 @@
  */
 package org.teavm.classlib.java.time.zone;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.time.ZoneOffset;
 import java.time.zone.ZoneRules;
 import java.time.zone.ZoneRulesException;
@@ -59,15 +61,13 @@ import java.util.HashSet;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test ZoneRulesProvider.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestZoneRulesProvider {
 
     //-----------------------------------------------------------------------
@@ -76,7 +76,7 @@ public class TestZoneRulesProvider {
     @Test
     public void test_getAvailableGroupIds() {
         Set<String> zoneIds = ZoneRulesProvider.getAvailableZoneIds();
-        assertEquals(zoneIds.contains("Europe/London"), true);
+        assertTrue(zoneIds.contains("Europe/London"));
         try {
             zoneIds.clear();
             fail();
@@ -84,7 +84,7 @@ public class TestZoneRulesProvider {
             // ignore
         }
         Set<String> zoneIds2 = ZoneRulesProvider.getAvailableZoneIds();
-        assertEquals(zoneIds2.contains("Europe/London"), true);
+        assertTrue(zoneIds2.contains("Europe/London"));
     }
 
     //-----------------------------------------------------------------------
@@ -95,17 +95,17 @@ public class TestZoneRulesProvider {
         ZoneRules rules = ZoneRulesProvider.getRules("Europe/London", false);
         assertNotNull(rules);
         ZoneRules rules2 = ZoneRulesProvider.getRules("Europe/London", false);
-        assertEquals(rules2, rules);
+        assertEquals(rules, rules2);
     }
 
-    @Test(expectedExceptions = ZoneRulesException.class)
+    @Test
     public void test_getRules_String_unknownId() {
-        ZoneRulesProvider.getRules("Europe/Lon", false);
+        assertThrows(ZoneRulesException.class, () -> ZoneRulesProvider.getRules("Europe/Lon", false));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_getRules_String_null() {
-        ZoneRulesProvider.getRules(null, false);
+        assertThrows(NullPointerException.class, () -> ZoneRulesProvider.getRules(null, false));
     }
 
     //-----------------------------------------------------------------------
@@ -116,23 +116,23 @@ public class TestZoneRulesProvider {
         NavigableMap<String, ZoneRules> versions = ZoneRulesProvider.getVersions("Europe/London");
         assertTrue(versions.size() >= 1);
         ZoneRules rules = ZoneRulesProvider.getRules("Europe/London", false);
-        assertEquals(versions.lastEntry().getValue(), rules);
+        assertEquals(rules, versions.lastEntry().getValue());
 
         NavigableMap<String, ZoneRules> copy = new TreeMap<>(versions);
         versions.clear();
-        assertEquals(versions.size(), 0);
+        assertEquals(0, versions.size());
         NavigableMap<String, ZoneRules> versions2 = ZoneRulesProvider.getVersions("Europe/London");
-        assertEquals(versions2, copy);
+        assertEquals(copy, versions2);
     }
 
-    @Test(expectedExceptions = ZoneRulesException.class)
+    @Test
     public void test_getVersions_String_unknownId() {
-        ZoneRulesProvider.getVersions("Europe/Lon");
+        assertThrows(ZoneRulesException.class, () -> ZoneRulesProvider.getVersions("Europe/Lon"));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_getVersions_String_null() {
-        ZoneRulesProvider.getVersions(null);
+        assertThrows(NullPointerException.class, () -> ZoneRulesProvider.getVersions(null));
     }
 
     //-----------------------------------------------------------------------
@@ -140,7 +140,7 @@ public class TestZoneRulesProvider {
     //-----------------------------------------------------------------------
     @Test
     public void test_refresh() {
-        assertEquals(ZoneRulesProvider.refresh(), false);
+        assertFalse(ZoneRulesProvider.refresh());
     }
 
     //-----------------------------------------------------------------------
@@ -149,12 +149,12 @@ public class TestZoneRulesProvider {
     @Test
     public void test_registerProvider() {
         Set<String> pre = ZoneRulesProvider.getAvailableZoneIds();
-        assertEquals(pre.contains("FooLocation"), false);
+        assertFalse(pre.contains("FooLocation"));
         ZoneRulesProvider.registerProvider(new MockTempProvider());
         Set<String> post = ZoneRulesProvider.getAvailableZoneIds();
-        assertEquals(post.contains("FooLocation"), true);
+        assertTrue(post.contains("FooLocation"));
 
-        assertEquals(ZoneRulesProvider.getRules("FooLocation", false), ZoneOffset.of("+01:45").getRules());
+        assertEquals(ZoneOffset.of("+01:45").getRules(), ZoneRulesProvider.getRules("FooLocation", false));
     }
 
     static class MockTempProvider extends ZoneRulesProvider {

@@ -15,23 +15,23 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class LinkedListTest {
     @Test
     public void emptyListCreated() {
@@ -88,22 +88,22 @@ public class LinkedListTest {
         assertEquals(1, iter.previousIndex());
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void listInteratorCantMoveBeyondLowerBound() {
         LinkedList<String> list = new LinkedList<>();
         list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
         ListIterator<String> iter = list.listIterator(1);
         assertEquals("1", iter.previous());
-        iter.previous();
+        assertThrows(NoSuchElementException.class, () -> iter.previous());
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void listInteratorCantMoveBeyondUpperBound() {
         LinkedList<String> list = new LinkedList<>();
         list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
         ListIterator<String> iter = list.listIterator(4);
         assertEquals("b", iter.next());
-        iter.next();
+        assertThrows(NoSuchElementException.class, () -> iter.next());
     }
 
     @Test
@@ -152,12 +152,12 @@ public class LinkedListTest {
         assertEquals(4, list.size());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void freshListIteratorWithOffsetDoesNotAllowRemoval() {
         LinkedList<String> list = new LinkedList<>();
         list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
         ListIterator<String> iter = list.listIterator(2);
-        iter.remove();
+        assertThrows(IllegalStateException.class, () -> iter.remove());
     }
 
     @Test

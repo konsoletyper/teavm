@@ -16,16 +16,15 @@
 
 package org.teavm.classlib.java.net;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class URLEncoderTest {
 
     @Test
@@ -35,9 +34,9 @@ public class URLEncoderTest {
         final String url2 = "telnet://justWantToHaveFun.com:400";
         final String url3 = "file://myServer.org/a file with spaces.jpg";
 
-        assertEquals("1. Incorrect encoding/decoding", url, URLDecoder.decode(URLEncoder.encode(url)));
-        assertEquals("2. Incorrect encoding/decoding", url2, URLDecoder.decode(URLEncoder.encode(url2)));
-        assertEquals("3. Incorrect encoding/decoding", url3, URLDecoder.decode(URLEncoder.encode(url3)));
+        assertEquals(url, URLDecoder.decode(URLEncoder.encode(url)), "1. Incorrect encoding/decoding");
+        assertEquals(url2, URLDecoder.decode(URLEncoder.encode(url2)), "2. Incorrect encoding/decoding");
+        assertEquals(url3, URLDecoder.decode(URLEncoder.encode(url3)), "3. Incorrect encoding/decoding");
     }
 
     @Test

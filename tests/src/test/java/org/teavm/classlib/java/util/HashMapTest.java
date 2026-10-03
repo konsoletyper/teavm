@@ -15,12 +15,12 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,13 +34,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.MapTest2Support;
 import org.teavm.classlib.support.UnmodifiableCollectionTestSupport;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class HashMapTest {
     private HashMap<String, String> ht10;
 
@@ -77,7 +76,7 @@ public class HashMapTest {
 
         HashMap<String, String> h = new HashMap<>();
 
-        assertEquals("Created incorrect HashMap", 0, h.size());
+        assertEquals(0, h.size(), "Created incorrect HashMap");
     }
 
     @Test
@@ -85,24 +84,24 @@ public class HashMapTest {
         // Test for method java.util.HashMap(int)
         HashMap<String, String> h = new HashMap<>(9);
 
-        assertEquals("Created incorrect HashMap", 0, h.size());
+        assertEquals(0, h.size(), "Created incorrect HashMap");
 
         HashMap<String, String> empty = new HashMap<>(0);
-        assertNull("Empty HashMap access", empty.get("nothing"));
+        assertNull(empty.get("nothing"), "Empty HashMap access");
         empty.put("something", "here");
-        assertEquals("cannot get element", "here", empty.get("something"));
+        assertEquals("here", empty.get("something"), "cannot get element");
     }
 
     @Test
     public void test_ConstructorIF() {
         // Test for method java.util.HashMap(int, float)
         HashMap<String, String> h = new HashMap<>(10, 0.5f);
-        assertEquals("Created incorrect HashMap", 0, h.size());
+        assertEquals(0, h.size(), "Created incorrect HashMap");
 
         HashMap<String, String> empty = new HashMap<>(0, 0.75f);
-        assertNull("Empty HashMap access", empty.get("nothing"));
+        assertNull(empty.get("nothing"), "Empty HashMap access");
         empty.put("something", "here");
-        assertEquals("cannot get element", "here", empty.get("something"));
+        assertEquals("here", empty.get("something"), "cannot get element");
     }
 
     @Test
@@ -114,8 +113,8 @@ public class HashMapTest {
         map.put("Gah", firstVal);
         map.put("Ooga", secondVal);
         HashMap<String, Object> ht = new HashMap<>(map);
-        assertSame("a) Incorrect HashMap constructed", firstVal, ht.get("Gah"));
-        assertSame("b) Incorrect HashMap constructed", secondVal, ht.get("Ooga"));
+        assertSame(firstVal, ht.get("Gah"), "a) Incorrect HashMap constructed");
+        assertSame(secondVal, ht.get("Ooga"), "b) Incorrect HashMap constructed");
     }
 
     public void test_HashMap_Constructor() {
@@ -129,10 +128,10 @@ public class HashMapTest {
         // Test for method void java.util.HashMap.clear()
         HashMap<String, String> h = hashMapClone(htfull);
         h.clear();
-        assertEquals("HashMap was not cleared", 0, h.size());
+        assertEquals(0, h.size(), "HashMap was not cleared");
         Iterator<String> el = h.values().iterator();
         Iterator<String> keys = h.keySet().iterator();
-        assertTrue("HashMap improperly cleared", !el.hasNext() && !keys.hasNext());
+        assertTrue(!el.hasNext() && !keys.hasNext(), "HashMap improperly cleared");
     }
 
     @Test
@@ -141,7 +140,7 @@ public class HashMapTest {
 
         @SuppressWarnings("unchecked")
         HashMap<String, String> h = (HashMap<String, String>) htfull.clone();
-        assertEquals("Clone different size than original", h.size(), htfull.size());
+        assertEquals(h.size(), htfull.size(), "Clone different size than original");
 
         Iterator<String> org = htfull.keySet().iterator();
         Iterator<String> cpy = h.keySet().iterator();
@@ -151,18 +150,18 @@ public class HashMapTest {
         while (org.hasNext()) {
             okey = org.next();
             ckey = cpy.next();
-            assertEquals("Key comparison failed", okey, ckey);
-            assertEquals("Value comparison failed", htfull.get(okey), h.get(ckey));
+            assertEquals(okey, ckey, "Key comparison failed");
+            assertEquals(htfull.get(okey), h.get(ckey), "Value comparison failed");
         }
-        assertFalse("Copy has more keys than original", cpy.hasNext());
+        assertFalse(cpy.hasNext(), "Copy has more keys than original");
     }
 
     @Test
     public void test_containsLjava_lang_Object() {
         // Test for method boolean
         // java.util.HashMap.contains(java.lang.Object)
-        assertTrue("Element not found", ht10.containsValue("Val 7"));
-        assertFalse("Invalid element found", ht10.containsValue("ZZZZZZZZZZZZZZZZ"));
+        assertTrue(ht10.containsValue("Val 7"), "Element not found");
+        assertFalse(ht10.containsValue("ZZZZZZZZZZZZZZZZ"), "Invalid element found");
     }
 
     @Test
@@ -170,8 +169,8 @@ public class HashMapTest {
         // Test for method boolean
         // java.util.HashMap.containsKey(java.lang.Object)
 
-        assertTrue("Failed to find key", htfull.containsKey("FKey 4"));
-        assertFalse("Failed to find key", htfull.containsKey("FKey 99"));
+        assertTrue(htfull.containsKey("FKey 4"), "Failed to find key");
+        assertFalse(htfull.containsKey("FKey 99"), "Failed to find key");
     }
 
     @Test
@@ -179,9 +178,9 @@ public class HashMapTest {
         // Test for method boolean
         // java.util.HashMap.containsValue(java.lang.Object)
         for (String s : elmList) {
-            assertTrue("Returned false for valid value", ht10.containsValue(s));
+            assertTrue(ht10.containsValue(s), "Returned false for valid value");
         }
-        assertFalse("Returned true for invalid value", ht10.containsValue(new Object()));
+        assertFalse(ht10.containsValue(new Object()), "Returned true for invalid value");
     }
 
     @Test
@@ -190,10 +189,10 @@ public class HashMapTest {
         Iterator<String> elms = ht10.values().iterator();
         while (elms.hasNext()) {
             String s = elms.next();
-            assertTrue("Missing key from enumeration", elmList.contains(s));
+            assertTrue(elmList.contains(s), "Missing key from enumeration");
         }
 
-        assertEquals("All keys not retrieved", 10, ht10.size());
+        assertEquals(10, ht10.size(), "All keys not retrieved");
 
         assertFalse(elms.hasNext());
         try {
@@ -232,7 +231,7 @@ public class HashMapTest {
             s2.add(entry.getValue());
         }
         for (String string : elmList) {
-            assertTrue("Returned incorrect entry set", s2.contains(string));
+            assertTrue(s2.contains(string), "Returned incorrect entry set");
         }
 
         ht10.entrySet().iterator().next().setValue(null);
@@ -242,8 +241,8 @@ public class HashMapTest {
     public void test_equalsLjava_lang_Object() {
         // Test for method boolean java.util.HashMap.equals(java.lang.Object)
         HashMap<String, String> h = hashMapClone(ht10);
-        assertEquals("Returned false for equal tables", ht10, h);
-        assertFalse("Returned true for unequal tables", ht10.equals(htfull));
+        assertEquals(ht10, h, "Returned false for equal tables");
+        assertFalse(ht10.equals(htfull), "Returned true for unequal tables");
     }
 
     @Test
@@ -251,7 +250,7 @@ public class HashMapTest {
         // Test for method java.lang.Object
         // java.util.HashMap.get(java.lang.Object)
         HashMap<String, String> h = hashMapClone(htfull);
-        assertEquals("Could not retrieve element", "FVal 2", h.get("FKey 2"));
+        assertEquals("FVal 2", h.get("FKey 2"), "Could not retrieve element");
 
         // Regression for HARMONY-262
         org.teavm.classlib.java.util.HashMapTest.ReusableKey
@@ -274,8 +273,8 @@ public class HashMapTest {
         for (Map.Entry<String, String> e : ht10.entrySet()) {
             expectedHash += e.hashCode();
         }
-        assertEquals("Incorrect hashCode returned.  Wanted: " + expectedHash + " got: " + ht10.hashCode(),
-                expectedHash, ht10.hashCode());
+        assertEquals(expectedHash, ht10.hashCode(),
+                "Incorrect hashCode returned.  Wanted: " + expectedHash + " got: " + ht10.hashCode());
         assertEquals(ht10.hashCode(), ht10.entrySet().hashCode());
     }
 
@@ -283,8 +282,8 @@ public class HashMapTest {
     public void test_isEmpty() {
         // Test for method boolean java.util.HashMap.isEmpty()
 
-        assertFalse("isEmpty returned incorrect value", ht10.isEmpty());
-        assertTrue("isEmpty returned incorrect value", new HashMap<String, String>().isEmpty());
+        assertFalse(ht10.isEmpty(), "isEmpty returned incorrect value");
+        assertTrue(new HashMap<String, String>().isEmpty(), "isEmpty returned incorrect value");
     }
 
     @Test
@@ -294,10 +293,10 @@ public class HashMapTest {
         Iterator<String> keys = ht10.keySet().iterator();
         while (keys.hasNext()) {
             String s = keys.next();
-            assertTrue("Missing key from enumeration", keyList.contains(s));
+            assertTrue(keyList.contains(s), "Missing key from enumeration");
         }
 
-        assertEquals("All keys not retrieved", 10, ht10.size());
+        assertEquals(10, ht10.size(), "All keys not retrieved");
 
         assertFalse(keys.hasNext());
         try {
@@ -329,7 +328,7 @@ public class HashMapTest {
         // Test for method java.util.Set java.util.HashMap.keySet()
         Set<String> s = ht10.keySet();
         for (String string : keyList) {
-            assertTrue("Returned incorrect key set", s.contains(string));
+            assertTrue(s.contains(string), "Returned incorrect key set");
         }
 
         Map<Integer, String> map = new HashMap<>(101);
@@ -344,9 +343,9 @@ public class HashMapTest {
         ArrayList<Integer> list = new ArrayList<>(Arrays.asList(1, 102, 203));
         list.remove(remove1);
         list.remove(remove2);
-        assertEquals("Wrong result", it.next(), list.get(0));
-        assertEquals("Wrong size", 1, map.size());
-        assertEquals("Wrong contents", map.keySet().iterator().next(), list.get(0));
+        assertEquals(it.next(), list.get(0), "Wrong result");
+        assertEquals(1, map.size(), "Wrong size");
+        assertEquals(map.keySet().iterator().next(), list.get(0), "Wrong contents");
 
         Map<Integer, String> map2 = new HashMap<>(101);
         map2.put(1, "1");
@@ -361,9 +360,9 @@ public class HashMapTest {
         }
         it2.hasNext();
         it2.remove();
-        assertEquals("Wrong result 2", it2.next(), next);
-        assertEquals("Wrong size 2", 1, map2.size());
-        assertEquals("Wrong contents 2", map2.keySet().iterator().next(), next);
+        assertEquals(it2.next(), next, "Wrong result 2");
+        assertEquals(1, map2.size(), "Wrong size 2");
+        assertEquals(map2.keySet().iterator().next(), next, "Wrong contents 2");
 
         Iterator<String> enumeration = s.iterator();
         assertTrue(enumeration.hasNext());
@@ -372,8 +371,8 @@ public class HashMapTest {
     @Test
     public void test_keySet_subtest0() {
         Set<String> s1 = ht10.keySet();
-        assertTrue("should contain key", s1.remove("Key 0"));
-        assertFalse("should not contain key", s1.remove("Key 0"));
+        assertTrue(s1.remove("Key 0"), "should contain key");
+        assertFalse(s1.remove("Key 0"), "should not contain key");
     }
 
     @Test
@@ -411,7 +410,7 @@ public class HashMapTest {
         } catch (NoSuchElementException e) {
             exception = true;
         }
-        assertFalse("unexpected NoSuchElementException", exception);
+        assertFalse(exception, "unexpected NoSuchElementException");
     }
 
     @Test
@@ -421,7 +420,7 @@ public class HashMapTest {
         HashMap<String, Integer> h = hashMapClone(ht100);
         Integer key = 100;
         h.put("Value 100", key);
-        assertTrue("Key/Value not inserted", h.size() == 1 && h.containsValue(key));
+        assertTrue(h.size() == 1 && h.containsValue(key), "Key/Value not inserted");
     }
 
     @Test
@@ -430,7 +429,7 @@ public class HashMapTest {
         HashMap<String, String> h = new HashMap<>();
         h.putAll(ht10);
         for (String x : keyList) {
-            assertEquals("Failed to put all elements", h.get(x), ht10.get(x));
+            assertEquals(h.get(x), ht10.get(x), "Failed to put all elements");
         }
     }
 
@@ -440,7 +439,7 @@ public class HashMapTest {
         // java.util.HashMap.remove(java.lang.Object)
         HashMap<String, String> h = hashMapClone(htfull);
         Object k = h.remove("FKey 0");
-        assertTrue("Remove failed", !h.containsKey("FKey 0") || k == null);
+        assertTrue(!h.containsKey("FKey 0") || k == null, "Remove failed");
     }
 
     @Test
@@ -460,19 +459,19 @@ public class HashMapTest {
     @Test
     public void test_size() {
         // Test for method int java.util.HashMap.size()
-        assertTrue("Returned invalid size", ht10.size() == 10 && ht100.isEmpty());
+        assertTrue(ht10.size() == 10 && ht100.isEmpty(), "Returned invalid size");
     }
 
     @Test
     public void test_toString() {
         // Test for method java.lang.String java.util.HashMap.toString()
         HashMap<Serializable, Serializable> h = new HashMap<>();
-        assertEquals("Incorrect toString for Empty table", "{}", h.toString());
+        assertEquals("{}", h.toString(), "Incorrect toString for Empty table");
 
         h.put("one", "1");
         h.put("two", h);
         String result = h.toString();
-        assertTrue("should contain self ref", result.contains("(this"));
+        assertTrue(result.contains("(this"), "should contain self ref");
     }
 
     @Test
@@ -480,7 +479,7 @@ public class HashMapTest {
         // Test for method java.util.Collection java.util.HashMap.values()
         Collection<String> c = ht10.values();
         for (String s : elmList) {
-            assertTrue("Returned incorrect values", c.contains(s));
+            assertTrue(c.contains(s), "Returned incorrect values");
         }
 
         HashMap<Integer, Integer> myHashMap = new HashMap<>();
@@ -490,8 +489,8 @@ public class HashMapTest {
         Collection<Integer> values = myHashMap.values();
         new UnmodifiableCollectionTestSupport(values).runTest();
         values.remove(0);
-        assertFalse("Removing from the values collection should remove from the original map",
-                myHashMap.containsValue(0));
+        assertFalse(myHashMap.containsValue(0),
+                "Removing from the values collection should remove from the original map");
     }
 
     @Test
@@ -656,9 +655,9 @@ public class HashMapTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly changed", "changed", ht10.get("Key" + i));
+                assertEquals("changed", ht10.get("Key" + i), "Value was incorrectly changed");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -675,9 +674,9 @@ public class HashMapTest {
         assertEquals(11, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
-        assertEquals("New value expected", "added", ht10.get("absent key"));
+        assertEquals("added", ht10.get("absent key"), "New value expected");
     }
 
     @Test
@@ -693,9 +692,9 @@ public class HashMapTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertNull("Value was unexpectedly present in map", ht10.get("Key" + i));
+                assertNull(ht10.get("Key" + i), "Value was unexpectedly present in map");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -712,9 +711,9 @@ public class HashMapTest {
         assertEquals(11, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
-        assertEquals("New value expected", "added", ht10.get("absent key"));
+        assertEquals("added", ht10.get("absent key"), "New value expected");
     }
 
     @Test
@@ -729,7 +728,7 @@ public class HashMapTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 
@@ -745,7 +744,7 @@ public class HashMapTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 
@@ -762,9 +761,9 @@ public class HashMapTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+                assertEquals("changed", ht10.get("Key" + i), "Value was incorrectly updated");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -781,7 +780,7 @@ public class HashMapTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 
@@ -798,9 +797,9 @@ public class HashMapTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertNull("Value unexpectedly present", ht10.get("Key" + i));
+                assertNull(ht10.get("Key" + i), "Value unexpectedly present");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -817,9 +816,9 @@ public class HashMapTest {
         assertEquals(11, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
-        assertEquals("New value expected", "changed", ht10.get("absent key"));
+        assertEquals("changed", ht10.get("absent key"), "New value expected");
     }
 
     @Test
@@ -835,9 +834,9 @@ public class HashMapTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly updated", "remapped", ht10.get("Key" + i));
+                assertEquals("remapped", ht10.get("Key" + i), "Value was incorrectly updated");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -854,9 +853,9 @@ public class HashMapTest {
         assertEquals(11, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
-        assertEquals("New value expected", "changed", ht10.get("absent key"));
+        assertEquals("changed", ht10.get("absent key"), "New value expected");
     }
 
     @Test
@@ -872,9 +871,9 @@ public class HashMapTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertNull("Null value expected", ht10.get("Key" + i));
+                assertNull(ht10.get("Key" + i), "Null value expected");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -892,9 +891,9 @@ public class HashMapTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+                assertEquals("changed", ht10.get("Key" + i), "Value was incorrectly updated");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -911,7 +910,7 @@ public class HashMapTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 
@@ -928,9 +927,9 @@ public class HashMapTest {
 
         for (int i = 0; i < 10; i++) {
             if (i == 5) {
-                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+                assertEquals("changed", ht10.get("Key" + i), "Value was incorrectly updated");
             } else {
-                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+                assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
             }
         }
     }
@@ -947,7 +946,7 @@ public class HashMapTest {
         assertEquals(10, ht10.size());
 
         for (int i = 0; i < 10; i++) {
-            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            assertEquals("Val" + i, ht10.get("Key" + i), "Value was unexpectedly changed");
         }
     }
 

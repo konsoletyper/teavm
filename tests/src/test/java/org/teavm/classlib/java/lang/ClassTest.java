@@ -15,12 +15,13 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -28,13 +29,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.SkipPlatform;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class ClassTest {
     @Test
     public void classNameEvaluated() {
@@ -115,10 +115,10 @@ public class ClassTest {
         assertEquals(Integer.valueOf(23), Integer.class.cast(obj));
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test
     public void inappropriateObjectCastingFails() {
         Object obj = 23;
-        Float.class.cast(obj);
+        assertThrows(ClassCastException.class, () -> Float.class.cast(obj));
     }
 
     @Test

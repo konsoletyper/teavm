@@ -32,9 +32,9 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -44,11 +44,10 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Locale;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class PrintWriterTest {
     static class Bogus {
         public String toString() {
@@ -76,9 +75,9 @@ public class PrintWriterTest {
         try {
             br = new BufferedReader(new StringReader(bao.toString()));
             s = br.readLine();
-            assertEquals("Incorrect string written/read", "Random Chars", s);
+            assertEquals("Random Chars", s, "Incorrect string written/read");
             s = br.readLine();
-            assertTrue("Incorrect string written/read: " + s, s.equals("Hello World"));
+            assertTrue(s.equals("Hello World"), "Incorrect string written/read: " + s);
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
@@ -93,13 +92,13 @@ public class PrintWriterTest {
         try {
             br = new BufferedReader(new StringReader(bao.toString()));
             s = br.readLine();
-            assertTrue("Incorrect string written/read: " + s, s.equals("Random Chars"));
+            assertTrue(s.equals("Random Chars"), "Incorrect string written/read: " + s);
             pw.flush();
             br = new BufferedReader(new StringReader(bao.toString()));
             s = br.readLine();
-            assertTrue("Incorrect string written/read: " + s, s.equals("Random Chars"));
+            assertTrue(s.equals("Random Chars"), "Incorrect string written/read: " + s);
             s = br.readLine();
-            assertTrue("Incorrect string written/read: " + s, s.equals("Hello World"));
+            assertTrue(s.equals("Hello World"), "Incorrect string written/read: " + s);
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
@@ -111,7 +110,7 @@ public class PrintWriterTest {
         pw = new PrintWriter(sw);
         pw.print("Hello");
         pw.flush();
-        assertEquals("Failed to construct proper writer", "Hello", sw.toString());
+        assertEquals("Hello", sw.toString(), "Failed to construct proper writer");
     }
 
     @Test
@@ -120,21 +119,21 @@ public class PrintWriterTest {
         pw = new PrintWriter(sw, true);
         pw.print("Hello");
         // Auto-flush should have happened
-        assertEquals("Failed to construct proper writer",  "Hello", sw.toString());
+        assertEquals("Hello",  sw.toString(), "Failed to construct proper writer");
     }
 
     @Test
     public void checkError() {
         pw.close();
         pw.print(490000000000.08765);
-        assertTrue("Failed to return error", pw.checkError());
+        assertTrue(pw.checkError(), "Failed to return error");
     }
 
     @Test
     public void close() {
         pw.close();
         pw.println("l");
-        assertTrue("Write on closed stream failed to generate error", pw.checkError());
+        assertTrue(pw.checkError(), "Write on closed stream failed to generate error");
     }
 
     @Test
@@ -142,7 +141,7 @@ public class PrintWriterTest {
         final double dub = 490000000000.08765;
         pw.print(dub);
         pw.flush();
-        assertTrue("Failed to flush", new String(bao.toByteArray()).equals(String.valueOf(dub)));
+        assertTrue(new String(bao.toByteArray()).equals(String.valueOf(dub)), "Failed to flush");
     }
 
     @Test
@@ -158,14 +157,14 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect char[] string: " + s, s.equals("Hello World"));
+        assertTrue(s.equals("Hello World"), "Wrote incorrect char[] string: " + s);
     }
 
     @Test
     public void printC() {
         pw.print('c');
         pw.flush();
-        assertEquals("Wrote incorrect char string", "c", new String(bao.toByteArray()));
+        assertEquals("c", new String(bao.toByteArray()), "Wrote incorrect char string");
     }
 
     @Test
@@ -173,7 +172,7 @@ public class PrintWriterTest {
         final double dub = 490000000000.08765;
         pw.print(dub);
         pw.flush();
-        assertTrue("Wrote incorrect double string", new String(bao.toByteArray()).equals(String.valueOf(dub)));
+        assertTrue(new String(bao.toByteArray()).equals(String.valueOf(dub)), "Wrote incorrect double string");
     }
 
     @Test
@@ -181,52 +180,52 @@ public class PrintWriterTest {
         final float flo = 49.08765f;
         pw.print(flo);
         pw.flush();
-        assertTrue("Wrote incorrect float string", new String(bao.toByteArray()).equals(String.valueOf(flo)));
+        assertTrue(new String(bao.toByteArray()).equals(String.valueOf(flo)), "Wrote incorrect float string");
     }
 
     @Test
     public void printI() {
         pw.print(4908765);
         pw.flush();
-        assertEquals("Wrote incorrect int string", "4908765", new String(bao.toByteArray()));
+        assertEquals("4908765", new String(bao.toByteArray()), "Wrote incorrect int string");
     }
 
     @Test
     public void printJ() {
         pw.print(49087650000L);
         pw.flush();
-        assertEquals("Wrote incorrect long string", "49087650000", new String(bao.toByteArray()));
+        assertEquals("49087650000", new String(bao.toByteArray()), "Wrote incorrect long string");
     }
 
     @Test
     public void printLjava_lang_Object() {
         pw.print((Object) null);
         pw.flush();
-        assertEquals("Did not write null", "null", new String(bao.toByteArray()));
+        assertEquals("null", new String(bao.toByteArray()), "Did not write null");
         bao.reset();
 
         pw.print(new Bogus());
         pw.flush();
-        assertEquals("Wrote in incorrect Object string", "Bogus", new String(bao.toByteArray()));
+        assertEquals("Bogus", new String(bao.toByteArray()), "Wrote in incorrect Object string");
     }
 
     @Test
     public void printLjava_lang_String() {
         pw.print((String) null);
         pw.flush();
-        assertEquals("did not write null", "null", new String(bao.toByteArray()));
+        assertEquals("null", new String(bao.toByteArray()), "did not write null");
         bao.reset();
 
         pw.print("Hello World");
         pw.flush();
-        assertEquals("Wrote incorrect  string", "Hello World", new String(bao.toByteArray()));
+        assertEquals("Hello World", new String(bao.toByteArray()), "Wrote incorrect  string");
     }
 
     @Test
     public void printZ() {
         pw.print(true);
         pw.flush();
-        assertEquals("Wrote in incorrect boolean string", "true", new String(bao.toByteArray()));
+        assertEquals("true", new String(bao.toByteArray()), "Wrote in incorrect boolean string");
     }
 
     @Test
@@ -239,11 +238,11 @@ public class PrintWriterTest {
         try {
             br = new BufferedReader(new StringReader(bao.toString()));
             s = br.readLine();
-            assertTrue("Wrote incorrect line: " + s, s.equals("Blarg"));
+            assertTrue(s.equals("Blarg"), "Wrote incorrect line: " + s);
             s = br.readLine();
-            assertTrue("Wrote incorrect line: " + s, s.equals(""));
+            assertTrue(s.equals(""), "Wrote incorrect line: " + s);
             s = br.readLine();
-            assertTrue("Wrote incorrect line: " + s, s.equals("Bleep"));
+            assertTrue(s.equals("Bleep"), "Wrote incorrect line: " + s);
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
@@ -264,7 +263,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect char[] string: " + s, s.equals("Hello World"));
+        assertTrue(s.equals("Hello World"), "Wrote incorrect char[] string: " + s);
     }
 
     @Test
@@ -280,7 +279,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect char string: " + s, s.equals("c"));
+        assertTrue(s.equals("c"), "Wrote incorrect char string: " + s);
     }
 
     @Test
@@ -297,7 +296,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect double string: " + s, s.equals(String.valueOf(dub)));
+        assertTrue(s.equals(String.valueOf(dub)), "Wrote incorrect double string: " + s);
     }
 
     @Test
@@ -311,8 +310,8 @@ public class PrintWriterTest {
             br = new BufferedReader(new StringReader(bao.toString()));
             br.readLine();
             s = br.readLine();
-            assertTrue("Wrote incorrect float string: " + s + " wanted: " + String.valueOf(flo),
-                    s.equals(String.valueOf(flo)));
+            assertTrue(s.equals(String.valueOf(flo)),
+                    "Wrote incorrect float string: " + s + " wanted: " + String.valueOf(flo));
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
@@ -332,7 +331,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect int string: " + s, s.equals("400000"));
+        assertTrue(s.equals("400000"), "Wrote incorrect int string: " + s);
     }
 
     @Test
@@ -348,7 +347,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect long string: " + s, s.equals("4000000000000"));
+        assertTrue(s.equals("4000000000000"), "Wrote incorrect long string: " + s);
     }
 
     @Test
@@ -364,7 +363,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect Object string: " + s, s.equals("Bogus"));
+        assertTrue(s.equals("Bogus"), "Wrote incorrect Object string: " + s);
     }
 
     @Test
@@ -380,7 +379,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect string: " + s, s.equals("Hello World"));
+        assertTrue(s.equals("Hello World"), "Wrote incorrect string: " + s);
     }
 
     @Test
@@ -396,7 +395,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect boolean string: " + s, s.equals("false"));
+        assertTrue(s.equals("false"), "Wrote incorrect boolean string: " + s);
     }
 
     @Test
@@ -414,7 +413,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test: " + e.getMessage());
         }
-        assertTrue("Wrote incorrect char[] string: " + s, s.equals("Hello World"));
+        assertTrue(s.equals("Hello World"), "Wrote incorrect char[] string: " + s);
     }
 
     @Test
@@ -432,7 +431,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect char[] string: " + s, s.equals("World"));
+        assertTrue(s.equals("World"), "Wrote incorrect char[] string: " + s);
     }
 
     @Test
@@ -446,7 +445,7 @@ public class PrintWriterTest {
         cab[0] = (char) isr.read();
         cab[1] = (char) isr.read();
         cab[2] = (char) isr.read();
-        assertTrue("Wrote incorrect ints", cab[0] == 'a' && cab[1] == 'b' && cab[2] == 'c');
+        assertTrue(cab[0] == 'a' && cab[1] == 'b' && cab[2] == 'c', "Wrote incorrect ints");
 
     }
 
@@ -463,7 +462,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect char[] string: " + s, s.equals("Hello World"));
+        assertTrue(s.equals("Hello World"), "Wrote incorrect char[] string: " + s);
     }
 
     @Test
@@ -479,7 +478,7 @@ public class PrintWriterTest {
         } catch (IOException e) {
             fail("IOException during test : " + e.getMessage());
         }
-        assertTrue("Wrote incorrect char[] string: " + s, s.equals("World"));
+        assertTrue(s.equals("World"), "Wrote incorrect char[] string: " + s);
     }
 
     @Test
@@ -520,13 +519,13 @@ public class PrintWriterTest {
     public void printfLjava_lang_String$Ljava_lang_Object() {
         pw.printf("%s %s", "Hello", "World");
         pw.flush();
-        assertEquals("Wrote incorrect string", "Hello World",  new String(bao.toByteArray()));
+        assertEquals("Hello World", new String(bao.toByteArray()),  "Wrote incorrect string");
     }
 
     @Test
     public void printfLjava_util_Locale_Ljava_lang_String_$Ljava_lang_Object() {
         pw.printf(Locale.US, "%s %s", "Hello", "World");
         pw.flush();
-        assertEquals("Wrote incorrect string", "Hello World", new String(bao.toByteArray()));
+        assertEquals("Hello World", new String(bao.toByteArray()), "Wrote incorrect string");
     }
 }

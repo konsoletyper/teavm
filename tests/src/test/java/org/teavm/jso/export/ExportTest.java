@@ -23,9 +23,9 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
@@ -60,7 +60,7 @@ public class ExportTest {
             false
     );
 
-    @BeforeClass
+    @BeforeAll
     public static void start() {
         if (jsNeeded) {
             jsRunner.start();
@@ -70,7 +70,7 @@ public class ExportTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void stop() {
         if (jsNeeded) {
             jsRunner.stop();

@@ -48,7 +48,7 @@
 
 package org.teavm.classlib.support;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -70,29 +70,21 @@ public class UnmodifiableCollectionTestSupport {
     public void runTest() {
 
         // contains
-        assertTrue("UnmodifiableCollectionTest - should contain 0", col
-                .contains(0));
-        assertTrue("UnmodifiableCollectionTest - should contain 50", col
-                .contains(50));
-        assertTrue("UnmodifiableCollectionTest - should not contain 100", !col
-                .contains(100));
+        assertTrue(col.contains(0), "UnmodifiableCollectionTest - should contain 0");
+        assertTrue(col.contains(50), "UnmodifiableCollectionTest - should contain 50");
+        assertTrue(!col.contains(100), "UnmodifiableCollectionTest - should not contain 100");
 
         // containsAll
         HashSet<Integer> hs = new HashSet<>();
         hs.add(0);
         hs.add(25);
         hs.add(99);
-        assertTrue(
-                "UnmodifiableCollectionTest - should contain set of 0, 25, and 99",
-                col.containsAll(hs));
+        assertTrue(col.containsAll(hs), "UnmodifiableCollectionTest - should contain set of 0, 25, and 99");
         hs.add(100);
-        assertTrue(
-                "UnmodifiableCollectionTest - should not contain set of 0, 25, 99 and 100",
-                !col.containsAll(hs));
+        assertTrue(!col.containsAll(hs), "UnmodifiableCollectionTest - should not contain set of 0, 25, 99 and 100");
 
         // isEmpty
-        assertTrue("UnmodifiableCollectionTest - should not be empty", !col
-                .isEmpty());
+        assertTrue(!col.isEmpty(), "UnmodifiableCollectionTest - should not be empty");
 
         // iterator
         Iterator<Integer> it = col.iterator();
@@ -103,33 +95,27 @@ public class UnmodifiableCollectionTestSupport {
         it = ss.iterator();
         for (int counter = 0; it.hasNext(); counter++) {
             int nextValue = it.next().intValue();
-            assertTrue(
-                    "UnmodifiableCollectionTest - Iterator returned wrong value.  Wanted: "
-                            + counter + " got: " + nextValue,
-                    nextValue == counter);
+            assertTrue(nextValue == counter, "UnmodifiableCollectionTest - Iterator returned wrong value.  Wanted: "
+                            + counter + " got: " + nextValue);
         }
 
         // size
-        assertTrue(
-                "UnmodifiableCollectionTest - returned wrong size.  Wanted 100, got: "
-                        + col.size(), col.size() == 100);
+        assertTrue(col.size() == 100,
+                "UnmodifiableCollectionTest - returned wrong size.  Wanted 100, got: " + col.size());
 
         // toArray
         Object[] objArray;
         objArray = col.toArray();
         for (int counter = 0; it.hasNext(); counter++) {
-            assertTrue(
-                    "UnmodifiableCollectionTest - toArray returned incorrect array",
-                    objArray[counter] == it.next());
+            assertTrue(objArray[counter] == it.next(), "UnmodifiableCollectionTest - toArray returned incorrect array");
         }
 
         // toArray (Object[])
         objArray = new Object[100];
         col.toArray(objArray);
         for (int counter = 0; it.hasNext(); counter++) {
-            assertTrue(
-                    "UnmodifiableCollectionTest - toArray(Object) filled array incorrectly",
-                    objArray[counter] == it.next());
+            assertTrue(objArray[counter] == it.next(),
+                    "UnmodifiableCollectionTest - toArray(Object) filled array incorrectly");
         }
 
     }

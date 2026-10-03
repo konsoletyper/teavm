@@ -48,7 +48,7 @@
 
 package org.teavm.classlib.support;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collection;
 import java.util.TreeSet;
 
@@ -73,39 +73,39 @@ public class CollectionTestSupport {
         myCollection.add(103);
 
         // add
-        assertTrue("CollectionTest - a) add did not work", col.add(101));
-        assertTrue("CollectionTest - b) add did not work", col.contains(101));
+        assertTrue(col.add(101), "CollectionTest - a) add did not work");
+        assertTrue(col.contains(101), "CollectionTest - b) add did not work");
 
         // remove
-        assertTrue("CollectionTest - a) remove did not work", col.remove(101));
-        assertTrue("CollectionTest - b) remove did not work", !col.contains(101));
+        assertTrue(col.remove(101), "CollectionTest - a) remove did not work");
+        assertTrue(!col.contains(101), "CollectionTest - b) remove did not work");
 
         // addAll
-        assertTrue("CollectionTest - a) addAll failed", col.addAll(myCollection));
-        assertTrue("CollectionTest - b) addAll failed", col.containsAll(myCollection));
+        assertTrue(col.addAll(myCollection), "CollectionTest - a) addAll failed");
+        assertTrue(col.containsAll(myCollection), "CollectionTest - b) addAll failed");
 
         // containsAll
-        assertTrue("CollectionTest - a) containsAll failed", col.containsAll(myCollection));
+        assertTrue(col.containsAll(myCollection), "CollectionTest - a) containsAll failed");
         col.remove(101);
-        assertTrue("CollectionTest - b) containsAll failed", !col.containsAll(myCollection));
+        assertTrue(!col.containsAll(myCollection), "CollectionTest - b) containsAll failed");
 
         // removeAll
-        assertTrue("CollectionTest - a) removeAll failed", col.removeAll(myCollection));
-        assertTrue("CollectionTest - b) removeAll failed", !col.removeAll(myCollection));
-        assertTrue("CollectionTest - c) removeAll failed", !col.contains(102));
-        assertTrue("CollectionTest - d) removeAll failed", !col.contains(103));
+        assertTrue(col.removeAll(myCollection), "CollectionTest - a) removeAll failed");
+        assertTrue(!col.removeAll(myCollection), "CollectionTest - b) removeAll failed");
+        assertTrue(!col.contains(102), "CollectionTest - c) removeAll failed");
+        assertTrue(!col.contains(103), "CollectionTest - d) removeAll failed");
 
         // retianAll
         col.addAll(myCollection);
-        assertTrue("CollectionTest - a) retainAll failed", col.retainAll(myCollection));
-        assertTrue("CollectionTest - b) retainAll failed", !col.retainAll(myCollection));
-        assertTrue("CollectionTest - c) retainAll failed", col.containsAll(myCollection));
-        assertTrue("CollectionTest - d) retainAll failed", !col.contains(0));
-        assertTrue("CollectionTest - e) retainAll failed", !col.contains(50));
+        assertTrue(col.retainAll(myCollection), "CollectionTest - a) retainAll failed");
+        assertTrue(!col.retainAll(myCollection), "CollectionTest - b) retainAll failed");
+        assertTrue(col.containsAll(myCollection), "CollectionTest - c) retainAll failed");
+        assertTrue(!col.contains(0), "CollectionTest - d) retainAll failed");
+        assertTrue(!col.contains(50), "CollectionTest - e) retainAll failed");
 
         // clear
         col.clear();
-        assertTrue("CollectionTest - a) clear failed", col.isEmpty());
-        assertTrue("CollectionTest - b) clear failed", !col.contains(101));
+        assertTrue(col.isEmpty(), "CollectionTest - a) clear failed");
+        assertTrue(!col.contains(101), "CollectionTest - b) clear failed");
     }
 }

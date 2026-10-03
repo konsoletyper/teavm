@@ -15,15 +15,14 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.security.SecureRandom;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.OnlyPlatform;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 public class SecureRandomTest {
     @Test
@@ -35,7 +34,7 @@ public class SecureRandomTest {
             array[n]++;
         }
         for (var elem : array) {
-            assertTrue("Each number must be generated at least once", elem > 0);
+            assertTrue(elem > 0, "Each number must be generated at least once");
         }
     }
 }

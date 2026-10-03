@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -100,7 +100,7 @@ final class CharsetTestCommon {
             outPos = out.position();
         } while (!result.isError() && inPos < input.length);
 
-        assertEquals("Should be UNDERFLOW after encoding", CoderResult.UNDERFLOW, result);
+        assertEquals(CoderResult.UNDERFLOW, result, "Should be UNDERFLOW after encoding");
 
         do {
             int outLen = Math.min(outSize, output.length - outPos);
@@ -109,7 +109,7 @@ final class CharsetTestCommon {
             outPos = out.position();
         } while (!result.isUnderflow());
 
-        assertEquals("Should be UNDERFLOW after flushing", CoderResult.UNDERFLOW, result);
+        assertEquals(CoderResult.UNDERFLOW, result, "Should be UNDERFLOW after flushing");
         output = Arrays.copyOf(output, outPos);
         assertEquals(hex, bytesToHex(output));
     }
@@ -132,7 +132,7 @@ final class CharsetTestCommon {
             outPos = out.position();
         } while (!result.isError() && inPos < input.length);
 
-        assertEquals("Should be UNDERFLOW after encoding", CoderResult.UNDERFLOW, result);
+        assertEquals(CoderResult.UNDERFLOW, result, "Should be UNDERFLOW after encoding");
 
         do {
             int outLen = Math.min(outSize, output.length - outPos);
@@ -141,7 +141,7 @@ final class CharsetTestCommon {
             outPos = out.position();
         } while (!result.isUnderflow());
 
-        assertEquals("Should be UNDERFLOW after flushing", CoderResult.UNDERFLOW, result);
+        assertEquals(CoderResult.UNDERFLOW, result, "Should be UNDERFLOW after flushing");
         output = Arrays.copyOf(output, outPos);
         assertEquals(text, new String(output));
     }

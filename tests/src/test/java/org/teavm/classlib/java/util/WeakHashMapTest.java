@@ -32,25 +32,24 @@
 
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.WeakHashMap;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.GCSupport;
 import org.teavm.classlib.support.MapTest2Support;
 import org.teavm.junit.SkipPlatform;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
 public class WeakHashMapTest {
     static class MockMap<K, V> extends AbstractMap<K, V> {
@@ -77,7 +76,7 @@ public class WeakHashMapTest {
             whm.put(keyArray[i], valueArray[i]);
         }
         for (int i = 0; i < 100; i++) {
-            assertSame("Incorrect value retrieved", valueArray[i], whm.get(keyArray[i]));
+            assertSame(valueArray[i], whm.get(keyArray[i]), "Incorrect value retrieved");
         }
     }
 
@@ -88,13 +87,13 @@ public class WeakHashMapTest {
             whm.put(keyArray[i], valueArray[i]);
         }
         for (int i = 0; i < 100; i++) {
-            assertSame("Incorrect value retrieved", valueArray[i], whm.get(keyArray[i]));
+            assertSame(valueArray[i], whm.get(keyArray[i]), "Incorrect value retrieved");
         }
 
         var empty = new WeakHashMap<>(0);
-        assertNull("Empty weakhashmap access", empty.get("nothing"));
+        assertNull(empty.get("nothing"), "Empty weakhashmap access");
         empty.put("something", "here");
-        assertSame("cannot get element", "here", empty.get("something"));
+        assertSame("here", empty.get("something"), "cannot get element");
     }
 
     @Test
@@ -104,19 +103,19 @@ public class WeakHashMapTest {
             whm.put(keyArray[i], valueArray[i]);
         }
         for (int i = 0; i < 100; i++) {
-            assertSame("Incorrect value retrieved", valueArray[i], whm.get(keyArray[i]));
+            assertSame(valueArray[i], whm.get(keyArray[i]), "Incorrect value retrieved");
         }
 
         var empty = new WeakHashMap<>(0, 0.75f);
-        assertNull("Empty hashtable access", empty.get("nothing"));
+        assertNull(empty.get("nothing"), "Empty hashtable access");
         empty.put("something", "here");
-        assertSame("cannot get element", "here", empty.get("something"));
+        assertSame("here", empty.get("something"), "cannot get element");
     }
 
     @Test
     public void constructorLjava_util_Map() {
         var map = new WeakHashMap<>(new MockMap<>());
-        assertEquals("Size should be 0", 0, map.size());
+        assertEquals(0, map.size(), "Size should be 0");
     }
 
     @Test
@@ -126,9 +125,9 @@ public class WeakHashMapTest {
             whm.put(keyArray[i], valueArray[i]);
         }
         whm.clear();
-        assertTrue("Cleared map should be empty", whm.isEmpty());
+        assertTrue(whm.isEmpty(), "Cleared map should be empty");
         for (int i = 0; i < 100; i++) {
-            assertNull("Cleared map should only return null", whm.get(keyArray[i]));
+            assertNull(whm.get(keyArray[i]), "Cleared map should only return null");
         }
 
     }
@@ -140,7 +139,7 @@ public class WeakHashMapTest {
             whm.put(keyArray[i], valueArray[i]);
         }
         for (int i = 0; i < 100; i++) {
-            assertTrue("Should contain referenced key", whm.containsKey(keyArray[i]));
+            assertTrue(whm.containsKey(keyArray[i]), "Should contain referenced key");
         }
         keyArray[25] = null;
         keyArray[50] = null;
@@ -153,7 +152,7 @@ public class WeakHashMapTest {
             whm.put(keyArray[i], valueArray[i]);
         }
         for (int i = 0; i < 100; i++) {
-            assertTrue("Should contain referenced value", whm.containsValue(valueArray[i]));
+            assertTrue(whm.containsValue(valueArray[i]), "Should contain referenced value");
         }
         keyArray[25] = null;
         keyArray[50] = null;
@@ -171,13 +170,13 @@ public class WeakHashMapTest {
 
         // Check the entry set has correct size & content
         var entrySet = weakMap.entrySet();
-        assertEquals("Assert 0: Incorrect number of entries returned", 100, entrySet.size());
+        assertEquals(100, entrySet.size(), "Assert 0: Incorrect number of entries returned");
         var it = entrySet.iterator();
         while (it.hasNext()) {
             var entry = it.next();
-            assertTrue("Assert 1: Invalid map entry key returned", keys.contains(entry.getKey()));
-            assertTrue("Assert 2: Invalid map entry value returned", values.contains(entry.getValue()));
-            assertTrue("Assert 3: Entry not in entry set", entrySet.contains(entry));
+            assertTrue(keys.contains(entry.getKey()), "Assert 1: Invalid map entry key returned");
+            assertTrue(values.contains(entry.getValue()), "Assert 2: Invalid map entry value returned");
+            assertTrue(entrySet.contains(entry), "Assert 3: Entry not in entry set");
         }
 
         // Dereference a single key, then try to
@@ -185,8 +184,8 @@ public class WeakHashMapTest {
         keyArray[50] = null;
         GCSupport.tryToTriggerGC();
 
-        assertEquals("Assert 4: Incorrect number of entries after gc", 99, entrySet.size());
-        assertSame("Assert 5: Entries not identical", entrySet.iterator().next(), entrySet.iterator().next());
+        assertEquals(99, entrySet.size(), "Assert 4: Incorrect number of entries after gc");
+        assertSame(entrySet.iterator().next(), entrySet.iterator().next(), "Assert 5: Entries not identical");
 
         // remove alternate entries using the iterator, and ensure the
         // iteration count is consistent
@@ -201,7 +200,7 @@ public class WeakHashMapTest {
             }
 
         }
-        assertEquals("Assert 6: entry set count mismatch", size, entrySet.size());
+        assertEquals(size, entrySet.size(), "Assert 6: entry set count mismatch");
 
         int entries = 0;
         it = entrySet.iterator();
@@ -209,15 +208,15 @@ public class WeakHashMapTest {
             it.next();
             entries++;
         }
-        assertEquals("Assert 6: count mismatch", size, entries);
+        assertEquals(size, entries, "Assert 6: count mismatch");
 
         it = entrySet.iterator();
         while (it.hasNext()) {
             it.next();
             it.remove();
         }
-        assertEquals("Assert 7: entry set not empty", 0, entrySet.size());
-        assertFalse("Assert 8:  iterator not empty", entrySet.iterator().hasNext());
+        assertEquals(0, entrySet.size(), "Assert 7: entry set not empty");
+        assertFalse(entrySet.iterator().hasNext(), "Assert 8:  iterator not empty");
     }
 
     @Test
@@ -229,11 +228,10 @@ public class WeakHashMapTest {
         var keys = Arrays.asList(keyArray);
         var values = Arrays.asList(valueArray);
         var entrySet = whm.entrySet();
-        assertEquals("Incorrect number of entries returned--wanted 100, got: " + entrySet.size(),
-                100, entrySet.size());
+        assertEquals(100, entrySet.size(), "Incorrect number of entries returned--wanted 100, got: " + entrySet.size());
         for (var entry : entrySet) {
-            assertTrue("Invalid map entry returned--bad key", keys.contains(entry.getKey()));
-            assertTrue("Invalid map entry returned--bad key", values.contains(entry.getValue()));
+            assertTrue(keys.contains(entry.getKey()), "Invalid map entry returned--bad key");
+            assertTrue(values.contains(entry.getValue()), "Invalid map entry returned--bad key");
         }
         keys = null;
         values = null;
@@ -241,24 +239,24 @@ public class WeakHashMapTest {
 
         GCSupport.tryToTriggerGC();
 
-        assertEquals("Incorrect number of entries returned after gc--wanted 99, got: " + entrySet.size(),
-                99, entrySet.size());
+        assertEquals(99, entrySet.size(),
+                "Incorrect number of entries returned after gc--wanted 99, got: " + entrySet.size());
     }
 
     @Test
     public void get() {
-        assertTrue("Used to test", true);
+        assertTrue(true, "Used to test");
     }
 
     @Test
     public void isEmpty() {
         whm = new WeakHashMap<>();
-        assertTrue("New map should be empty", whm.isEmpty());
+        assertTrue(whm.isEmpty(), "New map should be empty");
         Object myObject = new Object();
         whm.put(myObject, myObject);
-        assertFalse("Map should not be empty", whm.isEmpty());
+        assertFalse(whm.isEmpty(), "Map should not be empty");
         whm.remove(myObject);
-        assertTrue("Map with elements removed should be empty", whm.isEmpty());
+        assertTrue(whm.isEmpty(), "Map with elements removed should be empty");
     }
 
     @Test
@@ -267,7 +265,7 @@ public class WeakHashMapTest {
         map.put(null, "value"); // add null key
         GCSupport.tryToTriggerGC();
         map.remove("nothing"); // Cause objects in queue to be removed
-        assertEquals("null key was removed", 1, map.size());
+        assertEquals(1, map.size(), "null key was removed");
     }
 
     @Test
@@ -275,7 +273,7 @@ public class WeakHashMapTest {
         var mockMap = new MockMap<>();
         var map = new WeakHashMap<>();
         map.putAll(mockMap);
-        assertEquals("Size should be 0", 0, map.size());
+        assertEquals(0, map.size(), "Size should be 0");
     }
 
     @Test
@@ -285,14 +283,14 @@ public class WeakHashMapTest {
             whm.put(keyArray[i], valueArray[i]);
         }
 
-        assertSame("Remove returned incorrect value", valueArray[25], whm.remove(keyArray[25]));
-        assertNull("Remove returned incorrect value", whm.remove(keyArray[25]));
-        assertEquals("Size should be 99 after remove", 99, whm.size());
+        assertSame(valueArray[25], whm.remove(keyArray[25]), "Remove returned incorrect value");
+        assertNull(whm.remove(keyArray[25]), "Remove returned incorrect value");
+        assertEquals(99, whm.size(), "Size should be 99 after remove");
     }
 
     @Test
     public void size() {
-        assertTrue("Used to test", true);
+        assertTrue(true, "Used to test");
     }
 
     @Test
@@ -306,9 +304,9 @@ public class WeakHashMapTest {
         var values = Arrays.asList(valueArray);
 
         var keySet = whm.keySet();
-        assertEquals("Incorrect number of keys returned,", 100, keySet.size());
+        assertEquals(100, keySet.size(), "Incorrect number of keys returned,");
         for (var key : keySet) {
-            assertTrue("Invalid map entry returned--bad key", keys.contains(key));
+            assertTrue(keys.contains(key), "Invalid map entry returned--bad key");
         }
         keys = null;
         values = null;
@@ -316,7 +314,7 @@ public class WeakHashMapTest {
 
         GCSupport.tryToTriggerGC();
 
-        assertEquals("Incorrect number of keys returned after gc,", 99, keySet.size());
+        assertEquals(99, keySet.size(), "Incorrect number of keys returned after gc,");
     }
 
     @Test
@@ -330,7 +328,7 @@ public class WeakHashMapTest {
         iter.next();
         iter.next();
         GCSupport.tryToTriggerGC();
-        assertFalse("Wrong hasNext() value", iter.hasNext());
+        assertFalse(iter.hasNext(), "Wrong hasNext() value");
     }
 
     static class ConstantHashClass {
@@ -361,9 +359,9 @@ public class WeakHashMapTest {
         var values = Arrays.asList(valueArray);
 
         var valuesCollection = whm.values();
-        assertEquals("Incorrect number of keys returned,", 100, valuesCollection.size());
+        assertEquals(100, valuesCollection.size(), "Incorrect number of keys returned,");
         for (Object value : valuesCollection) {
-            assertTrue("Invalid map entry returned--bad value", values.contains(value));
+            assertTrue(values.contains(value), "Invalid map entry returned--bad value");
         }
         keys = null;
         values = null;
@@ -371,10 +369,10 @@ public class WeakHashMapTest {
 
         GCSupport.tryToTriggerGC();
 
-        assertEquals("Incorrect number of keys returned after gc", 99, valuesCollection.size());
+        assertEquals(99, valuesCollection.size(), "Incorrect number of keys returned after gc");
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         for (int i = 0; i < 100; i++) {
             keyArray[i] = new Object();

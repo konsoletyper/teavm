@@ -16,11 +16,11 @@
 
 package org.teavm.classlib.java.text;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.text.ChoiceFormat;
 import java.text.DateFormat;
 import java.text.FieldPosition;
@@ -35,12 +35,11 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class MessageFormatTest {
     private MessageFormat format1;
     private MessageFormat format2;
@@ -75,10 +74,10 @@ public class MessageFormatTest {
                 "Date: {0,date} Currency: {1, number, currency} Integer: {2, number, integer}",
                 mk);
 
-        assertTrue("Wrong locale1", format.getLocale().equals(mk));
-        assertTrue("Wrong locale2", format.getFormats()[0].equals(DateFormat.getDateInstance(DateFormat.DEFAULT, mk)));
-        assertTrue("Wrong locale3", format.getFormats()[1].equals(NumberFormat.getCurrencyInstance(mk)));
-        assertTrue("Wrong locale4", format.getFormats()[2].equals(NumberFormat.getIntegerInstance(mk)));
+        assertTrue(format.getLocale().equals(mk), "Wrong locale1");
+        assertTrue(format.getFormats()[0].equals(DateFormat.getDateInstance(DateFormat.DEFAULT, mk)), "Wrong locale2");
+        assertTrue(format.getFormats()[1].equals(NumberFormat.getCurrencyInstance(mk)), "Wrong locale3");
+        assertTrue(format.getFormats()[2].equals(NumberFormat.getIntegerInstance(mk)), "Wrong locale4");
     }
 
     @Test
@@ -86,15 +85,15 @@ public class MessageFormatTest {
         // Test for method java.text.MessageFormat(java.lang.String)
         MessageFormat format = new MessageFormat(
                 "abc {4,time} def {3,date} ghi {2,number} jkl {1,choice,0#low|1#high} mnop {0}");
-        assertTrue("Not a MessageFormat", format.getClass() == MessageFormat.class);
+        assertTrue(format.getClass() == MessageFormat.class, "Not a MessageFormat");
         Format[] formats = format.getFormats();
-        assertNotNull("null formats", formats);
-        assertTrue("Wrong format count: " + formats.length, formats.length >= 5);
-        assertTrue("Wrong time format", formats[0].equals(DateFormat.getTimeInstance()));
-        assertTrue("Wrong date format", formats[1].equals(DateFormat.getDateInstance()));
-        assertTrue("Wrong number format", formats[2].equals(NumberFormat.getInstance()));
-        assertTrue("Wrong choice format", formats[3].equals(new ChoiceFormat("0.0#low|1.0#high")));
-        assertNull("Wrong string format", formats[4]);
+        assertNotNull(formats, "null formats");
+        assertTrue(formats.length >= 5, "Wrong format count: " + formats.length);
+        assertTrue(formats[0].equals(DateFormat.getTimeInstance()), "Wrong time format");
+        assertTrue(formats[1].equals(DateFormat.getDateInstance()), "Wrong date format");
+        assertTrue(formats[2].equals(NumberFormat.getInstance()), "Wrong number format");
+        assertTrue(formats[3].equals(new ChoiceFormat("0.0#low|1.0#high")), "Wrong choice format");
+        assertNull(formats[4], "Wrong string format");
 
         Date date = new Date();
         FieldPosition pos = new FieldPosition(-1);
@@ -109,12 +108,12 @@ public class MessageFormatTest {
         buffer.append(" ghi ");
         buffer.append(NumberFormat.getInstance().format(7.2));
         buffer.append(" jkl high mnop 123");
-        assertTrue("Wrong answer:\n" + result + "\n" + buffer, result.equals(buffer.toString()));
+        assertTrue(result.equals(buffer.toString()), "Wrong answer:\n" + result + "\n" + buffer);
 
-        assertEquals("Simple string", "Test message", new MessageFormat("Test message").format(new Object[0]));
+        assertEquals("Test message", new MessageFormat("Test message").format(new Object[0]), "Simple string");
 
         result = new MessageFormat("Don't").format(new Object[0]);
-        assertTrue("Should not throw IllegalArgumentException: " + result, "Dont".equals(result));
+        assertTrue("Dont".equals(result), "Should not throw IllegalArgumentException: " + result);
 
         try {
             new MessageFormat("Invalid {1,foobar} format descriptor!");
@@ -142,76 +141,75 @@ public class MessageFormatTest {
     public void applyPatternLjava_lang_String() {
         MessageFormat format = new MessageFormat("test");
         format.applyPattern("xx {0}");
-        assertEquals("Invalid number", "xx 46", format.format(new Object[] { 46 }));
+        assertEquals("xx 46", format.format(new Object[] { 46 }), "Invalid number");
         Date date = new Date();
         String result = format.format(new Object[] { date });
         String expected = "xx " + DateFormat.getInstance().format(date);
-        assertTrue("Invalid date:\n" + result + "\n" + expected, result.equals(expected));
+        assertTrue(result.equals(expected), "Invalid date:\n" + result + "\n" + expected);
         format = new MessageFormat("{0,date}{1,time}{2,number,integer}");
         format.applyPattern("nothing");
-        assertEquals("Found formats", "nothing", format.toPattern());
+        assertEquals("nothing", format.toPattern(), "Found formats");
 
         format.applyPattern("{0}");
-        assertNull("Wrong format", format.getFormats()[0]);
-        assertEquals("Wrong pattern", "{0}", format.toPattern());
+        assertNull(format.getFormats()[0], "Wrong format");
+        assertEquals("{0}", format.toPattern(), "Wrong pattern");
 
         format.applyPattern("{0, \t\u001ftime }");
-        assertTrue("Wrong time format", format.getFormats()[0].equals(DateFormat.getTimeInstance()));
-        assertEquals("Wrong time pattern", "{0,time}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getTimeInstance()), "Wrong time format");
+        assertEquals("{0,time}", format.toPattern(), "Wrong time pattern");
         format.applyPattern("{0,Time, Short\n}");
-        assertTrue("Wrong short time format", format.getFormats()[0].equals(
-                DateFormat.getTimeInstance(DateFormat.SHORT)));
-        assertEquals("Wrong short time pattern", "{0,time,short}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getTimeInstance(DateFormat.SHORT)),
+                "Wrong short time format");
+        assertEquals("{0,time,short}", format.toPattern(), "Wrong short time pattern");
         format.applyPattern("{0,TIME,\nmedium  }");
-        assertTrue("Wrong medium time format", format.getFormats()[0].equals(
-                DateFormat.getTimeInstance(DateFormat.MEDIUM)));
-        assertEquals("Wrong medium time pattern", "{0,time}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getTimeInstance(DateFormat.MEDIUM)),
+                "Wrong medium time format");
+        assertEquals("{0,time}", format.toPattern(), "Wrong medium time pattern");
         format.applyPattern("{0,time,LONG}");
-        assertTrue("Wrong long time format", format.getFormats()[0].equals(
-                DateFormat.getTimeInstance(DateFormat.LONG)));
-        assertEquals("Wrong long time pattern", "{0,time,long}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getTimeInstance(DateFormat.LONG)),
+                "Wrong long time format");
+        assertEquals("{0,time,long}", format.toPattern(), "Wrong long time pattern");
 
         format.applyPattern("{0, date}");
-        assertTrue("Wrong date format", format.getFormats()[0].equals(DateFormat.getDateInstance()));
-        assertEquals("Wrong date pattern", "{0,date}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getDateInstance()), "Wrong date format");
+        assertEquals("{0,date}", format.toPattern(), "Wrong date pattern");
         format.applyPattern("{0, date, short}");
-        assertTrue("Wrong short date format", format.getFormats()[0]
-                .equals(DateFormat.getDateInstance(DateFormat.SHORT)));
-        assertEquals("Wrong short date pattern", "{0,date,short}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getDateInstance(DateFormat.SHORT)),
+                "Wrong short date format");
+        assertEquals("{0,date,short}", format.toPattern(), "Wrong short date pattern");
         format.applyPattern("{0, date, medium}");
-        assertTrue("Wrong medium date format", format.getFormats()[0]
-                .equals(DateFormat.getDateInstance(DateFormat.MEDIUM)));
-        assertEquals("Wrong medium date pattern",
-                "{0,date}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getDateInstance(DateFormat.MEDIUM)),
+                "Wrong medium date format");
+        assertEquals("{0,date}", format.toPattern(), "Wrong medium date pattern");
         format.applyPattern("{0, date, long}");
-        assertTrue("Wrong long date format", format.getFormats()[0]
-                .equals(DateFormat.getDateInstance(DateFormat.LONG)));
-        assertEquals("Wrong long date pattern", "{0,date,long}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getDateInstance(DateFormat.LONG)),
+                "Wrong long date format");
+        assertEquals("{0,date,long}", format.toPattern(), "Wrong long date pattern");
         format.applyPattern("{0, date, full}");
-        assertTrue("Wrong full date format", format.getFormats()[0]
-                .equals(DateFormat.getDateInstance(DateFormat.FULL)));
-        assertEquals("Wrong full date pattern", "{0,date,full}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(DateFormat.getDateInstance(DateFormat.FULL)),
+                "Wrong full date format");
+        assertEquals("{0,date,full}", format.toPattern(), "Wrong full date pattern");
 
         format.applyPattern("{0, date, MMM d {hh:mm:ss}}");
-        assertEquals("Wrong time/date format", " MMM d {hh:mm:ss}",
-                ((SimpleDateFormat) (format.getFormats()[0])).toPattern());
+        assertEquals(" MMM d {hh:mm:ss}", ((SimpleDateFormat) (format.getFormats()[0])).toPattern(),
+                "Wrong time/date format");
         //assertEquals("Wrong time/date pattern", "{0,date, MMM d {hh:mm:ss}}", format.toPattern());
 
         format.applyPattern("{0, number}");
-        assertTrue("Wrong number format", format.getFormats()[0].equals(NumberFormat.getNumberInstance()));
-        assertEquals("Wrong number pattern",  "{0,number}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(NumberFormat.getNumberInstance()), "Wrong number format");
+        assertEquals("{0,number}",  format.toPattern(), "Wrong number pattern");
         format.applyPattern("{0, number, currency}");
-        assertTrue("Wrong currency number format", format.getFormats()[0].equals(NumberFormat.getCurrencyInstance()));
-        assertEquals("Wrong currency number pattern", "{0,number,currency}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(NumberFormat.getCurrencyInstance()), "Wrong currency number format");
+        assertEquals("{0,number,currency}", format.toPattern(), "Wrong currency number pattern");
         format.applyPattern("{0, number, percent}");
-        assertTrue("Wrong percent number format", format.getFormats()[0].equals(NumberFormat.getPercentInstance()));
-        assertEquals("Wrong percent number pattern", "{0,number,percent}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(NumberFormat.getPercentInstance()), "Wrong percent number format");
+        assertEquals("{0,number,percent}", format.toPattern(), "Wrong percent number pattern");
         format.applyPattern("{0, number, integer}");
         NumberFormat nf = NumberFormat.getInstance();
         nf.setMaximumFractionDigits(0);
         nf.setParseIntegerOnly(true);
-        assertTrue("Wrong integer number format", format.getFormats()[0].equals(nf));
-        assertEquals("Wrong integer number pattern", "{0,number,integer}", format.toPattern());
+        assertTrue(format.getFormats()[0].equals(nf), "Wrong integer number format");
+        assertEquals("{0,number,integer}", format.toPattern(), "Wrong integer number pattern");
 
         format.applyPattern("{0, number, {'#'}##0.0E0}");
 
@@ -224,10 +222,10 @@ public class MessageFormatTest {
          */
 
         format.applyPattern("{0, choice,0#no|1#one|2#{1,number}}");
-        assertEquals("Wrong choice format", "0.0#no|1.0#one|2.0#{1,number}",
-                ((ChoiceFormat) format.getFormats()[0]).toPattern());
+        assertEquals("0.0#no|1.0#one|2.0#{1,number}", ((ChoiceFormat) format.getFormats()[0]).toPattern(),
+                "Wrong choice format");
         //assertEquals("Wrong choice pattern", "{0,choice,0.0#no|1.0#one|2.0#{1,number}}", format.toPattern());
-        assertEquals("Wrong formatted choice", "3.6", format.format(new Object[] { 2, 3.6f }));
+        assertEquals("3.6", format.format(new Object[] { 2, 3.6f }), "Wrong formatted choice");
 
         try {
             format.applyPattern("WRONG MESSAGE FORMAT {0,number,{}");
@@ -251,32 +249,32 @@ public class MessageFormatTest {
     public void test_clone() {
         MessageFormat format = new MessageFormat("'{'choice'}'{0}");
         MessageFormat clone = (MessageFormat) format.clone();
-        assertTrue("Clone not equal", format.equals(clone));
-        assertEquals("Wrong answer", "{choice}{0}", format.format(new Object[] {}));
+        assertTrue(format.equals(clone), "Clone not equal");
+        assertEquals("{choice}{0}", format.format(new Object[] {}), "Wrong answer");
         clone.setFormat(0, DateFormat.getInstance());
-        assertTrue("Clone shares format data", !format.equals(clone));
+        assertTrue(!format.equals(clone), "Clone shares format data");
         format = (MessageFormat) clone.clone();
         Format[] formats = clone.getFormats();
         ((SimpleDateFormat) formats[0]).applyPattern("adk123");
-        assertTrue("Clone shares format data", !format.equals(clone));
+        assertTrue(!format.equals(clone), "Clone shares format data");
     }
 
     @Test
     public void test_equalsLjava_lang_Object() {
         MessageFormat format1 = new MessageFormat("{0}");
         MessageFormat format2 = new MessageFormat("{1}");
-        assertTrue("Should not be equal", !format1.equals(format2));
+        assertTrue(!format1.equals(format2), "Should not be equal");
         format2.applyPattern("{0}");
-        assertTrue("Should be equal", format1.equals(format2));
+        assertTrue(format1.equals(format2), "Should be equal");
         SimpleDateFormat date = (SimpleDateFormat) DateFormat.getTimeInstance();
         format1.setFormat(0, DateFormat.getTimeInstance());
         format2.setFormat(0, new SimpleDateFormat(date.toPattern()));
-        assertTrue("Should be equal2", format1.equals(format2));
+        assertTrue(format1.equals(format2), "Should be equal2");
     }
 
     @Test
     public void test_hashCode() {
-        assertEquals("Should be equal", 3648, new MessageFormat("rr", null).hashCode());
+        assertEquals(3648, new MessageFormat("rr", null).hashCode(), "Should be equal");
     }
 
     @Test
@@ -284,12 +282,12 @@ public class MessageFormatTest {
         MessageFormat format = new MessageFormat("{1,number,integer}");
         StringBuffer buffer = new StringBuffer();
         format.format(new Object[] { "0", 53.863 }, buffer, new FieldPosition(0));
-        assertEquals("Wrong result", "54", buffer.toString());
+        assertEquals("54", buffer.toString(), "Wrong result");
         format.applyPattern("{0,choice,0#zero|1#one '{1,choice,2#two {2,time}}'}");
         Date date = new Date();
         String expected = "one two " + DateFormat.getTimeInstance().format(date);
         String result = format.format(new Object[] { 1.6, 3, date });
-        assertTrue("Choice not recursive:\n" + expected + "\n" + result, expected.equals(result));
+        assertTrue(expected.equals(result), "Choice not recursive:\n" + expected + "\n" + result);
     }
 
     @Test
@@ -303,9 +301,9 @@ public class MessageFormatTest {
                 new ChoiceFormat("0#off|1#on"), DateFormat.getDateInstance()
         };
 
-        assertEquals("Test1:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test1:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test1:wrong format for pattern index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test1:wrong format for pattern index " + i + ":");
         }
 
         // test with max argument index > max offset
@@ -316,14 +314,14 @@ public class MessageFormatTest {
                 new ChoiceFormat("0#off|1#on"), DateFormat.getDateInstance()
         };
 
-        assertEquals("Test2:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test2:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test2:wrong format for pattern index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test2:wrong format for pattern index " + i + ":");
         }
 
         // test with argument number being zero
         formats = format3.getFormats();
-        assertEquals("Test3: Returned wrong number of formats:", 0, formats.length);
+        assertEquals(0, formats.length, "Test3: Returned wrong number of formats:");
     }
 
     @Test
@@ -334,10 +332,9 @@ public class MessageFormatTest {
                 new ChoiceFormat("0#off|1#on"), DateFormat.getTimeInstance(),
                 NumberFormat.getCurrencyInstance(), null };
 
-        assertEquals("Test1:Returned wrong number of formats:",
-                correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test1:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test1:wrong format for argument index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test1:wrong format for argument index " + i + ":");
         }
 
         // test with max argument index > max offset
@@ -348,14 +345,14 @@ public class MessageFormatTest {
                 DateFormat.getTimeInstance()
         };
 
-        assertEquals("Test2:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test2:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test2:wrong format for argument index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test2:wrong format for argument index " + i + ":");
         }
 
         // test with argument number being zero
         formats = format3.getFormatsByArgumentIndex();
-        assertEquals("Test3: Returned wrong number of formats:", 0, formats.length);
+        assertEquals(0, formats.length, "Test3: Returned wrong number of formats:");
     }
 
     @Test
@@ -375,9 +372,9 @@ public class MessageFormatTest {
                 new ChoiceFormat("1#few|2#ok|3#a lot")
         };
 
-        assertEquals("Test1A:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test1A:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test1B:wrong format for argument index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test1B:wrong format for argument index " + i + ":");
         }
 
         // compare getFormats() results after calls to
@@ -390,9 +387,9 @@ public class MessageFormatTest {
                 new ChoiceFormat("0#off|1#on"), DateFormat.getTimeInstance()
         };
 
-        assertEquals("Test1C:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test1C:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test1D:wrong format for pattern index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test1D:wrong format for pattern index " + i + ":");
         }
 
         // test setting argumentIndexes that are not used
@@ -403,17 +400,17 @@ public class MessageFormatTest {
         formats = f2.getFormatsByArgumentIndex();
         correctFormats = format2.getFormatsByArgumentIndex();
 
-        assertEquals("Test2A:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test2A:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test2B:wrong format for argument index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test2B:wrong format for argument index " + i + ":");
         }
 
         formats = f2.getFormats();
         correctFormats = format2.getFormats();
 
-        assertEquals("Test2C:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test2C:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test2D:wrong format for pattern index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test2D:wrong format for pattern index " + i + ":");
         }
 
         // test exceeding the argumentIndex number
@@ -421,10 +418,10 @@ public class MessageFormatTest {
         f3.setFormatByArgumentIndex(1, NumberFormat.getCurrencyInstance());
 
         formats = f3.getFormatsByArgumentIndex();
-        assertEquals("Test3A:Returned wrong number of formats:", 0, formats.length);
+        assertEquals(0, formats.length, "Test3A:Returned wrong number of formats:");
 
         formats = f3.getFormats();
-        assertEquals("Test3B:Returned wrong number of formats:", 0, formats.length);
+        assertEquals(0, formats.length, "Test3B:Returned wrong number of formats:");
     }
 
     @Test
@@ -443,9 +440,9 @@ public class MessageFormatTest {
         f1.setFormatsByArgumentIndex(correctFormats);
         Format[] formats = f1.getFormatsByArgumentIndex();
 
-        assertEquals("Test1A:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test1A:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test1B:wrong format for argument index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test1B:wrong format for argument index " + i + ":");
         }
 
         // compare getFormats() results after calls to
@@ -457,9 +454,9 @@ public class MessageFormatTest {
                 new ChoiceFormat("0#off|1#on"), DateFormat.getTimeInstance()
         };
 
-        assertEquals("Test1C:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test1C:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test1D:wrong format for pattern index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test1D:wrong format for pattern index " + i + ":");
         }
 
         // test setting argumentIndexes that are not used
@@ -476,9 +473,9 @@ public class MessageFormatTest {
         formats = f2.getFormatsByArgumentIndex();
         correctFormats = format2.getFormatsByArgumentIndex();
 
-        assertEquals("Test2A:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test2A:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test2B:wrong format for argument index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test2B:wrong format for argument index " + i + ":");
         }
 
         formats = f2.getFormats();
@@ -488,9 +485,9 @@ public class MessageFormatTest {
                 DateFormat.getDateInstance()
         };
 
-        assertEquals("Test2C:Returned wrong number of formats:", correctFormats.length, formats.length);
+        assertEquals(correctFormats.length, formats.length, "Test2C:Returned wrong number of formats:");
         for (int i = 0; i < correctFormats.length; i++) {
-            assertEquals("Test2D:wrong format for pattern index " + i + ":", correctFormats[i], formats[i]);
+            assertEquals(correctFormats[i], formats[i], "Test2D:wrong format for pattern index " + i + ":");
         }
 
         // test exceeding the argumentIndex number
@@ -498,10 +495,10 @@ public class MessageFormatTest {
         f3.setFormatsByArgumentIndex(inputFormats);
 
         formats = f3.getFormatsByArgumentIndex();
-        assertEquals("Test3A:Returned wrong number of formats:", 0, formats.length);
+        assertEquals(0, formats.length, "Test3A:Returned wrong number of formats:");
 
         formats = f3.getFormats();
-        assertEquals("Test3B:Returned wrong number of formats:", 0, formats.length);
+        assertEquals(0, formats.length, "Test3B:Returned wrong number of formats:");
     }
 
     @Test
@@ -509,17 +506,17 @@ public class MessageFormatTest {
         MessageFormat format = new MessageFormat("date is {0,date,MMM d, yyyy}");
         ParsePosition pos = new ParsePosition(2);
         Object[] result = format.parse("xxdate is Feb 28, 1999", pos);
-        assertTrue("No result: " + result.length, result.length >= 1);
-        assertTrue("Wrong answer", result[0].equals(new GregorianCalendar(1999, Calendar.FEBRUARY, 28).getTime()));
+        assertTrue(result.length >= 1, "No result: " + result.length);
+        assertTrue(result[0].equals(new GregorianCalendar(1999, Calendar.FEBRUARY, 28).getTime()), "Wrong answer");
 
         MessageFormat mf = new MessageFormat("vm={0},{1},{2}");
         result = mf.parse("vm=win,foo,bar", new ParsePosition(0));
-        assertTrue("Invalid parse", result[0].equals("win") && result[1].equals("foo") && result[2].equals("bar"));
+        assertTrue(result[0].equals("win") && result[1].equals("foo") && result[2].equals("bar"), "Invalid parse");
 
         mf = new MessageFormat("{0}; {0}; {0}");
         String parse = "a; b; c";
         result = mf.parse(parse, new ParsePosition(0));
-        assertEquals("Wrong variable result", "c", result[0]);
+        assertEquals("c", result[0], "Wrong variable result");
 
         mf = new MessageFormat("before {0}, after {1,number}");
         parse = "before you, after 42";
@@ -533,23 +530,23 @@ public class MessageFormatTest {
     public void setLocaleLjava_util_Locale() {
         MessageFormat format = new MessageFormat("date {0,date}");
         format.setLocale(Locale.CHINA);
-        assertEquals("Wrong locale1", Locale.CHINA, format.getLocale());
+        assertEquals(Locale.CHINA, format.getLocale(), "Wrong locale1");
         format.applyPattern("{1,date}");
-        assertEquals("Wrong locale3", DateFormat.getDateInstance(DateFormat.DEFAULT,
-                Locale.CHINA), format.getFormats()[0]);
+        assertEquals(DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.CHINA), format.getFormats()[0],
+                "Wrong locale3");
     }
 
     @Test
     public void toPattern() {
         String pattern = "[{0}]";
         MessageFormat mf = new MessageFormat(pattern);
-        assertTrue("Wrong pattern", mf.toPattern().equals(pattern));
+        assertTrue(mf.toPattern().equals(pattern), "Wrong pattern");
         
         // Regression for HARMONY-59
         new MessageFormat("CHOICE {1,choice}").toPattern();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         Locale.setDefault(defaultLocale);
     }
@@ -570,8 +567,8 @@ public class MessageFormatTest {
         // Regression for HARMONY-63
         MessageFormat mf = new MessageFormat("{0,number,#,####}", Locale.US);
         Object[] res = mf.parse("1,00,00");
-        assertEquals("Assert 0: incorrect size of parsed data ", 1, res.length);
-        assertEquals("Assert 1: parsed value incorrectly", 10000L, res[0]);
+        assertEquals(1, res.length, "Assert 0: incorrect size of parsed data ");
+        assertEquals(10000L, res[0], "Assert 1: parsed value incorrectly");
     }
 
     @Test

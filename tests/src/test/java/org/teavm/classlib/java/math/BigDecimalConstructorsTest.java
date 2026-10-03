@@ -36,17 +36,16 @@
 
 package org.teavm.classlib.java.math;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class BigDecimalConstructorsTest {
     /**
      * check ONE
@@ -55,8 +54,8 @@ public class BigDecimalConstructorsTest {
     public void testFieldONE() {
         String oneS = "1";
         double oneD = 1.0;
-        assertEquals("incorrect string value", oneS, BigDecimal.ONE.toString());
-        assertEquals("incorrect double value", oneD, BigDecimal.ONE.doubleValue(), 0);
+        assertEquals(oneS, BigDecimal.ONE.toString(), "incorrect string value");
+        assertEquals(oneD, BigDecimal.ONE.doubleValue(), 0, "incorrect double value");
     }
 
     /**
@@ -66,8 +65,8 @@ public class BigDecimalConstructorsTest {
     public void testFieldTEN() {
         String oneS = "10";
         double oneD = 10.0;
-        assertEquals("incorrect string value", oneS, BigDecimal.TEN.toString());
-        assertEquals("incorrect double value", oneD, BigDecimal.TEN.doubleValue(), 0);
+        assertEquals(oneS, BigDecimal.TEN.toString(), "incorrect string value");
+        assertEquals(oneD, BigDecimal.TEN.doubleValue(), 0, "incorrect double value");
     }
 
     /**
@@ -77,8 +76,8 @@ public class BigDecimalConstructorsTest {
     public void testFieldZERO() {
         String oneS = "0";
         double oneD = 0.0;
-        assertEquals("incorrect string value", oneS, BigDecimal.ZERO.toString());
-        assertEquals("incorrect double value", oneD, BigDecimal.ZERO.doubleValue(), 0);
+        assertEquals(oneS, BigDecimal.ZERO.toString(), "incorrect string value");
+        assertEquals(oneD, BigDecimal.ZERO.doubleValue(), 0, "incorrect double value");
     }
 
     /**
@@ -89,8 +88,8 @@ public class BigDecimalConstructorsTest {
         String a = "1231212478987482988429808779810457634781384756794987";
         BigInteger bA = new BigInteger(a);
         BigDecimal aNumber = new BigDecimal(bA);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", 0, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(0, aNumber.scale(), "incorrect scale");
 
         try {
             new BigDecimal((BigInteger) null);
@@ -109,8 +108,8 @@ public class BigDecimalConstructorsTest {
         BigInteger bA = new BigInteger(a);
         int aScale = 10;
         BigDecimal aNumber = new BigDecimal(bA, aScale);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -126,8 +125,8 @@ public class BigDecimalConstructorsTest {
         String res = "1231212478987482988429808779810457634781384757";
         int resScale = -6;
         BigDecimal result = new BigDecimal(bA, mc);
-        assertEquals("incorrect value", res, result.unscaledValue().toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.unscaledValue().toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -144,8 +143,8 @@ public class BigDecimalConstructorsTest {
         String res = "1231212478987482988429808779810457634781384757";
         int resScale = 4;
         BigDecimal result = new BigDecimal(bA, aScale, mc);
-        assertEquals("incorrect value", res, result.unscaledValue().toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.unscaledValue().toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -157,8 +156,8 @@ public class BigDecimalConstructorsTest {
         BigDecimal result = new BigDecimal(value);
         String res = "-1.23804738E-419";
         int resScale = 427;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
 
         try {
             // Regression for HARMONY-783
@@ -180,8 +179,8 @@ public class BigDecimalConstructorsTest {
         BigDecimal result = new BigDecimal(value, offset, len);
         String res = "3.804738E-40";
         int resScale = 46;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
 
         try {
             // Regression for HARMONY-783
@@ -206,8 +205,8 @@ public class BigDecimalConstructorsTest {
         BigDecimal result = new BigDecimal(value, offset, len, mc);
         String res = "3.805E-40";
         int resScale = 43;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
 
         try {
             // Regression for HARMONY-783
@@ -280,7 +279,7 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
         } catch (NumberFormatException e) {
-            assertEquals("Improper exception message", "Infinite or NaN", e.getMessage());
+            assertEquals("Infinite or NaN", e.getMessage(), "Improper exception message");
         }
     }
 
@@ -294,8 +293,7 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
         } catch (NumberFormatException e) {
-            assertEquals("Improper exception message", "Infinite or NaN",
-                    e.getMessage());
+            assertEquals("Infinite or NaN", e.getMessage(), "Improper exception message");
         }
     }
 
@@ -309,8 +307,7 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
         } catch (NumberFormatException e) {
-            assertEquals("Improper exception message", "Infinite or NaN",
-                    e.getMessage());
+            assertEquals("Infinite or NaN", e.getMessage(), "Improper exception message");
         }
     }
 
@@ -323,8 +320,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 0;
         BigInteger bA = new BigInteger("732546982374982285073458350476230656");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -339,8 +336,8 @@ public class BigDecimalConstructorsTest {
         String res = "732546982374982285074";
         int resScale = -15;
         BigDecimal result = new BigDecimal(a, mc);
-        assertEquals("incorrect value", res, result.unscaledValue().toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.unscaledValue().toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -352,8 +349,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 55;
         BigInteger bA = new BigInteger("1000000000000000055511151231257827021181583404541015625");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -364,7 +361,7 @@ public class BigDecimalConstructorsTest {
         double a = 0.555;
         String bA = "55500000000000004884981308350688777863979339599609375";
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA.substring(0, 10), aNumber.unscaledValue().toString().substring(0, 10));
+        assertEquals(bA.substring(0, 10), aNumber.unscaledValue().toString().substring(0, 10), "incorrect value");
     }
 
     /**
@@ -376,8 +373,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 55;
         BigInteger bA = new BigInteger("-1000000000000000055511151231257827021181583404541015625");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -389,8 +386,8 @@ public class BigDecimalConstructorsTest {
         String res = "732546982";
         int resScale = 0;
         BigDecimal result = new BigDecimal(a);
-        assertEquals("incorrect value", res, result.unscaledValue().toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.unscaledValue().toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -405,8 +402,8 @@ public class BigDecimalConstructorsTest {
         String res = "732546982";
         int resScale = 0;
         BigDecimal result = new BigDecimal(a, mc);
-        assertEquals("incorrect value", res, result.unscaledValue().toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.unscaledValue().toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -418,8 +415,8 @@ public class BigDecimalConstructorsTest {
         String res = "4576578677732546982";
         int resScale = 0;
         BigDecimal result = new BigDecimal(a);
-        assertEquals("incorrect value", res, result.unscaledValue().toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.unscaledValue().toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -434,8 +431,8 @@ public class BigDecimalConstructorsTest {
         String res = "45766";
         int resScale = -14;
         BigDecimal result = new BigDecimal(a, mc);
-        assertEquals("incorrect value", res, result.unscaledValue().toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.unscaledValue().toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -456,8 +453,8 @@ public class BigDecimalConstructorsTest {
                 + "2754098901412372708947790843318760718495117047155597276492717187936854356663665005"
                 + "157041552436478744491526494952982062613955349661409854888916015625");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -543,8 +540,8 @@ public class BigDecimalConstructorsTest {
         int aScale = -2147483638;
         BigInteger bA = new BigInteger("-238768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -571,8 +568,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 18;
         BigInteger bA = new BigInteger("732546982374982347892379283571094797287346782359284756");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -584,8 +581,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 18;
         BigInteger bA = new BigInteger("732546982374982347892379283571094797287346782359284756");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -597,8 +594,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 18;
         BigInteger bA = new BigInteger("-732546982374982347892379283571094797287346782359284756");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -611,8 +608,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 0;
         BigInteger bA = new BigInteger("-732546982374982347892379283571094797287346782359284756");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -625,8 +622,8 @@ public class BigDecimalConstructorsTest {
         int aScale = -214;
         BigInteger bA = new BigInteger("-238768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -639,8 +636,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 214;
         BigInteger bA = new BigInteger("-238768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -653,8 +650,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 214;
         BigInteger bA = new BigInteger("238768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -667,8 +664,8 @@ public class BigDecimalConstructorsTest {
         int aScale = -214;
         BigInteger bA = new BigInteger("238768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -681,8 +678,8 @@ public class BigDecimalConstructorsTest {
         int aScale = -214;
         BigInteger bA = new BigInteger("238768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -695,8 +692,8 @@ public class BigDecimalConstructorsTest {
         int aScale = -207;
         BigInteger bA = new BigInteger("239854398379847824356524245238768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -709,8 +706,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 221;
         BigInteger bA = new BigInteger("2380964839238475457356735674573563567890295784902768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -723,8 +720,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 0;
         BigInteger bA = new BigInteger("2380964839238475457356735674573563567890295784902768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -737,8 +734,8 @@ public class BigDecimalConstructorsTest {
         int aScale = 2;
         BigInteger bA = new BigInteger("2380964839238475457356735674573563567890295784902768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -751,8 +748,8 @@ public class BigDecimalConstructorsTest {
         int aScale = -2;
         BigInteger bA = new BigInteger("2380964839238475457356735674573563567890295784902768787678287");
         BigDecimal aNumber = new BigDecimal(a);
-        assertEquals("incorrect value", bA, aNumber.unscaledValue());
-        assertEquals("incorrect scale", aScale, aNumber.scale());
+        assertEquals(bA, aNumber.unscaledValue(), "incorrect value");
+        assertEquals(aScale, aNumber.scale(), "incorrect scale");
     }
 
     /**
@@ -767,7 +764,7 @@ public class BigDecimalConstructorsTest {
         String res = "-23876";
         int resScale = -224;
         BigDecimal result = new BigDecimal(a, mc);
-        assertEquals("incorrect value", res, result.unscaledValue().toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.unscaledValue().toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 }

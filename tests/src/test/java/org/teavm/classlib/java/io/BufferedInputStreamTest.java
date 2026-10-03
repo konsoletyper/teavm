@@ -32,20 +32,19 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 @SuppressWarnings("resource")
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class BufferedInputStreamTest {
     @Test
     public void test_ConstructorLjava_io_InputStream() {
@@ -62,7 +61,7 @@ public class BufferedInputStreamTest {
     public void test_available() throws IOException {
         ByteArrayInputStream isFile = new ByteArrayInputStream(new byte[]{2, 3, 5, 7, 11});
         BufferedInputStream is = new BufferedInputStream(isFile);
-        assertTrue("Returned incorrect number of available bytes", is.available() == 5);
+        assertTrue(is.available() == 5, "Returned incorrect number of available bytes");
 
         // Test that a closed stream throws an IOE for available()
         BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(new byte[]{'h', 'e', 'l', 'l',
@@ -100,8 +99,8 @@ public class BufferedInputStreamTest {
         is.reset();
         is.read(buf2, 0, buf2.length);
         is.reset();
-        assertTrue("Failed to mark correct position",
-                new String(buf1, 0, buf1.length).equals(new String(buf2, 0, buf2.length)));
+        assertTrue(new String(buf1, 0, buf1.length).equals(new String(buf2, 0, buf2.length)),
+                "Failed to mark correct position");
 
         byte[] bytes = new byte[256];
         for (int i = 0; i < 256; i++) {
@@ -112,36 +111,36 @@ public class BufferedInputStreamTest {
         in.mark(14);
         in.read(new byte[14], 0, 14);
         in.reset();
-        assertTrue("Wrong bytes", in.read() == 6 && in.read() == 7);
+        assertTrue(in.read() == 6 && in.read() == 7, "Wrong bytes");
 
         in = new BufferedInputStream(new ByteArrayInputStream(bytes), 12);
         in.skip(6);
         in.mark(8);
         in.skip(7);
         in.reset();
-        assertTrue("Wrong bytes 2", in.read() == 6 && in.read() == 7);
+        assertTrue(in.read() == 6 && in.read() == 7, "Wrong bytes 2");
 
         BufferedInputStream buf = new BufferedInputStream(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), 2);
         buf.mark(3);
         bytes = new byte[3];
         int result = buf.read(bytes);
         assertEquals(3, result);
-        assertEquals("Assert 0:", 0, bytes[0]);
-        assertEquals("Assert 1:", 1, bytes[1]);
-        assertEquals("Assert 2:", 2, bytes[2]);
-        assertEquals("Assert 3:", 3, buf.read());
+        assertEquals(0, bytes[0], "Assert 0:");
+        assertEquals(1, bytes[1], "Assert 1:");
+        assertEquals(2, bytes[2], "Assert 2:");
+        assertEquals(3, buf.read(), "Assert 3:");
 
         buf = new BufferedInputStream(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), 2);
         buf.mark(3);
         bytes = new byte[4];
         result = buf.read(bytes);
         assertEquals(4, result);
-        assertEquals("Assert 4:", 0, bytes[0]);
-        assertEquals("Assert 5:", 1, bytes[1]);
-        assertEquals("Assert 6:", 2, bytes[2]);
-        assertEquals("Assert 7:", 3, bytes[3]);
-        assertEquals("Assert 8:", 4, buf.read());
-        assertEquals("Assert 9:", -1, buf.read());
+        assertEquals(0, bytes[0], "Assert 4:");
+        assertEquals(1, bytes[1], "Assert 5:");
+        assertEquals(2, bytes[2], "Assert 6:");
+        assertEquals(3, bytes[3], "Assert 7:");
+        assertEquals(4, buf.read(), "Assert 8:");
+        assertEquals(-1, buf.read(), "Assert 9:");
 
         buf = new BufferedInputStream(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), 2);
         buf.mark(Integer.MAX_VALUE);
@@ -155,19 +154,19 @@ public class BufferedInputStreamTest {
         BufferedInputStream is = new BufferedInputStream(isFile, 5);
         InputStreamReader isr = new InputStreamReader(is);
         int c = isr.read();
-        assertTrue("read returned incorrect char", c == 0);
+        assertTrue(c == 0, "read returned incorrect char");
 
         byte[] bytes = new byte[256];
         for (int i = 0; i < 256; i++) {
             bytes[i] = (byte) i;
         }
         InputStream in = new BufferedInputStream(new ByteArrayInputStream(bytes), 12);
-        assertEquals("Wrong initial byte", 0, in.read()); // Fill the
+        assertEquals(0, in.read(), "Wrong initial byte"); // Fill the
         // buffer
         byte[] buf = new byte[14];
         in.read(buf, 0, 14); // Read greater than the buffer
-        assertTrue("Wrong block read data", new String(buf, 0, 14).equals(new String(bytes, 1, 14)));
-        assertEquals("Wrong bytes", 15, in.read()); // Check next byte
+        assertTrue(new String(buf, 0, 14).equals(new String(bytes, 1, 14)), "Wrong block read data");
+        assertEquals(15, in.read(), "Wrong bytes"); // Check next byte
     }
 
     @Test
@@ -249,7 +248,7 @@ public class BufferedInputStreamTest {
         });
         bufin.read();
         int result = bufin.read(new byte[2], 0, 2);
-        assertTrue("Incorrect result: " + result, result == 1);
+        assertTrue(result == 1, "Incorrect result: " + result);
     }
 
     @Test
@@ -263,7 +262,7 @@ public class BufferedInputStreamTest {
         is.reset();
         is.read(buf2, 0, 10);
         is.reset();
-        assertTrue("Reset failed", new String(buf1, 0, buf1.length).equals(new String(buf2, 0, buf2.length)));
+        assertTrue(new String(buf1, 0, buf1.length).equals(new String(buf2, 0, buf2.length)), "Reset failed");
 
         BufferedInputStream bIn = new BufferedInputStream(new ByteArrayInputStream("1234567890".getBytes()));
         bIn.mark(10);

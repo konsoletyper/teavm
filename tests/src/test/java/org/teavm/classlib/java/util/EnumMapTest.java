@@ -15,14 +15,14 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,11 +34,10 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class EnumMapTest {
     @Test
     public void emptyCreated() {
@@ -269,10 +268,10 @@ public class EnumMapTest {
 
         hashColorMap.put(Color.Green, 2);
         enumMap = new EnumMap(hashColorMap);
-        assertEquals("Constructor fails", 2, enumMap.get(Color.Green));
-        assertNull("Constructor fails", enumMap.get(Color.Red));
+        assertEquals(2, enumMap.get(Color.Green), "Constructor fails");
+        assertNull(enumMap.get(Color.Red), "Constructor fails");
         enumMap.put(Color.Red, 1);
-        assertEquals("Wrong value", 1, enumMap.get(Color.Red));
+        assertEquals(1, enumMap.get(Color.Red), "Wrong value");
         hashColorMap.put(Size.Big, 3);
         try {
             enumMap = new EnumMap(hashColorMap);
@@ -308,8 +307,8 @@ public class EnumMapTest {
         EnumMap enumColorMap1 = new EnumMap<Color, Double>(Color.class);
         enumColorMap1.put(Color.Blue, 3);
         enumColorMap.putAll(enumColorMap1);
-        assertEquals("Get returned incorrect value for given key", 3, enumColorMap.get(Color.Blue));
-        assertEquals("Wrong Size", 2, enumColorMap.size());
+        assertEquals(3, enumColorMap.get(Color.Blue), "Get returned incorrect value for given key");
+        assertEquals(2, enumColorMap.size(), "Wrong Size");
         enumColorMap = new EnumMap<Color, Double>(Color.class);
         HashMap hashColorMap = null;
         try {
@@ -322,11 +321,11 @@ public class EnumMapTest {
         enumColorMap.putAll(hashColorMap);
         hashColorMap.put(Color.Green, 2);
         enumColorMap.putAll(hashColorMap);
-        assertEquals("Get returned incorrect value for given key", 2, enumColorMap.get(Color.Green));
-        assertNull("Get returned non-null for non mapped key", enumColorMap.get(Color.Red));
+        assertEquals(2, enumColorMap.get(Color.Green), "Get returned incorrect value for given key");
+        assertNull(enumColorMap.get(Color.Red), "Get returned non-null for non mapped key");
         hashColorMap.put(Color.Red, 1);
         enumColorMap.putAll(hashColorMap);
-        assertEquals("Get returned incorrect value for given key", 2, enumColorMap.get(Color.Green));
+        assertEquals(2, enumColorMap.get(Color.Green), "Get returned incorrect value for given key");
         hashColorMap.put(Size.Big, 3);
         try {
             enumColorMap.putAll(hashColorMap);
@@ -350,12 +349,12 @@ public class EnumMapTest {
         Integer integer = Integer.valueOf("3");
         enumSizeMap.put(Size.Small, integer);
         EnumMap<Size, Integer> enumSizeMapClone = enumSizeMap.clone();
-        assertNotSame("Should not be same", enumSizeMap, enumSizeMapClone);
-        assertEquals("Clone answered unequal EnumMap", enumSizeMap, enumSizeMapClone);
-        assertSame("Should be same", enumSizeMap.get(Size.Small), enumSizeMapClone.get(Size.Small));
-        assertSame("Clone is not shallow clone", integer, enumSizeMapClone.get(Size.Small));
+        assertNotSame(enumSizeMap, enumSizeMapClone, "Should not be same");
+        assertEquals(enumSizeMap, enumSizeMapClone, "Clone answered unequal EnumMap");
+        assertSame(enumSizeMap.get(Size.Small), enumSizeMapClone.get(Size.Small), "Should be same");
+        assertSame(integer, enumSizeMapClone.get(Size.Small), "Clone is not shallow clone");
         enumSizeMap.remove(Size.Small);
-        assertSame("Clone is not shallow clone", integer, enumSizeMapClone.get(Size.Small));
+        assertSame(integer, enumSizeMapClone.get(Size.Small), "Clone is not shallow clone");
     }
 
     @Test
@@ -367,49 +366,49 @@ public class EnumMapTest {
         MockEntry<Size, Integer> mockEntry = new MockEntry<>(Size.Middle, 1);
         Set<Map.Entry<Size, Integer>> set = enumSizeMap.entrySet();
         Set<Map.Entry<Size, Integer>> set1 = enumSizeMap.entrySet();
-        assertSame("Should be same", set1, set);
+        assertSame(set1, set, "Should be same");
         try {
             set.add(mockEntry);
             fail("Should throw UnsupportedOperationException");
         } catch (UnsupportedOperationException e) {
             // Expected
         }
-        assertTrue("Returned false for contained object", set.contains(mockEntry));
+        assertTrue(set.contains(mockEntry), "Returned false for contained object");
         mockEntry = new MockEntry<>(Size.Middle, null);
-        assertFalse("Returned true for uncontained object", set.contains(mockEntry));
-        assertFalse("Returned true for uncontained object", set.contains(Size.Small));
-        assertFalse("Returned true for uncontained object", set.contains(new MockEntry(1, 1)));
-        assertFalse("Returned true for uncontained object", set.contains(1));
+        assertFalse(set.contains(mockEntry), "Returned true for uncontained object");
+        assertFalse(set.contains(Size.Small), "Returned true for uncontained object");
+        assertFalse(set.contains(new MockEntry(1, 1)), "Returned true for uncontained object");
+        assertFalse(set.contains(1), "Returned true for uncontained object");
         mockEntry = new MockEntry<>(Size.Big, null);
-        assertTrue("Returned false for contained object", set.contains(mockEntry));
-        assertTrue("Returned false when the object can be removed", set.remove(mockEntry));
-        assertFalse("Returned true for uncontained object", set.contains(mockEntry));
-        assertFalse("Returned true when the object can not be removed", set.remove(mockEntry));
-        assertFalse("Returned true when the object can not be removed", set.remove(new MockEntry(1, 1)));
-        assertFalse("Returned true when the object can not be removed", set.remove(1));
+        assertTrue(set.contains(mockEntry), "Returned false for contained object");
+        assertTrue(set.remove(mockEntry), "Returned false when the object can be removed");
+        assertFalse(set.contains(mockEntry), "Returned true for uncontained object");
+        assertFalse(set.remove(mockEntry), "Returned true when the object can not be removed");
+        assertFalse(set.remove(new MockEntry(1, 1)), "Returned true when the object can not be removed");
+        assertFalse(set.remove(1), "Returned true when the object can not be removed");
         // The set is backed by the map so changes to one are reflected by the
         // other.
         enumSizeMap.put(Size.Big, 3);
         mockEntry = new MockEntry<>(Size.Big, 3);
-        assertTrue("Returned false for contained object", set.contains(mockEntry));
+        assertTrue(set.contains(mockEntry), "Returned false for contained object");
         enumSizeMap.remove(Size.Big);
-        assertFalse("Returned true for uncontained object", set.contains(mockEntry));
-        assertEquals("Wrong size", 1, set.size());
+        assertFalse(set.contains(mockEntry), "Returned true for uncontained object");
+        assertEquals(1, set.size(), "Wrong size");
         set.clear();
-        assertEquals("Wrong size", 0, set.size());
+        assertEquals(0, set.size(), "Wrong size");
         enumSizeMap = new EnumMap<>(Size.class);
         enumSizeMap.put(Size.Middle, 1);
         enumSizeMap.put(Size.Big, null);
         set = enumSizeMap.entrySet();
         Collection<Map.Entry<Size, Integer>> c = new ArrayList<>();
         c.add(new MockEntry<>(Size.Middle, 1));
-        assertTrue("Return wrong value", set.containsAll(c));
-        assertTrue("Remove does not success", set.removeAll(c));
+        assertTrue(set.containsAll(c), "Return wrong value");
+        assertTrue(set.removeAll(c), "Remove does not success");
         enumSizeMap.put(Size.Middle, 1);
         c.add(new MockEntry(Size.Big, 3));
-        assertTrue("Remove does not success", set.removeAll(c));
-        assertFalse("Should return false", set.removeAll(c));
-        assertEquals("Wrong size", 1, set.size());
+        assertTrue(set.removeAll(c), "Remove does not success");
+        assertFalse(set.removeAll(c), "Should return false");
+        assertEquals(1, set.size(), "Wrong size");
         enumSizeMap = new EnumMap<>(Size.class);
         enumSizeMap.put(Size.Middle, 1);
         enumSizeMap.put(Size.Big, null);
@@ -417,56 +416,54 @@ public class EnumMapTest {
         c = new ArrayList<>();
         c.add(new MockEntry(Size.Middle, 1));
         c.add(new MockEntry(Size.Big, 3));
-        assertTrue("Retain does not success", set.retainAll(c));
-        assertEquals("Wrong size", 1, set.size());
-        assertFalse("Should return false", set.retainAll(c));
+        assertTrue(set.retainAll(c), "Retain does not success");
+        assertEquals(1, set.size(), "Wrong size");
+        assertFalse(set.retainAll(c), "Should return false");
         enumSizeMap = new EnumMap<>(Size.class);
         enumSizeMap.put(Size.Middle, 1);
         enumSizeMap.put(Size.Big, null);
         set = enumSizeMap.entrySet();
         Object[] array = set.toArray();
-        assertEquals("Wrong length", 2, array.length);
+        assertEquals(2, array.length, "Wrong length");
         Map.Entry entry = (Map.Entry) array[0];
-        assertEquals("Wrong key", Size.Middle, entry.getKey());
-        assertEquals("Wrong value", 1, entry.getValue());
+        assertEquals(Size.Middle, entry.getKey(), "Wrong key");
+        assertEquals(1, entry.getValue(), "Wrong value");
         Object[] array1 = new Object[10];
         array1 = set.toArray();
-        assertEquals("Wrong length", 2, array1.length);
+        assertEquals(2, array1.length, "Wrong length");
         entry = (Map.Entry) array[0];
-        assertEquals("Wrong key", Size.Middle, entry.getKey());
-        assertEquals("Wrong value", 1, entry.getValue());
+        assertEquals(Size.Middle, entry.getKey(), "Wrong key");
+        assertEquals(1, entry.getValue(), "Wrong value");
         array1 = new Object[10];
         array1 = set.toArray(array1);
-        assertEquals("Wrong length", 10, array1.length);
+        assertEquals(10, array1.length, "Wrong length");
         entry = (Map.Entry) array[1];
-        assertEquals("Wrong key", Size.Big, entry.getKey());
-        assertNull("Should be null", array1[2]);
+        assertEquals(Size.Big, entry.getKey(), "Wrong key");
+        assertNull(array1[2], "Should be null");
         set = enumSizeMap.entrySet();
         Integer integer = Integer.valueOf("1");
-        assertFalse("Returned true when the object can not be removed", set.remove(integer));
-        assertTrue("Returned false when the object can be removed", set.remove(entry));
+        assertFalse(set.remove(integer), "Returned true when the object can not be removed");
+        assertTrue(set.remove(entry), "Returned false when the object can be removed");
         enumSizeMap = new EnumMap<>(EnumMapTest.Size.class);
         enumSizeMap.put(Size.Middle, 1);
         enumSizeMap.put(Size.Big, null);
         set = enumSizeMap.entrySet();
         Iterator<Map.Entry<Size, Integer>> iter = set.iterator();
         entry = iter.next();
-        assertTrue("Returned false for contained object", set.contains(entry));
+        assertTrue(set.contains(entry), "Returned false for contained object");
         mockEntry = new MockEntry<>(Size.Middle, 2);
-        assertFalse("Returned true for uncontained object", set.contains(mockEntry));
-        assertFalse("Returned true for uncontained object", set
-                .contains(new MockEntry(2, 2)));
+        assertFalse(set.contains(mockEntry), "Returned true for uncontained object");
+        assertFalse(set.contains(new MockEntry(2, 2)), "Returned true for uncontained object");
         entry = iter.next();
-        assertTrue("Returned false for contained object", set.contains(entry));
+        assertTrue(set.contains(entry), "Returned false for contained object");
         enumSizeMap.put(Size.Middle, 1);
         enumSizeMap.remove(Size.Big);
         mockEntry = new MockEntry<>(Size.Big, null);
-        assertEquals("Wrong size", 1, set.size());
-        assertFalse("Returned true for uncontained object", set.contains(mockEntry));
+        assertEquals(1, set.size(), "Wrong size");
+        assertFalse(set.contains(mockEntry), "Returned true for uncontained object");
         enumSizeMap.put(Size.Big, 2);
         mockEntry = new MockEntry<>(Size.Big, 2);
-        assertTrue("Returned false for contained object", set
-                .contains(mockEntry));
+        assertTrue(set.contains(mockEntry), "Returned false for contained object");
         iter.remove();
         try {
             iter.remove();
@@ -492,24 +489,24 @@ public class EnumMapTest {
         set = enumSizeMap.entrySet();
         iter = set.iterator();
         entry = iter.next();
-        assertEquals("Wrong key", Size.Middle, entry.getKey());
-        assertTrue("Returned false for contained object", set.contains(entry));
+        assertEquals(Size.Middle, entry.getKey(), "Wrong key");
+        assertTrue(set.contains(entry), "Returned false for contained object");
         enumSizeMap.put(Size.Middle, 3);
-        assertTrue("Returned false for contained object", set.contains(entry));
+        assertTrue(set.contains(entry), "Returned false for contained object");
         entry.setValue(2);
-        assertTrue("Returned false for contained object", set.contains(entry));
-        assertFalse("Returned true for uncontained object", set.remove(1));
+        assertTrue(set.contains(entry), "Returned false for contained object");
+        assertFalse(set.remove(1), "Returned true for uncontained object");
         iter.next();
-        assertEquals("Wrong key", Size.Middle, entry.getKey());
+        assertEquals(Size.Middle, entry.getKey(), "Wrong key");
         set.clear();
-        assertEquals("Wrong size", 0, set.size());
+        assertEquals(0, set.size(), "Wrong size");
         enumSizeMap = new EnumMap<>(Size.class);
         enumSizeMap.put(Size.Middle, 1);
         enumSizeMap.put(Size.Big, null);
         set = enumSizeMap.entrySet();
         iter = set.iterator();
         mockEntry = new MockEntry<>(Size.Middle, 1);
-        assertNotEquals("Wrong result", entry, mockEntry);
+        assertNotEquals(entry, mockEntry, "Wrong result");
         try {
             iter.remove();
             fail("Should throw IllegalStateException");
@@ -517,17 +514,17 @@ public class EnumMapTest {
             // Expected
         }
         entry = iter.next();
-        assertEquals("Wrong key", Size.Middle, entry.getKey());
-        assertEquals("Should return true", entry, mockEntry);
-        assertEquals("Should be equal", mockEntry.hashCode(), entry.hashCode());
+        assertEquals(Size.Middle, entry.getKey(), "Wrong key");
+        assertEquals(entry, mockEntry, "Should return true");
+        assertEquals(mockEntry.hashCode(), entry.hashCode(), "Should be equal");
         mockEntry = new MockEntry<>(Size.Big, 1);
-        assertNotEquals("Wrong result", entry, mockEntry);
+        assertNotEquals(entry, mockEntry, "Wrong result");
         entry = iter.next();
-        assertNotEquals("Wrong result", entry, mockEntry);
-        assertEquals("Wrong key", Size.Big, entry.getKey());
+        assertNotEquals(entry, mockEntry, "Wrong result");
+        assertEquals(Size.Big, entry.getKey(), "Wrong key");
         iter.remove();
-        assertNotEquals("Wrong result", entry, mockEntry);
-        assertEquals("Wrong size", 1, set.size());
+        assertNotEquals(entry, mockEntry, "Wrong result");
+        assertEquals(1, set.size(), "Wrong size");
         try {
             iter.remove();
             fail("Should throw IllegalStateException");
@@ -550,40 +547,40 @@ public class EnumMapTest {
         enumColorMap.put(Color.Blue, null);
         Collection<Integer> collection = enumColorMap.values();
         Collection<Integer> collection1 = enumColorMap.values();
-        assertSame("Should be same", collection1, collection);
+        assertSame(collection1, collection, "Should be same");
         try {
             collection.add(1);
             fail("Should throw UnsupportedOperationException");
         } catch (UnsupportedOperationException e) {
             // Expected
         }
-        assertTrue("Returned false for contained object", collection.contains(1));
-        assertTrue("Returned false for contained object", collection.contains(null));
-        assertFalse("Returned true for uncontained object", collection.contains(2));
-        assertTrue("Returned false when the object can be removed", collection.remove(null));
-        assertFalse("Returned true for uncontained object", collection.contains(null));
-        assertFalse("Returned true when the object can not be removed", collection.remove(null));
+        assertTrue(collection.contains(1), "Returned false for contained object");
+        assertTrue(collection.contains(null), "Returned false for contained object");
+        assertFalse(collection.contains(2), "Returned true for uncontained object");
+        assertTrue(collection.remove(null), "Returned false when the object can be removed");
+        assertFalse(collection.contains(null), "Returned true for uncontained object");
+        assertFalse(collection.remove(null), "Returned true when the object can not be removed");
         // The set is backed by the map so changes to one are reflected by the other.
         enumColorMap.put(Color.Blue, 3);
-        assertTrue("Returned false for contained object", collection.contains(3));
+        assertTrue(collection.contains(3), "Returned false for contained object");
         enumColorMap.remove(Color.Blue);
-        assertFalse("Returned true for uncontained object", collection.contains(3));
-        assertEquals("Wrong size", 1, collection.size());
+        assertFalse(collection.contains(3), "Returned true for uncontained object");
+        assertEquals(1, collection.size(), "Wrong size");
         collection.clear();
-        assertEquals("Wrong size", 0, collection.size());
+        assertEquals(0, collection.size(), "Wrong size");
         enumColorMap = new EnumMap<>(Color.class);
         enumColorMap.put(Color.Red, 1);
         enumColorMap.put(Color.Blue, null);
         collection = enumColorMap.values();
         Collection c = new ArrayList<>();
         c.add(1);
-        assertTrue("Should return true", collection.containsAll(c));
+        assertTrue(collection.containsAll(c), "Should return true");
         c.add(3.4);
-        assertFalse("Should return false", collection.containsAll(c));
-        assertTrue("Should return true", collection.removeAll(c));
-        assertEquals("Wrong size", 1, collection.size());
-        assertFalse("Should return false", collection.removeAll(c));
-        assertEquals("Wrong size", 1, collection.size());
+        assertFalse(collection.containsAll(c), "Should return false");
+        assertTrue(collection.removeAll(c), "Should return true");
+        assertEquals(1, collection.size(), "Wrong size");
+        assertFalse(collection.removeAll(c), "Should return false");
+        assertEquals(1, collection.size(), "Wrong size");
         try {
             collection.addAll(c);
             fail("Should throw UnsupportedOperationException");
@@ -591,29 +588,28 @@ public class EnumMapTest {
             // Expected
         }
         enumColorMap.put(Color.Red, 1);
-        assertEquals("Wrong size", 2, collection.size());
-        assertTrue("Should return true", collection.retainAll(c));
-        assertEquals("Wrong size", 1, collection.size());
-        assertFalse("Should return false", collection.retainAll(c));
+        assertEquals(2, collection.size(), "Wrong size");
+        assertTrue(collection.retainAll(c), "Should return true");
+        assertEquals(1, collection.size(), "Wrong size");
+        assertFalse(collection.retainAll(c), "Should return false");
         assertEquals(1, collection.size());
         Object[] array = collection.toArray();
-        assertEquals("Wrong length", 1, array.length);
-        assertEquals("Wrong key", 1, array[0]);
+        assertEquals(1, array.length, "Wrong length");
+        assertEquals(1, array[0], "Wrong key");
         enumColorMap = new EnumMap<>(Color.class);
         enumColorMap.put(Color.Red, 1);
         enumColorMap.put(Color.Blue, null);
         collection = enumColorMap.values();
-        assertEquals("Wrong size", 2, collection.size());
-        assertFalse("Returned true when the object can not be removed",
-                collection.remove(Integer.valueOf("10")));
+        assertEquals(2, collection.size(), "Wrong size");
+        assertFalse(collection.remove(Integer.valueOf("10")), "Returned true when the object can not be removed");
         Iterator<Integer> iter = enumColorMap.values().iterator();
         Object value = iter.next();
-        assertTrue("Returned false for contained object", collection.contains(value));
+        assertTrue(collection.contains(value), "Returned false for contained object");
         value = iter.next();
-        assertTrue("Returned false for contained object", collection.contains(value));
+        assertTrue(collection.contains(value), "Returned false for contained object");
         enumColorMap.put(Color.Green, 1);
         enumColorMap.remove(Color.Blue);
-        assertFalse("Returned true for uncontained object", collection.contains(value));
+        assertFalse(collection.contains(value), "Returned true for uncontained object");
         iter.remove();
         assertEquals("{Red=1, Green=1}", enumColorMap.toString());
         try {
@@ -622,16 +618,16 @@ public class EnumMapTest {
         } catch (IllegalStateException e) {
             // Expected
         }
-        assertFalse("Returned true for uncontained object", collection.contains(value));
+        assertFalse(collection.contains(value), "Returned true for uncontained object");
         iter = enumColorMap.values().iterator();
         value = iter.next();
-        assertTrue("Returned false for contained object", collection.contains(value));
+        assertTrue(collection.contains(value), "Returned false for contained object");
         enumColorMap.put(Color.Green, 3);
-        assertTrue("Returned false for contained object", collection.contains(value));
-        assertTrue("Returned false for contained object", collection.remove(Integer.valueOf("1")));
-        assertEquals("Wrong size", 1, collection.size());
+        assertTrue(collection.contains(value), "Returned false for contained object");
+        assertTrue(collection.remove(Integer.valueOf("1")), "Returned false for contained object");
+        assertEquals(1, collection.size(), "Wrong size");
         collection.clear();
-        assertEquals("Wrong size", 0, collection.size());
+        assertEquals(0, collection.size(), "Wrong size");
         enumColorMap = new EnumMap<>(Color.class);
         Integer integer1 = 1;
         enumColorMap.put(Color.Green, integer1);
@@ -645,20 +641,20 @@ public class EnumMapTest {
             // Expected
         }
         value = iter.next();
-        assertEquals("Wrong value", integer1, value);
-        assertSame("Wrong value", integer1, value);
-        assertNotEquals("Returned true for unequal object", iter, value);
+        assertEquals(integer1, value, "Wrong value");
+        assertSame(integer1, value, "Wrong value");
+        assertNotEquals(iter, value, "Returned true for unequal object");
         iter.remove();
-        assertNotEquals("Returned true for unequal object", iter, value);
+        assertNotEquals(iter, value, "Returned true for unequal object");
         try {
             iter.remove();
             fail("Should throw IllegalStateException");
         } catch (IllegalStateException e) {
             // Expected
         }
-        assertEquals("Wrong size", 1, collection.size());
+        assertEquals(1, collection.size(), "Wrong size");
         value = iter.next();
-        assertNotEquals("Returned true for unequal object", iter, value);
+        assertNotEquals(iter, value, "Returned true for unequal object");
         iter.remove();
         try {
             iter.next();

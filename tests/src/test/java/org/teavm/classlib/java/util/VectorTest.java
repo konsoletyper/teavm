@@ -48,13 +48,13 @@
 
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -63,12 +63,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Vector;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.ListTestSupport;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class VectorTest {
     Object[] objArray;
     private Vector<Object> tVector = new Vector<>();
@@ -108,8 +107,8 @@ public class VectorTest {
         new ListTestSupport(tv.subList(50, 150)).runTest();
 
         Vector<String> v = new Vector<>();
-        assertEquals("Vector creation failed", 0, v.size());
-        assertEquals("Wrong capacity", 10, v.capacity());
+        assertEquals(0, v.size(), "Vector creation failed");
+        assertEquals(10, v.capacity(), "Wrong capacity");
     }
 
     @Test
@@ -117,8 +116,8 @@ public class VectorTest {
         // Test for method java.util.Vector(int)
 
         Vector<String> v = new Vector<>(100);
-        assertEquals("Vector creation failed", 0, v.size());
-        assertEquals("Wrong capacity", 100, v.capacity());
+        assertEquals(0, v.size(), "Vector creation failed");
+        assertEquals(100, v.capacity(), "Wrong capacity");
     }
 
     @Test
@@ -130,22 +129,22 @@ public class VectorTest {
         v.addElement(new Object());
         v.addElement(new Object());
 
-        assertEquals("Failed to inc capacity by proper amount", 12, v.capacity());
+        assertEquals(12, v.capacity(), "Failed to inc capacity by proper amount");
 
         Vector<String> grow = new Vector<>(3, -1);
         grow.addElement("one");
         grow.addElement("two");
         grow.addElement("three");
         grow.addElement("four");
-        assertEquals("Wrong size", 4, grow.size());
-        assertEquals("Wrong capacity", 6, grow.capacity());
+        assertEquals(4, grow.size(), "Wrong size");
+        assertEquals(6, grow.capacity(), "Wrong capacity");
 
         Vector<String> emptyVector = new Vector<>(0, 0);
         emptyVector.addElement("one");
-        assertEquals("Wrong size", 1, emptyVector.size());
+        assertEquals(1, emptyVector.size(), "Wrong size");
         emptyVector.addElement("two");
         emptyVector.addElement("three");
-        assertEquals("Wrong size", 3, emptyVector.size());
+        assertEquals(3, emptyVector.size(), "Wrong size");
 
         try {
             new Vector<>(-1, 0);
@@ -163,9 +162,9 @@ public class VectorTest {
             l.add("Test " + i);
         }
         Vector<String> myVector = new Vector<>(l);
-        assertTrue("Vector is not correct size", myVector.size() == objArray.length);
+        assertTrue(myVector.size() == objArray.length, "Vector is not correct size");
         for (int counter = 0; counter < objArray.length; counter++) {
-            assertTrue("Vector does not contain correct elements", myVector.contains(((List<?>) l).get(counter)));
+            assertTrue(myVector.contains(((List<?>) l).get(counter)), "Vector does not contain correct elements");
         }
     }
 
@@ -175,15 +174,15 @@ public class VectorTest {
         Object o = new Object();
         Object prev = tVector.get(45);
         tVector.add(45, o);
-        assertTrue("Failed to add Object", tVector.get(45) == o);
-        assertTrue("Failed to fix-up existing indices", tVector.get(46) == prev);
-        assertEquals("Wrong size after add", 101, tVector.size());
+        assertTrue(tVector.get(45) == o, "Failed to add Object");
+        assertTrue(tVector.get(46) == prev, "Failed to fix-up existing indices");
+        assertEquals(101, tVector.size(), "Wrong size after add");
 
         prev = tVector.get(50);
         tVector.add(50, null);
-        assertNull("Failed to add null", tVector.get(50));
-        assertTrue("Failed to fix-up existing indices after adding null", tVector.get(51) == prev);
-        assertEquals("Wrong size after add", 102, tVector.size());
+        assertNull(tVector.get(50), "Failed to add null");
+        assertTrue(tVector.get(51) == prev, "Failed to fix-up existing indices after adding null");
+        assertEquals(102, tVector.size(), "Wrong size after add");
     }
 
     @Test
@@ -191,12 +190,12 @@ public class VectorTest {
         // Test for method boolean java.util.Vector.add(java.lang.Object)
         Object o = new Object();
         tVector.add(o);
-        assertTrue("Failed to add Object", tVector.lastElement() == o);
-        assertEquals("Wrong size after add", 101, tVector.size());
+        assertTrue(tVector.lastElement() == o, "Failed to add Object");
+        assertEquals(101, tVector.size(), "Wrong size after add");
 
         tVector.add(null);
-        assertNull("Failed to add null", tVector.lastElement());
-        assertEquals("Wrong size after add", 102, tVector.size());
+        assertNull(tVector.lastElement(), "Failed to add null");
+        assertEquals(102, tVector.size(), "Wrong size after add");
     }
 
     @Test
@@ -210,7 +209,7 @@ public class VectorTest {
         Vector<String> v = new Vector<>();
         tVector.addAll(50, l);
         for (int i = 50; i < 100; i++) {
-            assertTrue("Failed to add all elements", tVector.get(i) == ((List<String>) l).get(i - 50));
+            assertTrue(tVector.get(i) == ((List<String>) l).get(i - 50), "Failed to add all elements");
         }
         v = new Vector<>();
         v.add("one");
@@ -220,15 +219,15 @@ public class VectorTest {
         } catch (ArrayIndexOutOfBoundsException e) {
             r = 1;
         }
-        assertTrue("Invalid add: " + r, r == 1);
+        assertTrue(r == 1, "Invalid add: " + r);
         l = new LinkedList<>();
         l.add(null);
         l.add("gah");
         l.add(null);
         tVector.addAll(50, l);
-        assertNull("Wrong element at position 50--wanted null", tVector.get(50));
-        assertEquals("Wrong element at position 51--wanted 'gah'", "gah", tVector.get(51));
-        assertNull("Wrong element at position 52--wanted null", tVector.get(52));
+        assertNull(tVector.get(50), "Wrong element at position 50--wanted null");
+        assertEquals("gah", tVector.get(51), "Wrong element at position 51--wanted 'gah'");
+        assertNull(tVector.get(52), "Wrong element at position 52--wanted null");
 
         try {
             v.addAll(-1, null);
@@ -247,12 +246,12 @@ public class VectorTest {
             l.add("Test " + i);
         }
         v.addAll(l);
-        assertTrue("Failed to add all elements", tVector.equals(v));
+        assertTrue(tVector.equals(v), "Failed to add all elements");
 
         v.addAll(l);
         int vSize = tVector.size();
         for (int counter = vSize - 1; counter >= 0; counter--) {
-            assertTrue("Failed to add elements correctly", v.get(counter) == v.get(counter + vSize));
+            assertTrue(v.get(counter) == v.get(counter + vSize), "Failed to add elements correctly");
         }
 
         l = new LinkedList<>();
@@ -260,9 +259,9 @@ public class VectorTest {
         l.add("gah");
         l.add(null);
         tVector.addAll(l);
-        assertNull("Wrong element at 3rd last position--wanted null", tVector.get(vSize));
-        assertEquals("Wrong element at 2nd last position--wanted 'gah'", "gah", tVector.get(vSize + 1));
-        assertNull("Wrong element at last position--wanted null", tVector.get(vSize + 2));
+        assertNull(tVector.get(vSize), "Wrong element at 3rd last position--wanted null");
+        assertEquals("gah", tVector.get(vSize + 1), "Wrong element at 2nd last position--wanted 'gah'");
+        assertNull(tVector.get(vSize + 2), "Wrong element at last position--wanted null");
     }
 
     @Test
@@ -270,11 +269,11 @@ public class VectorTest {
         // Test for method void java.util.Vector.addElement(java.lang.Object)
         Vector<Object> v = vectorClone(tVector);
         v.addElement("Added Element");
-        assertTrue("Failed to add element", v.contains("Added Element"));
-        assertEquals("Added Element to wrong slot", "Added Element", v.elementAt(100));
+        assertTrue(v.contains("Added Element"), "Failed to add element");
+        assertEquals("Added Element", v.elementAt(100), "Added Element to wrong slot");
         v.addElement(null);
-        assertTrue("Failed to add null", v.contains(null));
-        assertNull("Added null to wrong slot", v.elementAt(101));
+        assertTrue(v.contains(null), "Failed to add null");
+        assertNull(v.elementAt(101), "Added null to wrong slot");
     }
 
     @Test
@@ -282,11 +281,11 @@ public class VectorTest {
         // Test for method void java.util.Vector.addElement(java.lang.Object)
         Vector<Object> v = vectorClone(tVector);
         v.addElement("Added Element");
-        assertTrue("Failed to add element", v.contains("Added Element"));
-        assertEquals("Added Element to wrong slot", "Added Element", v.elementAt(100));
+        assertTrue(v.contains("Added Element"), "Failed to add element");
+        assertEquals("Added Element", v.elementAt(100), "Added Element to wrong slot");
         v.addElement(null);
-        assertTrue("Failed to add null", v.contains(null));
-        assertNull("Added null to wrong slot", v.elementAt(101));
+        assertTrue(v.contains(null), "Failed to add null");
+        assertNull(v.elementAt(101), "Added null to wrong slot");
     }
 
     @Test
@@ -294,7 +293,7 @@ public class VectorTest {
         // Test for method int java.util.Vector.capacity()
 
         Vector<String> v = new Vector<>(9);
-        assertEquals("Incorrect capacity returned", 9, v.capacity());
+        assertEquals(9, v.capacity(), "Incorrect capacity returned");
     }
 
     @Test
@@ -302,18 +301,18 @@ public class VectorTest {
         // Test for method void java.util.Vector.clear()
         Vector<Object> orgVector = vectorClone(tVector);
         tVector.clear();
-        assertEquals("a) Cleared Vector has non-zero size", 0, tVector.size());
+        assertEquals(0, tVector.size(), "a) Cleared Vector has non-zero size");
         Enumeration<Object> e = orgVector.elements();
         while (e.hasMoreElements()) {
-            assertTrue("a) Cleared vector contained elements", !tVector.contains(e.nextElement()));
+            assertTrue(!tVector.contains(e.nextElement()), "a) Cleared vector contained elements");
         }
 
         tVector.add(null);
         tVector.clear();
-        assertEquals("b) Cleared Vector has non-zero size", 0, tVector.size());
+        assertEquals(0, tVector.size(), "b) Cleared Vector has non-zero size");
         e = orgVector.elements();
         while (e.hasMoreElements()) {
-            assertTrue("b) Cleared vector contained elements", !tVector.contains(e.nextElement()));
+            assertTrue(!tVector.contains(e.nextElement()), "b) Cleared vector contained elements");
         }
     }
 
@@ -329,21 +328,21 @@ public class VectorTest {
 
         int index = 0;
         while (orgNum.hasMoreElements()) {
-            assertTrue("Not enough elements copied", cnum.hasMoreElements());
-            assertSame("Vector cloned improperly, element " + index++ + " does not match",
-                    orgNum.nextElement(), cnum.nextElement());
+            assertTrue(cnum.hasMoreElements(), "Not enough elements copied");
+            assertSame(orgNum.nextElement(), cnum.nextElement(),
+                    "Vector cloned improperly, element " + index++ + " does not match");
         }
-        assertTrue("Not enough elements copied", !cnum.hasMoreElements());
+        assertTrue(!cnum.hasMoreElements(), "Not enough elements copied");
     }
 
     @Test
     public void test_containsLjava_lang_Object() {
         // Test for method boolean java.util.Vector.contains(java.lang.Object)
-        assertTrue("Did not find element", tVector.contains("Test 42"));
-        assertTrue("Found bogus element", !tVector.contains("Hello"));
-        assertTrue("Returned true looking for null in vector without null element", !tVector.contains(null));
+        assertTrue(tVector.contains("Test 42"), "Did not find element");
+        assertTrue(!tVector.contains("Hello"), "Found bogus element");
+        assertTrue(!tVector.contains(null), "Returned true looking for null in vector without null element");
         tVector.insertElementAt(null, 20);
-        assertTrue("Returned false looking for null in vector with null element", tVector.contains(null));
+        assertTrue(tVector.contains(null), "Returned false looking for null in vector with null element");
     }
 
     @Test
@@ -355,14 +354,14 @@ public class VectorTest {
             s.add("Test " + i);
         }
 
-        assertTrue("Returned false for valid collection", tVector.containsAll(s));
+        assertTrue(tVector.containsAll(s), "Returned false for valid collection");
         s.add(null);
-        assertTrue("Returned true for invlaid collection containing null", !tVector.containsAll(s));
+        assertTrue(!tVector.containsAll(s), "Returned true for invlaid collection containing null");
         tVector.add(25, null);
-        assertTrue("Returned false for valid collection containing null", tVector.containsAll(s));
+        assertTrue(tVector.containsAll(s), "Returned false for valid collection containing null");
         s = new HashSet<>();
         s.add(new Object());
-        assertTrue("Returned true for invalid collection", !tVector.containsAll(s));
+        assertTrue(!tVector.containsAll(s), "Returned true for invalid collection");
     }
 
     @Test
@@ -374,16 +373,16 @@ public class VectorTest {
         tVector.copyInto(a);
 
         for (int i = 0; i < 100; i++) {
-            assertTrue("copyInto failed", a[i] == tVector.elementAt(i));
+            assertTrue(a[i] == tVector.elementAt(i), "copyInto failed");
         }
     }
 
     @Test
     public void test_elementAtI() {
         // Test for method java.lang.Object java.util.Vector.elementAt(int)
-        assertEquals("Incorrect element returned", "Test 18", tVector.elementAt(18));
+        assertEquals("Test 18", tVector.elementAt(18), "Incorrect element returned");
         tVector.setElementAt(null, 20);
-        assertNull("Incorrect element returned--wanted null", tVector.elementAt(20));
+        assertNull(tVector.elementAt(20), "Incorrect element returned--wanted null");
     }
 
     @Test
@@ -393,10 +392,10 @@ public class VectorTest {
         Enumeration<Object> e = tVector.elements();
         int i = 0;
         while (e.hasMoreElements()) {
-            assertTrue("Enumeration returned incorrect element at pos: " + i, e.nextElement() == tVector.elementAt(i));
+            assertTrue(e.nextElement() == tVector.elementAt(i), "Enumeration returned incorrect element at pos: " + i);
             i++;
         }
-        assertTrue("Invalid enumeration", i == tVector.size());
+        assertTrue(i == tVector.size(), "Invalid enumeration");
     }
 
     @Test
@@ -405,28 +404,28 @@ public class VectorTest {
 
         Vector<Object> v = new Vector<>(9);
         v.ensureCapacity(20);
-        assertEquals("ensureCapacity failed to set correct capacity", 20, v.capacity());
+        assertEquals(20, v.capacity(), "ensureCapacity failed to set correct capacity");
         v = new Vector<>(100);
-        assertEquals("ensureCapacity reduced capacity", 100, v.capacity());
+        assertEquals(100, v.capacity(), "ensureCapacity reduced capacity");
 
         v.ensureCapacity(150);
-        assertEquals("ensuieCapacity failed to set to be twice the old capacity", 200, v.capacity());
+        assertEquals(200, v.capacity(), "ensuieCapacity failed to set to be twice the old capacity");
 
         v = new Vector<>(9, -1);
         v.ensureCapacity(20);
-        assertEquals("ensureCapacity failed to set to be minCapacity", 20, v.capacity());
+        assertEquals(20, v.capacity(), "ensureCapacity failed to set to be minCapacity");
         v.ensureCapacity(15);
-        assertEquals("ensureCapacity reduced capacity", 20, v.capacity());
+        assertEquals(20, v.capacity(), "ensureCapacity reduced capacity");
         v.ensureCapacity(35);
-        assertEquals("ensuieCapacity failed to set to be twice the old capacity", 40, v.capacity());
+        assertEquals(40, v.capacity(), "ensuieCapacity failed to set to be twice the old capacity");
 
         v = new Vector<>(9, 4);
         v.ensureCapacity(11);
-        assertEquals("ensureCapacity failed to set correct capacity", 13, v.capacity());
+        assertEquals(13, v.capacity(), "ensureCapacity failed to set correct capacity");
         v.ensureCapacity(5);
-        assertEquals("ensureCapacity reduced capacity", 13, v.capacity());
+        assertEquals(13, v.capacity(), "ensureCapacity reduced capacity");
         v.ensureCapacity(20);
-        assertEquals("ensuieCapacity failed to set to be twice the old capacity", 20, v.capacity());
+        assertEquals(20, v.capacity(), "ensuieCapacity failed to set to be twice the old capacity");
     }
 
     @Test
@@ -436,24 +435,24 @@ public class VectorTest {
         for (int i = 0; i < 100; i++) {
             v.addElement("Test " + i);
         }
-        assertTrue("a) Equal vectors returned false", tVector.equals(v));
+        assertTrue(tVector.equals(v), "a) Equal vectors returned false");
         v.addElement(null);
-        assertTrue("b) UnEqual vectors returned true", !tVector.equals(v));
+        assertTrue(!tVector.equals(v), "b) UnEqual vectors returned true");
         tVector.addElement(null);
-        assertTrue("c) Equal vectors returned false", tVector.equals(v));
+        assertTrue(tVector.equals(v), "c) Equal vectors returned false");
         tVector.removeElementAt(22);
-        assertTrue("d) UnEqual vectors returned true", !tVector.equals(v));
-        assertTrue("e) Equal vectors returned false", tVector.equals(tVector));
-        assertFalse("f) UnEqual vectors returned true", tVector.equals(new Object()));
-        assertFalse("g) Unequal vectors returned true", tVector.equals(null));
+        assertTrue(!tVector.equals(v), "d) UnEqual vectors returned true");
+        assertTrue(tVector.equals(tVector), "e) Equal vectors returned false");
+        assertFalse(tVector.equals(new Object()), "f) UnEqual vectors returned true");
+        assertFalse(tVector.equals(null), "g) Unequal vectors returned true");
     }
 
     @Test
     public void test_firstElement() {
         // Test for method java.lang.Object java.util.Vector.firstElement()
-        assertEquals("Returned incorrect firstElement", "Test 0", tVector.firstElement());
+        assertEquals("Test 0", tVector.firstElement(), "Returned incorrect firstElement");
         tVector.insertElementAt(null, 0);
-        assertNull("Returned incorrect firstElement--wanted null", tVector.firstElement());
+        assertNull(tVector.firstElement(), "Returned incorrect firstElement--wanted null");
 
         Vector<Object> v = new Vector<>();
         try {
@@ -467,9 +466,9 @@ public class VectorTest {
     @Test
     public void test_getI() {
         // Test for method java.lang.Object java.util.Vector.get(int)
-        assertEquals("Get returned incorrect object", "Test 80", tVector.get(80));
+        assertEquals("Test 80", tVector.get(80), "Get returned incorrect object");
         tVector.add(25, null);
-        assertNull("Returned incorrect element--wanted null", tVector.get(25));
+        assertNull(tVector.get(25), "Returned incorrect element--wanted null");
     }
 
     @Test
@@ -481,32 +480,32 @@ public class VectorTest {
             Object obj = tVector.elementAt(i);
             hashCode = 31 * hashCode + (obj == null ? 0 : obj.hashCode());
         }
-        assertTrue("Incorrect hashCode returned.  Wanted: " + hashCode + " got: " + tVector.hashCode(),
-                tVector.hashCode() == hashCode);
+        assertTrue(tVector.hashCode() == hashCode,
+                "Incorrect hashCode returned.  Wanted: " + hashCode + " got: " + tVector.hashCode());
     }
 
     @Test
     public void test_indexOfLjava_lang_Object() {
         // Test for method int java.util.Vector.indexOf(java.lang.Object)
-        assertEquals("Incorrect index returned", 10, tVector.indexOf("Test 10"));
-        assertEquals("Index returned for invalid Object", -1, tVector.indexOf("XXXXXXXXXXX"));
+        assertEquals(10, tVector.indexOf("Test 10"), "Incorrect index returned");
+        assertEquals(-1, tVector.indexOf("XXXXXXXXXXX"), "Index returned for invalid Object");
         tVector.setElementAt(null, 20);
         tVector.setElementAt(null, 40);
-        assertTrue("Incorrect indexOf returned for null: " + tVector.indexOf(null), tVector.indexOf(null) == 20);
+        assertTrue(tVector.indexOf(null) == 20, "Incorrect indexOf returned for null: " + tVector.indexOf(null));
     }
 
     @Test
     public void test_indexOfLjava_lang_ObjectI() {
         // Test for method int java.util.Vector.indexOf(java.lang.Object, int)
-        assertEquals("Failed to find correct index", tVector.indexOf("Test 98", 50), 98);
-        assertTrue("Found index of bogus element", tVector.indexOf("Test 1001", 50) == -1);
+        assertEquals(tVector.indexOf("Test 98", 50), 98, "Failed to find correct index");
+        assertTrue(tVector.indexOf("Test 1001", 50) == -1, "Found index of bogus element");
         tVector.setElementAt(null, 20);
         tVector.setElementAt(null, 40);
         tVector.setElementAt(null, 60);
-        assertTrue("a) Incorrect indexOf returned for null: " + tVector.indexOf(null, 25),
-                tVector.indexOf(null, 25) == 40);
-        assertTrue("b) Incorrect indexOf returned for null: " + tVector.indexOf(null, 20),
-                tVector.indexOf(null, 20) == 20);
+        assertTrue(tVector.indexOf(null, 25) == 40,
+                "a) Incorrect indexOf returned for null: " + tVector.indexOf(null, 25));
+        assertTrue(tVector.indexOf(null, 20) == 20,
+                "b) Incorrect indexOf returned for null: " + tVector.indexOf(null, 20));
         try {
             tVector.indexOf("Test 98", -1);
             fail("should throw ArrayIndexOutOfBoundsException");
@@ -532,10 +531,10 @@ public class VectorTest {
         Vector<Object> v = vectorClone(tVector);
         String prevElement = (String) v.elementAt(99);
         v.insertElementAt("Inserted Element", 99);
-        assertEquals("Element not inserted", "Inserted Element", v.elementAt(99));
-        assertTrue("Elements shifted incorrectly", ((String) v.elementAt(100)).equals(prevElement));
+        assertEquals("Inserted Element", v.elementAt(99), "Element not inserted");
+        assertTrue(((String) v.elementAt(100)).equals(prevElement), "Elements shifted incorrectly");
         v.insertElementAt(null, 20);
-        assertNull("null not inserted", v.elementAt(20));
+        assertNull(v.elementAt(20), "null not inserted");
 
         try {
             tVector.insertElementAt("Inserted Element", -1);
@@ -570,17 +569,17 @@ public class VectorTest {
     public void test_isEmpty() {
         // Test for method boolean java.util.Vector.isEmpty()Vector
         Vector<Object> v = new Vector<>();
-        assertTrue("Empty vector returned false", v.isEmpty());
+        assertTrue(v.isEmpty(), "Empty vector returned false");
         v.addElement(new Object());
-        assertTrue("non-Empty vector returned true", !v.isEmpty());
+        assertTrue(!v.isEmpty(), "non-Empty vector returned true");
     }
 
     @Test
     public void test_lastElement() {
         // Test for method java.lang.Object java.util.Vector.lastElement()
-        assertEquals("Incorrect last element returned", "Test 99", tVector.lastElement());
+        assertEquals("Test 99", tVector.lastElement(), "Incorrect last element returned");
         tVector.addElement(null);
-        assertNull("Incorrect last element returned--wanted null", tVector.lastElement());
+        assertNull(tVector.lastElement(), "Incorrect last element returned--wanted null");
 
         Vector<String> vector = new Vector<>();
         try {
@@ -599,26 +598,26 @@ public class VectorTest {
             v.addElement("Test");
         }
         v.addElement("z");
-        assertEquals("Failed to return correct index", 8, v.lastIndexOf("Test"));
+        assertEquals(8, v.lastIndexOf("Test"), "Failed to return correct index");
         tVector.setElementAt(null, 20);
         tVector.setElementAt(null, 40);
-        assertTrue("Incorrect lastIndexOf returned for null: " + tVector.lastIndexOf(null),
-                tVector.lastIndexOf(null) == 40);
+        assertTrue(tVector.lastIndexOf(null) == 40,
+                "Incorrect lastIndexOf returned for null: " + tVector.lastIndexOf(null));
     }
 
     @Test
     public void test_lastIndexOfLjava_lang_ObjectI() {
         // Test for method int java.util.Vector.lastIndexOf(java.lang.Object,
         // int)
-        assertEquals("Failed to find object", 0, tVector.lastIndexOf("Test 0", 0));
-        assertTrue("Found Object outside of index", tVector.lastIndexOf("Test 0", 10) > -1);
+        assertEquals(0, tVector.lastIndexOf("Test 0", 0), "Failed to find object");
+        assertTrue(tVector.lastIndexOf("Test 0", 10) > -1, "Found Object outside of index");
         tVector.setElementAt(null, 20);
         tVector.setElementAt(null, 40);
         tVector.setElementAt(null, 60);
-        assertTrue("Incorrect lastIndexOf returned for null: " + tVector.lastIndexOf(null, 15),
-                tVector.lastIndexOf(null, 15) == -1);
-        assertTrue("Incorrect lastIndexOf returned for null: " + tVector.lastIndexOf(null, 45),
-                tVector.lastIndexOf(null, 45) == 40);
+        assertTrue(tVector.lastIndexOf(null, 15) == -1,
+                "Incorrect lastIndexOf returned for null: " + tVector.lastIndexOf(null, 15));
+        assertTrue(tVector.lastIndexOf(null, 45) == 40,
+                "Incorrect lastIndexOf returned for null: " + tVector.lastIndexOf(null, 45));
 
         assertEquals(-1, tVector.lastIndexOf("Test 98", -1));
         assertEquals(-1, tVector.lastIndexOf("Test 98", 0));
@@ -653,19 +652,19 @@ public class VectorTest {
         // Test for method java.lang.Object java.util.Vector.remove(int)
         Object removeElement = tVector.get(36);
         Object result = tVector.remove(36);
-        assertFalse("Contained element after remove", tVector.contains("Test 36"));
-        assertEquals("Should return the element that was removed", removeElement, result);
-        assertEquals("Failed to decrement size after remove", 99, tVector.size());
+        assertFalse(tVector.contains("Test 36"), "Contained element after remove");
+        assertEquals(removeElement, result, "Should return the element that was removed");
+        assertEquals(99, tVector.size(), "Failed to decrement size after remove");
         tVector.add(20, null);
         removeElement = tVector.get(19);
         result = tVector.remove(19);
-        assertNull("Didn't move null element over", tVector.get(19));
-        assertEquals("Should return the element that was removed", removeElement, result);
+        assertNull(tVector.get(19), "Didn't move null element over");
+        assertEquals(removeElement, result, "Should return the element that was removed");
         removeElement = tVector.get(19);
         result = tVector.remove(19);
-        assertNotNull("Didn't remove null element", tVector.get(19));
-        assertEquals("Should return the element that was removed", removeElement, result);
-        assertEquals("Failed to decrement size after removing null", 98, tVector.size());
+        assertNotNull(tVector.get(19), "Didn't remove null element");
+        assertEquals(removeElement, result, "Should return the element that was removed");
+        assertEquals(98, tVector.size(), "Failed to decrement size after removing null");
 
         try {
             tVector.remove(-1);
@@ -686,12 +685,12 @@ public class VectorTest {
     public void test_removeLjava_lang_Object() {
         // Test for method boolean java.util.Vector.remove(java.lang.Object)
         tVector.remove("Test 0");
-        assertTrue("Contained element after remove", !tVector.contains("Test 0"));
-        assertEquals("Failed to decrement size after remove", 99, tVector.size());
+        assertTrue(!tVector.contains("Test 0"), "Contained element after remove");
+        assertEquals(99, tVector.size(), "Failed to decrement size after remove");
         tVector.add(null);
         tVector.remove(null);
-        assertTrue("Contained null after remove", !tVector.contains(null));
-        assertEquals("Failed to decrement size after removing null", 99, tVector.size());
+        assertTrue(!tVector.contains(null), "Contained null after remove");
+        assertEquals(99, tVector.size(), "Failed to decrement size after removing null");
     }
 
     @Test
@@ -709,20 +708,20 @@ public class VectorTest {
         Object o = v.firstElement();
         s.add(o);
         v.removeAll(s);
-        assertTrue("Failed to remove items in collection", !v.contains(o));
+        assertTrue(!v.contains(o), "Failed to remove items in collection");
         v.removeAll(l);
-        assertTrue("Failed to remove all elements", v.isEmpty());
+        assertTrue(v.isEmpty(), "Failed to remove all elements");
 
         v.add(null);
         v.add(null);
         v.add("Boom");
         v.removeAll(s);
-        assertEquals("Should not have removed any elements", 3, v.size());
+        assertEquals(3, v.size(), "Should not have removed any elements");
         l = new LinkedList<>();
         l.add(null);
         v.removeAll(l);
-        assertEquals("Should only have one element", 1, v.size());
-        assertEquals("Element should be 'Boom'", "Boom", v.firstElement());
+        assertEquals(1, v.size(), "Should only have one element");
+        assertEquals("Boom", v.firstElement(), "Element should be 'Boom'");
     }
 
     @Test
@@ -730,7 +729,7 @@ public class VectorTest {
         // Test for method void java.util.Vector.removeAllElements()
         Vector<Object> v = vectorClone(tVector);
         v.removeAllElements();
-        assertEquals("Failed to remove all elements", 0, v.size());
+        assertEquals(0, v.size(), "Failed to remove all elements");
     }
 
     @Test
@@ -739,11 +738,11 @@ public class VectorTest {
         // java.util.Vector.removeElement(java.lang.Object)
         Vector<Object> v = vectorClone(tVector);
         v.removeElement("Test 98");
-        assertEquals("Element not removed", "Test 99", v.elementAt(98));
-        assertTrue("Vector is wrong size after removal: " + v.size(), v.size() == 99);
+        assertEquals("Test 99", v.elementAt(98), "Element not removed");
+        assertTrue(v.size() == 99, "Vector is wrong size after removal: " + v.size());
         tVector.addElement(null);
         v.removeElement(null);
-        assertTrue("Vector is wrong size after removing null: " + v.size(), v.size() == 99);
+        assertTrue(v.size() == 99, "Vector is wrong size after removing null: " + v.size());
     }
 
     @Test
@@ -752,7 +751,7 @@ public class VectorTest {
         Vector<Object> v = vectorClone(tVector);
         int size = v.size();
         v.removeElementAt(50);
-        assertEquals("Failed to remove element", -1, v.indexOf("Test 50", 0));
+        assertEquals(-1, v.indexOf("Test 50", 0), "Failed to remove element");
         assertEquals("Test 51", v.get(50));
         assertEquals(size - 1, v.size());
 
@@ -760,7 +759,7 @@ public class VectorTest {
         assertNull(tVector.get(60));
         size = tVector.size();
         tVector.removeElementAt(60);
-        assertNotNull("Element at 60 should not be null after removal", tVector.elementAt(60));
+        assertNotNull(tVector.elementAt(60), "Element at 60 should not be null after removal");
         assertEquals(size - 1, tVector.size());
 
         try {
@@ -824,8 +823,8 @@ public class VectorTest {
         s.add(o);
         s.add(null);
         tVector.retainAll(s);
-        assertTrue("Retained items other than specified",
-                tVector.size() == 2 && tVector.contains(o) && tVector.contains(null));
+        assertTrue(tVector.size() == 2 && tVector.contains(o) && tVector.contains(null),
+                "Retained items other than specified");
     }
 
     @Test
@@ -835,13 +834,13 @@ public class VectorTest {
         Object o = new Object();
         Object previous = tVector.get(23);
         Object result = tVector.set(23, o);
-        assertEquals("Should return the element previously at the specified position", previous, result);
-        assertTrue("Failed to set Object", tVector.get(23) == o);
+        assertEquals(previous, result, "Should return the element previously at the specified position");
+        assertTrue(tVector.get(23) == o, "Failed to set Object");
 
         previous = tVector.get(0);
         result = tVector.set(0, null);
-        assertEquals("Should return the element previously at the specified position", previous, result);
-        assertNull("Failed to set Object", tVector.get(0));
+        assertEquals(previous, result, "Should return the element previously at the specified position");
+        assertNull(tVector.get(0), "Failed to set Object");
 
         try {
             tVector.set(-1, o);
@@ -878,10 +877,10 @@ public class VectorTest {
         // int)
         Vector<Object> v = vectorClone(tVector);
         v.setElementAt("Inserted Element", 99);
-        assertEquals("Element not set", "Inserted Element", v.elementAt(99));
+        assertEquals("Inserted Element", v.elementAt(99), "Element not set");
 
         v.setElementAt(null, 0);
-        assertNull("Null element not set", v.elementAt(0));
+        assertNull(v.elementAt(0), "Null element not set");
 
         try {
             v.setElementAt("Inserted Element", -1);
@@ -919,8 +918,8 @@ public class VectorTest {
         int oldSize = v.size();
         Object preElement = v.get(10);
         v.setSize(10);
-        assertEquals("Failed to set size", 10, v.size());
-        assertEquals("All components at index newSize and greater should be discarded", -1, v.indexOf(preElement));
+        assertEquals(10, v.size(), "Failed to set size");
+        assertEquals(-1, v.indexOf(preElement), "All components at index newSize and greater should be discarded");
         try {
             v.get(oldSize - 1);
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -929,7 +928,7 @@ public class VectorTest {
 
         oldSize = v.size();
         v.setSize(20);
-        assertEquals("Failed to set size", 20, v.size());
+        assertEquals(20, v.size(), "Failed to set size");
         for (int i = oldSize; i < v.size(); i++) {
             assertNull(v.get(i));
         }
@@ -945,23 +944,23 @@ public class VectorTest {
     @Test
     public void test_size() {
         // Test for method int java.util.Vector.size()
-        assertEquals("Returned incorrect size", 100, tVector.size());
+        assertEquals(100, tVector.size(), "Returned incorrect size");
     }
 
     @Test
     public void test_subListII() {
         // Test for method java.util.List java.util.Vector.subList(int, int)
         List<Object> sl = tVector.subList(10, 25);
-        assertEquals("Returned sublist of incorrect size", 15, sl.size());
+        assertEquals(15, sl.size(), "Returned sublist of incorrect size");
         for (int i = 10; i < 25; i++) {
-            assertTrue("Returned incorrect sublist", sl.contains(tVector.get(i)));
+            assertTrue(sl.contains(tVector.get(i)), "Returned incorrect sublist");
         }
     }
 
     @Test
     public void test_toArray() {
         // Test for method java.lang.Object [] java.util.Vector.toArray()
-        assertTrue("Returned incorrect array", Arrays.equals(objArray, tVector.toArray()));
+        assertTrue(Arrays.equals(objArray, tVector.toArray()), "Returned incorrect array");
     }
 
     @Test
@@ -974,9 +973,9 @@ public class VectorTest {
             o[i] = f;
         }
         tVector.toArray(o);
-        assertNull("Failed to set slot to null", o[100]);
+        assertNull(o[100], "Failed to set slot to null");
         for (int i = 0; i < tVector.size(); i++) {
-            assertTrue("Returned incorrect array", tVector.elementAt(i) == o[i]);
+            assertTrue(tVector.elementAt(i) == o[i], "Returned incorrect array");
         }
     }
 
@@ -990,7 +989,7 @@ public class VectorTest {
         assertNotNull(vec.toString());
 
         // Test for method java.lang.String java.util.Vector.toString()
-        assertTrue("Incorrect String returned", tVector.toString().equals(vString));
+        assertTrue(tVector.toString().equals(vString), "Incorrect String returned");
 
         Vector<Object> v = new Vector<>();
         v.addElement("one");
@@ -999,7 +998,7 @@ public class VectorTest {
         // test last element
         v.addElement(v);
         String result = v.toString();
-        assertTrue("should contain self ref", result.indexOf("(this") > -1);
+        assertTrue(result.indexOf("(this") > -1, "should contain self ref");
     }
 
     @Test
@@ -1025,7 +1024,7 @@ public class VectorTest {
         Vector<Object> v = new Vector<>(10);
         v.addElement(new Object());
         v.trimToSize();
-        assertEquals("Failed to trim capacity", 1, v.capacity());
+        assertEquals(1, v.capacity(), "Failed to trim capacity");
     }
 
     @SuppressWarnings("unchecked")
@@ -1060,7 +1059,7 @@ public class VectorTest {
             SubVector<String> subvector = new SubVector<>();
             subvector.add("foo");
             subvector.addElement("bar");
-            assertEquals("Expected two elements in vector", 2, subvector.size());
+            assertEquals(2, subvector.size(), "Expected two elements in vector");
         }
     }
 

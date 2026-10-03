@@ -15,10 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.DuplicateFormatFlagsException;
 import java.util.FormatFlagsConversionMismatchException;
 import java.util.Formattable;
@@ -30,25 +31,24 @@ import java.util.IllegalFormatPrecisionException;
 import java.util.Locale;
 import java.util.MissingFormatWidthException;
 import java.util.UnknownFormatConversionException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class FormatterTest {
-    @Test(expected = UnknownFormatConversionException.class)
+    @Test
     public void unexpectedEndOfFormatString() {
-        new Formatter().format("%1", "foo");
+        assertThrows(UnknownFormatConversionException.class, () -> new Formatter().format("%1", "foo"));
     }
 
-    @Test(expected = DuplicateFormatFlagsException.class)
+    @Test
     public void duplicateFlag() {
-        new Formatter().format("%--s", "q");
+        assertThrows(DuplicateFormatFlagsException.class, () -> new Formatter().format("%--s", "q"));
     }
 
-    @Test(expected = UnknownFormatConversionException.class)
+    @Test
     public void noPrecisionAfterDot() {
-        new Formatter().format("%1.s", "q");
+        assertThrows(UnknownFormatConversionException.class, () -> new Formatter().format("%1.s", "q"));
     }
 
     @Test

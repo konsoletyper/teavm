@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tests;
+package org.teavm.junit;
 
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-
-@RunWith(TeaVMTestRunner.class)
-public class JUnit3DerivedTest extends JUnit3BaseTest {
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        b = "derived";
+/**
+ * Replacements for JUnit Platform utility methods used by JUnit Jupiter assertions,
+ * see {@link JupiterAssertionsTransformer}.
+ */
+final class JupiterAssertionsSupport {
+    private JupiterAssertionsSupport() {
     }
 
-    public void testBar() {
-        assertEquals("derived", b);
+    static boolean isArray(Object obj) {
+        return obj != null && obj.getClass().isArray();
     }
 }

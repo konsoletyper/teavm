@@ -46,8 +46,9 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -72,23 +73,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test assertions that must be true for all built-in chronologies.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestChronoZonedDateTime {
     //-----------------------------------------------------------------------
     // regular data factory for names and descriptions of available calendars
     //-----------------------------------------------------------------------
-    @DataProvider(name = "calendars")
-    Object[][] data_of_calendars() {
+    static Object[][] data_of_calendars() {
         return new Chronology[][]{
                     {HijrahChronology.INSTANCE},
                     {IsoChronology.INSTANCE},
@@ -98,8 +96,7 @@ public class TestChronoZonedDateTime {
         };
     }
 
-    @DataProvider(name = "calendars2")
-    Object[][] data_of_calendars2() {
+    static Object[][] data_of_calendars2() {
         return new Chronology[][]{
                 {IsoChronology.INSTANCE},
                 {JapaneseChronology.INSTANCE},
@@ -108,7 +105,8 @@ public class TestChronoZonedDateTime {
         };
     }
 
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_badWithAdjusterChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoZonedDateTime<?> czdt = chrono.date(refDate).atTime(LocalTime.NOON).atZone(ZoneOffset.UTC);
@@ -119,19 +117,20 @@ public class TestChronoZonedDateTime {
             if (chrono != chrono2) {
                 try {
                     czdt.with(adjuster);
-                    Assert.fail("WithAdjuster should have thrown a ClassCastException, "
+                    Assertions.fail("WithAdjuster should have thrown a ClassCastException, "
                             + "required: " + czdt + ", supplied: " + czdt2);
                 } catch (ClassCastException cce) {
                     // Expected exception; not an error
                 }
             } else {
                 ChronoZonedDateTime<?> result = czdt.with(adjuster);
-                assertEquals(result, czdt2, "WithAdjuster failed to replace date");
+                assertEquals(czdt2, result, "WithAdjuster failed to replace date");
             }
         }
     }
 
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_badPlusAdjusterChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoZonedDateTime<?> czdt = chrono.date(refDate).atTime(LocalTime.NOON).atZone(ZoneOffset.UTC);
@@ -142,7 +141,7 @@ public class TestChronoZonedDateTime {
             if (chrono != chrono2) {
                 try {
                     czdt.plus(adjuster);
-                    Assert.fail("WithAdjuster should have thrown a ClassCastException, "
+                    Assertions.fail("WithAdjuster should have thrown a ClassCastException, "
                             + "required: " + czdt + ", supplied: " + czdt2);
                 } catch (ClassCastException cce) {
                     // Expected exception; not an error
@@ -150,12 +149,13 @@ public class TestChronoZonedDateTime {
             } else {
                 // Same chronology,
                 ChronoZonedDateTime<?> result = czdt.plus(adjuster);
-                assertEquals(result, czdt2, "WithAdjuster failed to replace date time");
+                assertEquals(czdt2, result, "WithAdjuster failed to replace date time");
             }
         }
     }
 
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_badMinusAdjusterChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoZonedDateTime<?> czdt = chrono.date(refDate).atTime(LocalTime.NOON).atZone(ZoneOffset.UTC);
@@ -166,7 +166,7 @@ public class TestChronoZonedDateTime {
             if (chrono != chrono2) {
                 try {
                     czdt.minus(adjuster);
-                    Assert.fail("WithAdjuster should have thrown a ClassCastException, "
+                    Assertions.fail("WithAdjuster should have thrown a ClassCastException, "
                             + "required: " + czdt + ", supplied: " + czdt2);
                 } catch (ClassCastException cce) {
                     // Expected exception; not an error
@@ -174,12 +174,13 @@ public class TestChronoZonedDateTime {
             } else {
                 // Same chronology,
                 ChronoZonedDateTime<?> result = czdt.minus(adjuster);
-                assertEquals(result, czdt2, "WithAdjuster failed to replace date");
+                assertEquals(czdt2, result, "WithAdjuster failed to replace date");
             }
         }
     }
 
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_badPlusPeriodUnitChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoZonedDateTime<?> czdt = chrono.date(refDate).atTime(LocalTime.NOON).atZone(ZoneOffset.UTC);
@@ -190,7 +191,7 @@ public class TestChronoZonedDateTime {
             if (chrono != chrono2) {
                 try {
                     czdt.plus(1, adjuster);
-                    Assert.fail("PeriodUnit.doPlus plus should have thrown a ClassCastException, " + czdt
+                    Assertions.fail("PeriodUnit.doPlus plus should have thrown a ClassCastException, " + czdt
                             + " can not be cast to " + czdt2);
                 } catch (ClassCastException cce) {
                     // Expected exception; not an error
@@ -198,12 +199,13 @@ public class TestChronoZonedDateTime {
             } else {
                 // Same chronology,
                 ChronoZonedDateTime<?> result = czdt.plus(1, adjuster);
-                assertEquals(result, czdt2, "WithAdjuster failed to replace date");
+                assertEquals(czdt2, result, "WithAdjuster failed to replace date");
             }
         }
     }
 
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_badMinusPeriodUnitChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoZonedDateTime<?> czdt = chrono.date(refDate).atTime(LocalTime.NOON).atZone(ZoneOffset.UTC);
@@ -214,20 +216,21 @@ public class TestChronoZonedDateTime {
             if (chrono != chrono2) {
                 try {
                     czdt.minus(1, adjuster);
-                    Assert.fail("PeriodUnit.doPlus minus should have thrown a ClassCastException, " + czdt.getClass()
-                            + " can not be cast to " + czdt2.getClass());
+                    Assertions.fail("PeriodUnit.doPlus minus should have thrown a ClassCastException, "
+                            + czdt.getClass() + " can not be cast to " + czdt2.getClass());
                 } catch (ClassCastException cce) {
                     // Expected exception; not an error
                 }
             } else {
                 // Same chronology,
                 ChronoZonedDateTime<?> result = czdt.minus(1, adjuster);
-                assertEquals(result, czdt2, "WithAdjuster failed to replace date");
+                assertEquals(czdt2, result, "WithAdjuster failed to replace date");
             }
         }
     }
 
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_badDateTimeFieldChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoZonedDateTime<?> czdt = chrono.date(refDate).atTime(LocalTime.NOON).atZone(ZoneOffset.UTC);
@@ -238,15 +241,15 @@ public class TestChronoZonedDateTime {
             if (chrono != chrono2) {
                 try {
                     czdt.with(adjuster, 1);
-                    Assert.fail("DateTimeField adjustInto() should have thrown a ClassCastException, " + czdt.getClass()
-                            + " can not be cast to " + czdt2.getClass());
+                    Assertions.fail("DateTimeField adjustInto() should have thrown a ClassCastException, "
+                            + czdt.getClass() + " can not be cast to " + czdt2.getClass());
                 } catch (ClassCastException cce) {
                     // Expected exception; not an error
                 }
             } else {
                 // Same chronology,
                 ChronoZonedDateTime<?> result = czdt.with(adjuster, 1);
-                assertEquals(result, czdt2, "DateTimeField adjustInto() failed to replace date");
+                assertEquals(czdt2, result, "DateTimeField adjustInto() failed to replace date");
             }
         }
     }
@@ -255,7 +258,8 @@ public class TestChronoZonedDateTime {
     // isBefore, isAfter, isEqual, INSTANT_COMPARATOR  test a Chrono against the other Chronos
     //-----------------------------------------------------------------------
     @SuppressWarnings("unused")
-    @Test(dataProvider = "calendars2")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars2")
     // TODO: excluded HijrahChronology
     // it produces 'Invalid Hijrah date' error on JVM
     public void test_zonedDateTime_comparisons(Chronology chrono) {
@@ -304,19 +308,19 @@ public class TestChronoZonedDateTime {
                     int cmp = ChronoZonedDateTime.timeLineOrder().compare(a, b);
                     if (i < j) {
                         assertTrue(cmp < 0, a + " compare " + b);
-                        assertEquals(a.isBefore(b), true, a + " isBefore " + b);
-                        assertEquals(a.isAfter(b), false, a + " ifAfter " + b);
-                        assertEquals(a.isEqual(b), false, a + " isEqual " + b);
+                        assertTrue(a.isBefore(b), a + " isBefore " + b);
+                        assertFalse(a.isAfter(b), a + " ifAfter " + b);
+                        assertFalse(a.isEqual(b), a + " isEqual " + b);
                     } else if (i > j) {
                         assertTrue(cmp > 0, a + " compare " + b);
-                        assertEquals(a.isBefore(b), false, a + " isBefore " + b);
-                        assertEquals(a.isAfter(b), true, a + " ifAfter " + b);
-                        assertEquals(a.isEqual(b), false, a + " isEqual " + b);
+                        assertFalse(a.isBefore(b), a + " isBefore " + b);
+                        assertTrue(a.isAfter(b), a + " ifAfter " + b);
+                        assertFalse(a.isEqual(b), a + " isEqual " + b);
                     } else {
                         assertTrue(cmp == 0, a + " compare " + b);
-                        assertEquals(a.isBefore(b), false, a + " isBefore " + b);
-                        assertEquals(a.isAfter(b), false, a + " ifAfter " + b);
-                        assertEquals(a.isEqual(b), true, a + " isEqual " + b);
+                        assertFalse(a.isBefore(b), a + " isBefore " + b);
+                        assertFalse(a.isAfter(b), a + " ifAfter " + b);
+                        assertTrue(a.isEqual(b), a + " isEqual " + b);
                     }
                 }
             }

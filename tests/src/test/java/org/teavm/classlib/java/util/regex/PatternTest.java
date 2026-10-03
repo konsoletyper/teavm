@@ -33,21 +33,20 @@
 
 package org.teavm.classlib.java.util.regex;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class PatternTest {
     String[] testPatterns = {
             "(a|b)*abb",
@@ -456,9 +455,8 @@ public class PatternTest {
 
         for (int i = 0; i < testPatterns.length; i++) {
             for (int j = 0; j < posSeq[i].length; j++) {
-                assertTrue("Incorrect match: " + testPatterns[i] + " vs "
-                        + posSeq[i][j], Pattern.matches(testPatterns[i],
-                        posSeq[i][j]));
+                assertTrue(Pattern.matches(testPatterns[i], posSeq[i][j]),
+                        "Incorrect match: " + testPatterns[i] + " vs " + posSeq[i][j]);
             }
         }
     }
@@ -485,9 +483,8 @@ public class PatternTest {
                 "jhfkjhaSDFGHJkdfhHNJMjkhfabb", "+*??+*abb", "sdfghjkabb" };
 
         for (int i = 0; i < correctTestPatterns.length; i++) {
-            assertTrue("pattern: " + correctTestPatterns[i] + " input: "
-                    + inputSecuence[i], Pattern.matches(correctTestPatterns[i],
-                    inputSecuence[i]));
+            assertTrue(Pattern.matches(correctTestPatterns[i], inputSecuence[i]),
+                    "pattern: " + correctTestPatterns[i] + " input: " + inputSecuence[i]);
         }
 
         String[] wrongInputSecuence = { "]", "abcabcd124k654abb",
@@ -495,9 +492,8 @@ public class PatternTest {
                 "jhfkjhaSDFGHJk;dfhHNJMjkhfabb", "+*?a?+*abb", "sdf+ghjkabb" };
 
         for (int i = 0; i < correctTestPatterns.length; i++) {
-            assertFalse("pattern: " + correctTestPatterns[i] + " input: "
-                    + wrongInputSecuence[i], Pattern.matches(
-                    correctTestPatterns[i], wrongInputSecuence[i]));
+            assertFalse(Pattern.matches(correctTestPatterns[i], wrongInputSecuence[i]),
+                    "pattern: " + correctTestPatterns[i] + " input: " + wrongInputSecuence[i]);
         }
     }
 
@@ -520,8 +516,7 @@ public class PatternTest {
         for (int i = 0; i < posPatterns.length; i++) {
             String pat = posPatterns[i++];
             String inp = posPatterns[i];
-            assertTrue("pattern: " + pat + " input: " + inp, Pattern.matches(
-                    pat, inp));
+            assertTrue(Pattern.matches(pat, inp), "pattern: " + pat + " input: " + inp);
         }
     }
 

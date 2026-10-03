@@ -15,8 +15,8 @@
  */
 package org.teavm.incremental;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeArray;
@@ -78,10 +78,9 @@ public class IncrementalTest {
     private String oldResult;
     private String newResult;
 
-    @Rule
-    public TestName name = new TestName();
+    private String testMethodName;
 
-    @BeforeClass
+    @BeforeAll
     public static void initClass() {
         rhinoContext = Context.enter();
         rhinoContext.setOptimizationLevel(-1);
@@ -89,11 +88,16 @@ public class IncrementalTest {
         rhinoRootScope = rhinoContext.initStandardObjects();
     }
 
-    @AfterClass
+    @AfterAll
     public static void closeClass() {
         Context.exit();
         rhinoRootScope = null;
         rhinoContext = null;
+    }
+
+    @BeforeEach
+    public void captureTestMethodName(TestInfo testInfo) {
+        testMethodName = testInfo.getTestMethod().orElseThrow().getName();
     }
 
     @Test
@@ -131,12 +135,12 @@ public class IncrementalTest {
     }
 
     private void checkUpdatedMethods(String... methods) {
-        assertEquals("Unexpected set of updated methods", new HashSet<>(Arrays.asList(methods)),
-                new HashSet<>(Arrays.asList(updatedMethods)));
+        assertEquals(new HashSet<>(Arrays.asList(methods)), new HashSet<>(Arrays.asList(updatedMethods)),
+                "Unexpected set of updated methods");
     }
 
     private void run() {
-        String entryPoint = "org.teavm.incremental.data." + name.getMethodName().toLowerCase() + ".Main";
+        String entryPoint = "org.teavm.incremental.data." + testMethodName.toLowerCase() + ".Main";
         Builder builder = new Builder(entryPoint);
 
         ClassHolderSourceImpl newClassSource = new ClassHolderSourceImpl(oldClassSource, true);
@@ -147,8 +151,8 @@ public class IncrementalTest {
         builder.enableCapturing();
         builder.build(newClassSource, newClassSource, NEW_FILE);
 
-        assertEquals("Script must be the same after refreshing", builder.buildTarget.get(OLD_FILE),
-                builder.buildTarget.get(REFRESHED_FILE));
+        assertEquals(builder.buildTarget.get(OLD_FILE), builder.buildTarget.get(REFRESHED_FILE),
+                "Script must be the same after refreshing");
 
         updatedMethods = builder.programCache.updatedMethods
                 .stream()

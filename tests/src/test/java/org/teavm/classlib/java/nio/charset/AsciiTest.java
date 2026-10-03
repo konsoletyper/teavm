@@ -17,11 +17,10 @@ package org.teavm.classlib.java.nio.charset;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class AsciiTest {
     private static String hex = CharsetTestCommon.bytesToHex(convert(CharsetTestCommon.asciiText));
 

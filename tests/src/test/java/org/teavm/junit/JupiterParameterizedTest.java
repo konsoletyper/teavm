@@ -85,19 +85,19 @@ public class JupiterParameterizedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = { true })
+    @ValueSource(booleans = true)
     public void booleans(boolean b) {
         assertTrue(b);
     }
 
     @ParameterizedTest
-    @ValueSource(classes = { String.class })
+    @ValueSource(classes = String.class)
     public void classes(Class<?> cls) {
         assertEquals("java.lang.String", cls.getName());
     }
 
     @ParameterizedTest
-    @ValueSource(ints = { 5 })
+    @ValueSource(ints = 5)
     public void boxing(Object value) {
         assertEquals(5, value);
     }
@@ -132,7 +132,7 @@ public class JupiterParameterizedTest {
     }
 
     @ParameterizedTest
-    @CsvSource({ "1.5, 1.5" })
+    @CsvSource("1.5, 1.5")
     public void csvStringFactory(BigDecimal value, double expected) {
         assertEquals(expected, value.doubleValue(), 0.0);
     }

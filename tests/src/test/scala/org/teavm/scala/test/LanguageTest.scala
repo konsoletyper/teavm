@@ -1,12 +1,10 @@
 package org.teavm.scala.test
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.teavm.junit.TeaVMTestRunner
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.teavm.junit.TeaVMTest
 
-@RunWith(classOf[TeaVMTestRunner])
+@TeaVMTest
 class LanguageTest {
   @Test
   def lambda(): Unit = {

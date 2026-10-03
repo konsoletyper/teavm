@@ -36,13 +36,12 @@
 
 package org.teavm.classlib.java.math;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigInteger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class BigIntegerHashCodeTest {
     /**
      * Test hash codes for the same object
@@ -60,7 +59,7 @@ public class BigIntegerHashCodeTest {
         aNumber1.divide(aNumber2).bitLength();
         aNumber1.gcd(aNumber2).pow(7);
         int code2 = aNumber1.hashCode();
-        assertTrue("hash codes for the same object differ", code1 == code2);
+        assertTrue(code1 == code2, "hash codes for the same object differ");
     }
 
     /**
@@ -75,7 +74,7 @@ public class BigIntegerHashCodeTest {
         int code1 = aNumber1.hashCode();
         int code2 = aNumber2.hashCode();
         if (aNumber1.equals(aNumber2)) {
-            assertTrue("hash codes for equal objects are unequal", code1 == code2);
+            assertTrue(code1 == code2, "hash codes for equal objects are unequal");
         }
     }
 
@@ -92,7 +91,7 @@ public class BigIntegerHashCodeTest {
         int code1 = aNumber1.hashCode();
         int code2 = aNumber2.hashCode();
         if (!aNumber1.equals(aNumber2)) {
-            assertTrue("hash codes for unequal objects are equal", code1 != code2);
+            assertTrue(code1 != code2, "hash codes for unequal objects are equal");
         }
     }
 }

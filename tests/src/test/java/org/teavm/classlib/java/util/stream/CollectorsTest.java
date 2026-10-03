@@ -15,8 +15,8 @@
  */
 package org.teavm.classlib.java.util.stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -31,11 +31,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class CollectorsTest {
     @Test
     public void joining() {
@@ -72,14 +71,16 @@ public class CollectorsTest {
         assertEquals(Arrays.asList(1, 2, 3), c);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void noNullsInToMap() {
-        Stream.of(1, 2, null).collect(Collectors.toMap(Function.identity(), Function.identity()));
+        assertThrows(NullPointerException.class,
+                () -> Stream.of(1, 2, null).collect(Collectors.toMap(Function.identity(), Function.identity())));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void noDuplicatesInToMap() {
-        Stream.of(1, 2, 2).collect(Collectors.toMap(Function.identity(), Function.identity()));
+        assertThrows(IllegalStateException.class,
+                () -> Stream.of(1, 2, 2).collect(Collectors.toMap(Function.identity(), Function.identity())));
     }
 
     @Test

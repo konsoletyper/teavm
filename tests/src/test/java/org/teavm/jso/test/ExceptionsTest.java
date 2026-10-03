@@ -15,10 +15,9 @@
  */
 package org.teavm.jso.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSExceptions;
 import org.teavm.jso.JSFunctor;
@@ -27,10 +26,10 @@ import org.teavm.jso.core.JSError;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @SkipJVM
 @OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
@@ -66,7 +65,7 @@ public class ExceptionsTest {
             return null;
         }, e -> {
             sb.append("caught");
-            assertTrue("Should catch Error", JSError.isError(e));
+            assertTrue(JSError.isError(e), "Should catch Error");
 
             JSError error = (JSError) e;
             assertEquals("foo", error.getMessage());

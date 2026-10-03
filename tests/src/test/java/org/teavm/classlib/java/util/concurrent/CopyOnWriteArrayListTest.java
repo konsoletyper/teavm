@@ -22,21 +22,20 @@ package org.teavm.classlib.java.util.concurrent;
  * Pat Fisher, Mike Judd. 
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class CopyOnWriteArrayListTest {
     private static final int SIZE = 20;
 
@@ -359,7 +358,7 @@ public class CopyOnWriteArrayListTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testToArray_ArrayStoreException() {
         try {
             var c = new CopyOnWriteArrayList<>();

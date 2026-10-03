@@ -15,23 +15,22 @@
  */
 package org.teavm.classlib.java.util.concurrent;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class ArrayBlockingQueueTest {
     @Test
@@ -104,7 +103,7 @@ public class ArrayBlockingQueueTest {
         long start = System.currentTimeMillis();
         queue.put(3);
         long end = System.currentTimeMillis();
-        assertTrue("Wait time " + (end - start), start + 50 < end && start + 5000 > end);
+        assertTrue(start + 50 < end && start + 5000 > end, "Wait time " + (end - start));
 
         assertEquals(3, queue.remove().intValue());
     }
@@ -129,7 +128,7 @@ public class ArrayBlockingQueueTest {
         long end = System.currentTimeMillis();
         int b = queue.take();
 
-        assertTrue("Wait time " + (end - start), start + 100 < end && start + 5000 > end);
+        assertTrue(start + 100 < end && start + 5000 > end, "Wait time " + (end - start));
         assertEquals(1, a);
         assertEquals(2, b);
     }

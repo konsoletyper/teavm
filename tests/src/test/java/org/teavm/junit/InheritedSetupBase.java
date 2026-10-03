@@ -15,19 +15,19 @@
  */
 package org.teavm.junit;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 public abstract class InheritedSetupBase {
     protected int setupCount;
     protected int teardownCount;
 
-    @Before
+    @BeforeEach
     public void countSetup() {
         setupCount++;
     }
 
-    @After
+    @AfterEach
     public void countTeardown() {
         if (++teardownCount > 1) {
             throw new AssertionError("@After ran " + teardownCount + " times");

@@ -15,11 +15,10 @@
  */
 package org.teavm.junit;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class InheritedSetupTest extends InheritedSetupBase {
     @Test
     public void inheritedSetupRunsOncePerTest() {

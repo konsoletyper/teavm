@@ -15,21 +15,20 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class MapTest {
     @Test
     public void of() {
@@ -79,7 +78,7 @@ public class MapTest {
         Map<String, Integer> mapCopy1 = Map.copyOf(Map.of("q", 0, "w", 1, "e", 2));
         Map<String, Integer> mapCopy2 = Map.copyOf(mapCopy1);
 
-        assertSame("Must not create copies of immutable collections", mapCopy1, mapCopy2);
+        assertSame(mapCopy1, mapCopy2, "Must not create copies of immutable collections");
     }
 
     private void testOf(String[] expected, Map<String, Integer> actual) {
@@ -110,33 +109,33 @@ public class MapTest {
 
         for (int i = 0; i < expected.length; i++) {
             String key = expected[i];
-            assertTrue("containsKey returns true for existing elements", actual.containsKey(key));
-            assertTrue("containsValue returns true for existing elements", actual.containsValue(i));
-            assertTrue("contains returns true for existing elements", actual.entrySet().contains(Map.entry(key, i)));
+            assertTrue(actual.containsKey(key), "containsKey returns true for existing elements");
+            assertTrue(actual.containsValue(i), "containsValue returns true for existing elements");
+            assertTrue(actual.entrySet().contains(Map.entry(key, i)), "contains returns true for existing elements");
         }
 
-        assertFalse("containsKey return false for non-existing element", actual.containsKey("*"));
-        assertFalse("containsValue return false for non-existing element", actual.containsValue(-1));
+        assertFalse(actual.containsKey("*"), "containsKey return false for non-existing element");
+        assertFalse(actual.containsValue(-1), "containsValue return false for non-existing element");
         for (String key : expected) {
-            assertFalse("contains return false for non-existing element",
-                    actual.entrySet().contains(Map.entry(key, -1)));
+            assertFalse(actual.entrySet().contains(Map.entry(key, -1)),
+                    "contains return false for non-existing element");
         }
 
-        assertEquals("isEmpty works properly", expected.length == 0, actual.isEmpty());
+        assertEquals(expected.length == 0, actual.isEmpty(), "isEmpty works properly");
 
         String[] expectedCopy = expected.clone();
         for (Map.Entry<String, Integer> entry : actual.entrySet()) {
             boolean found = false;
             for (int i = 0; i < expectedCopy.length; ++i) {
                 if (entry.getKey().equals(expectedCopy[i])) {
-                    assertEquals("Strange value of entry.getValue()", (Object) i, entry.getValue());
+                    assertEquals((Object) i, entry.getValue(), "Strange value of entry.getValue()");
                     expectedCopy[i] = null;
                     found = true;
                     break;
                 }
             }
 
-            assertTrue("iterator returned strange value", found);
+            assertTrue(found, "iterator returned strange value");
         }
 
         for (Map.Entry<String, Integer> entry : actual.entrySet()) {
@@ -149,7 +148,7 @@ public class MapTest {
         }
 
         for (String e : expectedCopy) {
-            assertNull("Iterator did not return all of expected elements", e);
+            assertNull(e, "Iterator did not return all of expected elements");
         }
     }
 

@@ -15,16 +15,15 @@
  */
 package org.teavm.classlib.java.util.zip;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.zip.ZipFile;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class ZipFileTest {
     private static final String DATA1 = "504b030414000808080036a25659000000000000000000000000070000006578616d706c65e"
             + "dc1310d000000c3a0d4bfe9d9d801140000f06e504b07086a6536d214000000b80b0000504b0102140014000808080036a256"

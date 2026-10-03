@@ -46,9 +46,9 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.HijrahChronology;
@@ -59,21 +59,20 @@ import java.time.chrono.ThaiBuddhistChronology;
 import java.time.temporal.ChronoField;
 import java.util.Locale;
 import java.util.Set;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test Chrono class.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestChronology {
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         // Ensure each of the classes are initialized (until initialization is fixed)
         Chronology c;
@@ -88,8 +87,7 @@ public class TestChronology {
     //-----------------------------------------------------------------------
     // regular data factory for names and descriptions of available calendars
     //-----------------------------------------------------------------------
-    @DataProvider(name = "calendars")
-    Object[][] data_of_calendars() {
+    static Object[][] data_of_calendars() {
         return new Object[][] {
                     {"Hijrah-umalqura", "islamic-umalqura", "Hijrah calendar"},
                     {"ISO", "iso8601", "ISO calendar"},
@@ -99,15 +97,17 @@ public class TestChronology {
                 };
     }
 
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_getters(String chronoId, String calendarSystemType, String description) {
         Chronology chrono = Chronology.of(chronoId);
         assertNotNull(chrono, "Required calendar not found by ID: " + chronoId);
-        assertEquals(chrono.getId(), chronoId);
-        assertEquals(chrono.getCalendarType(), calendarSystemType);
+        assertEquals(chronoId, chrono.getId());
+        assertEquals(calendarSystemType, chrono.getCalendarType());
     }
 
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_required_calendars(String chronoId, String calendarSystemType, String description) {
         Chronology chrono = Chronology.of(chronoId);
         assertNotNull(chrono, "Required calendar not found by ID: " + chronoId);
@@ -125,28 +125,28 @@ public class TestChronology {
             Chronology lookup = Chronology.of(chrono.getId());
             assertNotNull(lookup, "Required calendar not found: " + chrono);
         }
-        assertEquals(chronos.size() >= data_of_calendars().length, true, "Required list of calendars too short");
+        assertTrue(chronos.size() >= data_of_calendars().length, "Required list of calendars too short");
     }
 
     /**
      * Compute the number of days from the Epoch and compute the date from the number of days.
      */
-    @Test(dataProvider = "calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_epoch(String name, String alias, String description) {
         Chronology chrono = Chronology.of(name); // a chronology. In practice this is rarely hardcoded
         ChronoLocalDate date1 = chrono.dateNow();
         long epoch1 = date1.getLong(ChronoField.EPOCH_DAY);
         ChronoLocalDate date2 = date1.with(ChronoField.EPOCH_DAY, epoch1);
-        assertEquals(date1, date2, "Date from epoch day is not same date: " + date1 + " != " + date2);
+        assertEquals(date2, date1, "Date from epoch day is not same date: " + date1 + " != " + date2);
         long epoch2 = date1.getLong(ChronoField.EPOCH_DAY);
-        assertEquals(epoch1, epoch2, "Epoch day not the same: " + epoch1 + " != " + epoch2);
+        assertEquals(epoch2, epoch1, "Epoch day not the same: " + epoch1 + " != " + epoch2);
     }
 
     //-----------------------------------------------------------------------
     // locale based lookup
     //-----------------------------------------------------------------------
-    @DataProvider(name = "calendarsystemtype")
-    Object[][] data_CalendarType() {
+    static Object[][] data_CalendarType() {
         return new Object[][] {
             {HijrahChronology.INSTANCE, "islamic-umalqura"},
             {IsoChronology.INSTANCE, "iso8601"},
@@ -156,22 +156,23 @@ public class TestChronology {
         };
     }
 
-    @Test(dataProvider = "calendarsystemtype")
+    @ParameterizedTest
+    @MethodSource("data_CalendarType")
     public void test_getCalendarType(Chronology chrono, String calendarType) {
-        assertEquals(chrono.getCalendarType(), calendarType);
+        assertEquals(calendarType, chrono.getCalendarType());
     }
 
     @Test
     public void test_lookupLocale_jp_JP() {
         Chronology test = Chronology.ofLocale(new Locale("ja", "JP"));
-        Assert.assertEquals(test.getId(), "ISO");
-        Assert.assertEquals(test, IsoChronology.INSTANCE);
+        Assertions.assertEquals("ISO", test.getId());
+        Assertions.assertEquals(IsoChronology.INSTANCE, test);
     }
 
     @Test
     public void test_lookupLocale_jp_JP_JP() {
         Chronology test = Chronology.ofLocale(new Locale("ja", "JP", "JP"));
-        Assert.assertEquals(test.getId(), "Japanese");
-        Assert.assertEquals(test, JapaneseChronology.INSTANCE);
+        Assertions.assertEquals("Japanese", test.getId());
+        Assertions.assertEquals(JapaneseChronology.INSTANCE, test);
     }
 }

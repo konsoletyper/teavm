@@ -16,9 +16,9 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,12 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class FileInputStreamTest {
     public String fileName;
     public String fileString = ""
@@ -134,7 +133,7 @@ public class FileInputStreamTest {
     public void available() throws IOException {
         try {
             is = new FileInputStream(fileName);
-            assertTrue("Returned incorrect number of available bytes", is.available() == fileString.length());
+            assertTrue(is.available() == fileString.length(), "Returned incorrect number of available bytes");
         } finally {
             try {
                 is.close();
@@ -162,7 +161,7 @@ public class FileInputStreamTest {
         InputStreamReader isr = new InputStreamReader(new FileInputStream(fileName));
         int c = isr.read();
         isr.close();
-        assertTrue("read returned incorrect char", c == fileString.charAt(0));
+        assertTrue(c == fileString.charAt(0), "read returned incorrect char");
     }
 
     @Test
@@ -172,7 +171,7 @@ public class FileInputStreamTest {
         is.skip(3000);
         is.read(buf1);
         is.close();
-        assertEquals("Failed to read correct data", new String(buf1, 0, buf1.length), fileString.substring(3000, 3100));
+        assertEquals(new String(buf1, 0, buf1.length), fileString.substring(3000, 3100), "Failed to read correct data");
     }
 
     @Test
@@ -182,8 +181,8 @@ public class FileInputStreamTest {
         is.skip(3000);
         is.read(buf1, 0, buf1.length);
         is.close();
-        assertTrue("Failed to read correct data",
-                new String(buf1, 0, buf1.length).equals(fileString.substring(3000, 3100)));
+        assertTrue(new String(buf1, 0, buf1.length).equals(fileString.substring(3000, 3100)),
+                "Failed to read correct data");
 
         // Regression test for HARMONY-285
         File file = new File("FileInputStream.tmp");
@@ -320,8 +319,8 @@ public class FileInputStreamTest {
         is.skip(1000);
         is.read(buf1, 0, buf1.length);
         is.close();
-        assertTrue("Failed to skip to correct position",
-                new String(buf1, 0, buf1.length).equals(fileString.substring(1000, 1010)));
+        assertTrue(new String(buf1, 0, buf1.length).equals(fileString.substring(1000, 1010)),
+                "Failed to skip to correct position");
     }
 
     @Test
@@ -379,7 +378,7 @@ public class FileInputStreamTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         new File(fileName).delete();
     }

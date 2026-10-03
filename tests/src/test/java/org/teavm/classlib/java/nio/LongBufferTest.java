@@ -15,13 +15,13 @@
  */
 package org.teavm.classlib.java.nio;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
@@ -29,21 +29,20 @@ import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 import java.nio.LongBuffer;
 import java.nio.ReadOnlyBufferException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class LongBufferTest {
     @Test
     public void allocatesSimple() {
         LongBuffer buffer = LongBuffer.allocate(100);
-        assertThat(buffer.isDirect(), is(false));
-        assertThat(buffer.isReadOnly(), is(false));
-        assertThat(buffer.hasArray(), is(true));
-        assertThat(buffer.capacity(), is(100));
-        assertThat(buffer.position(), is(0));
-        assertThat(buffer.limit(), is(100));
+        assertFalse(buffer.isDirect());
+        assertFalse(buffer.isReadOnly());
+        assertTrue(buffer.hasArray());
+        assertEquals(100, buffer.capacity());
+        assertEquals(0, buffer.position());
+        assertEquals(100, buffer.limit());
         try {
             buffer.reset();
             fail("Mark is expected to be undefined");
@@ -78,23 +77,23 @@ public class LongBufferTest {
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void errorIfAllocatingBufferOfNegativeSize() {
-        LongBuffer.allocate(-1);
+        assertThrows(IllegalArgumentException.class, () -> LongBuffer.allocate(-1));
     }
 
     @Test
     public void wrapsArray() {
         long[] array = new long[100];
         LongBuffer buffer = LongBuffer.wrap(array, 10, 70);
-        assertThat(buffer.isDirect(), is(false));
-        assertThat(buffer.isReadOnly(), is(false));
-        assertThat(buffer.hasArray(), is(true));
-        assertThat(buffer.array(), is(array));
-        assertThat(buffer.arrayOffset(), is(0));
-        assertThat(buffer.capacity(), is(100));
-        assertThat(buffer.position(), is(10));
-        assertThat(buffer.limit(), is(80));
+        assertFalse(buffer.isDirect());
+        assertFalse(buffer.isReadOnly());
+        assertTrue(buffer.hasArray());
+        assertArrayEquals(array, buffer.array());
+        assertEquals(0, buffer.arrayOffset());
+        assertEquals(100, buffer.capacity());
+        assertEquals(10, buffer.position());
+        assertEquals(80, buffer.limit());
         try {
             buffer.reset();
             fail("Mark is expected to be undefined");
@@ -102,9 +101,9 @@ public class LongBufferTest {
             // ok
         }
         array[0] = 23;
-        assertThat(buffer.get(0), is((long) 23));
+        assertEquals((long) 23, buffer.get(0));
         buffer.put(1, 24);
-        assertThat(array[1], is((long) 24));
+        assertEquals((long) 24, array[1]);
     }
 
     @Test
@@ -136,8 +135,8 @@ public class LongBufferTest {
     public void wrapsArrayWithoutOffset() {
         long[] array = new long[100];
         LongBuffer buffer = LongBuffer.wrap(array);
-        assertThat(buffer.position(), is(0));
-        assertThat(buffer.limit(), is(100));
+        assertEquals(0, buffer.position());
+        assertEquals(100, buffer.limit());
     }
 
     @Test
@@ -147,24 +146,24 @@ public class LongBufferTest {
         buffer.flip();
         buffer.put(new long[15]);
         LongBuffer slice = buffer.slice();
-        assertThat(slice.array(), is(buffer.array()));
-        assertThat(slice.position(), is(0));
-        assertThat(slice.capacity(), is(45));
-        assertThat(slice.limit(), is(45));
-        assertThat(slice.isDirect(), is(false));
-        assertThat(slice.isReadOnly(), is(false));
+        assertArrayEquals(buffer.array(), slice.array());
+        assertEquals(0, slice.position());
+        assertEquals(45, slice.capacity());
+        assertEquals(45, slice.limit());
+        assertFalse(slice.isDirect());
+        assertFalse(slice.isReadOnly());
         slice.put(3, 23);
-        assertThat(buffer.get(18), is((long) 23));
+        assertEquals((long) 23, buffer.get(18));
         slice.put(24);
-        assertThat(buffer.get(15), is((long) 24));
+        assertEquals((long) 24, buffer.get(15));
         buffer.put(16, 25);
-        assertThat(slice.get(1), is((long) 25));
+        assertEquals((long) 25, slice.get(1));
     }
 
     @Test
     public void slicePropertiesSameWithOriginal() {
         LongBuffer buffer = LongBuffer.allocate(100).asReadOnlyBuffer().slice();
-        assertThat(buffer.isReadOnly(), is(true));
+        assertTrue(buffer.isReadOnly());
     }
 
     @Test
@@ -174,30 +173,30 @@ public class LongBufferTest {
         buffer.flip();
         buffer.put(new long[15]);
         LongBuffer duplicate = buffer.duplicate();
-        assertThat(duplicate.array(), is(buffer.array()));
-        assertThat(duplicate.position(), is(15));
-        assertThat(duplicate.capacity(), is(100));
-        assertThat(duplicate.limit(), is(60));
-        assertThat(duplicate.isDirect(), is(false));
-        assertThat(duplicate.isReadOnly(), is(false));
+        assertArrayEquals(buffer.array(), duplicate.array());
+        assertEquals(15, duplicate.position());
+        assertEquals(100, duplicate.capacity());
+        assertEquals(60, duplicate.limit());
+        assertFalse(duplicate.isDirect());
+        assertFalse(duplicate.isReadOnly());
         duplicate.put(3, 23);
-        assertThat(buffer.get(3), is((long) 23));
+        assertEquals((long) 23, buffer.get(3));
         duplicate.put(24);
-        assertThat(buffer.get(15), is((long) 24));
+        assertEquals((long) 24, buffer.get(15));
         buffer.put(1, 25);
-        assertThat(duplicate.get(1), is((long) 25));
-        assertThat(duplicate.array(), is(sameInstance(buffer.array())));
+        assertEquals((long) 25, duplicate.get(1));
+        assertSame(buffer.array(), duplicate.array());
     }
 
     @Test
     public void getsLong() {
         long[] array = { 2, 3, 5, 7 };
         LongBuffer buffer = LongBuffer.wrap(array);
-        assertThat(buffer.get(), is((long) 2));
-        assertThat(buffer.get(), is((long) 3));
+        assertEquals((long) 2, buffer.get());
+        assertEquals((long) 3, buffer.get());
         buffer = buffer.slice();
-        assertThat(buffer.get(), is((long) 5));
-        assertThat(buffer.get(), is((long) 7));
+        assertEquals((long) 5, buffer.get());
+        assertEquals((long) 7, buffer.get());
     }
 
     @Test
@@ -220,7 +219,7 @@ public class LongBufferTest {
         long[] array = new long[4];
         LongBuffer buffer = LongBuffer.wrap(array);
         buffer.put(2).put(3).put(5).put(7);
-        assertThat(array, is(new long[] { 2, 3, 5, 7 }));
+        assertArrayEquals(new long[] { 2, 3, 5, 7 }, array);
     }
 
     @Test
@@ -233,27 +232,27 @@ public class LongBufferTest {
             buffer.put(5);
             fail("Should have thrown error");
         } catch (BufferOverflowException e) {
-            assertThat(array[2], is((long) 0));
+            assertEquals((long) 0, array[2]);
         }
     }
 
-    @Test(expected = ReadOnlyBufferException.class)
+    @Test
     public void puttingLongToReadOnlyBufferCausesError() {
         long[] array = new long[4];
         LongBuffer buffer = LongBuffer.wrap(array).asReadOnlyBuffer();
-        buffer.put(2);
+        assertThrows(ReadOnlyBufferException.class, () -> buffer.put(2));
     }
 
     @Test
     public void getsLongFromGivenLocation() {
         long[] array = { 2, 3, 5, 7 };
         LongBuffer buffer = LongBuffer.wrap(array);
-        assertThat(buffer.get(0), is((long) 2));
-        assertThat(buffer.get(1), is((long) 3));
+        assertEquals((long) 2, buffer.get(0));
+        assertEquals((long) 3, buffer.get(1));
         buffer.get();
         buffer = buffer.slice();
-        assertThat(buffer.get(1), is((long) 5));
-        assertThat(buffer.get(2), is((long) 7));
+        assertEquals((long) 5, buffer.get(1));
+        assertEquals((long) 7, buffer.get(2));
     }
 
     @Test
@@ -283,7 +282,7 @@ public class LongBufferTest {
         buffer = buffer.slice();
         buffer.put(1, 5);
         buffer.put(2, 7);
-        assertThat(array, is(new long[] { 2, 3, 5, 7 }));
+        assertArrayEquals(new long[] { 2, 3, 5, 7 }, array);
     }
 
     @Test
@@ -303,11 +302,11 @@ public class LongBufferTest {
         }
     }
 
-    @Test(expected = ReadOnlyBufferException.class)
+    @Test
     public void puttingLongToGivenLocationOfReadOnlyBufferCausesError() {
         long[] array = new long[4];
         LongBuffer buffer = LongBuffer.wrap(array).asReadOnlyBuffer();
-        buffer.put(0, 2);
+        assertThrows(ReadOnlyBufferException.class, () -> buffer.put(0, 2));
     }
 
     @Test
@@ -317,8 +316,8 @@ public class LongBufferTest {
         buffer.get();
         long[] receiver = new long[2];
         buffer.get(receiver, 0, 2);
-        assertThat(buffer.position(), is(3));
-        assertThat(receiver, is(new long[] { 3, 5 }));
+        assertEquals(3, buffer.position());
+        assertArrayEquals(new long[] { 3, 5 }, receiver);
     }
 
     @Test
@@ -331,8 +330,8 @@ public class LongBufferTest {
             buffer.get(receiver, 0, 4);
             fail("Error expected");
         } catch (BufferUnderflowException e) {
-            assertThat(receiver, is(new long[4]));
-            assertThat(buffer.position(), is(0));
+            assertArrayEquals(new long[4], receiver);
+            assertEquals(0, buffer.position());
         }
     }
 
@@ -344,20 +343,20 @@ public class LongBufferTest {
         try {
             buffer.get(receiver, 0, 5);
         } catch (IndexOutOfBoundsException e) {
-            assertThat(receiver, is(new long[4]));
-            assertThat(buffer.position(), is(0));
+            assertArrayEquals(new long[4], receiver);
+            assertEquals(0, buffer.position());
         }
         try {
             buffer.get(receiver, -1, 3);
         } catch (IndexOutOfBoundsException e) {
-            assertThat(receiver, is(new long[4]));
-            assertThat(buffer.position(), is(0));
+            assertArrayEquals(new long[4], receiver);
+            assertEquals(0, buffer.position());
         }
         try {
             buffer.get(receiver, 6, 3);
         } catch (IndexOutOfBoundsException e) {
-            assertThat(receiver, is(new long[4]));
-            assertThat(buffer.position(), is(0));
+            assertArrayEquals(new long[4], receiver);
+            assertEquals(0, buffer.position());
         }
     }
 
@@ -368,8 +367,8 @@ public class LongBufferTest {
         buffer.get();
         long[] data = { 2, 3 };
         buffer.put(data, 0, 2);
-        assertThat(buffer.position(), is(3));
-        assertThat(array, is(new long[] { 0, 2, 3, 0 }));
+        assertEquals(3, buffer.position());
+        assertArrayEquals(new long[] { 0, 2, 3, 0 }, array);
     }
 
     @Test
@@ -379,10 +378,10 @@ public class LongBufferTest {
         buffer.get();
         buffer.mark();
         buffer.compact();
-        assertThat(array, is(new long[] { 3, 5, 7, 7 }));
-        assertThat(buffer.position(), is(3));
-        assertThat(buffer.limit(), is(4));
-        assertThat(buffer.capacity(), is(4));
+        assertArrayEquals(new long[] { 3, 5, 7, 7 }, array);
+        assertEquals(3, buffer.position());
+        assertEquals(4, buffer.limit());
+        assertEquals(4, buffer.capacity());
         try {
             buffer.reset();
             fail("Exception expected");
@@ -399,7 +398,7 @@ public class LongBufferTest {
         buffer.mark();
         buffer.position(2);
         buffer.reset();
-        assertThat(buffer.position(), is(1));
+        assertEquals(1, buffer.position());
     }
 
     @Test

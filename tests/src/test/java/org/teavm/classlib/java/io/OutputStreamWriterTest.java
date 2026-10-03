@@ -33,20 +33,19 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class OutputStreamWriterTest {
 
     private static final int UPPER = 0xd800;
@@ -345,7 +344,7 @@ public class OutputStreamWriterTest {
 
                 isr = new InputStreamReader(new ByteArrayInputStream(result), MINIMAL_CHARSETS[i]);
                 for (int expected = 0; expected < upper; ++expected) {
-                    assertEquals("Error when reading bytes in " + MINIMAL_CHARSETS[i], expected, isr.read());
+                    assertEquals(expected, isr.read(), "Error when reading bytes in " + MINIMAL_CHARSETS[i]);
                 }
             } finally {
                 try {
@@ -402,7 +401,7 @@ public class OutputStreamWriterTest {
                         read = isr.read(largeBuffer);
                         j = 0;
                     }
-                    assertEquals("Error when reading bytes in " + MINIMAL_CHARSETS[i], expected++, largeBuffer[j++]);
+                    assertEquals(expected++, largeBuffer[j++], "Error when reading bytes in " + MINIMAL_CHARSETS[i]);
                 }
             } finally {
                 try {
@@ -421,7 +420,7 @@ public class OutputStreamWriterTest {
 
     @Test
     public void test_ConstructorLjava_io_OutputStream() {
-        assertTrue("Used in tests", true);
+        assertTrue(true, "Used in tests");
     }
 
     @Test
@@ -453,7 +452,7 @@ public class OutputStreamWriterTest {
             writer.close();
             // the default is ASCII, there should not be any mode changes
             String converted = new String(bout.toByteArray(), "ISO8859_1");
-            assertTrue("invalid conversion 1: " + converted, converted.equals("a"));
+            assertTrue(converted.equals("a"), "invalid conversion 1: " + converted);
 
             bout.reset();
             writer = new OutputStreamWriter(bout, "ISO2022JP");
@@ -462,10 +461,10 @@ public class OutputStreamWriterTest {
             // the byte sequence should not switch to ASCII mode until the
             // stream is closed
             converted = new String(bout.toByteArray(), "ISO8859_1");
-            assertTrue("invalid conversion 2: " + converted, converted.equals("\u001b$B$("));
+            assertTrue(converted.equals("\u001b$B$("), "invalid conversion 2: " + converted);
             writer.close();
             converted = new String(bout.toByteArray(), "ISO8859_1");
-            assertTrue("invalid conversion 3: " + converted, converted.equals("\u001b$B$(\u001b(B"));
+            assertTrue(converted.equals("\u001b$B$(\u001b(B"), "invalid conversion 3: " + converted);
 
             bout.reset();
             writer = new OutputStreamWriter(bout, "ISO2022JP");
@@ -473,7 +472,7 @@ public class OutputStreamWriterTest {
             writer.write(new char[] { '\u3048' });
             writer.close();
             // there should not be a mode switch between writes
-            assertEquals("invalid conversion 4", "\u001b$B$($(\u001b(B", new String(bout.toByteArray(), "ISO8859_1"));
+            assertEquals("\u001b$B$($(\u001b(B", new String(bout.toByteArray(), "ISO8859_1"), "invalid conversion 4");
         } catch (UnsupportedEncodingException e) {
             // Can't test missing converter
             e.printStackTrace();
@@ -487,7 +486,7 @@ public class OutputStreamWriterTest {
         osw.flush();
         openInputStream();
         isr.read(buf, 0, buf.length);
-        assertTrue("Chars not flushed", new String(buf, 0, buf.length).equals(testString));
+        assertTrue(new String(buf, 0, buf.length).equals(testString), "Chars not flushed");
     }
 
     @Test
@@ -497,7 +496,7 @@ public class OutputStreamWriterTest {
         osw.close();
         openInputStream();
         isr.read(buf, 0, buf.length);
-        assertTrue("Incorrect chars returned", new String(buf, 0, buf.length).equals(testString));
+        assertTrue(new String(buf, 0, buf.length).equals(testString), "Incorrect chars returned");
     }
 
     @Test
@@ -506,7 +505,7 @@ public class OutputStreamWriterTest {
         osw.close();
         openInputStream();
         int c = isr.read();
-        assertEquals("Incorrect char returned", 'T', (char) c);
+        assertEquals('T', (char) c, "Incorrect char returned");
     }
 
     @Test
@@ -516,7 +515,7 @@ public class OutputStreamWriterTest {
         osw.close();
         openInputStream();
         isr.read(buf);
-        assertEquals("Incorrect chars returned", testString, new String(buf, 0, buf.length));
+        assertEquals(testString, new String(buf, 0, buf.length), "Incorrect chars returned");
     }
 
     private void openInputStream() {
