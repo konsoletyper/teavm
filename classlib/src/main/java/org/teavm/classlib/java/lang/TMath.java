@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.java.math.TBigInteger;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
@@ -105,6 +106,97 @@ public final class TMath extends TObject {
     @Import(module = "teavmMath", name = "floor")
     @Unmanaged
     public static native double floor(double a);
+
+    @Import(name = "fma")
+    private static native double fmaC(double a, double b, double c);
+
+    @Import(name = "fmaf")
+    private static native float fmaC(float a, float b, float c);
+
+    public static double fma(double a, double b, double c) {
+        if (PlatformDetector.isC()) {
+            return fmaC(a, b, c);
+        }
+        if (!Double.isFinite(a) || !Double.isFinite(b) || a == 0 || b == 0) {
+            return a * b + c;
+        }
+        if (!Double.isFinite(c)) {
+            return c;
+        }
+        return fusedMultiplyAdd(a, b, c, 53, -1074);
+    }
+
+    public static float fma(float a, float b, float c) {
+        if (PlatformDetector.isC()) {
+            return fmaC(a, b, c);
+        }
+        if (!Float.isFinite(a) || !Float.isFinite(b) || a == 0 || b == 0) {
+            return a * b + c;
+        }
+        if (!Float.isFinite(c)) {
+            return c;
+        }
+        return (float) fusedMultiplyAdd(a, b, c, 24, -149);
+    }
+
+    private static double fusedMultiplyAdd(double a, double b, double c, int precision, int minExponent) {
+        int productExponent = significandExponent(a) + significandExponent(b);
+        int addendExponent = significandExponent(c);
+        int exponent = Math.min(productExponent, addendExponent);
+        TBigInteger sum = TBigInteger.valueOf(significand(a)).multiply(TBigInteger.valueOf(significand(b)))
+                .shiftLeft(productExponent - exponent)
+                .add(TBigInteger.valueOf(significand(c)).shiftLeft(addendExponent - exponent));
+        if (sum.signum() == 0) {
+            return 0;
+        }
+
+        boolean negative = sum.signum() < 0;
+        TBigInteger magnitude = sum.abs();
+        int leadingExponent = magnitude.bitLength() - 1 + exponent;
+        if (leadingExponent > Double.MAX_EXPONENT) {
+            return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        }
+
+        int lastExponent = Math.max(leadingExponent - precision + 1, minExponent);
+        int shift = lastExponent - exponent;
+        long rounded;
+        if (shift <= 0) {
+            rounded = magnitude.shiftLeft(-shift).longValue();
+        } else {
+            rounded = magnitude.shiftRight(shift).longValue();
+            boolean half = magnitude.testBit(shift - 1);
+            boolean exact = magnitude.getLowestSetBit() >= shift - 1;
+            if (half && (!exact || (rounded & 1) != 0)) {
+                rounded++;
+            }
+        }
+
+        double result;
+        if (lastExponent >= -1022) {
+            result = rounded * powerOfTwo(lastExponent);
+        } else {
+            result = rounded * powerOfTwo(lastExponent + 52) * powerOfTwo(-52);
+        }
+        return copySign(result, negative ? -1.0 : 1.0);
+    }
+
+    private static long significand(double d) {
+        long bits = Double.doubleToRawLongBits(d);
+        long result = bits & 0xFFFFFFFFFFFFFL;
+        if ((bits & 0x7FF0000000000000L) != 0) {
+            result |= 0x10000000000000L;
+        }
+        return bits < 0 ? -result : result;
+    }
+
+    private static int significandExponent(double d) {
+        int biased = (int) ((Double.doubleToRawLongBits(d) >>> 52) & 0x7FF);
+        return Math.max(biased, 1) - 1075;
+    }
+
+    private static double powerOfTwo(int exponent) {
+        return Double.longBitsToDouble((long) (exponent + 1023) << 52);
+    }
 
     public static double pow(double x, double y) {
         return powImpl(x, y);
