@@ -17,7 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.PlatformDetector;
-import org.teavm.classlib.java.math.TBigInteger;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
@@ -117,85 +116,235 @@ public final class TMath extends TObject {
         if (PlatformDetector.isC()) {
             return fmaC(a, b, c);
         }
+        // Fast path: emulation of FMA with error-free transformations and rounding to odd, see
+        // S. Boldo, G. Melquiond "Emulation of FMA and correctly rounded sums: proved algorithms using rounding
+        // to odd". It's only valid when there's no overflow or underflow in intermediate results,
+        // otherwise fall back to exact computation with integers. Note that range check also filters out
+        // zeros, infinities and NaNs.
+        double p = a * b;
+        double absP = Math.abs(p);
+        if (absP >= 0x1p-900 && absP < 0x1p1000 && Math.abs(c) < 0x1p1000
+                && Math.abs(a) < 0x1p995 && Math.abs(b) < 0x1p995) {
+            // Exact product p + pl, see Dekker's TwoProduct
+            double t = 134217729.0 * a;
+            double ah = t - (t - a);
+            double al = a - ah;
+            t = 134217729.0 * b;
+            double bh = t - (t - b);
+            double bl = b - bh;
+            double pl = ((ah * bh - p) + ah * bl + al * bh) + al * bl;
+
+            // Exact sum s + sl = c + p, see Knuth's TwoSum
+            double s = c + p;
+            double bv = s - c;
+            double sl = (c - (s - bv)) + (p - bv);
+
+            // sl + pl, rounded to odd
+            double v = sl + pl;
+            bv = v - sl;
+            double ve = (sl - (v - bv)) + (pl - bv);
+            if (ve != 0) {
+                v = roundToOdd(v, ve);
+            }
+
+            double result = s + v;
+            if (Math.abs(result) >= 0x1p-960) {
+                return result;
+            }
+        }
+
         if (!Double.isFinite(a) || !Double.isFinite(b) || a == 0 || b == 0) {
             return a * b + c;
         }
         if (!Double.isFinite(c)) {
             return c;
         }
-        return fusedMultiplyAdd(a, b, c, 53, -1074);
+        return fmaSlow(a, b, c);
     }
 
     public static float fma(float a, float b, float c) {
         if (PlatformDetector.isC()) {
             return fmaC(a, b, c);
         }
-        if (!Float.isFinite(a) || !Float.isFinite(b) || a == 0 || b == 0) {
-            return a * b + c;
+        // Product of two floats is exact in double, then sum rounded to odd guarantees that
+        // subsequent rounding to float gives correctly rounded result.
+        double p = (double) a * b;
+        double s = p + c;
+        if (Double.isFinite(s)) {
+            double bv = s - p;
+            double e = (p - (s - bv)) + (c - bv);
+            if (e != 0) {
+                s = roundToOdd(s, e);
+            }
         }
-        if (!Float.isFinite(c)) {
-            return c;
-        }
-        return (float) fusedMultiplyAdd(a, b, c, 24, -149);
+        return (float) s;
     }
 
-    private static double fusedMultiplyAdd(double a, double b, double c, int precision, int minExponent) {
-        int productExponent = significandExponent(a) + significandExponent(b);
-        int addendExponent = significandExponent(c);
-        int exponent = Math.min(productExponent, addendExponent);
-        TBigInteger sum = TBigInteger.valueOf(significand(a)).multiply(TBigInteger.valueOf(significand(b)))
-                .shiftLeft(productExponent - exponent)
-                .add(TBigInteger.valueOf(significand(c)).shiftLeft(addendExponent - exponent));
-        if (sum.signum() == 0) {
+    private static double roundToOdd(double value, double error) {
+        long bits = Double.doubleToRawLongBits(value);
+        if ((bits & 1) == 0) {
+            bits += (error > 0) == (value > 0) ? 1 : -1;
+            value = Double.longBitsToDouble(bits);
+        }
+        return value;
+    }
+
+    private static double fmaSlow(double a, double b, double c) {
+        long aBits = Double.doubleToRawLongBits(a);
+        long bBits = Double.doubleToRawLongBits(b);
+        long cBits = Double.doubleToRawLongBits(c);
+
+        // 106-bit product of significands
+        long ma = significandMagnitude(aBits);
+        long mb = significandMagnitude(bBits);
+        long a0 = ma & 0xFFFFFFFFL;
+        long a1 = ma >>> 32;
+        long b0 = mb & 0xFFFFFFFFL;
+        long b1 = mb >>> 32;
+        long p00 = a0 * b0;
+        long mid = a0 * b1 + a1 * b0 + (p00 >>> 32);
+        long hi = a1 * b1 + (mid >>> 32);
+        long lo = (mid << 32) | (p00 & 0xFFFFFFFFL);
+
+        // Normalize 128-bit numbers so that the highest bit is 125, which leaves room for carry
+        int length = bitLength128(hi, lo);
+        int top = significandExponent(aBits) + significandExponent(bBits) + length - 1;
+        int shift = 126 - length;
+        if (shift >= 64) {
+            hi = lo << (shift - 64);
+            lo = 0;
+        } else {
+            hi = (hi << shift) | (lo >>> (64 - shift));
+            lo <<= shift;
+        }
+        boolean negative = (aBits ^ bBits) < 0;
+
+        long mc = significandMagnitude(cBits);
+        if (mc != 0) {
+            int cLength = 64 - Long.numberOfLeadingZeros(mc);
+            int cTop = significandExponent(cBits) + cLength - 1;
+            long cHi = mc << (126 - cLength - 64);
+            long cLo = 0;
+            boolean cNegative = cBits < 0;
+
+            if (cTop > top || cTop == top && Long.compareUnsigned(cHi, hi) > 0) {
+                long tmp = cHi;
+                cHi = hi;
+                hi = tmp;
+                cLo = lo;
+                lo = 0;
+                int tmpTop = cTop;
+                cTop = top;
+                top = tmpTop;
+                boolean tmpNegative = cNegative;
+                cNegative = negative;
+                negative = tmpNegative;
+            }
+
+            // Align the smaller number, collecting shifted out bits into sticky bit
+            int d = top - cTop;
+            if (d > 0) {
+                boolean sticky;
+                if (d >= 128) {
+                    sticky = true;
+                    cLo = 0;
+                    cHi = 0;
+                } else if (d >= 64) {
+                    sticky = cLo != 0 || d > 64 && (cHi << (128 - d)) != 0;
+                    cLo = cHi >>> (d - 64);
+                    cHi = 0;
+                } else {
+                    sticky = (cLo << (64 - d)) != 0;
+                    cLo = (cLo >>> d) | (cHi << (64 - d));
+                    cHi >>>= d;
+                }
+                if (sticky) {
+                    cLo |= 1;
+                }
+            }
+
+            if (negative == cNegative) {
+                long sum = lo + cLo;
+                hi += cHi + (Long.compareUnsigned(sum, lo) < 0 ? 1 : 0);
+                lo = sum;
+            } else {
+                long diff = lo - cLo;
+                hi -= cHi + (Long.compareUnsigned(lo, cLo) < 0 ? 1 : 0);
+                lo = diff;
+            }
+        }
+        if (hi == 0 && lo == 0) {
             return 0;
         }
 
-        boolean negative = sum.signum() < 0;
-        TBigInteger magnitude = sum.abs();
-        int leadingExponent = magnitude.bitLength() - 1 + exponent;
-        if (leadingExponent > Double.MAX_EXPONENT) {
-            return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-        }
-
-        int lastExponent = Math.max(leadingExponent - precision + 1, minExponent);
-        int shift = lastExponent - exponent;
-        long rounded;
+        // Round to 53 bits or to subnormal precision
+        int lowestExponent = top - 125;
+        length = bitLength128(hi, lo);
+        int resultExponent = Math.max(lowestExponent + length - 53, -1074);
+        shift = resultExponent - lowestExponent;
+        long result;
         if (shift <= 0) {
-            rounded = magnitude.shiftLeft(-shift).longValue();
+            result = lo << -shift;
+        } else if (shift > length) {
+            result = 0;
         } else {
-            rounded = magnitude.shiftRight(shift).longValue();
-            boolean half = magnitude.testBit(shift - 1);
-            boolean exact = magnitude.getLowestSetBit() >= shift - 1;
-            if (half && (!exact || (rounded & 1) != 0)) {
-                rounded++;
+            result = shiftRight128(hi, lo, shift);
+            if (testBit128(hi, lo, shift - 1) && ((result & 1) != 0 || hasLowerBits128(hi, lo, shift - 1))) {
+                result++;
             }
         }
 
-        double result;
-        if (lastExponent >= -1022) {
-            result = rounded * powerOfTwo(lastExponent);
-        } else {
-            result = rounded * powerOfTwo(lastExponent + 52) * powerOfTwo(-52);
+        // Significand includes implicit bit, so adding it to exponent field gives proper value,
+        // even if rounding caused carry to the next power of two or if result is subnormal
+        long bits = result + ((long) (resultExponent + 1074) << 52);
+        if (resultExponent > 971 || bits >= 0x7FF0000000000000L) {
+            bits = 0x7FF0000000000000L;
         }
-        return copySign(result, negative ? -1.0 : 1.0);
+        if (negative) {
+            bits |= 0x8000000000000000L;
+        }
+        return Double.longBitsToDouble(bits);
     }
 
-    private static long significand(double d) {
-        long bits = Double.doubleToRawLongBits(d);
+    private static int bitLength128(long hi, long lo) {
+        return hi != 0 ? 128 - Long.numberOfLeadingZeros(hi) : 64 - Long.numberOfLeadingZeros(lo);
+    }
+
+    private static long shiftRight128(long hi, long lo, int shift) {
+        if (shift < 64) {
+            return (lo >>> shift) | (hi << (64 - shift));
+        } else {
+            return hi >>> (shift - 64);
+        }
+    }
+
+    private static boolean testBit128(long hi, long lo, int bit) {
+        return bit < 64 ? ((lo >>> bit) & 1) != 0 : ((hi >>> (bit - 64)) & 1) != 0;
+    }
+
+    private static boolean hasLowerBits128(long hi, long lo, int count) {
+        if (count == 0) {
+            return false;
+        } else if (count < 64) {
+            return (lo << (64 - count)) != 0;
+        } else if (count == 64) {
+            return lo != 0;
+        } else {
+            return lo != 0 || (hi << (128 - count)) != 0;
+        }
+    }
+
+    private static long significandMagnitude(long bits) {
         long result = bits & 0xFFFFFFFFFFFFFL;
         if ((bits & 0x7FF0000000000000L) != 0) {
             result |= 0x10000000000000L;
         }
-        return bits < 0 ? -result : result;
+        return result;
     }
 
-    private static int significandExponent(double d) {
-        int biased = (int) ((Double.doubleToRawLongBits(d) >>> 52) & 0x7FF);
+    private static int significandExponent(long bits) {
+        int biased = (int) ((bits >>> 52) & 0x7FF);
         return Math.max(biased, 1) - 1075;
-    }
-
-    private static double powerOfTwo(int exponent) {
-        return Double.longBitsToDouble((long) (exponent + 1023) << 52);
     }
 
     public static double pow(double x, double y) {
@@ -581,7 +730,7 @@ public final class TMath extends TObject {
     private static native float absC(float d);
 
     public static float abs(float n) {
-        if (PlatformDetector.isJavaScript()) {
+        if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
             return absImpl(n);
         } else if (PlatformDetector.isC()) {
             return absC(n);
@@ -597,7 +746,7 @@ public final class TMath extends TObject {
     private static native double absC(double d);
 
     public static double abs(double n) {
-        if (PlatformDetector.isJavaScript()) {
+        if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
             return absImpl(n);
         } else if (PlatformDetector.isC()) {
             return absC(n);

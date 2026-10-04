@@ -420,4 +420,56 @@ public class MathTest {
         sameFloat(-0f, Math.fma(-1f, 0f, -0f));
         sameFloat(-0f, Math.fma(-1e-30f, 1e-30f, 0f));
     }
+
+    @Test
+    public void fmaDoubleRoundsCorrectly() {
+        sameDouble(0x1.670922f6dcd9p-140,
+                Math.fma(0x1.c51145efaa97cp383, 0x1.f3ddb2760b3c7p-469, -0x1.ba5483893af2dp-85));
+        sameDouble(-0x0.0p0,
+                Math.fma(-0x1.0028p-664, 0x1.6a2bab1ada3c5p-956, 0x0.0p0));
+        sameDouble(0x1.40b7c80bbc3dp-69,
+                Math.fma(0x1.897019d3f8d38p-18, 0x1.88f92ef14eef6p1, -0x1.2df94edd5a56ap-16));
+        sameDouble(-0x1.8c0a7e497168p-57,
+                Math.fma(0x1.c208c7d524754p-23, -0x1.37f305bf7f7c8p20, 0x1.1231f19a3796cp-2));
+        sameDouble(0x1.232398509406p-95,
+                Math.fma(0x1.27ef48cc81fedp-994, -0x1.3d62b22a118a2p955, 0x1.6ee564b41d69p-39));
+        sameDouble(0x1.d581105cff0b8p-83,
+                Math.fma(-0x1.d3b750f00a4c4p251, 0x1.d5c8844e96c72p-282, 0x1.ad26981c8cbacp-30));
+        sameDouble(0x1.ea1cd601a9dc8p-6,
+                Math.fma(-0x1.f716dd92de6e9p58, 0x1.eb2fe47bd6ebcp-11, 0x1.e2a37c978d225p48));
+        sameDouble(0x1.68fcf743ebd8p-45,
+                Math.fma(0x1.859fc0f16981p-16, -0x1.b00e64bbf305p22, 0x1.48c9bed232161p7));
+        sameDouble(-0x0.0000016901af6p-1022,
+                Math.fma(0x1.116ecee97bfp-21, -0x1.1643782024fb9p-971, 0x1.293664fffa09ap-992));
+        sameDouble(-0x1.ab75c39fbp-1013,
+                Math.fma(-0x1.7ce584d4322e3p-989, 0x1.0000000009p32, 0x1.7ce584d43f924p-957));
+        sameDouble(0x1.45cd68758p-32,
+                Math.fma(0x1.490a574652f15p278, -0x1.000000008p-258, 0x1.490a5746f7769p20));
+        sameDouble(-0x0.0p0,
+                Math.fma(-0x1.f1769f0219382p-725, 0x1.4fd2537d59dbep-375, 0x0.0p0));
+        sameDouble(0x1.76a4a3cfd81b8p-1008,
+                Math.fma(-0x1.ae7db0becc432p-954, -0x1.f7fd43b887678p-3, -0x1.a7c16d2fe1997p-956));
+        sameDouble(0x1.74140e7cc4d7cp-41,
+                Math.fma(-0x1.c6b77e4561d4ap-1005, -0x1.9c0788c369eb3p1017, -0x1.6dee5894592a7p13));
+        sameDouble(-0x0.0000000035181p-1022,
+                Math.fma(0x1.1d98e22c1ff18p16, -0x1.ab14a2ed77eabp-1017, 0x1.dc7506f4f02b8p-1001));
+        sameDouble(0x1.3262ce3f863fcp879,
+                Math.fma(0x1.e84976950146dp1016, 0x1.2fa075d85c79bp-83, -0x1.219081055d9a2p934));
+        sameDouble(0x0.000000271c565p-1022,
+                Math.fma(-0x1.8fd5848eddc5p-16, 0x1.db83d8cd4f244p-980, 0x1.73578cea5e03ap-995));
+        sameDouble(-0x1.5378e3c8881p803,
+                Math.fma(0x1.00000000000cp-141, -0x1.5c71284bed82bp998, 0x1.5c71284bed93p857));
+        sameDouble(0x1.f9385f43734fp-46,
+                Math.fma(-0x1.3ecf9e8ce50afp-999, -0x1.d9f81b2ab7b08p1006, -0x1.27214b74821d1p8));
+        sameDouble(0x0.0000000219d8ep-1022,
+                Math.fma(0x0.a12a0531a982dp-1022, -0x1.d11985166ced8p22, 0x1.24cd6452a9a2bp-1000));
+        sameDouble(0x0.000000000182bp-1022,
+                Math.fma(-0x1.b7fe5be4ba1dp-26, -0x1.9d95db1c7c5a4p-982, -0x1.636b74f185451p-1007));
+        sameDouble(-0x1.aab18p934,
+                Math.fma(0x1.2d8bcdcb3c1eep-23, 0x1.0000bp1011, -0x1.2d8c9d1b599aap988));
+        sameDouble(-0x1.659a8e2959dp946,
+                Math.fma(0x1.b6ebf61a4c84p-4, 0x1.267b872b49103p1004, -0x1.f8e6c7c21831ap1000));
+        sameDouble(0x0.0000525541238p-1022,
+                Math.fma(-0x1.0486c46ef68e6p-1013, -0x1.f24245fc6c988p26, -0x1.fb119c17b65bdp-987));
+    }
 }

@@ -49,6 +49,7 @@ import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.EventQueue;
@@ -122,6 +123,10 @@ public class WasmGCIntrinsics {
                 floatIntrinsic);
         reg.registerIntrinsic(new MethodReference(Math.class, "max", float.class, float.class, float.class),
                 floatIntrinsic);
+        reg.registerIntrinsic(new MethodReference(Math.class.getName(), "absImpl", ValueType.DOUBLE, ValueType.DOUBLE),
+                new MathAbsIntrinsic(WasmFloatType.FLOAT64));
+        reg.registerIntrinsic(new MethodReference(Math.class.getName(), "absImpl", ValueType.FLOAT, ValueType.FLOAT),
+                new MathAbsIntrinsic(WasmFloatType.FLOAT32));
     }
 
     private static void fillReflection(IntrinsicRegistry<WasmGCInlineIntrinsic> reg,
