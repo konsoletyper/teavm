@@ -29,7 +29,9 @@ Currently, three backends are supported:
   - `./maven`
   - `./core` - basic tool intergration API, used by Gradle and Maven plugins
   - `./idea`
+  - `./perf` - runner of JMH-compatible benchmarks compiled by TeaVM
 * `/test` - test suite
+* `/benchmarks` - performance benchmarks (JMH-style) for code produced by TeaVM, see `benchmarks/README.md`
 * `/samples` - samples for end users
 
 
@@ -58,6 +60,16 @@ Note that you also need to explicitly specify which backends to run tests for. S
 Also, setting `teavm.tests.optimized` to true will compile each test twice: once without and once with optimizations.
 
 ALWAYS pass all of these properties to Gradle, since user may override their value in local Gradle config.
+
+
+# Performance benchmarks
+
+Benchmarks live in `/benchmarks` module and are written with JMH annotations (only a subset is supported).
+They are compiled by TeaVM and run by `:tools:perf` on JS, Wasm GC and C backends, and can also run on JVM
+with real JMH for comparison. When changing code that may affect performance (classlib, optimizer,
+code generators), consider measuring the effect with `benchmarks/compare-stash.sh` (uncommitted changes vs
+`HEAD`) or `benchmarks/compare-commit.sh <commit>`. See `benchmarks/README.md` for Gradle tasks, properties
+and the supported subset of JMH.
 
 
 # Checking code style

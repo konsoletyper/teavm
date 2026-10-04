@@ -12,6 +12,7 @@ kotlin = "2.3.10"
 scala = "3.7.3"
 jreleaser = "1.18.0"
 junit-jupiter = "5.11.4"
+jmh = "1.37"
 
 [libraries]
 
@@ -46,6 +47,9 @@ junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.re
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit-jupiter" }
 junit-platform-launcher = "org.junit.platform:junit-platform-launcher:1.11.4"
+
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
 
 maven-plugin-api = { module = "org.apache.maven:maven-plugin-api", version.ref = "maven" }
 maven-artifact = { module = "org.apache.maven:maven-artifact", version.ref = "maven" }

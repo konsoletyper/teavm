@@ -163,9 +163,11 @@ public class BrowserRunner {
         private final CountDownLatch latch;
         volatile Throwable error;
         volatile boolean shouldRepeat;
+        final BrowserOutputListener outputListener;
 
-        CallbackWrapper(CountDownLatch latch) {
+        CallbackWrapper(CountDownLatch latch, BrowserOutputListener outputListener) {
             this.latch = latch;
+            this.outputListener = outputListener;
         }
 
         void complete() {
@@ -184,12 +186,20 @@ public class BrowserRunner {
     }
 
     public void runTest(BrowserRunDescriptor run) throws IOException {
-        while (!runTestOnce(run)) {
+        runTest(run, null);
+    }
+
+    /**
+     * Runs code in browser, passing every line it writes to stdout or stderr to the given listener
+     * instead of printing it to stdout/stderr of the current process.
+     */
+    public void runTest(BrowserRunDescriptor run, BrowserOutputListener outputListener) throws IOException {
+        while (!runTestOnce(run, outputListener)) {
             // repeat
         }
     }
 
-    private boolean runTestOnce(BrowserRunDescriptor run) {
+    private boolean runTestOnce(BrowserRunDescriptor run, BrowserOutputListener outputListener) {
         Session ws;
         try {
             do {
@@ -203,7 +213,7 @@ public class BrowserRunner {
         int id = idGenerator.incrementAndGet();
         var latch = new CountDownLatch(1);
 
-        var callbackWrapper = new CallbackWrapper(latch);
+        var callbackWrapper = new CallbackWrapper(latch, outputListener);
         awaitingRuns.put(id, callbackWrapper);
 
         var nf = objectMapper.getNodeFactory();
@@ -428,6 +438,10 @@ public class BrowserRunner {
             if (log != null) {
                 for (JsonNode logEntry : log) {
                     String str = logEntry.get("message").asText();
+                    if (run.outputListener != null) {
+                        run.outputListener.onOutput(logEntry.get("type").asText().equals("stderr"), str);
+                        continue;
+                    }
                     switch (logEntry.get("type").asText()) {
                         case "stdout":
                             System.out.println(str);
