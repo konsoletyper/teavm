@@ -20,17 +20,19 @@ import org.teavm.backend.wasm.model.instruction.WasmFloatType;
 import org.teavm.backend.wasm.model.instruction.WasmFloatUnaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 
-public class MathAbsIntrinsic implements WasmGCInlineIntrinsic {
+public class MathUnaryIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmFloatType type;
+    private final WasmFloatUnaryOperation operation;
 
-    public MathAbsIntrinsic(WasmFloatType type) {
+    public MathUnaryIntrinsic(WasmFloatType type, WasmFloatUnaryOperation operation) {
         this.type = type;
+        this.operation = operation;
     }
 
     @Override
     public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         context.generate(builder, invocation.getArguments().get(0));
-        builder.floatUnary(type, WasmFloatUnaryOperation.ABS);
+        builder.floatUnary(type, operation);
     }
 }

@@ -472,4 +472,52 @@ public class MathTest {
         sameDouble(0x0.0000525541238p-1022,
                 Math.fma(-0x1.0486c46ef68e6p-1013, -0x1.f24245fc6c988p26, -0x1.fb119c17b65bdp-987));
     }
+
+    @Test
+    public void sqrt() {
+        sameDouble(3.0, Math.sqrt(9.0));
+        sameDouble(1.4142135623730951, Math.sqrt(2.0));
+        sameDouble(0.0, Math.sqrt(0.0));
+        sameDouble(-0.0, Math.sqrt(-0.0));
+        sameDouble(Double.NaN, Math.sqrt(-1.0));
+        sameDouble(Double.NaN, Math.sqrt(Double.NaN));
+        sameDouble(Double.POSITIVE_INFINITY, Math.sqrt(Double.POSITIVE_INFINITY));
+        sameDouble(0x1.0p-537, Math.sqrt(Double.MIN_VALUE));
+        sameDouble(3.0, StrictMath.sqrt(9.0));
+    }
+
+    @Test
+    public void floor() {
+        sameDouble(2.0, Math.floor(2.5));
+        sameDouble(-3.0, Math.floor(-2.5));
+        sameDouble(-0.0, Math.floor(-0.0));
+        sameDouble(0.0, Math.floor(0.3));
+        sameDouble(-1.0, Math.floor(-0.3));
+        sameDouble(Double.NaN, Math.floor(Double.NaN));
+        sameDouble(Double.NEGATIVE_INFINITY, Math.floor(Double.NEGATIVE_INFINITY));
+        sameDouble(1e300, Math.floor(1e300));
+        sameDouble(2.0, StrictMath.floor(2.5));
+    }
+
+    @Test
+    public void ceil() {
+        sameDouble(3.0, Math.ceil(2.5));
+        sameDouble(-2.0, Math.ceil(-2.5));
+        sameDouble(-0.0, Math.ceil(-0.3));
+        sameDouble(0.0, Math.ceil(0.0));
+        sameDouble(1.0, Math.ceil(0.3));
+        sameDouble(Double.NaN, Math.ceil(Double.NaN));
+        sameDouble(Double.POSITIVE_INFINITY, Math.ceil(Double.POSITIVE_INFINITY));
+        sameDouble(-1e300, Math.ceil(-1e300));
+        sameDouble(3.0, StrictMath.ceil(2.5));
+    }
+
+    @Test
+    public void absOfSpecialValues() {
+        sameDouble(Double.NaN, Math.abs(Double.NaN));
+        sameFloat(Float.NaN, Math.abs(Float.NaN));
+        sameDouble(Double.MIN_VALUE, Math.abs(-Double.MIN_VALUE));
+        sameFloat(Float.MAX_VALUE, Math.abs(-Float.MAX_VALUE));
+        sameDouble(2.5, StrictMath.abs(-2.5));
+    }
 }

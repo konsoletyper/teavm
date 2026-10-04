@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
@@ -82,8 +83,9 @@ public final class TMath extends TObject {
         return log(a) / 2.302585092994046 /* log_e 10 */;
     }
 
-    @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "teavmMath", name = "sqrt")
+    @InjectedBy(MathNativeGenerator.class)
+    @Import(name = "sqrt")
+    @NoSideEffects
     @Unmanaged
     public static native double sqrt(double a);
 
@@ -96,13 +98,15 @@ public final class TMath extends TObject {
         return f1 - n * f2;
     }
 
-    @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "teavmMath", name = "ceil")
+    @InjectedBy(MathNativeGenerator.class)
+    @Import(name = "ceil")
+    @NoSideEffects
     @Unmanaged
     public static native double ceil(double a);
 
-    @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "teavmMath", name = "floor")
+    @InjectedBy(MathNativeGenerator.class)
+    @Import(name = "floor")
+    @NoSideEffects
     @Unmanaged
     public static native double floor(double a);
 
@@ -722,37 +726,17 @@ public final class TMath extends TObject {
         }
     }
 
-    @GeneratedBy(MathNativeGenerator.class)
+    @InjectedBy(MathNativeGenerator.class)
+    @Import(name = "fabsf")
     @NoSideEffects
-    private static native float absImpl(float d);
+    @Unmanaged
+    public static native float abs(float n);
 
+    @InjectedBy(MathNativeGenerator.class)
     @Import(name = "fabs")
-    private static native float absC(float d);
-
-    public static float abs(float n) {
-        if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
-            return absImpl(n);
-        } else if (PlatformDetector.isC()) {
-            return absC(n);
-        }
-        return n <= 0f ? 0f - n : n;
-    }
-
-    @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
-    private static native double absImpl(double d);
-
-    @Import(name = "fabs")
-    private static native double absC(double d);
-
-    public static double abs(double n) {
-        if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
-            return absImpl(n);
-        } else if (PlatformDetector.isC()) {
-            return absC(n);
-        }
-        return n <= 0.0 ? 0.0 - n : n;
-    }
+    @Unmanaged
+    public static native double abs(double n);
 
     public static double ulp(double d) {
         if (TDouble.isNaN(d)) {
