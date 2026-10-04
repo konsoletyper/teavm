@@ -634,6 +634,30 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
     }
 
+    private void visitLongShift(BinaryExpr expr, String function) {
+        if (!(expr.getSecondOperand() instanceof ConstantExpr)
+                || !(((ConstantExpr) expr.getSecondOperand()).getValue() instanceof Integer)) {
+            visitBinaryFunction(expr, function);
+            return;
+        }
+        var shift = (Integer) ((ConstantExpr) expr.getSecondOperand()).getValue() & 63;
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        if (shift == 0) {
+            expr.getFirstOperand().acceptVisitor(this);
+        } else {
+            // Passing shift amount as BigInt literal allows JS engines to produce much more efficient code
+            writer.appendFunction(function + "Const").append('(');
+            precedence = Precedence.min();
+            expr.getFirstOperand().acceptVisitor(this);
+            writer.append(",").ws().append(shift + "n)");
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
+    }
+
     @Override
     public void visit(BinaryExpr expr) {
         if (expr.getType() == OperationType.LONG) {
@@ -663,13 +687,13 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     visitBinaryFunction(expr, "Long_xor");
                     break;
                 case LEFT_SHIFT:
-                    visitBinaryFunction(expr, "Long_shl");
+                    visitLongShift(expr, "Long_shl");
                     break;
                 case RIGHT_SHIFT:
-                    visitBinaryFunction(expr, "Long_shr");
+                    visitLongShift(expr, "Long_shr");
                     break;
                 case UNSIGNED_RIGHT_SHIFT:
-                    visitBinaryFunction(expr, "Long_shru");
+                    visitLongShift(expr, "Long_shru");
                     break;
                 case COMPARE_LESS:
                 case COMPARE_GREATER:

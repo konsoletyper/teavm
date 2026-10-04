@@ -17,18 +17,37 @@
 
 let Long_MAX_NORMAL = 1 << 18;
 let Long_ZERO = teavm_globals.BigInt(0);
-let Long_create = (lo, hi) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, teavm_globals.BigInt(lo))
-    | teavm_globals.BigInt.asUintN(64, (teavm_globals.BigInt(hi) << teavm_globals.BigInt(32))));
-let Long_fromInt = val => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(val | 0));
+// Conversions between BigInt and number go through typed arrays that share the same buffer,
+// since JS engines handle them much faster than BigInt() and Number() calls.
+let Long_create = (lo, hi) => {
+    $rt_numberConversionIntArray[0] = lo;
+    $rt_numberConversionIntArray[1] = hi;
+    return $rt_numberConversionLongArray[0];
+}
+let Long_fromInt = val => teavm_globals.BigInt(val | 0);
 let Long_MAX_VALUE = teavm_globals.BigInt("9223372036854775807");
 let Long_MIN_VALUE = teavm_globals.BigInt("-9223372036854775808");
-let Long_fromNumber = val => val >= 9223372036854775807 ? Long_MAX_VALUE
-    : val <= -9223372036854775808 ? Long_MIN_VALUE
-    : val === val ? teavm_globals.BigInt(teavm_globals.Math.trunc(val))
-    : Long_ZERO;
-let Long_toNumber = val => teavm_globals.Number(val);
-let Long_hi = val => teavm_globals.Number(teavm_globals.BigInt.asIntN(64, val >> teavm_globals.BigInt(32))) | 0;
-let Long_lo = val => teavm_globals.Number(teavm_globals.BigInt.asIntN(32, val)) | 0;
+let Long_fromNumber = val => {
+    if (teavm_globals.Math.abs(val) < 9223372036854775808) {
+        let t = teavm_globals.Math.trunc(val);
+        $rt_numberConversionIntArray[0] = t | 0;
+        $rt_numberConversionIntArray[1] = teavm_globals.Math.floor(t / 4294967296) | 0;
+        return $rt_numberConversionLongArray[0];
+    }
+    return val !== val ? Long_ZERO : val > 0 ? Long_MAX_VALUE : Long_MIN_VALUE;
+}
+let Long_toNumber = val => {
+    $rt_numberConversionLongArray[0] = val;
+    return $rt_numberConversionIntArray[1] * 4294967296 + ($rt_numberConversionIntArray[0] >>> 0);
+}
+let Long_hi = val => {
+    $rt_numberConversionLongArray[0] = val;
+    return $rt_numberConversionIntArray[1];
+}
+let Long_lo = val => {
+    $rt_numberConversionLongArray[0] = val;
+    return $rt_numberConversionIntArray[0];
+}
 
 let Long_eq = (a, b) => a === b
 let Long_ne = (a, b) => a !== b
@@ -61,4 +80,7 @@ let Long_shl = (a, b) => teavm_globals.BigInt.asIntN(64, a << teavm_globals.BigI
 let Long_shr = (a, b) => teavm_globals.BigInt.asIntN(64, a >> teavm_globals.BigInt(b & 63));
 let Long_shru = (a, b) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) >>
         teavm_globals.BigInt(b & 63));
+let Long_shlConst = (a, b) => teavm_globals.BigInt.asIntN(64, a << b);
+let Long_shrConst = (a, b) => teavm_globals.BigInt.asIntN(64, a >> b);
+let Long_shruConst = (a, b) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) >> b);
 let Long_not = a => teavm_globals.BigInt.asIntN(64, ~a);
