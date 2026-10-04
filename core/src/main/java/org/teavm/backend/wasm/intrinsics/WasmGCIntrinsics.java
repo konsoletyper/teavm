@@ -50,6 +50,7 @@ import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.EventQueue;
@@ -133,6 +134,8 @@ public class WasmGCIntrinsics {
                 new MathUnaryIntrinsic(WasmFloatType.FLOAT64, WasmFloatUnaryOperation.FLOOR));
         reg.registerIntrinsic(new MethodReference(Math.class, "ceil", double.class, double.class),
                 new MathUnaryIntrinsic(WasmFloatType.FLOAT64, WasmFloatUnaryOperation.CEIL));
+        reg.registerIntrinsic(new MethodReference(Math.class.getName(), "rintImpl", ValueType.DOUBLE, ValueType.DOUBLE),
+                new MathUnaryIntrinsic(WasmFloatType.FLOAT64, WasmFloatUnaryOperation.NEAREST));
     }
 
     private static void fillReflection(IntrinsicRegistry<WasmGCInlineIntrinsic> reg,

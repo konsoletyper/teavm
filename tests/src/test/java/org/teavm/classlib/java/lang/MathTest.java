@@ -124,6 +124,59 @@ public class MathTest {
         assertEquals(2, Math.round(1.8));
         assertEquals(-1, Math.round(-1.3));
         assertEquals(-2, Math.round(-1.8));
+        assertEquals(1, Math.round(0.5));
+        assertEquals(3, Math.round(2.5));
+        assertEquals(0, Math.round(-0.5));
+        assertEquals(-1, Math.round(-1.5));
+        assertEquals(-2, Math.round(-2.5));
+        assertEquals(0, Math.round(-0.5f));
+        assertEquals(-1, Math.round(-1.5f));
+        assertEquals(3, Math.round(2.5f));
+        assertEquals(5, Math.round(4.999));
+        assertEquals(4, Math.round(4.499999999999999));
+        assertEquals(0, Math.round(-0.3));
+        assertEquals(-1, Math.round(-0.5000000000000001));
+
+        assertEquals(0, Math.round(0.49999999999999994));
+        assertEquals(0, Math.round(0.49999997f));
+        assertEquals(1L << 52, Math.round(0x1.0p52 - 0.5));
+        assertEquals(1L << 60, Math.round(0x1.0p60));
+        assertEquals(1 << 24, Math.round(0x1.0p24f));
+
+        assertEquals(0, Math.round(Double.NaN));
+        assertEquals(0, Math.round(Float.NaN));
+        assertEquals(Long.MAX_VALUE, Math.round(Double.POSITIVE_INFINITY));
+        assertEquals(Long.MIN_VALUE, Math.round(Double.NEGATIVE_INFINITY));
+        assertEquals(Long.MAX_VALUE, Math.round(1e19));
+        assertEquals(Long.MIN_VALUE, Math.round(-1e19));
+        assertEquals(Integer.MAX_VALUE, Math.round(1e10f));
+        assertEquals(Integer.MIN_VALUE, Math.round(-1e10f));
+        assertEquals(Integer.MAX_VALUE, Math.round(Float.POSITIVE_INFINITY));
+        assertEquals(3, StrictMath.round(2.5));
+        assertEquals(0, StrictMath.round(-0.5f));
+    }
+
+    @Test
+    public void rint() {
+        sameDouble(1.0, Math.rint(1.3));
+        sameDouble(2.0, Math.rint(1.8));
+        sameDouble(0.0, Math.rint(0.5));
+        sameDouble(2.0, Math.rint(1.5));
+        sameDouble(2.0, Math.rint(2.5));
+        sameDouble(4.0, Math.rint(3.5));
+        sameDouble(-0.0, Math.rint(-0.5));
+        sameDouble(-2.0, Math.rint(-1.5));
+        sameDouble(-2.0, Math.rint(-2.5));
+        sameDouble(-0.0, Math.rint(-0.3));
+        sameDouble(-0.0, Math.rint(-0.0));
+        sameDouble(0.0, Math.rint(0.0));
+        sameDouble(0.0, Math.rint(0.49999999999999994));
+        sameDouble(1e19, Math.rint(1e19));
+        sameDouble(0x1.0p52, Math.rint(0x1.0p52 - 0.5));
+        sameDouble(Double.NaN, Math.rint(Double.NaN));
+        sameDouble(Double.POSITIVE_INFINITY, Math.rint(Double.POSITIVE_INFINITY));
+        sameDouble(Double.NEGATIVE_INFINITY, Math.rint(Double.NEGATIVE_INFINITY));
+        sameDouble(2.0, StrictMath.rint(2.5));
     }
 
     @Test

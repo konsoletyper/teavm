@@ -361,8 +361,23 @@ public final class TMath extends TObject {
     private static native double powImpl(double x, double y);
 
     public static double rint(double a) {
-        return round(a);
+        if (PlatformDetector.isJavaScript()) {
+            // JS has no built-in function that rounds half to even
+            double result = floor(a);
+            double diff = a - result;
+            if (diff > 0.5 || diff == 0.5 && result % 2 != 0) {
+                result += 1;
+            }
+            // preserve sign of zero, e.g. rint(-0.3) == -0.0
+            return result == 0 ? a * 0 : result;
+        }
+        return rintImpl(a);
     }
+
+    @Import(name = "rint")
+    @NoSideEffects
+    @Unmanaged
+    private static native double rintImpl(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
     @Import(module = "teavmMath", name = "atan2")
@@ -370,11 +385,25 @@ public final class TMath extends TObject {
     public static native double atan2(double y, double x);
 
     public static int round(float a) {
-        return (int) (a + signum(a) * 0.5f);
+        // float to double conversion is exact, and so is the rest of computation in double
+        return (int) roundToDouble(a);
     }
 
     public static long round(double a) {
-        return (long) (a + signum(a) * 0.5);
+        return (long) roundToDouble(a);
+    }
+
+    /**
+     * Computes floor(a + 0.5) without intermediate rounding of a + 0.5. a - floor(a) is either exact
+     * or, for a in (-0.5, 0), rounds to value that's still greater or equal than 0.5. NaN and infinities
+     * are preserved, so that subsequent conversion to integer type maps them properly.
+     */
+    private static double roundToDouble(double a) {
+        double result = floor(a);
+        if (a - result >= 0.5) {
+            result += 1;
+        }
+        return result;
     }
 
     public static int floorDiv(int a, int b) {
