@@ -48,6 +48,9 @@ let $rt_equalDoubles = (a, b) => {
         && $rt_numberConversionIntArray[1] === $rt_numberConversionIntArray[3];
 }
 
+let $rt_doubleToInt = n => teavm_globals.Math.abs(n) < 2147483648 ? n | 0 : $rt_saturateToInt(n);
+let $rt_saturateToInt = n => n !== n ? 0 : n > 0 ? 2147483647 : -2147483648;
+
 let $rt_compare = (a, b) => a === b ? 0 : a < b ? -1 : 1;
 let $rt_compare_less = (a, b) => a === b ? 0 : a > b ? 1 : -1;
 let $rt_imul = teavm_globals.Math.imul || function(a, b) {

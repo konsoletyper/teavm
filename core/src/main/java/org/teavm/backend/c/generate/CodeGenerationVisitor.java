@@ -1108,6 +1108,15 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(PrimitiveCastExpr expr) {
         pushLocation(expr.getLocation());
+        if ((expr.getSource() == OperationType.FLOAT || expr.getSource() == OperationType.DOUBLE)
+                && (expr.getTarget() == OperationType.INT || expr.getTarget() == OperationType.LONG)) {
+            writer.print(expr.getSource() == OperationType.FLOAT ? "teavm_float" : "teavm_double");
+            writer.print(expr.getTarget() == OperationType.INT ? "ToInt(" : "ToLong(");
+            expr.getValue().acceptVisitor(this);
+            writer.print(")");
+            popLocation(expr.getLocation());
+            return;
+        }
         writer.print("((");
         switch (expr.getTarget()) {
             case INT:

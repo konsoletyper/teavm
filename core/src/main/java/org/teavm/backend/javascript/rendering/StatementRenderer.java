@@ -978,8 +978,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         writer.append(')');
                         break;
                     case INT:
-                        visitBinary(BinaryOperation.BITWISE_OR, "|", () -> expr.getValue().acceptVisitor(this),
-                                () -> writer.append("0"));
+                        writer.appendFunction("$rt_doubleToInt").append("(");
+                        precedence = Precedence.min();
+                        expr.getValue().acceptVisitor(this);
+                        writer.append(')');
                         break;
                     default:
                         expr.getValue().acceptVisitor(this);

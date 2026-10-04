@@ -214,6 +214,25 @@ static inline int32_t teavm_compare_double_less(double a, double b) {
     return a == b ? INT32_C(0) : a > b ? INT32_C(1) : INT32_C(-1);
 }
 
+static inline int32_t teavm_saturateToInt(double v) {
+    return v != v ? INT32_C(0) : v > 0 ? INT32_MAX : INT32_MIN;
+}
+static inline int64_t teavm_saturateToLong(double v) {
+    return v != v ? INT64_C(0) : v > 0 ? INT64_MAX : INT64_MIN;
+}
+static inline int32_t teavm_doubleToInt(double v) {
+    return fabs(v) < 2147483648.0 ? (int32_t) v : teavm_saturateToInt(v);
+}
+static inline int32_t teavm_floatToInt(float v) {
+    return fabsf(v) < 2147483648.0f ? (int32_t) v : teavm_saturateToInt(v);
+}
+static inline int64_t teavm_doubleToLong(double v) {
+    return fabs(v) < 9223372036854775808.0 ? (int64_t) v : teavm_saturateToLong(v);
+}
+static inline int64_t teavm_floatToLong(float v) {
+    return fabsf(v) < 9223372036854775808.0f ? (int64_t) v : teavm_saturateToLong(v);
+}
+
 static inline int32_t teavm_instanceof(void* obj, void* cls, int32_t (*fn)(TeaVM_Class*,TeaVM_Class*)) {
     return obj != NULL && fn((TeaVM_Class*) cls, TEAVM_CLASS_OF(obj));
 }

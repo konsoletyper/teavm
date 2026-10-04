@@ -20,8 +20,12 @@ let Long_ZERO = teavm_globals.BigInt(0);
 let Long_create = (lo, hi) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, teavm_globals.BigInt(lo))
     | teavm_globals.BigInt.asUintN(64, (teavm_globals.BigInt(hi) << teavm_globals.BigInt(32))));
 let Long_fromInt = val => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(val | 0));
-let Long_fromNumber = val =>  teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(
-    val >= 0 ? teavm_globals.Math.floor(val) : teavm_globals.Math.ceil(val)));
+let Long_MAX_VALUE = teavm_globals.BigInt("9223372036854775807");
+let Long_MIN_VALUE = teavm_globals.BigInt("-9223372036854775808");
+let Long_fromNumber = val => val >= 9223372036854775807 ? Long_MAX_VALUE
+    : val <= -9223372036854775808 ? Long_MIN_VALUE
+    : val === val ? teavm_globals.BigInt(teavm_globals.Math.trunc(val))
+    : Long_ZERO;
 let Long_toNumber = val => teavm_globals.Number(val);
 let Long_hi = val => teavm_globals.Number(teavm_globals.BigInt.asIntN(64, val >> teavm_globals.BigInt(32))) | 0;
 let Long_lo = val => teavm_globals.Number(teavm_globals.BigInt.asIntN(32, val)) | 0;
