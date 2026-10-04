@@ -55,6 +55,8 @@ class TPossessiveAltQuantifierSet extends TAltQuantifierSet {
             if (shift >= 1) {
                 stringIndex += shift;
             }
+        } else {
+            matchResult.hitEnd = true;
         }
 
         return next.matches(stringIndex, testString, matchResult);

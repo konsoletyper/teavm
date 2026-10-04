@@ -67,6 +67,7 @@ class TPossessiveCompositeQuantifierSet extends TCompositeQuantifierSet {
         for (; i < max; i++) {
             int shift;
             if (stringIndex + leaf.charCount() > matchResult.getRightBound()) {
+                matchResult.hitEnd = true;
                 break;
             }
             shift = leaf.accepts(stringIndex, testString);

@@ -86,8 +86,11 @@ abstract class TAbstractCharClass extends TSpecialToken {
     }
 
     public boolean hasLowHighSurrogates() {
-        return altSurrogates ? lowHighSurrogates.nextClearBit(0) < SURROGATE_CARDINALITY : lowHighSurrogates
-                .nextSetBit(0) < SURROGATE_CARDINALITY;
+        if (altSurrogates) {
+            return lowHighSurrogates.nextClearBit(0) < SURROGATE_CARDINALITY;
+        }
+        int firstSurrogate = lowHighSurrogates.nextSetBit(0);
+        return firstSurrogate >= 0 && firstSurrogate < SURROGATE_CARDINALITY;
     }
 
     public boolean mayContainSupplCodepoints() {

@@ -170,6 +170,7 @@ public class PatternLiteralTest {
             }
             sb.append(']');
         }
+        sb.append(';').append(matcher.hitEnd());
         return sb.toString();
     }
 

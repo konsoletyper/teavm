@@ -124,7 +124,9 @@ class TSupplRangeSet extends TJointSet {
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         int strLength = matchResult.getRightBound();
 
-        if (stringIndex < strLength) {
+        if (stringIndex >= strLength) {
+            matchResult.hitEnd = true;
+        } else {
             char high = testString.charAt(stringIndex++);
 
             if (contains(high)) {

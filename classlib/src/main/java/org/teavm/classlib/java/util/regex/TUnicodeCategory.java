@@ -51,7 +51,7 @@ class TUnicodeCategory extends TAbstractCharClass {
 
     @Override
     public boolean contains(int ch) {
-        return alt ^ (category == Character.getType((char) ch));
+        return alt ^ (category == Character.getType(ch));
     }
 
     @Override

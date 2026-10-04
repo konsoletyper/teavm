@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1385,5 +1386,65 @@ public class PatternTest {
         assertThrows(IllegalArgumentException.class, () -> matcher.group("qwe"));
         assertThrows(IllegalArgumentException.class, () -> matcher.start("qwe"));
         assertThrows(IllegalArgumentException.class, () -> matcher.end("qwe"));
+    }
+
+    @Test
+    public void surrogatesInCharClasses() {
+        checkFind("[a-z]+", "ab\uD835\uDC00cd", "[0-2, 4-6]", false);
+        checkFind("\\w+", "ab\uD800cd\uDC00ef", "[0-2, 3-5, 6-8]", false);
+        checkFind("\\p{L}+", "a\uD835\uDC00b1", "[0-4]", false);
+        checkFind("\\p{Lu}", "x\uD835\uDC00Y", "[1-3, 3-4]", false);
+        checkFind("[\\p{L}\\d]+", "a1\uD835\uDC00 b2", "[0-4, 5-7]", false);
+        checkFind("[\\uD800-\\uDBFF]", "a\uD800b\uD835\uDC00", "[1-2]", false);
+        checkFind("[^a-z]", "a\uD835\uDC00b\uD800c", "[1-3, 4-5]", false);
+        checkFind("[a-z\\uDC00]+", "ab\uDC00c\uD835\uDC00d", "[0-4, 6-7]", false);
+        checkFind("[a-z]*b", "aaab", "[0-4]", true);
+        checkFind("x[a-z]?y", "xy xay xaay", "[0-2, 3-6]", false);
+    }
+
+    private static void checkFind(String regex, String input, String expectedMatches, boolean expectedHitEnd) {
+        var pattern = Pattern.compile(regex);
+        var matches = new ArrayList<String>();
+        var matcher = pattern.matcher(input);
+        while (matcher.find()) {
+            matches.add(matcher.start() + "-" + matcher.end());
+        }
+        assertEquals(expectedMatches, matches.toString(), "Pattern " + regex);
+        matcher = pattern.matcher(input);
+        matcher.matches();
+        assertEquals(expectedHitEnd, matcher.hitEnd(), "hitEnd for pattern " + regex);
+    }
+
+    @Test
+    public void hitEndInCharClassQuantifiers() {
+        checkHitEnd("[0-9]+", "12", true, true);
+        checkHitEnd("[0-9]+", "12a", false, false);
+        checkHitEnd("[0-9]*", "12", true, true);
+        checkHitEnd("[0-9]+?", "12", false, false);
+        checkHitEnd("[0-9]*+", "12", true, true);
+        checkHitEnd("[0-9]{1,3}", "12", true, true);
+        checkHitEnd("[0-9]{1,3}", "1234", false, false);
+        checkHitEnd("[0-9]+x", "12", true, true);
+        checkHitEnd("\\p{L}+", "ab", true, true);
+        checkHitEnd("\\p{L}+", "ab1", false, false);
+        checkHitEnd("\\p{L}", "", true, true);
+        checkHitEnd("a[0-9]+b?", "a12", true, true);
+        checkHitEnd("\\d+\\s", "12", true, true);
+        checkHitEnd("[0-9]?+", "", true, true);
+        checkHitEnd("[0-9]?+", "1", false, false);
+        checkHitEnd("[0-9]{1,3}?x", "12", true, true);
+        checkHitEnd("[0-9]{1,2}?", "12", false, false);
+        checkHitEnd("[0-9]{1,3}+", "12", true, true);
+        checkHitEnd("[0-9]{1,3}+", "1234", false, false);
+        checkHitEnd("[0-9]?", "1", false, false);
+    }
+
+    private static void checkHitEnd(String regex, String input, boolean afterFind, boolean afterMatches) {
+        var matcher = Pattern.compile(regex).matcher(input);
+        matcher.find();
+        assertEquals(afterFind, matcher.hitEnd(), "hitEnd after find() for " + regex + " on " + input);
+        matcher = Pattern.compile(regex).matcher(input);
+        matcher.matches();
+        assertEquals(afterMatches, matcher.hitEnd(), "hitEnd after matches() for " + regex + " on " + input);
     }
 }

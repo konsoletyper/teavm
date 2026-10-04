@@ -48,7 +48,7 @@ class TUnicodeCategoryScope extends TUnicodeCategory {
 
     @Override
     public boolean contains(int ch) {
-        return alt ^ ((category >> Character.getType((char) ch)) & 1) != 0;
+        return alt ^ ((category >> Character.getType(ch)) & 1) != 0;
     }
 
     @Override

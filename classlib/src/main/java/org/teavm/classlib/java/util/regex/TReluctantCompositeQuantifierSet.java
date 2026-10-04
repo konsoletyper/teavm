@@ -77,6 +77,8 @@ class TReluctantCompositeQuantifierSet extends TCompositeQuantifierSet {
                 shift = leaf.accepts(stringIndex, testString);
                 stringIndex += shift;
                 i++;
+            } else if (i < max) {
+                matchResult.hitEnd = true;
             }
 
         } while (shift >= 1 && i <= max);
