@@ -524,25 +524,88 @@ public final class TString extends TObject implements TSerializable, TComparable
             return sb.toString();
         } else if (target.length() == 1 && replacement.length() == 1) {
             return (String) (Object) replace(target.charAt(0), replacement.charAt(0));
+        } else if (target instanceof TString && replacement instanceof TString) {
+            return (String) (Object) replaceString((TString) target, (TString) replacement);
         } else {
-            var sb = new StringBuilder();
-            int sz = length() - target.length();
-            int i = 0;
-            outer:
-            for (; i <= sz; ++i) {
-                for (int j = 0; j < target.length(); ++j) {
-                    if (charactersGet(i + j) != target.charAt(j)) {
-                        sb.append(charactersGet(i));
-                        continue outer;
-                    }
-                }
-                sb.append(replacement);
-                i += target.length() - 1;
+            int first = indexOf(target, 0);
+            if (first < 0) {
+                return (String) (Object) this;
             }
-            sb.append(substring(i));
-
-            return sb.toString();
+            int targetLength = target.length();
+            int replacementLength = replacement.length();
+            int count = 0;
+            for (int i = first; i >= 0; i = indexOf(target, i + targetLength)) {
+                ++count;
+            }
+            var buffer = new char[replacedLength(count, targetLength, replacementLength)];
+            int src = 0;
+            int dst = 0;
+            for (int i = first; i >= 0; i = indexOf(target, i + targetLength)) {
+                while (src < i) {
+                    buffer[dst++] = charactersGet(src++);
+                }
+                for (int j = 0; j < replacementLength; ++j) {
+                    buffer[dst++] = replacement.charAt(j);
+                }
+                src = i + targetLength;
+            }
+            while (src < length()) {
+                buffer[dst++] = charactersGet(src++);
+            }
+            return (String) (Object) fromArray(buffer);
         }
+    }
+
+    private TString replaceString(TString target, TString replacement) {
+        int first = indexOf(target, 0);
+        if (first < 0) {
+            return this;
+        }
+        int targetLength = target.length();
+        int replacementLength = replacement.length();
+        int count = 0;
+        for (int i = first; i >= 0; i = indexOf(target, i + targetLength)) {
+            ++count;
+        }
+
+        var buffer = new char[replacedLength(count, targetLength, replacementLength)];
+        int src = 0;
+        int dst = 0;
+        for (int i = first; i >= 0; i = indexOf(target, i + targetLength)) {
+            while (src < i) {
+                buffer[dst++] = charactersGet(src++);
+            }
+            for (int j = 0; j < replacementLength; ++j) {
+                buffer[dst++] = replacement.charactersGet(j);
+            }
+            src = i + targetLength;
+        }
+        while (src < length()) {
+            buffer[dst++] = charactersGet(src++);
+        }
+        return fromArray(buffer);
+    }
+
+    private int replacedLength(int count, int targetLength, int replacementLength) {
+        int diff = replacementLength - targetLength;
+        if (diff > 0 && count > (Integer.MAX_VALUE - length()) / diff) {
+            throw new OutOfMemoryError();
+        }
+        return length() + count * diff;
+    }
+
+    private int indexOf(TCharSequence target, int fromIndex) {
+        int toIndex = length() - target.length();
+        outer:
+        for (int i = fromIndex; i <= toIndex; ++i) {
+            for (int j = 0; j < target.length(); ++j) {
+                if (charactersGet(i + j) != target.charAt(j)) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
     }
 
     public TString trim() {

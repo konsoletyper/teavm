@@ -199,6 +199,22 @@ public class StringTest {
         assertEquals("xaxaxax", "aaa".replace("", "x"));
         assertEquals("axc", "abc".replace("b", "x"));
         assertEquals("abc", "abc".replace("bc", "bc"));
+        assertEquals("xyzbxyz", "abcbabc".replace("abc", "xyz"));
+        assertEquals("[]b[]b[]", "aabaabaa".replace("aa", "[]"));
+        assertEquals("--", "abcabc".replace("abc", "-"));
+        assertEquals("", "abcabc".replace("abc", ""));
+        assertEquals("aXYZXYZb", "a12b".replace(new StringBuilder("1"), "XYZ").replace("2", "XYZ"));
+        assertEquals("ab", "ab".replace("abc", "x"));
+        assertEquals("[]b[]", "aabaa".replace(new StringBuilder("aa"), new StringBuilder("[]")));
+        assertEquals("-b-", "aabaa".replace(new StringBuilder("aa"), "-"));
+        assertSame("ab", "ab".replace(new StringBuilder("ac"), "x"));
+    }
+
+    @Test
+    public void sequenceReplaceReturnsSameStringWhenNotFound() {
+        var s = new String(new char[] { 'a', 'b', 'c' });
+        assertSame(s, s.replace("bd", "x"));
+        assertSame(s, s.replace("d", "x"));
     }
 
     @Test
