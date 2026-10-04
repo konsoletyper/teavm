@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.teavm.classlib.java.util.regex.TPattern;
 import org.teavm.classlib.java.util.regex.TPatternWriter;
@@ -29,15 +30,22 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 
 /**
@@ -45,29 +53,70 @@ import org.teavm.model.instructions.StringConstantInstruction;
  * arguments by code that directly constructs the compiled pattern. The pattern is compiled at build time
  * by running classlib's regex engine in the compiler's JVM, and the resulting object graph is turned into
  * calls to factory methods by {@link TPatternWriter} and {@link PatternProgramBuilder}.
+ *
+ * <p>Also handles class library methods that compile a regular expression passed as argument, like
+ * {@link String#split(String)} or {@link String#replaceAll(String, String)}. When regular expression
+ * is a constant, such calls are expanded into their implementation that takes pre-compiled pattern.
+ * Unlike {@code Pattern.compile}, which must return a new instance every time, these methods don't expose
+ * pattern instance, so it is created once and cached in a static field.
  */
 public class PatternCompileTransformer implements ClassHolderTransformer {
     private static final MethodReference COMPILE = new MethodReference(Pattern.class, "compile",
             String.class, Pattern.class);
     private static final MethodReference COMPILE_WITH_FLAGS = new MethodReference(Pattern.class, "compile",
             String.class, int.class, Pattern.class);
+    private static final MethodReference MATCHER = new MethodReference(Pattern.class, "matcher",
+            CharSequence.class, Matcher.class);
+    private static final MethodReference PATTERN_SPLIT = new MethodReference(Pattern.class, "split",
+            CharSequence.class, String[].class);
+    private static final MethodReference PATTERN_SPLIT_WITH_LIMIT = new MethodReference(Pattern.class, "split",
+            CharSequence.class, int.class, String[].class);
+    private static final MethodReference MATCHER_MATCHES = new MethodReference(Matcher.class, "matches",
+            boolean.class);
+    private static final MethodReference MATCHER_REPLACE_ALL = new MethodReference(Matcher.class, "replaceAll",
+            String.class, String.class);
+    private static final MethodReference MATCHER_REPLACE_FIRST = new MethodReference(Matcher.class,
+            "replaceFirst", String.class, String.class);
     private static final String FACTORY_CLASS = "java.util.regex.PatternFactory";
+    private static final ValueType PATTERN_TYPE = ValueType.object(Pattern.class.getName());
+
+    /**
+     * Methods that take regular expression as the first argument, mapped to their implementation
+     * in terms of pre-compiled pattern. Should be kept in sync with actual implementation of these methods.
+     */
+    private static final Map<MethodReference, Expansion> CONSUMERS = Map.of(
+            new MethodReference(String.class, "matches", String.class, boolean.class),
+            (e, invoke) -> e.call(MATCHER_MATCHES, e.call(MATCHER, e.pattern, invoke.getInstance())),
+            new MethodReference(String.class, "split", String.class, String[].class),
+            (e, invoke) -> e.call(PATTERN_SPLIT, e.pattern, invoke.getInstance()),
+            new MethodReference(String.class, "split", String.class, int.class, String[].class),
+            (e, invoke) -> e.call(PATTERN_SPLIT_WITH_LIMIT, e.pattern, invoke.getInstance(),
+                    invoke.getArguments().get(1)),
+            new MethodReference(String.class, "replaceAll", String.class, String.class, String.class),
+            (e, invoke) -> e.call(MATCHER_REPLACE_ALL, e.call(MATCHER, e.pattern, invoke.getInstance()),
+                    invoke.getArguments().get(1)),
+            new MethodReference(String.class, "replaceFirst", String.class, String.class, String.class),
+            (e, invoke) -> e.call(MATCHER_REPLACE_FIRST, e.call(MATCHER, e.pattern, invoke.getInstance()),
+                    invoke.getArguments().get(1)),
+            new MethodReference(Pattern.class, "matches", String.class, CharSequence.class, boolean.class),
+            (e, invoke) -> e.call(MATCHER_MATCHES, e.call(MATCHER, e.pattern, invoke.getArguments().get(1)))
+    );
 
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
-        var factories = new HashMap<PatternKey, MethodReference>();
+        var state = new ClassState(cls, context);
         for (var method : List.copyOf(cls.getMethods())) {
             var program = method.getProgram();
-            if (program != null && hasCompileCalls(program)) {
-                transformProgram(cls, program, factories, context);
+            if (program != null && hasCandidateCalls(program)) {
+                transformProgram(program, state);
             }
         }
     }
 
-    private boolean hasCompileCalls(Program program) {
+    private boolean hasCandidateCalls(Program program) {
         for (var block : program.getBasicBlocks()) {
             for (var instruction : block) {
-                if (instruction instanceof InvokeInstruction && isCompile((InvokeInstruction) instruction)) {
+                if (instruction instanceof InvokeInstruction && isCandidate((InvokeInstruction) instruction)) {
                     return true;
                 }
             }
@@ -75,12 +124,12 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
         return false;
     }
 
-    private static boolean isCompile(InvokeInstruction invoke) {
-        return invoke.getMethod().equals(COMPILE) || invoke.getMethod().equals(COMPILE_WITH_FLAGS);
+    private static boolean isCandidate(InvokeInstruction invoke) {
+        var method = invoke.getMethod();
+        return method.equals(COMPILE) || method.equals(COMPILE_WITH_FLAGS) || CONSUMERS.containsKey(method);
     }
 
-    private void transformProgram(ClassHolder cls, Program program, Map<PatternKey, MethodReference> factories,
-            ClassHolderTransformerContext context) {
+    private void transformProgram(Program program, ClassState state) {
         var varSet = new DisjointSet();
         for (int i = 0; i < program.variableCount(); i++) {
             varSet.create();
@@ -97,7 +146,7 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
                 } else if (instruction instanceof AssignInstruction assign) {
                     varSet.union(assign.getAssignee().getIndex(), assign.getReceiver().getIndex());
                 } else if (instruction instanceof InvokeInstruction invoke) {
-                    if (isCompile(invoke)) {
+                    if (isCandidate(invoke)) {
                         invocations.add(invoke);
                     }
                 }
@@ -123,7 +172,7 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
                 continue;
             }
             int flags = 0;
-            if (args.size() > 1) {
+            if (invoke.getMethod().equals(COMPILE_WITH_FLAGS)) {
                 var flagsConstant = intConstantsByClass[varSet.find(args.get(1).getIndex())];
                 if (flagsConstant == null) {
                     continue;
@@ -132,27 +181,140 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
             }
 
             var key = new PatternKey(source, flags);
-            MethodReference factory;
-            if (factories.containsKey(key)) {
-                factory = factories.get(key);
+            var expansion = CONSUMERS.get(invoke.getMethod());
+            if (expansion == null) {
+                var factory = state.factory(key);
+                if (factory == null) {
+                    continue;
+                }
+                var replacement = new InvokeInstruction();
+                replacement.setType(InvocationType.SPECIAL);
+                replacement.setMethod(factory);
+                replacement.setReceiver(invoke.getReceiver());
+                replacement.setLocation(invoke.getLocation());
+                invoke.replace(replacement);
             } else {
-                factory = createFactory(cls, key, context);
-                factories.put(key, factory);
+                var cachedFactory = state.cachedFactory(key);
+                if (cachedFactory == null) {
+                    continue;
+                }
+                var emitter = new Emitter(program);
+                emitter.pattern = emitter.call(cachedFactory, null);
+                expansion.expand(emitter, invoke);
+                var last = (InvokeInstruction) emitter.instructions.get(emitter.instructions.size() - 1);
+                last.setReceiver(invoke.getReceiver());
+                for (var instruction : emitter.instructions) {
+                    instruction.setLocation(invoke.getLocation());
+                }
+                invoke.insertPreviousAll(emitter.instructions);
+                invoke.delete();
             }
-            if (factory == null) {
-                continue;
-            }
-
-            var replacement = new InvokeInstruction();
-            replacement.setType(InvocationType.SPECIAL);
-            replacement.setMethod(factory);
-            replacement.setReceiver(invoke.getReceiver());
-            replacement.setLocation(invoke.getLocation());
-            invoke.replace(replacement);
         }
     }
 
-    private MethodReference createFactory(ClassHolder cls, PatternKey key, ClassHolderTransformerContext context) {
+    private static class ClassState {
+        final ClassHolder cls;
+        final ClassHolderTransformerContext context;
+        final Map<PatternKey, MethodReference> factories = new HashMap<>();
+        final Map<PatternKey, MethodReference> cachedFactories = new HashMap<>();
+
+        ClassState(ClassHolder cls, ClassHolderTransformerContext context) {
+            this.cls = cls;
+            this.context = context;
+        }
+
+        MethodReference factory(PatternKey key) {
+            if (factories.containsKey(key)) {
+                return factories.get(key);
+            }
+            var factory = createFactory(cls, key, context);
+            factories.put(key, factory);
+            return factory;
+        }
+
+        MethodReference cachedFactory(PatternKey key) {
+            if (cachedFactories.containsKey(key)) {
+                return cachedFactories.get(key);
+            }
+            var factory = factory(key);
+            var cachedFactory = factory != null ? createCachedFactory(cls, factory) : null;
+            cachedFactories.put(key, cachedFactory);
+            return cachedFactory;
+        }
+    }
+
+    private static MethodReference createCachedFactory(ClassHolder cls, MethodReference factory) {
+        var fieldName = uniqueFieldName(cls, "patternLiteralCache$");
+        var field = new FieldHolder(fieldName);
+        field.setType(PATTERN_TYPE);
+        field.setLevel(AccessLevel.PRIVATE);
+        field.getModifiers().add(ElementModifier.STATIC);
+        field.getModifiers().add(ElementModifier.SYNTHETIC);
+        cls.addField(field);
+
+        var program = new Program();
+        program.createVariable();
+        var block = program.createBasicBlock();
+        var cachedBlock = program.createBasicBlock();
+        var createBlock = program.createBasicBlock();
+
+        var get = new GetFieldInstruction();
+        get.setField(field.getReference());
+        get.setFieldType(PATTERN_TYPE);
+        get.setReceiver(program.createVariable());
+        block.add(get);
+        var branch = new BranchingInstruction(BranchingCondition.NOT_NULL);
+        branch.setOperand(get.getReceiver());
+        branch.setConsequent(cachedBlock);
+        branch.setAlternative(createBlock);
+        block.add(branch);
+
+        var exitCached = new ExitInstruction();
+        exitCached.setValueToReturn(get.getReceiver());
+        cachedBlock.add(exitCached);
+
+        var create = new InvokeInstruction();
+        create.setType(InvocationType.SPECIAL);
+        create.setMethod(factory);
+        create.setReceiver(program.createVariable());
+        createBlock.add(create);
+        var put = new PutFieldInstruction();
+        put.setField(field.getReference());
+        put.setFieldType(PATTERN_TYPE);
+        put.setValue(create.getReceiver());
+        createBlock.add(put);
+        var exitCreated = new ExitInstruction();
+        exitCreated.setValueToReturn(create.getReceiver());
+        createBlock.add(exitCreated);
+
+        var method = new MethodHolder(uniqueMethodName(cls, "cachedPatternLiteral$"), PATTERN_TYPE);
+        method.setLevel(AccessLevel.PRIVATE);
+        method.getModifiers().add(ElementModifier.STATIC);
+        method.getModifiers().add(ElementModifier.SYNTHETIC);
+        method.setProgram(program);
+        cls.addMethod(method);
+        return method.getReference();
+    }
+
+    private static String uniqueMethodName(ClassHolder cls, String prefix) {
+        int index = 0;
+        while (cls.getMethod(new MethodReference(cls.getName(), prefix + index, PATTERN_TYPE).getDescriptor())
+                != null) {
+            ++index;
+        }
+        return prefix + index;
+    }
+
+    private static String uniqueFieldName(ClassHolder cls, String prefix) {
+        int index = 0;
+        while (cls.getField(prefix + index) != null) {
+            ++index;
+        }
+        return prefix + index;
+    }
+
+    private static MethodReference createFactory(ClassHolder cls, PatternKey key,
+            ClassHolderTransformerContext context) {
         // Canonical equivalence relies on Unicode tables, which may differ between compiler's JVM
         // and TeaVM classlib, so leave these patterns to run time compilation.
         // Other Unicode-dependent cases are rejected by TPatternWriter.
@@ -177,13 +339,7 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
         }
         var program = builder.complete(pattern);
 
-        var name = "patternLiteral$";
-        int index = 0;
-        while (cls.getMethod(new MethodReference(cls.getName(), name + index,
-                ValueType.object(Pattern.class.getName())).getDescriptor()) != null) {
-            ++index;
-        }
-        var method = new MethodHolder(name + index, ValueType.object(Pattern.class.getName()));
+        var method = new MethodHolder(uniqueMethodName(cls, "patternLiteral$"), PATTERN_TYPE);
         method.setLevel(AccessLevel.PRIVATE);
         method.getModifiers().add(ElementModifier.STATIC);
         method.getModifiers().add(ElementModifier.SYNTHETIC);
@@ -193,5 +349,32 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
     }
 
     private record PatternKey(String source, int flags) {
+    }
+
+    private interface Expansion {
+        void expand(Emitter emitter, InvokeInstruction invoke);
+    }
+
+    private static class Emitter {
+        final Program program;
+        final List<Instruction> instructions = new ArrayList<>();
+        Variable pattern;
+
+        Emitter(Program program) {
+            this.program = program;
+        }
+
+        Variable call(MethodReference method, Variable instance, Variable... arguments) {
+            var insn = new InvokeInstruction();
+            insn.setType(instance != null ? InvocationType.VIRTUAL : InvocationType.SPECIAL);
+            insn.setMethod(method);
+            insn.setInstance(instance);
+            insn.setArguments(arguments);
+            if (method.getReturnType() != ValueType.VOID) {
+                insn.setReceiver(program.createVariable());
+            }
+            instructions.add(insn);
+            return insn.getReceiver();
+        }
     }
 }

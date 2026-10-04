@@ -141,6 +141,37 @@ public class PatternLiteralTest {
         assertEquals(List.of("", "c"), List.of(patterns.get(1).split("aabc")));
     }
 
+    @Test
+    public void stringMethods() {
+        for (var i = 0; i < 2; ++i) {
+            for (var input : INPUTS) {
+                assertEquals(List.of(input.split(dynamic("\\s*,\\s*"))), List.of(input.split("\\s*,\\s*")));
+                assertEquals(List.of(input.split(dynamic("\\d"), 2)), List.of(input.split("\\d", 2)));
+                assertEquals(input.replaceAll(dynamic("(\\w)(\\w)"), "$2$1"), input.replaceAll("(\\w)(\\w)", "$2$1"));
+                assertEquals(input.replaceFirst(dynamic("[a-z]+"), "<$0>"), input.replaceFirst("[a-z]+", "<$0>"));
+                assertEquals(input.matches(dynamic("\\w*")), input.matches("\\w*"));
+                assertEquals(Pattern.matches(dynamic("[a-z]+"), input), Pattern.matches("[a-z]+", input));
+            }
+        }
+        assertEquals(List.of("a", "b", "c"), List.of(new Splitter() { }.split("a, b,c")));
+    }
+
+    @Test
+    public void stringMethodsReportErrors() {
+        assertThrows(PatternSyntaxException.class, () -> "abc".split("(abc"));
+        assertThrows(PatternSyntaxException.class, () -> "abc".replaceAll("[a-", ""));
+        String nullString = dynamic(null);
+        assertThrows(NullPointerException.class, () -> nullString.split(", "));
+        assertThrows(NullPointerException.class, () -> nullString.matches("a+"));
+        assertThrows(NullPointerException.class, () -> nullString.replaceAll("a+", ""));
+    }
+
+    interface Splitter {
+        default String[] split(String s) {
+            return s.split("\\s*,\\s*");
+        }
+    }
+
     private static void check(Pattern precompiled, String source) {
         check(precompiled, source, 0);
     }
@@ -176,6 +207,6 @@ public class PatternLiteralTest {
 
     // Prevents pattern from being compiled in build time
     private static String dynamic(String value) {
-        return new StringBuilder(value).toString();
+        return value != null ? new StringBuilder(value).toString() : null;
     }
 }
