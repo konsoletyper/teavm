@@ -92,4 +92,12 @@ class TLeafQuantifierSet extends TQuantifierSet {
         super.setInnerSet(innerSet);
         this.leaf = (TLeafSet) innerSet;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TLeafQuantifierSet.class, "leafQuantifierSet", leaf, type);
+    }
 }

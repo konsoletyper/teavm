@@ -104,19 +104,8 @@ abstract class TAbstractCharClass extends TSpecialToken {
     }
 
     public TAbstractCharClass getSurrogates() {
-
         if (charClassWithSurrogates == null) {
-            final BitSet lHS = getLowHighSurrogates();
-
-            charClassWithSurrogates = new TAbstractCharClass() {
-                @Override
-                public boolean contains(int ch) {
-                    int index = ch - Character.MIN_SURROGATE;
-
-                    return ((index >= 0) && (index < TAbstractCharClass.SURROGATE_CARDINALITY)) ? this.altSurrogates
-                            ^ lHS.get(index) : false;
-                }
-            };
+            charClassWithSurrogates = new SurrogatesCharClass(getLowHighSurrogates());
             charClassWithSurrogates.setNegative(this.altSurrogates);
         }
 
@@ -125,26 +114,68 @@ abstract class TAbstractCharClass extends TSpecialToken {
 
     public TAbstractCharClass getWithoutSurrogates() {
         if (charClassWithoutSurrogates == null) {
-            final BitSet lHS = getLowHighSurrogates();
-            final TAbstractCharClass thisClass = this;
-
-            charClassWithoutSurrogates = new TAbstractCharClass() {
-                @Override
-                public boolean contains(int ch) {
-                    int index = ch - Character.MIN_SURROGATE;
-
-                    boolean containslHS = (index >= 0 && index < TAbstractCharClass.SURROGATE_CARDINALITY)
-                            ? this.altSurrogates ^ lHS.get(index)
-                            : false;
-
-                    return thisClass.contains(ch) && !containslHS;
-                }
-            };
+            charClassWithoutSurrogates = new WithoutSurrogatesCharClass(getLowHighSurrogates(), this);
             charClassWithoutSurrogates.setNegative(isNegative());
             charClassWithoutSurrogates.mayContainSupplCodepoints = mayContainSupplCodepoints;
         }
 
         return charClassWithoutSurrogates;
+    }
+
+    static class SurrogatesCharClass extends TAbstractCharClass {
+        final BitSet surrogates;
+
+        SurrogatesCharClass(BitSet surrogates) {
+            this.surrogates = surrogates;
+        }
+
+        @Override
+        public boolean contains(int ch) {
+            int index = ch - Character.MIN_SURROGATE;
+
+            return ((index >= 0) && (index < TAbstractCharClass.SURROGATE_CARDINALITY)) ? this.altSurrogates
+                    ^ surrogates.get(index) : false;
+        }
+
+        @Override
+        void describe(TPatternWriter writer) {
+            if (altSurrogates != alt || !mayContainSupplCodepoints || !lowHighSurrogates.isEmpty()) {
+                throw TPatternWriter.unsupported();
+            }
+            writer.create(this, SurrogatesCharClass.class, "surrogatesCharClass", alt);
+            writer.describeBits(this, "addSurrogateRange", surrogates);
+        }
+    }
+
+    static class WithoutSurrogatesCharClass extends TAbstractCharClass {
+        final BitSet surrogates;
+        final TAbstractCharClass base;
+
+        WithoutSurrogatesCharClass(BitSet surrogates, TAbstractCharClass base) {
+            this.surrogates = surrogates;
+            this.base = base;
+        }
+
+        @Override
+        public boolean contains(int ch) {
+            int index = ch - Character.MIN_SURROGATE;
+
+            boolean containslHS = (index >= 0 && index < TAbstractCharClass.SURROGATE_CARDINALITY)
+                    ? this.altSurrogates ^ surrogates.get(index)
+                    : false;
+
+            return base.contains(ch) && !containslHS;
+        }
+
+        @Override
+        void describe(TPatternWriter writer) {
+            if (altSurrogates != alt || !lowHighSurrogates.isEmpty()) {
+                throw TPatternWriter.unsupported();
+            }
+            writer.create(this, WithoutSurrogatesCharClass.class, "withoutSurrogatesCharClass", base, alt,
+                    mayContainSupplCodepoints);
+            writer.describeBits(this, "addSurrogateRange", surrogates);
+        }
     }
 
     public boolean hasUCI() {
@@ -164,6 +195,13 @@ abstract class TAbstractCharClass extends TSpecialToken {
 
     public boolean isNegative() {
         return alt;
+    }
+
+    /**
+     * Describes how to create this character class in run time, see {@link TPatternWriter}.
+     */
+    void describe(TPatternWriter writer) {
+        throw TPatternWriter.unsupported();
     }
 
     // -----------------------------------------------------------------

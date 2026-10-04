@@ -269,4 +269,9 @@ class TLowSurrogateCharSet extends TJointSet {
     public boolean hasConsumed(TMatchResultImpl matchResult) {
         return true;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TLowSurrogateCharSet.class, "lowSurrogateCharSet", low);
+    }
 }

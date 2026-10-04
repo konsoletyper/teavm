@@ -57,4 +57,9 @@ class TPossessiveGroupQuantifierSet extends TGroupQuantifierSet {
 
         return next.matches(stringIndex, testString, matchResult);
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TPossessiveGroupQuantifierSet.class, "possessiveGroupQuantifierSet", innerSet, type);
+    }
 }

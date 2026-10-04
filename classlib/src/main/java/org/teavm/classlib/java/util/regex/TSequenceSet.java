@@ -244,4 +244,9 @@ class TSequenceSet extends TLeafSet {
             }
         }
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TSequenceSet.class, "sequenceSet", string);
+    }
 }

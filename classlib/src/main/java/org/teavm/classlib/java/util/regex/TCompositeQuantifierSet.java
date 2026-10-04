@@ -104,4 +104,12 @@ class TCompositeQuantifierSet extends TLeafQuantifierSet {
     void setQuantifier(TQuantifier quant) {
         this.quantifier = quant;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TCompositeQuantifierSet.class, "compositeQuantifierSet", quantifier, leaf, type);
+    }
 }

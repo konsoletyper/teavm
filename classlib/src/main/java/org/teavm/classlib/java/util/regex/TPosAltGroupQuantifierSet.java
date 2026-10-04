@@ -62,4 +62,9 @@ class TPosAltGroupQuantifierSet extends TAltGroupQuantifierSet {
     public void setNext(TAbstractSet next) {
         this.next = next;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TPosAltGroupQuantifierSet.class, "posAltGroupQuantifierSet", innerSet, type);
+    }
 }

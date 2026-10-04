@@ -60,4 +60,12 @@ class TPossessiveQuantifierSet extends TLeafQuantifierSet {
 
         return next.matches(stringIndex, testString, matchResult);
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TPossessiveQuantifierSet.class, "possessiveQuantifierSet", leaf, type);
+    }
 }

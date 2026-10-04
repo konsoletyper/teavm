@@ -59,4 +59,9 @@ class TBehindFSet extends TFSet {
     protected String getName() {
         return "BehindFSet";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TBehindFSet.class, "behindFSet", getGroupIndex());
+    }
 }

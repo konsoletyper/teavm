@@ -128,4 +128,9 @@ class TCharSet extends TLeafSet {
 
         return true;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TCharSet.class, "charSet", ch);
+    }
 }

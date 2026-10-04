@@ -83,4 +83,13 @@ class TReluctantCompositeQuantifierSet extends TCompositeQuantifierSet {
 
         return -1;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TReluctantCompositeQuantifierSet.class, "reluctantCompositeQuantifierSet", quantifier,
+                leaf, type);
+    }
 }

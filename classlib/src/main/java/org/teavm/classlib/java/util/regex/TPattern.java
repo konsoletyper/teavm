@@ -116,9 +116,14 @@ public final class TPattern implements Serializable {
     private transient TLexer lexemes;
 
     /**
+     * Source of the pattern
+     */
+    String source;
+
+    /**
      * Pattern compile flags;
      */
-    private int flags;
+    int flags;
 
     /*
      * All backreferences that may be used in pattern.
@@ -130,15 +135,15 @@ public final class TPattern implements Serializable {
      */
     transient private boolean needsBackRefReplacement;
 
-    transient private int globalGroupIndex = -1;
+    transient int globalGroupIndex = -1;
 
-    transient private int compCount = -1;
+    transient int compCount = -1;
 
-    transient private int consCount = -1;
+    transient int consCount = -1;
 
     transient TAbstractSet start;
 
-    private Map<String, Integer> namedGroups;
+    Map<String, Integer> namedGroups;
 
     /**
      * Returns a {@link TMatcher} for the {@code Pattern} and a given input. The
@@ -233,7 +238,7 @@ public final class TPattern implements Serializable {
      * @return the regular expression.
      */
     public String pattern() {
-        return lexemes.toString();
+        return source;
     }
 
     @Override
@@ -308,6 +313,7 @@ public final class TPattern implements Serializable {
      */
     private TPattern compileImpl(String pattern, int flags) throws TPatternSyntaxException {
         this.lexemes = new TLexer(pattern, flags);
+        this.source = pattern;
         this.flags = flags;
 
         start = processExpression(-1, this.flags, null);
@@ -315,6 +321,8 @@ public final class TPattern implements Serializable {
             throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
         }
         finalizeCompile();
+        lexemes = null;
+        backRefs = null;
         return this;
     }
 
@@ -1361,6 +1369,16 @@ public final class TPattern implements Serializable {
      * Dismiss public constructor.
      *
      */
-    private TPattern() {
+    TPattern() {
+    }
+
+    void describe(TPatternWriter writer) {
+        if (needsBackRefReplacement) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TPattern.class, "pattern", source, flags, start, globalGroupIndex, compCount, consCount);
+        for (var entry : namedGroups.entrySet()) {
+            writer.call("namedGroup", this, entry.getKey(), entry.getValue());
+        }
     }
 }

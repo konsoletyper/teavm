@@ -56,4 +56,12 @@ class TReluctantAltQuantifierSet extends TAltQuantifierSet {
             return innerSet.matches(stringIndex, testString, matchResult);
         }
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TReluctantAltQuantifierSet.class, "reluctantAltQuantifierSet", leaf, type);
+    }
 }

@@ -65,4 +65,9 @@ class TAltGroupQuantifierSet extends TGroupQuantifierSet {
         super.setNext(next);
         innerSet.setNext(next);
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TAltGroupQuantifierSet.class, "altGroupQuantifierSet", innerSet, type);
+    }
 }

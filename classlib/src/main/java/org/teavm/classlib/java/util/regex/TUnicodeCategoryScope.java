@@ -50,4 +50,14 @@ class TUnicodeCategoryScope extends TUnicodeCategory {
     public boolean contains(int ch) {
         return alt ^ ((category >> Character.getType((char) ch)) & 1) != 0;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        var surrogateCount = lowHighSurrogates.cardinality();
+        if (altSurrogates != alt || (surrogateCount != 0 && surrogateCount != SURROGATE_CARDINALITY)) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TUnicodeCategoryScope.class, "unicodeCategoryScope", category, alt,
+                mayContainSupplCodepoints, surrogateCount != 0);
+    }
 }

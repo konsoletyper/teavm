@@ -188,4 +188,12 @@ class TSupplRangeSet extends TJointSet {
     public boolean hasConsumed(TMatchResultImpl mr) {
         return true;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (alt != chars.alt) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TSupplRangeSet.class, "supplRangeSet", chars);
+    }
 }

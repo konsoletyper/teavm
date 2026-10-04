@@ -26,6 +26,7 @@ import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.record.ObjectMethodsSubstitutor;
 import org.teavm.classlib.impl.reflection.ReflectionTransformer;
+import org.teavm.classlib.impl.regex.PatternCompileTransformer;
 import org.teavm.classlib.impl.string.DefaultStringTransformer;
 import org.teavm.classlib.impl.string.JSStringConstructorGenerator;
 import org.teavm.classlib.impl.string.JSStringInjector;
@@ -102,6 +103,7 @@ public class JCLPlugin implements TeaVMPlugin {
                 host.getResourceProvider()));
         if (!isBootstrap()) {
             host.add(new ReflectionTransformer());
+            host.add(new PatternCompileTransformer());
         }
 
         LambdaMetafactorySubstitutor lms = new LambdaMetafactorySubstitutor();

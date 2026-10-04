@@ -60,4 +60,9 @@ class TPreviousMatch extends TAbstractSet {
     protected String getName() {
         return "PreviousMatch";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TPreviousMatch.class, "previousMatch");
+    }
 }

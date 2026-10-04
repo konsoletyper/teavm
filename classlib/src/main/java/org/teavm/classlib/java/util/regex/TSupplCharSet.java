@@ -210,4 +210,9 @@ class TSupplCharSet extends TLeafSet {
 
         return true;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TSupplCharSet.class, "supplCharSet", ch);
+    }
 }

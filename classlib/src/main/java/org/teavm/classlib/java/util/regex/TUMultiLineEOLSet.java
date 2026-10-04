@@ -75,4 +75,9 @@ class TUMultiLineEOLSet extends TAbstractSet {
     protected String getName() {
         return "<Unix MultiLine $>";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TUMultiLineEOLSet.class, "uMultiLineEOLSet", consCounter);
+    }
 }

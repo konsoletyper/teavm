@@ -65,7 +65,7 @@ abstract class TAbstractSet {
 
     protected String index = Integer.toString(TAbstractSet.counter++);
 
-    private int type;
+    int type;
 
     public TAbstractSet() {
     }
@@ -248,5 +248,13 @@ abstract class TAbstractSet {
                  */
             }
         }
+    }
+
+    /**
+     * Describes how to create this node in run time, see {@link TPatternWriter}.
+     * Field {@link #next} is described automatically.
+     */
+    void describe(TPatternWriter writer) {
+        throw TPatternWriter.unsupported();
     }
 }

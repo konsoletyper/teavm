@@ -69,4 +69,9 @@ class TAtomicFSet extends TFSet {
     public boolean hasConsumed(TMatchResultImpl mr) {
         return false;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TAtomicFSet.class, "atomicFSet", getGroupIndex());
+    }
 }

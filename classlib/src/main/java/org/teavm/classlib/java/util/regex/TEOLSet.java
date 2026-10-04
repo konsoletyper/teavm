@@ -87,4 +87,9 @@ final class TEOLSet extends TAbstractSet {
     protected String getName() {
         return "<EOL>";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TEOLSet.class, "eolSet", consCounter);
+    }
 }

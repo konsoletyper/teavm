@@ -65,4 +65,12 @@ class TReluctantQuantifierSet extends TLeafQuantifierSet {
 
         return -1;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TReluctantQuantifierSet.class, "reluctantQuantifierSet", leaf, type);
+    }
 }

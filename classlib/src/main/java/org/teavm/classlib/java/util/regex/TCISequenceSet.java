@@ -65,4 +65,9 @@ class TCISequenceSet extends TLeafSet {
     public String getName() {
         return "CI sequence: " + string;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TCISequenceSet.class, "ciSequenceSet", string);
+    }
 }

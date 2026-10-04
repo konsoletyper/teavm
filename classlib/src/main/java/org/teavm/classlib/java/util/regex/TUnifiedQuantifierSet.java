@@ -78,4 +78,12 @@ class TUnifiedQuantifierSet extends TLeafQuantifierSet {
 
         return startSearch;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TUnifiedQuantifierSet.class, "unifiedQuantifierSet", leaf, type);
+    }
 }

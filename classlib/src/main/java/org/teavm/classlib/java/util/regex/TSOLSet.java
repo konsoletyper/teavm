@@ -62,4 +62,9 @@ final class TSOLSet extends TAbstractSet {
     protected String getName() {
         return "<SOL>";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TSOLSet.class, "solSet");
+    }
 }

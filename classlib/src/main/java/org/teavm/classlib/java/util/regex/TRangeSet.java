@@ -86,4 +86,12 @@ class TRangeSet extends TLeafSet {
     protected TAbstractCharClass getChars() {
         return chars;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (alt != chars.alt) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TRangeSet.class, "rangeSet", chars);
+    }
 }

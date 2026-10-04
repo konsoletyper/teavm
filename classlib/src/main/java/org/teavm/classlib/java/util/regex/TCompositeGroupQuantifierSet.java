@@ -96,4 +96,10 @@ class TCompositeGroupQuantifierSet extends TGroupQuantifierSet {
     void setQuantifier(TQuantifier quant) {
         this.quantifier = quant;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TCompositeGroupQuantifierSet.class, "compositeGroupQuantifierSet", quantifier, innerSet,
+                type, setCounter);
+    }
 }

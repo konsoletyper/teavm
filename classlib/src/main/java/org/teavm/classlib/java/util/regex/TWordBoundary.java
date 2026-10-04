@@ -96,4 +96,9 @@ class TWordBoundary extends TAbstractSet {
         }
         return true;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TWordBoundary.class, "wordBoundary", positive);
+    }
 }

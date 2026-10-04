@@ -125,4 +125,9 @@ class TEmptySet extends TLeafSet {
     public boolean hasConsumed(TMatchResultImpl mr) {
         return false;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TEmptySet.class, "emptySet");
+    }
 }

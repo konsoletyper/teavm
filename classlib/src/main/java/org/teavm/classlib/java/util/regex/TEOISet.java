@@ -68,4 +68,9 @@ class TEOISet extends TAbstractSet {
     protected String getName() {
         return "EOI";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TEOISet.class, "eoiSet");
+    }
 }

@@ -64,4 +64,9 @@ class TCICharSet extends TLeafSet {
     protected char getChar() {
         return ch;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TCICharSet.class, "ciCharSet", ch);
+    }
 }

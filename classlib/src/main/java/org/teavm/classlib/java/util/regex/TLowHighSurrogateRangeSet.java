@@ -207,4 +207,12 @@ class TLowHighSurrogateRangeSet extends TJointSet {
     public boolean hasConsumed(TMatchResultImpl matchResult) {
         return true;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (alt != surrChars.alt) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TLowHighSurrogateRangeSet.class, "lowHighSurrogateRangeSet", surrChars);
+    }
 }

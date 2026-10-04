@@ -557,33 +557,57 @@ class TCharClass extends TAbstractCharClass {
     public TAbstractCharClass getInstance() {
 
         if (nonBitSet == null) {
-            final BitSet bs = getBits();
-
-            TAbstractCharClass res = new TAbstractCharClass() {
-                @Override
-                public boolean contains(int ch) {
-                    return this.alt ^ bs.get(ch);
-                }
-
-                @Override
-                public String toString() {
-                    StringBuilder temp = new StringBuilder();
-                    for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i + 1)) {
-                        temp.append(Character.toChars(i));
-                        temp.append('|');
-                    }
-
-                    if (temp.length() > 0) {
-                        temp.deleteCharAt(temp.length() - 1);
-                    }
-
-                    return temp.toString();
-                }
-
-            };
-            return res.setNegative(isNegative());
+            return new BitSetCharClass(getBits()).setNegative(isNegative());
         } else {
             return this;
+        }
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (hasUCI || nonBitSet != null) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TCharClass.class, "charClass", ci, uci, invertedSurrogates, inverted, hideBits, alt,
+                altSurrogates, mayContainSupplCodepoints);
+        writer.describeBits(this, "addCharClassRange", bits);
+        writer.describeBits(this, "addSurrogateRange", lowHighSurrogates);
+    }
+
+    static class BitSetCharClass extends TAbstractCharClass {
+        final BitSet bs;
+
+        BitSetCharClass(BitSet bs) {
+            this.bs = bs;
+        }
+
+        @Override
+        public boolean contains(int ch) {
+            return this.alt ^ bs.get(ch);
+        }
+
+        @Override
+        void describe(TPatternWriter writer) {
+            if (altSurrogates != alt || !mayContainSupplCodepoints || !lowHighSurrogates.isEmpty()) {
+                throw TPatternWriter.unsupported();
+            }
+            writer.create(this, BitSetCharClass.class, "bitSetCharClass", alt);
+            writer.describeBits(this, "addCharClassRange", bs);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder temp = new StringBuilder();
+            for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i + 1)) {
+                temp.append(Character.toChars(i));
+                temp.append('|');
+            }
+
+            if (temp.length() > 0) {
+                temp.deleteCharAt(temp.length() - 1);
+            }
+
+            return temp.toString();
         }
     }
 

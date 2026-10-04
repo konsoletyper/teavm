@@ -179,4 +179,9 @@ class TCompositeRangeSet extends TJointSet {
     public boolean first(TAbstractSet set) {
         return true;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TCompositeRangeSet.class, "compositeRangeSet", withoutSurrogates, withSurrogates);
+    }
 }
