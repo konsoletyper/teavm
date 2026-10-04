@@ -356,4 +356,68 @@ public class MathTest {
         assertEquals(1.9101783e-38f, Math.scalb(2.91e-43f, 16), Float.MIN_VALUE);
         assertEquals(2.91e-43f, Math.scalb(1.9101783e-38f, -16), Float.MIN_VALUE);
     }
+
+    @Test
+    public void fmaDoubleRoundsOnce() {
+        double t = 0x1.0p-30;
+        sameDouble(0x1.0p-60, Math.fma(1 + t, 1 + t, -(1 + 2 * t)));
+        assertEquals(0, (1 + t) * (1 + t) - (1 + 2 * t), 0);
+        sameDouble(1.0222044616602375E-14, Math.fma(1.0000001, 1.0000001, -1.0000002));
+        sameDouble(1.0222044616602375E-14, StrictMath.fma(1.0000001, 1.0000001, -1.0000002));
+    }
+
+    @Test
+    public void fmaDoubleRange() {
+        sameDouble(2 * Double.MIN_VALUE, Math.fma(Double.MIN_VALUE, 0.5, Double.MIN_VALUE));
+        sameDouble(Double.MAX_VALUE, Math.fma(Double.MAX_VALUE, 2.0, -Double.MAX_VALUE));
+        sameDouble(Double.POSITIVE_INFINITY, Math.fma(1e300, 1e300, Double.MAX_VALUE));
+        sameDouble(Double.NEGATIVE_INFINITY, Math.fma(-1e300, 1e300, -Double.MAX_VALUE));
+        sameDouble(Double.NEGATIVE_INFINITY, Math.fma(1e300, 1e300, Double.NEGATIVE_INFINITY));
+    }
+
+    @Test
+    public void fmaDoubleSpecialValues() {
+        sameDouble(Double.NaN, Math.fma(Double.POSITIVE_INFINITY, 1.0, Double.NEGATIVE_INFINITY));
+        sameDouble(Double.NaN, Math.fma(Double.NEGATIVE_INFINITY, 2.0, Double.POSITIVE_INFINITY));
+        sameDouble(Double.NaN, Math.fma(Double.POSITIVE_INFINITY, 0.0, 1.0));
+        sameDouble(Double.NaN, Math.fma(Double.NaN, 1.0, 1.0));
+        sameDouble(Double.NaN, Math.fma(1.0, 1.0, Double.NaN));
+        sameDouble(Double.POSITIVE_INFINITY, Math.fma(Double.NEGATIVE_INFINITY, -1.0, 1.0));
+        sameDouble(Double.POSITIVE_INFINITY, Math.fma(2.0, 3.0, Double.POSITIVE_INFINITY));
+        sameDouble(0.0, Math.fma(3.0, 2.0, -6.0));
+        sameDouble(0.0, Math.fma(1.0, 0.0, 0.0));
+        sameDouble(-0.0, Math.fma(-1.0, 0.0, -0.0));
+        sameDouble(-0.0, Math.fma(-1e-200, 1e-200, 0.0));
+    }
+
+    @Test
+    public void fmaFloatRoundsOnce() {
+        float x = Float.intBitsToFloat(0xb32a8000);
+        float y = Float.intBitsToFloat(0xeef3b300);
+        float z = Float.intBitsToFloat(0xb851b01e);
+        assertEquals(0x62a24eb7, Float.floatToRawIntBits(Math.fma(x, y, z)));
+        assertEquals(0x62a24eb8, Float.floatToRawIntBits((float) ((double) x * (double) y + (double) z)));
+
+        float a = 1 + 0x1.0p-12f;
+        sameFloat(0x1.0p-24f, Math.fma(a, a, -(1 + 0x1.0p-11f)));
+        sameFloat(0x1.0p-24f, StrictMath.fma(a, a, -(1 + 0x1.0p-11f)));
+    }
+
+    @Test
+    public void fmaFloatRange() {
+        sameFloat(2 * Float.MIN_VALUE, Math.fma(Float.MIN_VALUE, 0.5f, Float.MIN_VALUE));
+        sameFloat(Float.MAX_VALUE, Math.fma(Float.MAX_VALUE, 2f, -Float.MAX_VALUE));
+        sameFloat(Float.POSITIVE_INFINITY, Math.fma(Float.MAX_VALUE, Float.MAX_VALUE, 0f));
+        sameFloat(Float.NEGATIVE_INFINITY, Math.fma(Float.MAX_VALUE, Float.MAX_VALUE, Float.NEGATIVE_INFINITY));
+    }
+
+    @Test
+    public void fmaFloatSpecialValues() {
+        sameFloat(Float.NaN, Math.fma(Float.POSITIVE_INFINITY, 1f, Float.NEGATIVE_INFINITY));
+        sameFloat(Float.NaN, Math.fma(Float.NaN, 1f, 1f));
+        sameFloat(Float.NaN, Math.fma(0f, Float.POSITIVE_INFINITY, 1f));
+        sameFloat(0f, Math.fma(3f, 2f, -6f));
+        sameFloat(-0f, Math.fma(-1f, 0f, -0f));
+        sameFloat(-0f, Math.fma(-1e-30f, 1e-30f, 0f));
+    }
 }
