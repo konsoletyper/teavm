@@ -228,17 +228,24 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     expr.getSecondOperand().acceptVisitor(this);
                     writer.print(")");
                     return;
+                case LEFT_SHIFT:
                 case UNSIGNED_RIGHT_SHIFT: {
+                    // Shift in unsigned type, since left shift of negative number is undefined behaviour in C
                     String type = expr.getType() == OperationType.LONG ? "int64_t" : "int32_t";
                     writer.print("((" + type + ") ((u" + type + ") ");
-
                     expr.getFirstOperand().acceptVisitor(this);
-                    writer.print(" >> ");
-                    expr.getSecondOperand().acceptVisitor(this);
-
+                    writer.print(expr.getOperation() == BinaryOperation.LEFT_SHIFT ? " << " : " >> ");
+                    writeShiftAmount(expr);
                     writer.print("))");
                     return;
                 }
+                case RIGHT_SHIFT:
+                    writer.print("(");
+                    expr.getFirstOperand().acceptVisitor(this);
+                    writer.print(" >> ");
+                    writeShiftAmount(expr);
+                    writer.print(")");
+                    return;
 
                 case MODULO: {
                     switch (expr.getType()) {
@@ -295,12 +302,6 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 case BITWISE_XOR:
                     op = "^";
                     break;
-                case LEFT_SHIFT:
-                    op = "<<";
-                    break;
-                case RIGHT_SHIFT:
-                    op = ">>";
-                    break;
                 case EQUALS:
                     op = "==";
                     break;
@@ -334,6 +335,22 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             writer.print(")");
         } finally {
             popLocation(expr.getLocation());
+        }
+    }
+
+    /**
+     * Java takes only lower 5 or 6 bits of shift amount, while in C shift by amount greater than or equal
+     * to bit width is undefined behaviour.
+     */
+    private void writeShiftAmount(BinaryExpr expr) {
+        int mask = expr.getType() == OperationType.LONG ? 63 : 31;
+        var amount = expr.getSecondOperand();
+        if (amount instanceof ConstantExpr && ((ConstantExpr) amount).getValue() instanceof Integer) {
+            writer.print(String.valueOf((Integer) ((ConstantExpr) amount).getValue() & mask));
+        } else {
+            writer.print("(");
+            amount.acceptVisitor(this);
+            writer.print(" & " + mask + ")");
         }
     }
 
