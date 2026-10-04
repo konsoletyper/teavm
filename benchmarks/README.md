@@ -29,6 +29,8 @@ To run benchmarks on JVM with JMH, use `./gradlew :benchmarks:jmh`. Results go t
 | `benchmark.browser`      | `browser-chrome` (default), `browser-firefox` or `browser` (prints URL to open manually)       |
 | `benchmark.optimization` | TeaVM optimization level: `simple`, `advanced`, `full` (default)                              |
 | `benchmark.formats`      | Comma-separated list of report formats: `text`, `json`, `html`. Default is all of them        |
+| `benchmark.c.compiler`   | Script that compiles generated C code. Default is selected by OS, see below                   |
+| `benchmark.c.envScript`  | Script that sets up C compiler environment. Default is `setup-msvc-env.bat` on Windows        |
 | `benchmark.compareJvm`   | When `true`, runs `jmh` task first and includes JVM results into the report                   |
 | `benchmark.baseline`     | Comma-separated list of JMH JSON files to compare with, optionally labeled: `label=file.json` |
 
@@ -53,8 +55,17 @@ Example:
     -Pbenchmark.compareJvm=true -Pbenchmark.args="-wi 2 -i 3 -p digits=100 StringSplit|Pi"
 ```
 
-Browser backends need Chrome (`google-chrome-stable`) or Firefox; C backend needs `cc`
-(Linux and macOS only, unless custom build script is passed to `:tools:perf` via `--c-build-script`).
+Browser backends need Chrome (`google-chrome-stable`) or Firefox.
+
+C backend compiles generated code with a script that is selected depending on OS, like in the `tests` module:
+
+* Linux: `compile-c-unix.sh` (`gcc -O2`);
+* macOS: `compile-c-macos.sh` (`clang -O2`);
+* Windows: `compile-c-windows.bat` (MSVC `cl /O2`); the developer environment is set up by
+  `setup-msvc-env.bat`, which requires Visual Studio with C++ build tools.
+
+A script runs in the directory with generated C code and must produce `benchmark` executable
+(`benchmark.exe` on Windows). Use `benchmark.c.compiler` to pass your own script.
 
 ## Comparing TeaVM versions
 

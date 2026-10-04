@@ -128,12 +128,15 @@ public final class PerfCli {
         options.addOption(Option.builder().longOpt("optimization").argName("level").hasArg()
                 .desc("TeaVM optimization level: simple, advanced, full. Default is full").build());
         options.addOption(Option.builder().longOpt("cc").argName("command").hasArg()
-                .desc("C compiler for native backend. Default is cc").build());
+                .desc("C compiler for native backend. Default is cl on Windows, cc otherwise").build());
         options.addOption(Option.builder().longOpt("cflags").argName("flags").hasArg()
-                .desc("Flags for C compiler, separated by spaces. Default is -O2").build());
+                .desc("Flags for C compiler, separated by spaces. Default is /O2 on Windows, -O2 otherwise").build());
         options.addOption(Option.builder().longOpt("c-build-script").argName("file").hasArg()
                 .desc("Script that builds C code, runs in directory with generated code and must produce "
                         + "'benchmark' executable. Overrides --cc and --cflags").build());
+        options.addOption(Option.builder().longOpt("c-env-script").argName("file").hasArg()
+                .desc("Script that sets up environment for C compiler (e.g. MSVC developer environment). "
+                        + "Runs once, resulting environment is passed to every compiler invocation").build());
         options.addOption(Option.builder().longOpt("scan").argName("path").hasArg()
                 .desc("Directory or JAR file to search benchmarks in. Can be specified multiple times. "
                         + "By default, all directories on classpath are searched").build());
@@ -348,6 +351,9 @@ public final class PerfCli {
                         if (commandLine.hasOption("cflags")) {
                             backend.setCompilerFlags(Arrays.asList(commandLine.getOptionValue("cflags").trim()
                                     .split("\\s+")));
+                        }
+                        if (commandLine.hasOption("c-env-script")) {
+                            backend.setEnvScript(new File(commandLine.getOptionValue("c-env-script")));
                         }
                         if (commandLine.hasOption("c-build-script")) {
                             backend.setBuildScript(new File(commandLine.getOptionValue("c-build-script")));

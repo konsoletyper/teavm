@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
@@ -33,12 +35,15 @@ import org.teavm.perf.runtime.BenchmarkNativeEntryPoint;
  */
 public class CBackend extends BenchmarkBackend {
     private static final boolean WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
+    private static final boolean MACOS = System.getProperty("os.name").toLowerCase().startsWith("mac");
     private static final boolean LINUX = System.getProperty("os.name").toLowerCase().contains("linux");
     private static final String EXECUTABLE_NAME = WINDOWS ? "benchmark.exe" : "benchmark";
 
-    private String compiler = "cc";
-    private List<String> compilerFlags = List.of("-O2");
+    private String compiler = WINDOWS ? "cl" : "cc";
+    private List<String> compilerFlags = List.of(WINDOWS ? "/O2" : "-O2");
     private File buildScript;
+    private File envScript;
+    private Map<String, String> capturedEnvironment;
 
     public CBackend(BenchmarkEnvironment environment) {
         super(environment);
@@ -61,6 +66,14 @@ public class CBackend extends BenchmarkBackend {
         this.buildScript = buildScript;
     }
 
+    /**
+     * Sets script that prepares environment for C compiler (for example, sets up MSVC developer environment).
+     * The script runs once, then the environment it produces is used for every compiler invocation.
+     */
+    public void setEnvScript(File envScript) {
+        this.envScript = envScript;
+    }
+
     @Override
     public String getName() {
         return "c";
@@ -76,29 +89,13 @@ public class CBackend extends BenchmarkBackend {
         var target = new CTarget(new CNameProvider());
         build(target, BenchmarkNativeEntryPoint.class.getName(), benchmark, directory, "");
 
-        var command = new ArrayList<String>();
-        if (buildScript != null) {
-            if (!WINDOWS) {
-                command.add("bash");
-            }
-            command.add(buildScript.getAbsolutePath());
-        } else {
-            command.add(compiler);
-            command.add("-std=c11");
-            command.addAll(compilerFlags);
-            command.add("-o");
-            command.add(EXECUTABLE_NAME);
-            command.add("all.c");
-            command.add("-lm");
-            if (LINUX) {
-                command.add("-lrt");
-            }
-        }
+        var command = buildScript != null ? scriptCommand(buildScript) : defaultCompilerCommand();
         try {
-            var process = new ProcessBuilder(command)
+            var processBuilder = new ProcessBuilder(command)
                     .directory(directory)
-                    .redirectErrorStream(true)
-                    .start();
+                    .redirectErrorStream(true);
+            processBuilder.environment().putAll(getEnvironment());
+            var process = processBuilder.start();
             var output = new String(process.getInputStream().readAllBytes());
             int exitCode = process.waitFor();
             if (exitCode != 0) {
@@ -117,6 +114,85 @@ public class CBackend extends BenchmarkBackend {
             throw new BenchmarkException("C compiler did not produce " + executable);
         }
         return new CompiledBenchmark(benchmark, directory, executable);
+    }
+
+    private List<String> defaultCompilerCommand() {
+        var command = new ArrayList<String>();
+        command.add(compiler);
+        if (WINDOWS) {
+            command.addAll(List.of("/nologo", "/std:c11", "/utf-8"));
+            command.addAll(compilerFlags);
+            command.add("all.c");
+            command.add("/Fe:" + EXECUTABLE_NAME);
+        } else {
+            command.add("-std=c11");
+            command.addAll(compilerFlags);
+            if (MACOS) {
+                command.add("-D_DARWIN_C_SOURCE");
+            }
+            command.add("-o");
+            command.add(EXECUTABLE_NAME);
+            command.add("all.c");
+            command.add("-lm");
+            if (LINUX) {
+                command.add("-lrt");
+            }
+        }
+        return command;
+    }
+
+    private static List<String> scriptCommand(File script) {
+        var name = script.getName().toLowerCase();
+        if (name.endsWith(".bat") || name.endsWith(".cmd")) {
+            return List.of("cmd", "/c", script.getAbsolutePath());
+        } else if (name.endsWith(".sh")) {
+            return List.of("bash", script.getAbsolutePath());
+        } else {
+            return List.of(script.getAbsolutePath());
+        }
+    }
+
+    private Map<String, String> getEnvironment() throws BenchmarkException {
+        if (envScript == null) {
+            return Map.of();
+        }
+        if (capturedEnvironment == null) {
+            capturedEnvironment = captureEnvironment(envScript);
+        }
+        return capturedEnvironment;
+    }
+
+    // Runs script in a shell, then prints the resulting environment, so that it can be passed to
+    // every subsequent compiler invocation without running the script again.
+    private static Map<String, String> captureEnvironment(File script) throws BenchmarkException {
+        var name = script.getName().toLowerCase();
+        List<String> command;
+        if (name.endsWith(".bat") || name.endsWith(".cmd")) {
+            command = List.of("cmd", "/c", "call \"" + script.getAbsolutePath() + "\" && set");
+        } else {
+            command = List.of("bash", "-c", "source \"" + script.getAbsolutePath() + "\" && env");
+        }
+        String output;
+        try {
+            var process = new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.INHERIT).start();
+            output = new String(process.getInputStream().readAllBytes());
+            if (process.waitFor() != 0) {
+                throw new BenchmarkException("Environment script " + script + " failed");
+            }
+        } catch (IOException e) {
+            throw new BenchmarkException("Error running environment script " + script, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BenchmarkException("Interrupted");
+        }
+        var result = new HashMap<String, String>();
+        for (var line : output.split("\\r?\\n")) {
+            var eq = line.indexOf('=');
+            if (eq > 0) {
+                result.put(line.substring(0, eq), line.substring(eq + 1));
+            }
+        }
+        return result;
     }
 
     @Override

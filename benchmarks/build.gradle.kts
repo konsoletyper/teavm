@@ -39,6 +39,9 @@ dependencies {
  * - benchmark.browser: browser-chrome (default), browser-firefox or browser (open URL manually)
  * - benchmark.optimization: simple, advanced, full (default)
  * - benchmark.formats: comma-separated list of text, json, html (default is all of them)
+ * - benchmark.c.compiler: script that compiles generated C code (default depends on OS, see compile-c-*.sh/bat)
+ * - benchmark.c.envScript: script that sets up environment for C compiler (on Windows defaults to
+ *   setup-msvc-env.bat, unless benchmark.c.compiler is overridden)
  * - benchmark.compareJvm: when true, runs benchmarks with JMH on JVM first and includes results in the report
  * - benchmark.baseline: comma-separated list of JMH JSON result files to compare with, each optionally
  *   prefixed with label, e.g. jvm=build/reports/jmh/jvm.json
@@ -47,6 +50,19 @@ dependencies {
  * ./gradlew :benchmarks:teavmBenchmark -Pbenchmark.backends=js,wasm-gc -Pbenchmark.args="-wi 1 -i 3 StringSplit"
  */
 fun splitArgs(text: String?) = text?.trim()?.split(Regex("\\s+"))?.filter { it.isNotEmpty() } ?: emptyList()
+
+val osName = System.getProperty("os.name").lowercase()
+val isWindowsOs = osName.contains("win")
+val isMacOs = osName.startsWith("mac")
+val cCompilerOverridden = providers.gradleProperty("benchmark.c.compiler").isPresent
+val defaultCCompiler = when {
+    isWindowsOs -> "compile-c-windows.bat"
+    isMacOs -> "compile-c-macos.sh"
+    else -> "compile-c-unix.sh"
+}
+// only run our own env setup script when we're compiling with our own default Windows compiler
+// script; a custom benchmark.c.compiler is expected to set up whatever environment it needs itself.
+val defaultCEnvScript = if (isWindowsOs && !cCompilerOverridden) "setup-msvc-env.bat" else ""
 
 val benchmarkArgs = splitArgs(providers.gradleProperty("benchmark.args").orNull)
 val jvmResultFile = layout.buildDirectory.file("reports/jmh/jvm.json")
@@ -78,6 +94,12 @@ tasks.register<JavaExec>("teavmBenchmark") {
     args("-b", providers.gradleProperty("benchmark.backends").getOrElse("js"))
     args("--browser", providers.gradleProperty("benchmark.browser").getOrElse("browser-chrome"))
     args("--optimization", providers.gradleProperty("benchmark.optimization").getOrElse("full"))
+    args("--c-build-script", file(providers.gradleProperty("benchmark.c.compiler").getOrElse(defaultCCompiler))
+            .absolutePath)
+    val cEnvScript = providers.gradleProperty("benchmark.c.envScript").getOrElse(defaultCEnvScript)
+    if (cEnvScript.isNotEmpty()) {
+        args("--c-env-script", file(cEnvScript).absolutePath)
+    }
     args("-rf", providers.gradleProperty("benchmark.formats").getOrElse("text,json,html"))
     for (baseline in providers.gradleProperty("benchmark.baseline").getOrElse("").split(",")) {
         val spec = baseline.trim()
