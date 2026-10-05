@@ -1413,7 +1413,7 @@ class JSClassProcessor {
             var importsList = importsValue.getList();
             imports = new JsBodyImportInfo[importsList.size()];
             for (var i = 0; i < importsList.size(); ++i) {
-                var importAnnot = importsList.get(0).getAnnotation();
+                var importAnnot = importsList.get(i).getAnnotation();
                 imports[i] = new JsBodyImportInfo(importAnnot.getValue("alias").getString(),
                         importAnnot.getValue("fromModule").getString());
             }

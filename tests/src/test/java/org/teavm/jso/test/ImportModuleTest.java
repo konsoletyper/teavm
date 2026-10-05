@@ -78,6 +78,23 @@ public class ImportModuleTest {
         assertEquals("top level prop", ClassWithConstructorInModule.getTopLevelProperty());
     }
 
+    @Test
+    @JsModuleTest
+    @ServeJS(from = "org/teavm/jso/test/es2015.js", as = "testModule.js")
+    @ServeJS(from = "org/teavm/jso/test/es2015.js", as = "secondModule.js")
+    public void twoImports() {
+        assertEquals(46, runTestFunctionFromTwoModules());
+    }
+
+    @JSBody(
+            script = "return testModule.foo() + secondModule.foo();",
+            imports = {
+                    @JSBodyImport(alias = "testModule", fromModule = "./testModule.js"),
+                    @JSBodyImport(alias = "secondModule", fromModule = "./secondModule.js")
+            }
+    )
+    private static native int runTestFunctionFromTwoModules();
+
     @JSBody(
             script = "return testModule.foo();",
             imports = @JSBodyImport(alias = "testModule", fromModule = "./testModule.js")
