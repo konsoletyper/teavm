@@ -55,6 +55,12 @@ public class MathTest {
         assertEquals(1.1920928955078125E-7, Math.ulp(1), 1E-25);
         assertEquals(1.4210854715202004e-14, Math.ulp(123.456), 1E-25);
         assertEquals(6.32E-322, Math.ulp(Math.pow(2, -1015)), 1E-323);
+        assertEquals(0x1p-52, Math.ulp(1.0), 0.0);
+        assertEquals(0x1p-52, Math.ulp(-1.0), 0.0);
+        assertEquals(0x1p-56, Math.ulp(0.1), 0.0);
+        assertEquals(0x1p-46, Math.ulp(-123.456), 0.0);
+        assertEquals(0x1p971, Math.ulp(Double.MAX_VALUE), 0.0);
+        assertEquals(Double.MIN_VALUE, Math.ulp(-Double.MIN_VALUE), 0.0);
 
         assertEquals(7.62939453125E-6F, Math.ulp(123.456F), 1E-8F);
         assertEquals(8.968310171678829E-44F, Math.ulp((float) Math.pow(2, -120)), 1E-45F);
