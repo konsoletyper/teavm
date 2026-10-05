@@ -774,14 +774,8 @@ public final class TMath extends TObject {
             return TDouble.POSITIVE_INFINITY;
         }
 
-        if (TDouble.isNaN(d)) {
-            return d;
-        } else if (TDouble.isInfinite(d)) {
-            return TDouble.POSITIVE_INFINITY;
-        }
-
         long bits = TDouble.doubleToLongBits(d);
-        bits &= 0xEFF0000000000000L;
+        bits &= 0x7FF0000000000000L;
         if (bits >= 53L << 52L) {
             bits -= 52L << 52L;
         } else {
