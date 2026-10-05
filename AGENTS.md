@@ -97,3 +97,10 @@ Links there omit `.md` extension, e.g. `foo/bar` instead of `foo/bar.md`.
 * When tests fails due to broken wasm file, you can find *.wast.html file right near the generated module.
   The HTML file also has `(; hex offset ;)` comment before each instruction to easily navigate through the file.
   Don't use any external validators, they don't support Wasm GC proposal fully.
+
+
+# Report policy
+
+IMPORTANT! When you asked to provide any report for the user, NEVER write it to scratchpad. Even
+if you used scratchpad to generate such result, ALWAYS copy data that you are supposed to provide to the user
+in project's directory.
