@@ -23,8 +23,6 @@ import org.teavm.classlib.java.util.TArrays;
 
 class TAbstractStringBuilder implements TSerializable, TCharSequence {
     static class Constants {
-        static final long[] longLogPowersOfTen = { 1, 10, 100, 10000, 100000000, 10000000000000000L, };
-
         static final DoubleAnalyzer.Result doubleAnalysisResult = new DoubleAnalyzer.Result();
         static final FloatAnalyzer.Result floatAnalysisResult = new FloatAnalyzer.Result();
     }
@@ -379,9 +377,14 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
             ++sz; // including '-' sign of mantissa
         }
 
+        // Mantissa has DECIMAL_PRECISION (18) digits. Split it into two 9-digit ints once, so that the rest
+        // of computations is performed with ints, which is much faster than long arithmetic on JS
+        int mantissaHi = (int) (mantissa / 1000000000L);
+        int mantissaLo = (int) (mantissa - mantissaHi * 1000000000L);
+
         // Remove trailing zeros
         int digits = DoubleAnalyzer.DECIMAL_PRECISION;
-        int zeros = trailingDecimalZeros(mantissa);
+        int zeros = mantissaLo == 0 ? 9 + trailingDecimalZeros(mantissaHi) : trailingDecimalZeros(mantissaLo);
         if (zeros > 0) {
             digits -= zeros;
         }
@@ -427,7 +430,9 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         if (negative) {
             buffer[target++] = '-';
         }
-        long pos = DoubleAnalyzer.DOUBLE_MAX_POS;
+        int pos = 100000000;
+        int part = mantissaHi;
+        boolean lowPart = false;
         if (leadingZero) {
             buffer[target++] = '0';
             buffer[target++] = '.';
@@ -438,8 +443,14 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         for (int i = 0; i < digits; ++i) {
             int intDigit;
             if (pos > 0) {
-                intDigit = (int) (mantissa / pos);
-                mantissa %= pos;
+                intDigit = part / pos;
+                part %= pos;
+                pos /= 10;
+                if (pos == 0 && !lowPart) {
+                    lowPart = true;
+                    part = mantissaLo;
+                    pos = 100000000;
+                }
             } else {
                 intDigit = 0;
             }
@@ -447,7 +458,6 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
             if (--intPart == 0) {
                 buffer[target++] = '.';
             }
-            pos /= 10;
         }
 
         // Print exponent
@@ -489,20 +499,6 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         }
         if (n % (zeros * 10) == 0) {
             result |= 1;
-        }
-        return result;
-    }
-
-    private static int trailingDecimalZeros(long n) {
-        long zeros = 1;
-        int result = 0;
-        int bit = 16;
-        for (int i = Constants.longLogPowersOfTen.length - 1; i >= 0; --i) {
-            if (n % (zeros * Constants.longLogPowersOfTen[i]) == 0) {
-                result |= bit;
-                zeros *= Constants.longLogPowersOfTen[i];
-            }
-            bit >>>= 1;
         }
         return result;
     }

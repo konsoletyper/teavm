@@ -46,6 +46,10 @@ let Long_lo = val => {
     return $rt_numberConversionIntArray[0];
 }
 
+// Generated code uses these functions directly and writes long arithmetic inline
+let Long_asIntN = teavm_globals.BigInt.asIntN;
+let Long_asUintN = teavm_globals.BigInt.asUintN;
+
 let Long_eq = (a, b) => a === b
 let Long_ne = (a, b) => a !== b
 let Long_gt = (a, b) => a > b

@@ -634,6 +634,23 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
     }
 
+    // Long operations are written inline rather than as calls to runtime functions, since JS engines
+    // generate efficient code for BigInt arithmetic wrapped into asIntN(64, ...) only when they see the whole
+    // expression, and they don't always inline small functions into large ones.
+    private void visitLongBinary(BinaryExpr expr, String op) {
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        writer.appendFunction("Long_asIntN").append("(64,").ws();
+        precedence = Precedence.min();
+        visitBinary(expr.getOperation(), op, () -> expr.getFirstOperand().acceptVisitor(this),
+                () -> expr.getSecondOperand().acceptVisitor(this));
+        writer.append(")");
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
+    }
+
     private void visitLongShift(BinaryExpr expr, String function) {
         if (!(expr.getSecondOperand() instanceof ConstantExpr)
                 || !(((ConstantExpr) expr.getSecondOperand()).getValue() instanceof Integer)) {
@@ -647,11 +664,21 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         if (shift == 0) {
             expr.getFirstOperand().acceptVisitor(this);
         } else {
-            // Passing shift amount as BigInt literal allows JS engines to produce much more efficient code
-            writer.appendFunction(function + "Const").append('(');
-            precedence = Precedence.min();
-            expr.getFirstOperand().acceptVisitor(this);
-            writer.append(",").ws().append(shift + "n)");
+            // Passing shift amount as BigInt literal allows JS engines to produce much more efficient code.
+            // JS engines can do this only when shift is written inline, since they don't always inline
+            // small functions into large ones.
+            writer.appendFunction("Long_asIntN").append("(64,").ws();
+            if (expr.getOperation() == BinaryOperation.UNSIGNED_RIGHT_SHIFT) {
+                writer.appendFunction("Long_asUintN").append("(64,").ws();
+                precedence = Precedence.min();
+                expr.getFirstOperand().acceptVisitor(this);
+                writer.append(")").ws().append(">>").ws().append(shift + "n");
+            } else {
+                precedence = Precedence.min();
+                visitBinary(expr.getOperation(), expr.getOperation() == BinaryOperation.LEFT_SHIFT ? "<<" : ">>",
+                        () -> expr.getFirstOperand().acceptVisitor(this), () -> writer.append(shift + "n"));
+            }
+            writer.append(")");
         }
         if (expr.getLocation() != null) {
             popLocation();
@@ -663,28 +690,28 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         if (expr.getType() == OperationType.LONG) {
             switch (expr.getOperation()) {
                 case ADD:
-                    visitBinaryFunction(expr, "Long_add");
+                    visitLongBinary(expr, "+");
                     break;
                 case SUBTRACT:
-                    visitBinaryFunction(expr, "Long_sub");
+                    visitLongBinary(expr, "-");
                     break;
                 case MULTIPLY:
-                    visitBinaryFunction(expr, "Long_mul");
+                    visitLongBinary(expr, "*");
                     break;
                 case DIVIDE:
-                    visitBinaryFunction(expr, "Long_div");
+                    visitLongBinary(expr, "/");
                     break;
                 case MODULO:
-                    visitBinaryFunction(expr, "Long_rem");
+                    visitLongBinary(expr, "%");
                     break;
                 case BITWISE_OR:
-                    visitBinaryFunction(expr, "Long_or");
+                    visitLongBinary(expr, "|");
                     break;
                 case BITWISE_AND:
-                    visitBinaryFunction(expr, "Long_and");
+                    visitLongBinary(expr, "&");
                     break;
                 case BITWISE_XOR:
-                    visitBinaryFunction(expr, "Long_xor");
+                    visitLongBinary(expr, "^");
                     break;
                 case LEFT_SHIFT:
                     visitLongShift(expr, "Long_shl");
@@ -700,22 +727,22 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     visitBinaryFunction(expr, "Long_compare");
                     break;
                 case EQUALS:
-                    visitBinaryFunction(expr, "Long_eq");
+                    visitBinary(expr, "===", false);
                     break;
                 case NOT_EQUALS:
-                    visitBinaryFunction(expr, "Long_ne");
+                    visitBinary(expr, "!==", false);
                     break;
                 case LESS:
-                    visitBinaryFunction(expr, "Long_lt");
+                    visitBinary(expr, "<", false);
                     break;
                 case LESS_OR_EQUALS:
-                    visitBinaryFunction(expr, "Long_le");
+                    visitBinary(expr, "<=", false);
                     break;
                 case GREATER:
-                    visitBinaryFunction(expr, "Long_gt");
+                    visitBinary(expr, ">", false);
                     break;
                 case GREATER_OR_EQUALS:
-                    visitBinaryFunction(expr, "Long_ge");
+                    visitBinary(expr, ">=", false);
                     break;
                 default:
                     break;
@@ -812,8 +839,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         switch (expr.getOperation()) {
             case NOT: {
                 if (expr.getType() == OperationType.LONG) {
-                    writer.appendFunction("Long_not").append("(");
-                    precedence = Precedence.min();
+                    writer.appendFunction("Long_asIntN").append("(64,").ws().append("~");
+                    precedence = Precedence.UNARY;
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
                 } else {
@@ -831,8 +858,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
             case NEGATE:
                 if (expr.getType() == OperationType.LONG) {
-                    writer.appendFunction("Long_neg").append("(");
-                    precedence = Precedence.min();
+                    writer.appendFunction("Long_asIntN").append("(64,").ws().append("-");
+                    precedence = Precedence.UNARY;
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
                 } else if (expr.getType() == OperationType.INT) {
