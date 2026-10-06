@@ -76,10 +76,45 @@ let Long_urem = (a, b) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.a
 let Long_and = (a, b) => teavm_globals.BigInt.asIntN(64, a & b);
 let Long_or = (a, b) => teavm_globals.BigInt.asIntN(64, a | b);
 let Long_xor = (a, b) => teavm_globals.BigInt.asIntN(64, a ^ b);
-let Long_shl = (a, b) => teavm_globals.BigInt.asIntN(64, a << teavm_globals.BigInt(b & 63));
-let Long_shr = (a, b) => teavm_globals.BigInt.asIntN(64, a >> teavm_globals.BigInt(b & 63));
-let Long_shru = (a, b) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) >>
-        teavm_globals.BigInt(b & 63));
+// JS engines generate efficient code for BigInt shifts wrapped into asIntN(64, ...) only when shift amount
+// is a constant, otherwise they fall back to arbitrary precision arithmetic. Multiplication is optimized well,
+// so left shift is expressed as multiplication by a power of two. Right shifts are performed on 32-bit halves.
+let Long_pows = function() {
+    let result = [];
+    for (let i = 0; i < 64; ++i) {
+        result.push(teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(1) << teavm_globals.BigInt(i)));
+    }
+    return result;
+}();
+let Long_shl = (a, b) => teavm_globals.BigInt.asIntN(64, a * Long_pows[b & 63]);
+let Long_shr = (a, b) => {
+    b &= 63;
+    $rt_numberConversionLongArray[0] = a;
+    let lo = $rt_numberConversionIntArray[0];
+    let hi = $rt_numberConversionIntArray[1];
+    if (b >= 32) {
+        lo = hi >> (b - 32);
+        hi = hi >> 31;
+    } else if (b > 0) {
+        lo = (lo >>> b) | (hi << (32 - b));
+        hi = hi >> b;
+    }
+    return Long_create(lo, hi);
+}
+let Long_shru = (a, b) => {
+    b &= 63;
+    $rt_numberConversionLongArray[0] = a;
+    let lo = $rt_numberConversionIntArray[0];
+    let hi = $rt_numberConversionIntArray[1];
+    if (b >= 32) {
+        lo = hi >>> (b - 32);
+        hi = 0;
+    } else if (b > 0) {
+        lo = (lo >>> b) | (hi << (32 - b));
+        hi = hi >>> b;
+    }
+    return Long_create(lo, hi);
+}
 let Long_shlConst = (a, b) => teavm_globals.BigInt.asIntN(64, a << b);
 let Long_shrConst = (a, b) => teavm_globals.BigInt.asIntN(64, a >> b);
 let Long_shruConst = (a, b) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) >> b);

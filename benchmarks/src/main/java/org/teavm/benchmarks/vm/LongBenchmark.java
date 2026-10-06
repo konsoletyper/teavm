@@ -139,4 +139,22 @@ public class LongBenchmark {
         }
         return result;
     }
+
+    @Benchmark
+    public long variableShiftRight() {
+        var result = 0L;
+        for (var i = 0; i < SIZE; ++i) {
+            result ^= longs[i] >> ints[i];
+        }
+        return result;
+    }
+
+    @Benchmark
+    public long variableShiftRightUnsigned() {
+        var result = 0L;
+        for (var i = 0; i < SIZE; ++i) {
+            result ^= longs[i] >>> ints[i];
+        }
+        return result;
+    }
 }
