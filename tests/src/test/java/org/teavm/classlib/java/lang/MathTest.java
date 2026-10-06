@@ -218,6 +218,20 @@ public class MathTest {
     }
 
     @Test
+    public void nextAfterWorks() {
+        sameDouble(1.0000000000000002, Math.nextAfter(1.0, 2.0));
+        sameDouble(0.9999999999999999, Math.nextAfter(1.0, 0.0));
+        sameDouble(-0.0, Math.nextAfter(0.0, -0.0));
+        sameDouble(Double.NaN, Math.nextAfter(1.0, Double.NaN));
+        sameDouble(Double.NaN, Math.nextAfter(Double.NaN, 1.0));
+        sameFloat(1.0000001f, Math.nextAfter(1.0f, 2.0));
+        sameFloat(0.99999994f, Math.nextAfter(1.0f, 0.0));
+        sameFloat(-0.0f, Math.nextAfter(0.0f, -0.0));
+        sameFloat(Float.NaN, Math.nextAfter(1.0f, Double.NaN));
+        sameFloat(Float.NaN, Math.nextAfter(Float.NaN, 1.0));
+    }
+
+    @Test
     public void exponentWorks() {
         assertEquals(0, Math.getExponent(1.0f));
         assertEquals(-127, Math.getExponent(Float.MIN_VALUE));
