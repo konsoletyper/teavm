@@ -881,15 +881,15 @@ public final class TMath extends TObject {
     }
 
     public static double nextAfter(double start, double direction) {
-        if (start == direction) {
+        if (start == direction || TDouble.isNaN(direction)) {
             return direction;
         }
         return direction > start ? nextUp(start) : nextDown(start);
     }
 
     public static float nextAfter(float start, double direction) {
-        if (start == direction) {
-            return start;
+        if (start == direction || TDouble.isNaN(direction)) {
+            return (float) direction;
         }
         return direction > start ? nextUp(start) : nextDown(start);
     }
