@@ -94,6 +94,7 @@ import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmIntUnary;
 import org.teavm.backend.wasm.model.instruction.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
+import org.teavm.backend.wasm.model.instruction.WasmReturn;
 import org.teavm.backend.wasm.model.instruction.WasmSignedType;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
@@ -132,7 +133,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
     private Map<IdentifiedStatement, WasmInstructionList> continueTargets = new HashMap<>();
     private IdentifiedStatement currentBreakTarget;
     private IdentifiedStatement currentContinueTarget;
-    private int blockLevel;
     private WasmGCVirtualCallGenerator vcallGen;
     private boolean shortenedReturn;
 
@@ -160,6 +160,10 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         shortenedReturn = false;
         builder = target.builder();
         statement.acceptVisitor(this);
+        if (target.getLast() instanceof WasmReturn) {
+            target.getLast().delete();
+            shortenedReturn = true;
+        }
         builder = null;
     }
 
@@ -1317,7 +1321,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
                 return;
             }
         }
-        ++blockLevel;
         var cond = builder.conditional();
         var thenBuilder = cond.getThenBlock().builder();
         var oldBuilder = builder;
@@ -1332,7 +1335,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             }
         }
         builder = oldBuilder;
-        --blockLevel;
     }
 
     @Override
@@ -1347,7 +1349,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
                 .flatMapToInt(clause -> Arrays.stream(clause.getConditions()))
                 .max().orElse(0);
 
-        ++blockLevel;
         var outermostBlock = new WasmBlock(false);
         breakTargets.put(statement, outermostBlock.getBody());
         var oldBreakTarget = currentBreakTarget;
@@ -1396,7 +1397,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         builder.add(outermostBlock);
         breakTargets.remove(statement);
         currentBreakTarget = oldBreakTarget;
-        --blockLevel;
     }
 
     private void translateSwitchToBinarySearch(SwitchStatement statement, WasmInstructionList defaultList,
@@ -1477,7 +1477,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         if (builder.isTerminating()) {
             return;
         }
-        ++blockLevel;
         var oldBreakTarget = currentBreakTarget;
         var oldContinueTarget = currentContinueTarget;
         currentBreakTarget = statement;
@@ -1511,7 +1510,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         continueTargets.remove(statement);
         currentBreakTarget = oldBreakTarget;
         currentContinueTarget = oldContinueTarget;
-        --blockLevel;
     }
 
     @Override
@@ -1519,7 +1517,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         if (builder.isTerminating()) {
             return;
         }
-        ++blockLevel;
         var blockBuilder = builder.block();
         if (statement.getId() != null) {
             breakTargets.put(statement, blockBuilder.list);
@@ -1535,7 +1532,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         if (statement.getId() != null) {
             breakTargets.remove(statement);
         }
-        --blockLevel;
     }
 
     @Override
@@ -1587,14 +1583,10 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
             accept(statement.getResult(), builder, returnType);
         }
 
-        if (blockLevel > 0) {
-            if (returnBlock == null) {
-                builder.return_();
-            } else {
-                builder.breakTo(returnBlock);
-            }
+        if (returnBlock == null) {
+            builder.return_();
         } else {
-            shortenedReturn = true;
+            builder.breakTo(returnBlock);
         }
         builder.popLocation();
     }
@@ -1651,8 +1643,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         }
         tryCatchStatements.add(statement);
         Collections.reverse(tryCatchStatements);
-
-        ++blockLevel;
 
         var oldBuilder = builder;
 
@@ -1712,8 +1702,6 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
 
         builder = oldBuilder;
         builder.add(innerInsnList.getBreakTarget());
-
-        --blockLevel;
     }
 
     @Override

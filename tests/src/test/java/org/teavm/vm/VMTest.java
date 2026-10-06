@@ -148,6 +148,26 @@ public class VMTest {
         }
         assertEquals(List.of("1", "2", "3"), list);
     }
+    
+    @Test
+    public void finallyWithEmptyTryBody() {
+        Object result;
+        try {
+            result = methodWithFinally("ok");
+        } catch (Throwable t) {
+            fail("Exception not expected here");
+            return;
+        }
+        assertEquals("ok", result);
+    }
+
+    private static Object methodWithFinally(Object g) {
+        try {
+            return g;
+        } finally {
+            System.out.println("Never mind");
+        }
+    }
 
     @Test
     public void breakLoopFromCatch() {
