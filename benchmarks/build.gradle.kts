@@ -37,7 +37,7 @@ dependencies {
  *
  * - benchmark.backends: comma-separated list of js, wasm-gc, c (default is js)
  * - benchmark.browser: browser-chrome (default), browser-firefox or browser (open URL manually)
- * - benchmark.optimization: simple, advanced, full (default)
+ * - benchmark.optimization: simple, advanced (default), full
  * - benchmark.formats: comma-separated list of text, json, html (default is all of them)
  * - benchmark.c.compiler: script that compiles generated C code (default depends on OS, see compile-c-*.sh/bat)
  * - benchmark.c.envScript: script that sets up environment for C compiler (on Windows defaults to
@@ -93,7 +93,7 @@ tasks.register<JavaExec>("teavmBenchmark") {
     args("-o", layout.buildDirectory.dir("reports/teavm-perf").get().asFile.absolutePath)
     args("-b", providers.gradleProperty("benchmark.backends").getOrElse("js"))
     args("--browser", providers.gradleProperty("benchmark.browser").getOrElse("browser-chrome"))
-    args("--optimization", providers.gradleProperty("benchmark.optimization").getOrElse("full"))
+    args("--optimization", providers.gradleProperty("benchmark.optimization").getOrElse("advanced"))
     args("--c-build-script", file(providers.gradleProperty("benchmark.c.compiler").getOrElse(defaultCCompiler))
             .absolutePath)
     val cEnvScript = providers.gradleProperty("benchmark.c.envScript").getOrElse(defaultCEnvScript)

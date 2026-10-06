@@ -32,7 +32,7 @@ public class BenchmarkEnvironment {
     private final ClasspathResourceProvider resourceProvider;
     private final ClassHolderSource classSource;
     private final File outputDir;
-    private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.FULL;
+    private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
 
     public BenchmarkEnvironment(ClassLoader classLoader, File outputDir) {
         this.classLoader = classLoader;

@@ -27,7 +27,7 @@ To run benchmarks on JVM with JMH, use `./gradlew :benchmarks:jmh`. Results go t
 | `benchmark.args`         | JMH-style arguments, used by both `teavmBenchmark` and `jmh` tasks (see below)                |
 | `benchmark.backends`     | Comma-separated list of `js`, `wasm-gc`, `c`. Default is `js`                                 |
 | `benchmark.browser`      | `browser-chrome` (default), `browser-firefox` or `browser` (prints URL to open manually)       |
-| `benchmark.optimization` | TeaVM optimization level: `simple`, `advanced`, `full` (default)                              |
+| `benchmark.optimization` | TeaVM optimization level: `simple`, `advanced` (default), `full`                              |
 | `benchmark.formats`      | Comma-separated list of report formats: `text`, `json`, `html`. Default is all of them        |
 | `benchmark.c.compiler`   | Script that compiles generated C code. Default is selected by OS, see below                   |
 | `benchmark.c.envScript`  | Script that sets up C compiler environment. Default is `setup-msvc-env.bat` on Windows        |
@@ -109,9 +109,11 @@ Everything else (`@Threads`, `@Group`, `@CompilerControl`, `@AuxCounters`, JVM a
 injection of `BenchmarkParams` and similar infrastructure objects, profilers) is not supported
 and ignored.
 
-Defaults differ from JMH: when neither annotations nor command line specify them, benchmarks run 5 warmup
-and 5 measurement iterations, 1 second each, in a single fork. Mode and time unit defaults are the same
-as in JMH (throughput, seconds). Command line options take priority over annotations.
+Defaults differ from JMH: when neither annotations nor command line specify them, benchmarks run 3 warmup
+iterations, 300 ms each, and 5 measurement iterations, 500 ms each, in a single fork. Code produced by TeaVM
+needs much less warmup than JVM: C code is compiled ahead of time, and browsers tier up hot code quickly.
+Mode and time unit defaults are the same as in JMH (throughput, seconds).
+Command line options take priority over annotations.
 
 Score error is computed like in JMH, as a 99.9% confidence interval using Student's t-distribution.
 

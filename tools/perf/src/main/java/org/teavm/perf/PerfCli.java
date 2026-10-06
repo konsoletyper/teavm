@@ -126,7 +126,7 @@ public final class PerfCli {
                 .desc("Browser to run JS and Wasm GC benchmarks: browser-chrome, browser-firefox or browser "
                         + "(print URL to open manually). Default is browser-chrome").build());
         options.addOption(Option.builder().longOpt("optimization").argName("level").hasArg()
-                .desc("TeaVM optimization level: simple, advanced, full. Default is full").build());
+                .desc("TeaVM optimization level: simple, advanced, full. Default is advanced").build());
         options.addOption(Option.builder().longOpt("cc").argName("command").hasArg()
                 .desc("C compiler for native backend. Default is cl on Windows, cc otherwise").build());
         options.addOption(Option.builder().longOpt("cflags").argName("flags").hasArg()
@@ -189,7 +189,7 @@ public final class PerfCli {
 
             var environment = new BenchmarkEnvironment(PerfCli.class.getClassLoader(), outputDir);
             environment.setOptimizationLevel(parseOptimizationLevel(
-                    commandLine.getOptionValue("optimization", "full")));
+                    commandLine.getOptionValue("optimization", "advanced")));
             var benchmarks = findBenchmarks(environment);
             if (benchmarks == null) {
                 return 1;

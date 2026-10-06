@@ -35,8 +35,8 @@ import org.openjdk.jmh.annotations.Warmup;
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 3, time = 2)
-@Measurement(iterations = 5, time = 2)
+@Warmup(iterations = 2, time = 1)
+@Measurement(iterations = 5, time = 1)
 @Fork(1)
 public class PiBenchmark {
     @Param("1000")

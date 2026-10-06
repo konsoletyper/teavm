@@ -27,12 +27,14 @@ import java.util.regex.Pattern;
 /**
  * Settings that override settings given by annotations, usually specified via command line.
  * When neither annotations nor these options specify a setting, defaults are used. Defaults are the same as
- * JMH ones, except for iteration count, iteration time and number of forks, which are smaller to keep running
- * time reasonable.
+ * JMH ones, except for iteration count, iteration time and number of forks, which are much smaller.
+ * Unlike JVM, code produced by TeaVM needs little warmup: C code is compiled ahead of time, and browsers
+ * tier up hot JS and Wasm code within milliseconds. So short warmup is mostly needed to pick batch size
+ * and short iterations are sufficient to get stable results, while keeping running time reasonable.
  */
 public class BenchmarkOptions {
-    public static final IterationSettings DEFAULT_WARMUP = new IterationSettings(5, 1_000_000_000L, 1);
-    public static final IterationSettings DEFAULT_MEASUREMENT = new IterationSettings(5, 1_000_000_000L, 1);
+    public static final IterationSettings DEFAULT_WARMUP = new IterationSettings(3, 300_000_000L, 1);
+    public static final IterationSettings DEFAULT_MEASUREMENT = new IterationSettings(5, 500_000_000L, 1);
     public static final int DEFAULT_FORKS = 1;
     public static final Set<BenchmarkMode> DEFAULT_MODES = EnumSet.of(BenchmarkMode.THROUGHPUT);
     public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
