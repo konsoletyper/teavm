@@ -16,7 +16,6 @@
 "use strict";
 
 let Long_MAX_NORMAL = 1 << 18;
-let Long_ZERO = teavm_globals.BigInt(0);
 // Conversions between BigInt and number go through typed arrays that share the same buffer,
 // since JS engines handle them much faster than BigInt() and Number() calls.
 let Long_create = (lo, hi) => {
@@ -25,8 +24,6 @@ let Long_create = (lo, hi) => {
     return $rt_numberConversionLongArray[0];
 }
 let Long_fromInt = val => teavm_globals.BigInt(val | 0);
-let Long_MAX_VALUE = teavm_globals.BigInt("9223372036854775807");
-let Long_MIN_VALUE = teavm_globals.BigInt("-9223372036854775808");
 let Long_fromNumber = val => {
     if (teavm_globals.Math.abs(val) < 9223372036854775808) {
         let t = teavm_globals.Math.trunc(val);
@@ -34,7 +31,7 @@ let Long_fromNumber = val => {
         $rt_numberConversionIntArray[1] = teavm_globals.Math.floor(t / 4294967296) | 0;
         return $rt_numberConversionLongArray[0];
     }
-    return val !== val ? Long_ZERO : val > 0 ? Long_MAX_VALUE : Long_MIN_VALUE;
+    return val !== val ? 0n : val > 0 ? 9223372036854775807n : -9223372036854775808n;
 }
 let Long_toNumber = val => {
     $rt_numberConversionLongArray[0] = val;
@@ -56,8 +53,8 @@ let Long_ge = (a, b) => a >= b
 let Long_lt = (a, b) => a < b
 let Long_le = (a, b) => a <= b
 let Long_add = (a, b) => teavm_globals.BigInt.asIntN(64, a + b);
-let Long_inc = a => teavm_globals.BigInt.asIntN(64, a + 1);
-let Long_dec = a => teavm_globals.BigInt.asIntN(64, a - 1);
+let Long_inc = a => teavm_globals.BigInt.asIntN(64, a + 1n);
+let Long_dec = a => teavm_globals.BigInt.asIntN(64, a - 1n);
 let Long_neg = a => teavm_globals.BigInt.asIntN(64, -a);
 let Long_sub = (a, b) => teavm_globals.BigInt.asIntN(64, a - b);
 let Long_compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
@@ -81,8 +78,10 @@ let Long_xor = (a, b) => teavm_globals.BigInt.asIntN(64, a ^ b);
 // so left shift is expressed as multiplication by a power of two. Right shifts are performed on 32-bit halves.
 let Long_pows = function() {
     let result = [];
+    let pow = 1n;
     for (let i = 0; i < 64; ++i) {
-        result.push(teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(1) << teavm_globals.BigInt(i)));
+        result.push(teavm_globals.BigInt.asIntN(64, pow));
+        pow <<= 1n;
     }
     return result;
 }();

@@ -1396,7 +1396,7 @@ class JSClassProcessor {
         var errorReporter = new TeaVMErrorReporter(diagnostics, new CallLocation(methodToProcess.getReference()));
         var env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
-        env.setLanguageVersion(Context.VERSION_1_8);
+        env.setLanguageVersion(Context.VERSION_ES6);
         env.setIdeMode(true);
         var parser = new JSParser(env, errorReporter);
         AstRoot rootNode;

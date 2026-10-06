@@ -67,8 +67,16 @@ public class AnnotationsTest {
         assertEquals(true, obj.active());
     }
 
+    @Test
+    public void bigIntLiteralInBody() {
+        assertEquals("9223372036854775807,255", bigIntLiterals());
+    }
+
     @JSBody(params = { "a", "b" }, script = "return a + b;")
     private static native int add(int a, int b);
+
+    @JSBody(script = "return String(9223372036854775806n + 1n) + ',' + String(0xFFn);")
+    private static native String bigIntLiterals();
 
     @JSBody(params = "n", script = "return n;")
     private static native Num convert(int n);

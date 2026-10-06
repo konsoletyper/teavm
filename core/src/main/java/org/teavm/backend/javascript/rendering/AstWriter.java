@@ -31,6 +31,7 @@ import org.mozilla.javascript.ast.ArrayComprehensionLoop;
 import org.mozilla.javascript.ast.ArrayLiteral;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
+import org.mozilla.javascript.ast.BigIntLiteral;
 import org.mozilla.javascript.ast.Block;
 import org.mozilla.javascript.ast.BreakStatement;
 import org.mozilla.javascript.ast.CatchClause;
@@ -188,6 +189,9 @@ public class AstWriter {
                 break;
             case Token.NUMBER:
                 print((NumberLiteral) node);
+                break;
+            case Token.BIGINT:
+                print((BigIntLiteral) node);
                 break;
             case Token.STRING:
                 print((StringLiteral) node);
@@ -691,6 +695,10 @@ public class AstWriter {
 
     private void print(NumberLiteral node) {
         writer.append(node.getValue());
+    }
+
+    private void print(BigIntLiteral node) {
+        writer.append(node.getBigInt().toString()).append('n');
     }
 
     private void print(StringLiteral node) {

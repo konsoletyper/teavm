@@ -101,7 +101,7 @@ public class RuntimeRenderer {
     private AstRoot parseRuntime(String name) {
         CompilerEnvirons env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
-        env.setLanguageVersion(Context.VERSION_1_8);
+        env.setLanguageVersion(Context.VERSION_ES6);
         JSParser factory = new JSParser(env);
 
         ClassLoader loader = RuntimeRenderer.class.getClassLoader();
