@@ -996,12 +996,28 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             case LONG:
                 switch (expr.getTarget()) {
                     case INT:
+                        var outerPrecedence = precedence;
                         precedence = Precedence.MEMBER_ACCESS;
-                        Expr longShifted = extractLongRightShiftedBy32(expr.getValue());
-                        if (longShifted != null) {
+                        var longShift = extractLongRightShiftBy32OrMore(expr.getValue());
+                        if (longShift != null) {
+                            // (int) (a >> n), where n >= 32, takes bits from high word only,
+                            // which is cheaper than shifting BigInt and then converting it to int
+                            var extraShift = longShift.shift - 32;
+                            var needsParentheses = extraShift > 0
+                                    && outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal();
+                            if (needsParentheses) {
+                                writer.append('(');
+                            }
                             writer.appendFunction("Long_hi").append("(");
-                            longShifted.acceptVisitor(this);
+                            precedence = Precedence.min();
+                            longShift.value.acceptVisitor(this);
                             writer.append(")");
+                            if (extraShift > 0) {
+                                writer.ws().append(longShift.unsigned ? ">>>" : ">>").ws().append(extraShift);
+                            }
+                            if (needsParentheses) {
+                                writer.append(')');
+                            }
                         } else {
                             writer.appendFunction("Long_lo").append("(");
                             expr.getValue().acceptVisitor(this);
@@ -1044,7 +1060,19 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
     }
 
-    private Expr extractLongRightShiftedBy32(Expr expr) {
+    private static class LongRightShift {
+        final Expr value;
+        final int shift;
+        final boolean unsigned;
+
+        LongRightShift(Expr value, int shift, boolean unsigned) {
+            this.value = value;
+            this.shift = shift;
+            this.unsigned = unsigned;
+        }
+    }
+
+    private LongRightShift extractLongRightShiftBy32OrMore(Expr expr) {
         if (!(expr instanceof BinaryExpr)) {
             return null;
         }
@@ -1062,11 +1090,15 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
 
         Object rightConstant = ((ConstantExpr) binary.getSecondOperand()).getValue();
-        if (rightConstant.equals(32) || rightConstant.equals(32L)) {
-            return binary.getFirstOperand();
+        if (!(rightConstant instanceof Integer)) {
+            return null;
         }
-
-        return null;
+        var shift = (Integer) rightConstant & 63;
+        if (shift < 32) {
+            return null;
+        }
+        return new LongRightShift(binary.getFirstOperand(), shift,
+                binary.getOperation() == BinaryOperation.UNSIGNED_RIGHT_SHIFT);
     }
 
     @Override
