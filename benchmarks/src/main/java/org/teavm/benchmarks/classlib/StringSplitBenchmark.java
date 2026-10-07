@@ -41,6 +41,7 @@ public class StringSplitBenchmark {
 
     private String commaSeparated;
     private String commaSpaceSeparated;
+    private String comma;
 
     @Setup
     public void setup() {
@@ -57,6 +58,7 @@ public class StringSplitBenchmark {
         }
         commaSeparated = comma.toString();
         commaSpaceSeparated = commaSpace.toString();
+        this.comma = new StringBuilder(",").toString();
     }
 
     /**
@@ -65,6 +67,14 @@ public class StringSplitBenchmark {
     @Benchmark
     public void splitSingleChar(Blackhole blackhole) {
         blackhole.consume(commaSeparated.split(","));
+    }
+
+    /**
+     * Same as {@link #splitSingleChar(Blackhole)}, but separator is not known at compile time.
+     */
+    @Benchmark
+    public void splitSingleCharDynamic(Blackhole blackhole) {
+        blackhole.consume(commaSeparated.split(comma));
     }
 
     /**

@@ -77,6 +77,13 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
             String.class, String.class);
     private static final MethodReference MATCHER_REPLACE_FIRST = new MethodReference(Matcher.class,
             "replaceFirst", String.class, String.class);
+    private static final MethodReference STRING_SPLIT = new MethodReference(String.class, "split",
+            String.class, String[].class);
+    private static final MethodReference STRING_SPLIT_WITH_LIMIT = new MethodReference(String.class, "split",
+            String.class, int.class, String[].class);
+    private static final MethodReference STRING_SPLIT_BY_CHAR = new MethodReference(String.class.getName(),
+            "splitByChar", ValueType.CHARACTER, ValueType.INTEGER, ValueType.arrayOf(ValueType.object(
+                    String.class.getName())));
     private static final String FACTORY_CLASS = "java.util.regex.PatternFactory";
     private static final ValueType PATTERN_TYPE = ValueType.object(Pattern.class.getName());
 
@@ -87,9 +94,9 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
     private static final Map<MethodReference, Expansion> CONSUMERS = Map.of(
             new MethodReference(String.class, "matches", String.class, boolean.class),
             (e, invoke) -> e.call(MATCHER_MATCHES, e.call(MATCHER, e.pattern, invoke.getInstance())),
-            new MethodReference(String.class, "split", String.class, String[].class),
+            STRING_SPLIT,
             (e, invoke) -> e.call(PATTERN_SPLIT, e.pattern, invoke.getInstance()),
-            new MethodReference(String.class, "split", String.class, int.class, String[].class),
+            STRING_SPLIT_WITH_LIMIT,
             (e, invoke) -> e.call(PATTERN_SPLIT_WITH_LIMIT, e.pattern, invoke.getInstance(),
                     invoke.getArguments().get(1)),
             new MethodReference(String.class, "replaceAll", String.class, String.class, String.class),
@@ -180,6 +187,10 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
                 flags = flagsConstant;
             }
 
+            if (tryExpandSplitByChar(program, invoke, source)) {
+                continue;
+            }
+
             var key = new PatternKey(source, flags);
             var expansion = CONSUMERS.get(invoke.getMethod());
             if (expansion == null) {
@@ -210,6 +221,36 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
                 invoke.delete();
             }
         }
+    }
+
+    /**
+     * Expands {@code String.split} by a single character (see {@link SplitFastPath#singleChar(String)})
+     * into a call of the fast path method, avoiding instantiation of the pattern.
+     */
+    private boolean tryExpandSplitByChar(Program program, InvokeInstruction invoke, String source) {
+        var method = invoke.getMethod();
+        if (!method.equals(STRING_SPLIT) && !method.equals(STRING_SPLIT_WITH_LIMIT)) {
+            return false;
+        }
+        int ch = SplitFastPath.singleChar(source);
+        if (ch < 0) {
+            return false;
+        }
+
+        var emitter = new Emitter(program);
+        var chVar = emitter.intConstant(ch);
+        var limitVar = method.equals(STRING_SPLIT_WITH_LIMIT)
+                ? invoke.getArguments().get(1)
+                : emitter.intConstant(0);
+        emitter.call(STRING_SPLIT_BY_CHAR, invoke.getInstance(), chVar, limitVar);
+        var split = (InvokeInstruction) emitter.instructions.get(emitter.instructions.size() - 1);
+        split.setReceiver(invoke.getReceiver());
+        for (var instruction : emitter.instructions) {
+            instruction.setLocation(invoke.getLocation());
+        }
+        invoke.insertPreviousAll(emitter.instructions);
+        invoke.delete();
+        return true;
     }
 
     private static class ClassState {
@@ -373,6 +414,14 @@ public class PatternCompileTransformer implements ClassHolderTransformer {
             if (method.getReturnType() != ValueType.VOID) {
                 insn.setReceiver(program.createVariable());
             }
+            instructions.add(insn);
+            return insn.getReceiver();
+        }
+
+        Variable intConstant(int value) {
+            var insn = new IntegerConstantInstruction();
+            insn.setConstant(value);
+            insn.setReceiver(program.createVariable());
             instructions.add(insn);
             return insn.getReceiver();
         }

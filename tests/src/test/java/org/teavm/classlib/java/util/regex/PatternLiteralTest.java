@@ -157,6 +157,30 @@ public class PatternLiteralTest {
     }
 
     @Test
+    public void splitBySingleChar() {
+        var inputs = List.of("", ",", ",,", "a", "a,b", ",a,b", "a,b,", "a,,b,,", ",,a,,", "abc", "a,b,c,d");
+        for (var input : inputs) {
+            for (var limit = -1; limit <= 5; ++limit) {
+                var expected = List.of(Pattern.compile(dynamic(",")).split(input, limit));
+                assertEquals(expected, List.of(input.split(",", limit)), "Literal split of " + input + " " + limit);
+                assertEquals(expected, List.of(input.split(dynamic(","), limit)),
+                        "Dynamic split of " + input + " " + limit);
+            }
+            var expected = List.of(Pattern.compile(dynamic(",")).split(input));
+            assertEquals(expected, List.of(input.split(",")), "Literal split of " + input);
+            assertEquals(expected, List.of(input.split(dynamic(","))), "Dynamic split of " + input);
+
+            var dotted = input.replace(',', '.');
+            expected = List.of(Pattern.compile(dynamic("\\.")).split(dotted));
+            assertEquals(expected, List.of(dotted.split("\\.")), "Literal split of " + dotted);
+            assertEquals(expected, List.of(dotted.split(dynamic("\\."))), "Dynamic split of " + dotted);
+            assertEquals(List.of(dotted.split(dynamic(".")).length), List.of(dotted.split(".").length));
+        }
+        assertEquals(List.of("a", "c"), List.of("abc".split(dynamic("\\Qb\\E"))));
+        assertEquals(List.of("", "", "bc"), List.of("aabc".split("\\w", 3)));
+    }
+
+    @Test
     public void stringMethodsReportErrors() {
         assertThrows(PatternSyntaxException.class, () -> "abc".split("(abc"));
         assertThrows(PatternSyntaxException.class, () -> "abc".replaceAll("[a-", ""));
