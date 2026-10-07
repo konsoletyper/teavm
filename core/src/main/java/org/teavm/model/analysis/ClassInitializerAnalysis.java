@@ -143,7 +143,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
     }
 
     private boolean isDynamicInitializer(MethodInfo methodInfo, String className) {
-        if (methodInfo.anyFieldModified || methodInfo.complete) {
+        if (methodInfo.anyFieldModified || !methodInfo.complete) {
             return true;
         }
         if (methodInfo.classesWithModifiedFields != null) {
@@ -315,7 +315,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
                 return;
             }
 
-            if (calledMethod.anyFieldModified || calledMethod.complete) {
+            if (calledMethod.anyFieldModified || !calledMethod.complete) {
                 methodInfo.anyFieldModified = true;
                 methodInfo.classesWithModifiedFields = null;
             } else if (calledMethod.classesWithModifiedFields != null) {
