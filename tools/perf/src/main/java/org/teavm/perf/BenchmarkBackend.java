@@ -64,6 +64,19 @@ public abstract class BenchmarkBackend {
     public abstract void run(CompiledBenchmark benchmark, String argument, Consumer<String> outputConsumer)
             throws BenchmarkException;
 
+    public boolean supportsCpuProfiling() {
+        return false;
+    }
+
+    /**
+     * Returns CPU profile of measurement iterations of the last run, recorded with the given title.
+     *
+     * @return profile in Chrome DevTools format ({@code .cpuprofile}).
+     */
+    public String takeCpuProfile(String title) throws BenchmarkException {
+        throw new BenchmarkException("CPU profiling is not supported by " + getName());
+    }
+
     protected final void build(TeaVMTarget target, String entryPoint, BenchmarkInfo benchmark, File directory,
             String fileName) throws BenchmarkException {
         directory.mkdirs();
@@ -93,7 +106,7 @@ public abstract class BenchmarkBackend {
                 sb.append(problem.getText()).append(problem.getStackTrace()).append('\n');
             }
         }
-        if (sb.length() > 0) {
+        if (!sb.isEmpty()) {
             throw new BenchmarkException("Error compiling " + benchmark.getName() + " for " + getName() + ":\n"
                     + sb);
         }

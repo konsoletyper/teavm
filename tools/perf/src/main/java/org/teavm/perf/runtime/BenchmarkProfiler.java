@@ -15,16 +15,11 @@
  */
 package org.teavm.perf.runtime;
 
-public final class BenchmarkJsEntryPoint {
-    private BenchmarkJsEntryPoint() {
-    }
+/**
+ * Starts and stops profiler around measurement iterations of a benchmark. Implementation depends on backend.
+ */
+public interface BenchmarkProfiler {
+    void start(String title);
 
-    public static void main(String[] args) throws Throwable {
-        try {
-            BenchmarkEntryPoint.run(args.length > 0 ? args[0] : "", new ConsoleProfiler());
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw e;
-        }
-    }
+    void stop(String title);
 }

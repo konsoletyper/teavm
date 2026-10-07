@@ -42,7 +42,8 @@ public class JsBackend extends BrowserBackend {
     @Override
     public CompiledBenchmark compile(BenchmarkInfo benchmark, File directory) throws BenchmarkException {
         var target = new JavaScriptTarget();
-        target.setObfuscated(true);
+        // Profiles are useless when function names are obfuscated
+        target.setObfuscated(!environment.isCpuProfiling());
         build(target, BenchmarkJsEntryPoint.class.getName(), benchmark, directory, "benchmark.js");
         return new CompiledBenchmark(benchmark, directory, new File(directory, "benchmark.js"));
     }

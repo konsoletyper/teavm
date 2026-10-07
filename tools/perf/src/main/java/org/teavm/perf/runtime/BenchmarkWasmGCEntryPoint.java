@@ -24,7 +24,7 @@ public final class BenchmarkWasmGCEntryPoint {
 
     public static void main(String[] args) {
         try {
-            BenchmarkEntryPoint.run(args.length > 0 ? args[0] : "");
+            BenchmarkEntryPoint.run(args.length > 0 ? args[0] : "", new ConsoleProfiler());
             reportSuccess();
         } catch (Throwable e) {
             e.printStackTrace();

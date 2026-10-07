@@ -15,16 +15,25 @@
  */
 package org.teavm.perf.runtime;
 
-public final class BenchmarkJsEntryPoint {
-    private BenchmarkJsEntryPoint() {
+import org.teavm.jso.JSBody;
+
+/**
+ * Records CPU profile with {@code console.profile}, which browser reports via DevTools protocol.
+ */
+public class ConsoleProfiler implements BenchmarkProfiler {
+    @Override
+    public void start(String title) {
+        profile(title);
     }
 
-    public static void main(String[] args) throws Throwable {
-        try {
-            BenchmarkEntryPoint.run(args.length > 0 ? args[0] : "", new ConsoleProfiler());
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw e;
-        }
+    @Override
+    public void stop(String title) {
+        profileEnd(title);
     }
+
+    @JSBody(params = "title", script = "console.profile(title);")
+    private static native void profile(String title);
+
+    @JSBody(params = "title", script = "console.profileEnd(title);")
+    private static native void profileEnd(String title);
 }

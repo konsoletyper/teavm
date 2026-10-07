@@ -33,6 +33,7 @@ public class BenchmarkEnvironment {
     private final ClassHolderSource classSource;
     private final File outputDir;
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
+    private boolean cpuProfiling;
 
     public BenchmarkEnvironment(ClassLoader classLoader, File outputDir) {
         this.classLoader = classLoader;
@@ -68,5 +69,17 @@ public class BenchmarkEnvironment {
 
     public void setOptimizationLevel(TeaVMOptimizationLevel optimizationLevel) {
         this.optimizationLevel = optimizationLevel;
+    }
+
+    /**
+     * Whether CPU profiles of measurement iterations should be recorded. Backends that support profiling
+     * may produce code that is more convenient for profiling, e.g. not obfuscated.
+     */
+    public boolean isCpuProfiling() {
+        return cpuProfiling;
+    }
+
+    public void setCpuProfiling(boolean cpuProfiling) {
+        this.cpuProfiling = cpuProfiling;
     }
 }

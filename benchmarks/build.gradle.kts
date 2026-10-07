@@ -39,6 +39,8 @@ dependencies {
  * - benchmark.browser: browser-chrome (default), browser-firefox or browser (open URL manually)
  * - benchmark.optimization: simple, advanced (default), full
  * - benchmark.formats: comma-separated list of text, json, html (default is all of them)
+ * - benchmark.profiler: comma-separated list of profilers, same as -prof option. Only cpu is supported, which
+ *   records CPU profiles of measurement iterations for js and wasm-gc backends in Chrome
  * - benchmark.c.compiler: script that compiles generated C code (default depends on OS, see compile-c-*.sh/bat)
  * - benchmark.c.envScript: script that sets up environment for C compiler (on Windows defaults to
  *   setup-msvc-env.bat, unless benchmark.c.compiler is overridden)
@@ -101,6 +103,11 @@ tasks.register<JavaExec>("teavmBenchmark") {
         args("--c-env-script", file(cEnvScript).absolutePath)
     }
     args("-rf", providers.gradleProperty("benchmark.formats").getOrElse("text,json,html"))
+    for (profiler in providers.gradleProperty("benchmark.profiler").getOrElse("").split(",")) {
+        if (profiler.isNotBlank()) {
+            args("-prof", profiler.trim())
+        }
+    }
     for (baseline in providers.gradleProperty("benchmark.baseline").getOrElse("").split(",")) {
         val spec = baseline.trim()
         if (spec.isEmpty()) {

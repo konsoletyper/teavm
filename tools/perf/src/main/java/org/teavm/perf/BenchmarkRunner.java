@@ -16,10 +16,14 @@
 package org.teavm.perf;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.teavm.perf.runtime.BenchmarkEntryPoint;
@@ -33,6 +37,8 @@ public class BenchmarkRunner {
     private final List<BenchmarkBackend> backends;
     private final PrintStream log;
     private final List<String> failures = new ArrayList<>();
+    private int profileCounter;
+    private static final int PROFILE_SUMMARY_SIZE = 15;
 
     public BenchmarkRunner(BenchmarkEnvironment environment, BenchmarkOptions options,
             List<BenchmarkBackend> backends, PrintStream log) {
@@ -52,6 +58,10 @@ public class BenchmarkRunner {
             var compiled = compileAll(backend, benchmarks);
             if (compiled.isEmpty()) {
                 continue;
+            }
+            if (environment.isCpuProfiling() && !backend.supportsCpuProfiling()) {
+                log.println("WARNING: CPU profiling is not supported by " + backend.getName()
+                        + " backend with current settings, benchmarks will run without profiling");
             }
             try {
                 backend.start();
@@ -125,7 +135,7 @@ public class BenchmarkRunner {
         if (!params.isEmpty()) {
             var sb = new StringBuilder();
             for (var entry : params.entrySet()) {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     sb.append(", ");
                 }
                 sb.append(entry.getKey()).append(" = ").append(entry.getValue());
@@ -141,7 +151,11 @@ public class BenchmarkRunner {
             var forkData = new ArrayList<Double>();
             var counters = new int[2];
             var finished = new boolean[1];
-            backend.run(compiled, argument, line -> {
+            var profileTitle = environment.isCpuProfiling() && backend.supportsCpuProfiling()
+                    ? "teavm-perf-" + ++profileCounter
+                    : null;
+            var forkArgument = profileTitle != null ? argument + ";prof=" + encode(profileTitle) : argument;
+            backend.run(compiled, forkArgument, line -> {
                 if (!line.startsWith(BenchmarkEntryPoint.OUTPUT_PREFIX)) {
                     log.println(line);
                     return;
@@ -170,6 +184,10 @@ public class BenchmarkRunner {
                         + " finished without reporting results");
             }
             rawData.add(forkData);
+            if (profileTitle != null) {
+                saveProfile(backend, benchmark, params, forks > 1 ? fork : 0,
+                        backend.takeCpuProfile(profileTitle));
+            }
         }
 
         var result = new BenchmarkResult(backend.getName(), backend.getDescription(), benchmark.getName(),
@@ -189,6 +207,35 @@ public class BenchmarkRunner {
         log.println("  " + ScoreUnits.format(result.getScore()) + " ±(99.9%) " + ScoreUnits.format(result.getError())
                 + " " + unit);
         return result;
+    }
+
+    private void saveProfile(BenchmarkBackend backend, BenchmarkInfo benchmark, Map<String, String> params,
+            int fork, String profile) throws BenchmarkException {
+        var sb = new StringBuilder(benchmark.getName());
+        for (var entry : params.entrySet()) {
+            sb.append('-').append(entry.getKey()).append('_').append(entry.getValue());
+        }
+        if (fork > 0) {
+            sb.append("-fork").append(fork);
+        }
+        var fileName = sb.toString().replaceAll("[^A-Za-z0-9._-]", "_") + ".cpuprofile";
+        var file = new File(new File(new File(environment.getOutputDir(), "profiles"), backend.getName()), fileName);
+        file.getParentFile().mkdirs();
+        try {
+            Files.writeString(file.toPath(), profile, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new BenchmarkException("Error writing profile to " + file, e);
+        }
+
+        var summary = CpuProfileSummary.parse(profile);
+        log.println();
+        log.println("CPU profile of measurement iterations (self time, " + summary.getTotalSamples()
+                + " samples), full profile written to " + file);
+        var entries = summary.getEntries();
+        for (var i = 0; i < Math.min(PROFILE_SUMMARY_SIZE, entries.size()); ++i) {
+            var entry = entries.get(i);
+            log.printf(Locale.ROOT, "  %5.1f%%  %s%n", summary.fraction(entry) * 100, entry.function);
+        }
     }
 
     private static String describe(IterationSettings settings, BenchmarkMode mode) {

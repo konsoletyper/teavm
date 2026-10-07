@@ -36,6 +36,7 @@ public final class BenchmarkEntryPoint {
     private static long measurementTime;
     private static int measurementBatchSize = 1;
     private static int batch = 1;
+    private static String profileTitle;
 
     private BenchmarkEntryPoint() {
     }
@@ -49,14 +50,29 @@ public final class BenchmarkEntryPoint {
      *                 UTF-16 code unit.
      */
     public static void run(String argument) {
+        run(argument, null);
+    }
+
+    /**
+     * Runs benchmark. When argument contains {@code prof} key and profiler is given, measurement iterations
+     * are recorded by profiler with title, specified by value of {@code prof} key.
+     */
+    public static void run(String argument, BenchmarkProfiler profiler) {
         createStates();
         parseArgument(argument);
         setupTrial();
         for (int i = 0; i < warmupIterations; ++i) {
             iteration("W", warmupTime, warmupBatchSize);
         }
+        var profile = profiler != null && profileTitle != null;
+        if (profile) {
+            profiler.start(profileTitle);
+        }
         for (int i = 0; i < measurementIterations; ++i) {
             iteration("M", measurementTime, measurementBatchSize);
+        }
+        if (profile) {
+            profiler.stop(profileTitle);
         }
         tearDownTrial();
         System.out.println(OUTPUT_PREFIX + "END " + BlackholeSink.hash());
@@ -98,6 +114,9 @@ public final class BenchmarkEntryPoint {
                     break;
                 case "mb":
                     measurementBatchSize = Integer.parseInt(value);
+                    break;
+                case "prof":
+                    profileTitle = decode(value);
                     break;
                 default:
                     if (key.startsWith("p")) {

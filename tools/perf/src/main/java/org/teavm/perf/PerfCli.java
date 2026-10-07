@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,10 +31,11 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.help.HelpFormatter;
+import org.apache.commons.cli.help.TextHelpAppendable;
 import org.teavm.perf.report.HtmlReport;
 import org.teavm.perf.report.JmhJsonFormat;
 import org.teavm.perf.report.TextReport;
@@ -88,70 +90,81 @@ public final class PerfCli {
 
     private static Options createOptions() {
         var options = new Options();
-        options.addOption(Option.builder("h").longOpt("help").desc("Show this help").build());
-        options.addOption(Option.builder("l").desc("List matching benchmarks and exit").build());
+        options.addOption(Option.builder("h").longOpt("help").desc("Show this help").get());
+        options.addOption(Option.builder("l").desc("List matching benchmarks and exit").get());
         options.addOption(Option.builder("e").argName("regexp").hasArg()
-                .desc("Exclude benchmarks matching regular expression. Can be specified multiple times").build());
+                .desc("Exclude benchmarks matching regular expression. Can be specified multiple times").get());
         options.addOption(Option.builder("wi").argName("int").hasArg()
-                .desc("Number of warmup iterations").build());
+                .desc("Number of warmup iterations").get());
         options.addOption(Option.builder("w").argName("time").hasArg()
-                .desc("Time of each warmup iteration, e.g. 1s, 500ms").build());
+                .desc("Time of each warmup iteration, e.g. 1s, 500ms").get());
         options.addOption(Option.builder("wbs").argName("int").hasArg()
-                .desc("Warmup batch size, i.e. number of benchmark calls per op in single shot mode").build());
+                .desc("Warmup batch size, i.e. number of benchmark calls per op in single shot mode").get());
         options.addOption(Option.builder("i").argName("int").hasArg()
-                .desc("Number of measurement iterations").build());
+                .desc("Number of measurement iterations").get());
         options.addOption(Option.builder("r").argName("time").hasArg()
-                .desc("Time of each measurement iteration, e.g. 1s, 500ms").build());
+                .desc("Time of each measurement iteration, e.g. 1s, 500ms").get());
         options.addOption(Option.builder("bs").argName("int").hasArg()
-                .desc("Measurement batch size, i.e. number of benchmark calls per op in single shot mode").build());
+                .desc("Measurement batch size, i.e. number of benchmark calls per op in single shot mode").get());
         options.addOption(Option.builder("f").argName("int").hasArg()
                 .desc("How many times to fork a single benchmark. In browser every fork runs in a new frame, "
-                        + "in native code every fork runs in a new process").build());
+                        + "in native code every fork runs in a new process").get());
         options.addOption(Option.builder("bm").argName("mode").hasArg()
-                .desc("Benchmark mode, comma-separated list of: thrpt, avgt, ss, all").build());
+                .desc("Benchmark mode, comma-separated list of: thrpt, avgt, ss, all").get());
         options.addOption(Option.builder("tu").argName("unit").hasArg()
-                .desc("Output time unit: ns, us, ms, s, min").build());
+                .desc("Output time unit: ns, us, ms, s, min").get());
         options.addOption(Option.builder("opi").argName("int").hasArg()
-                .desc("Operations per invocation").build());
+                .desc("Operations per invocation").get());
         options.addOption(Option.builder("p").argName("param=v1,v2").hasArg()
-                .desc("Override values of benchmark parameters. Can be specified multiple times").build());
+                .desc("Override values of benchmark parameters. Can be specified multiple times").get());
+        options.addOption(Option.builder("prof").argName("profiler").hasArg()
+                .desc("Profiler to use. Only 'cpu' is supported, which records CPU profile of measurement "
+                        + "iterations. Profiles are written to 'profiles' subdirectory of output directory "
+                        + "in Chrome DevTools format (.cpuprofile). Only supported for JS and Wasm GC backends "
+                        + "running in Chrome").get());
         options.addOption(Option.builder("rf").argName("formats").hasArg()
                 .desc("Comma-separated list of report formats to produce: text, json, html. "
-                        + "Default is text,json,html").build());
+                        + "Default is text,json,html").get());
         options.addOption(Option.builder("o").longOpt("output-dir").argName("dir").hasArg()
-                .desc("Directory to write reports and compiled benchmarks to. Default is teavm-perf").build());
+                .desc("Directory to write reports and compiled benchmarks to. Default is teavm-perf").get());
         options.addOption(Option.builder("b").longOpt("backends").argName("list").hasArg()
-                .desc("Comma-separated list of backends: js, wasm-gc, c. Default is js").build());
+                .desc("Comma-separated list of backends: js, wasm-gc, c. Default is js").get());
         options.addOption(Option.builder().longOpt("browser").argName("browser").hasArg()
                 .desc("Browser to run JS and Wasm GC benchmarks: browser-chrome, browser-firefox or browser "
-                        + "(print URL to open manually). Default is browser-chrome").build());
+                        + "(print URL to open manually). Default is browser-chrome").get());
         options.addOption(Option.builder().longOpt("optimization").argName("level").hasArg()
-                .desc("TeaVM optimization level: simple, advanced, full. Default is advanced").build());
+                .desc("TeaVM optimization level: simple, advanced, full. Default is advanced").get());
         options.addOption(Option.builder().longOpt("cc").argName("command").hasArg()
-                .desc("C compiler for native backend. Default is cl on Windows, cc otherwise").build());
+                .desc("C compiler for native backend. Default is cl on Windows, cc otherwise").get());
         options.addOption(Option.builder().longOpt("cflags").argName("flags").hasArg()
-                .desc("Flags for C compiler, separated by spaces. Default is /O2 on Windows, -O2 otherwise").build());
+                .desc("Flags for C compiler, separated by spaces. Default is /O2 on Windows, -O2 otherwise").get());
         options.addOption(Option.builder().longOpt("c-build-script").argName("file").hasArg()
                 .desc("Script that builds C code, runs in directory with generated code and must produce "
-                        + "'benchmark' executable. Overrides --cc and --cflags").build());
+                        + "'benchmark' executable. Overrides --cc and --cflags").get());
         options.addOption(Option.builder().longOpt("c-env-script").argName("file").hasArg()
                 .desc("Script that sets up environment for C compiler (e.g. MSVC developer environment). "
-                        + "Runs once, resulting environment is passed to every compiler invocation").build());
+                        + "Runs once, resulting environment is passed to every compiler invocation").get());
         options.addOption(Option.builder().longOpt("scan").argName("path").hasArg()
                 .desc("Directory or JAR file to search benchmarks in. Can be specified multiple times. "
-                        + "By default, all directories on classpath are searched").build());
+                        + "By default, all directories on classpath are searched").get());
         options.addOption(Option.builder().longOpt("baseline").argName("[label=]file").hasArg()
                 .desc("JMH JSON result file (for example, produced by running JMH with '-rf json') "
-                        + "to compare with. Can be specified multiple times").build());
+                        + "to compare with. Can be specified multiple times").get());
         options.addOption(Option.builder().longOpt("compare-only")
-                .desc("Don't run benchmarks, only produce reports from baseline files").build());
+                .desc("Don't run benchmarks, only produce reports from baseline files").get());
         return options;
     }
 
     private static void printUsage(Options options) {
-        var formatter = new HelpFormatter();
-        formatter.setWidth(120);
-        formatter.printHelp("java " + PerfCli.class.getName() + " [options] [benchmark regexp...]", options);
+        var output = new TextHelpAppendable(System.out);
+        output.setMaxWidth(120);
+        var formatter = HelpFormatter.builder().setHelpAppendable(output).setShowSince(false).get();
+        try {
+            formatter.printHelp("java " + PerfCli.class.getName() + " [options] [benchmark regexp...]",
+                    "", options, "", false);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static final class Execution {
@@ -190,6 +203,12 @@ public final class PerfCli {
             var environment = new BenchmarkEnvironment(PerfCli.class.getClassLoader(), outputDir);
             environment.setOptimizationLevel(parseOptimizationLevel(
                     commandLine.getOptionValue("optimization", "advanced")));
+            for (var profiler : nullToEmpty(commandLine.getOptionValues("prof"))) {
+                if (!profiler.equals("cpu")) {
+                    throw new IllegalArgumentException("Unknown profiler: " + profiler + ". Supported profilers: cpu");
+                }
+                environment.setCpuProfiling(true);
+            }
             var benchmarks = findBenchmarks(environment);
             if (benchmarks == null) {
                 return 1;
@@ -287,16 +306,12 @@ public final class PerfCli {
         }
 
         private static TeaVMOptimizationLevel parseOptimizationLevel(String text) {
-            switch (text.toLowerCase()) {
-                case "simple":
-                    return TeaVMOptimizationLevel.SIMPLE;
-                case "advanced":
-                    return TeaVMOptimizationLevel.ADVANCED;
-                case "full":
-                    return TeaVMOptimizationLevel.FULL;
-                default:
-                    throw new IllegalArgumentException("Unknown optimization level: " + text);
-            }
+            return switch (text.toLowerCase()) {
+                case "simple" -> TeaVMOptimizationLevel.SIMPLE;
+                case "advanced" -> TeaVMOptimizationLevel.ADVANCED;
+                case "full" -> TeaVMOptimizationLevel.FULL;
+                default -> throw new IllegalArgumentException("Unknown optimization level: " + text);
+            };
         }
 
         private List<BenchmarkInfo> findBenchmarks(BenchmarkEnvironment environment) throws IOException {
@@ -386,12 +401,11 @@ public final class PerfCli {
             return JmhJsonFormat.read(file, label);
         }
 
-        private void writeReports(List<BenchmarkResult> baselines, List<BenchmarkResult> results)
-                throws IOException {
+        private void writeReports(List<BenchmarkResult> baselines, List<BenchmarkResult> results) throws IOException {
             if (results.isEmpty() && baselines.isEmpty()) {
                 return;
             }
-            var all = new ArrayList<BenchmarkResult>(baselines);
+            var all = new ArrayList<>(baselines);
             all.addAll(results);
             outputDir.mkdirs();
 

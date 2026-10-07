@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -68,6 +70,9 @@ public class BrowserRunner {
     private BlockingQueue<Session> wsSessionQueue = new LinkedBlockingQueue<>();
     private ConcurrentMap<Integer, CallbackWrapper> awaitingRuns = new ConcurrentHashMap<>();
     private ObjectMapper objectMapper = new ObjectMapper();
+    private boolean devToolsEnabled;
+    private int devToolsPort;
+    private ChromeDevTools devTools;
 
     public BrowserRunner(File baseDir, String type, Function<BrowserRunParams, Process> browserRunner,
             boolean decodeStack) {
@@ -92,8 +97,20 @@ public class BrowserRunner {
         }
     }
 
+    /**
+     * Makes browser accessible via Chrome DevTools protocol, which allows to collect CPU profiles,
+     * see {@link #takeConsoleProfile(String, long, TimeUnit)}. Only supported in Chrome.
+     * Must be called before {@link #start()}.
+     */
+    public void enableDevTools() {
+        devToolsEnabled = true;
+    }
+
     public void start() {
         runServer();
+        if (devToolsEnabled) {
+            devToolsPort = findFreePort();
+        }
         var pid = ProcessHandle.current().pid();
         browserProcess = browserRunner.apply(
                 new BrowserRunParams() {
@@ -117,11 +134,46 @@ public class BrowserRunner {
                         }
                         return null;
                     }
+
+                    @Override
+                    public int remoteDebuggingPort() {
+                        return devToolsPort;
+                    }
                 }
         );
+        if (devToolsEnabled) {
+            devTools = new ChromeDevTools();
+            devTools.connect(devToolsPort, "http://localhost:" + port + "/index.html", 30000);
+        }
+    }
+
+    /**
+     * Waits for CPU profile, recorded by code running in the browser between {@code console.profile(title)}
+     * and {@code console.profileEnd(title)} calls. Requires {@link #enableDevTools()}.
+     *
+     * @return profile in format of Chrome DevTools protocol (the same as format of {@code .cpuprofile} files,
+     *         which can be opened by Chrome DevTools).
+     */
+    public String takeConsoleProfile(String title, long timeout, TimeUnit unit) throws TimeoutException {
+        if (devTools == null) {
+            throw new IllegalStateException("DevTools are not enabled");
+        }
+        return devTools.takeConsoleProfile(title, timeout, unit);
+    }
+
+    private static int findFreePort() {
+        try (var socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void stop() {
+        if (devTools != null) {
+            devTools.close();
+            devTools = null;
+        }
         try {
             server.stop();
         } catch (Exception e) {
@@ -218,19 +270,19 @@ public class BrowserRunner {
 
         var nf = objectMapper.getNodeFactory();
         var node = nf.objectNode();
-        node.set("command", nf.textNode("run"));
+        node.set("command", nf.stringNode("run"));
         node.set("id", nf.numberNode(id));
 
         var array = nf.arrayNode();
         node.set("tests", array);
 
         var testNode = nf.objectNode();
-        testNode.set("type", nf.textNode(type));
-        testNode.set("name", nf.textNode(run.getName()));
+        testNode.set("type", nf.stringNode(type));
+        testNode.set("name", nf.stringNode(run.getName()));
 
         var fileNode = nf.objectNode();
-        fileNode.set("path", nf.textNode(run.getTestPath()));
-        fileNode.set("type", nf.textNode(run.isModule() ? "module" : "regular"));
+        fileNode.set("path", nf.stringNode(run.getTestPath()));
+        fileNode.set("type", nf.stringNode(run.isModule() ? "module" : "regular"));
         testNode.set("file", fileNode);
 
         testNode.set("cached", nf.booleanNode(run.isCached()));
@@ -239,15 +291,15 @@ public class BrowserRunner {
             var additionalJsJson = nf.arrayNode();
             for (var additionalFile : run.getAdditionalFiles()) {
                 var additionFileObj = nf.objectNode();
-                additionFileObj.set("path", nf.textNode(additionalFile));
-                additionFileObj.set("type", nf.textNode("regular"));
+                additionFileObj.set("path", nf.stringNode(additionalFile));
+                additionFileObj.set("type", nf.stringNode("regular"));
                 additionalJsJson.add(additionFileObj);
             }
             testNode.set("additionalFiles", additionalJsJson);
         }
 
         if (run.getArgument() != null) {
-            testNode.set("argument", nf.textNode(run.getArgument()));
+            testNode.set("argument", nf.stringNode(run.getArgument()));
         }
         array.add(testNode);
 
@@ -283,7 +335,7 @@ public class BrowserRunner {
         }
         var nf = objectMapper.getNodeFactory();
         var node = nf.objectNode();
-        node.set("command", nf.textNode("cleanup"));
+        node.set("command", nf.stringNode("cleanup"));
 
         var message = node.toString();
         ws.sendText(message, Callback.NOOP);
@@ -437,12 +489,12 @@ public class BrowserRunner {
             JsonNode log = resultNode.get("log");
             if (log != null) {
                 for (JsonNode logEntry : log) {
-                    String str = logEntry.get("message").asText();
+                    String str = logEntry.get("message").asString();
                     if (run.outputListener != null) {
-                        run.outputListener.onOutput(logEntry.get("type").asText().equals("stderr"), str);
+                        run.outputListener.onOutput(logEntry.get("type").asString().equals("stderr"), str);
                         continue;
                     }
-                    switch (logEntry.get("type").asText()) {
+                    switch (logEntry.get("type").asString()) {
                         case "stdout":
                             System.out.println(str);
                             break;
@@ -453,11 +505,11 @@ public class BrowserRunner {
                 }
             }
 
-            String status = resultNode.get("status").asText();
+            String status = resultNode.get("status").asString();
             if (status.equals("OK")) {
                 run.complete();
             } else {
-                run.error(new RuntimeException(resultNode.get("errorMessage").asText()));
+                run.error(new RuntimeException(resultNode.get("errorMessage").asString()));
             }
         }
     }
@@ -483,6 +535,9 @@ public class BrowserRunner {
                     "--js-flags=--expose-gc",
                     "--user-data-dir=" + profile
             ));
+            if (runParams.remoteDebuggingPort() > 0) {
+                params.add("--remote-debugging-port=" + runParams.remoteDebuggingPort());
+            }
         });
     }
 

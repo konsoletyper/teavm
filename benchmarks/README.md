@@ -29,6 +29,7 @@ To run benchmarks on JVM with JMH, use `./gradlew :benchmarks:jmh`. Results go t
 | `benchmark.browser`      | `browser-chrome` (default), `browser-firefox` or `browser` (prints URL to open manually)       |
 | `benchmark.optimization` | TeaVM optimization level: `simple`, `advanced` (default), `full`                              |
 | `benchmark.formats`      | Comma-separated list of report formats: `text`, `json`, `html`. Default is all of them        |
+| `benchmark.profiler`     | Profilers, same as `-prof` option. Only `cpu` is supported, see [Profiling](#profiling)       |
 | `benchmark.c.compiler`   | Script that compiles generated C code. Default is selected by OS, see below                   |
 | `benchmark.c.envScript`  | Script that sets up C compiler environment. Default is `setup-msvc-env.bat` on Windows        |
 | `benchmark.compareJvm`   | When `true`, runs `jmh` task first and includes JVM results into the report                   |
@@ -46,6 +47,7 @@ Supported options in `benchmark.args` (the same as in JMH):
 * `-tu <unit>`: `ns`, `us`, `ms`, `s`, `min`;
 * `-p <param>=<v1>,<v2>`: override values of `@Param` fields;
 * `-opi <n>`, `-bs <n>`, `-wbs <n>`: operations per invocation, batch sizes;
+* `-prof cpu`: record CPU profiles of measurement iterations, see [Profiling](#profiling);
 * `-l`: list benchmarks.
 
 Example:
@@ -66,6 +68,28 @@ C backend compiles generated code with a script that is selected depending on OS
 
 A script runs in the directory with generated C code and must produce `benchmark` executable
 (`benchmark.exe` on Windows). Use `benchmark.c.compiler` to pass your own script.
+
+## Profiling
+
+`-prof cpu` records a CPU profile of the measurement iterations of every benchmark (warmup iterations are not
+included). It's supported for `js` and `wasm-gc` backends running in Chrome; other backends run without profiling.
+
+```shell
+./gradlew :benchmarks:teavmBenchmark -Pbenchmark.backends=js,wasm-gc -Pbenchmark.profiler=cpu \
+    -Pbenchmark.args="-p kind=random StringBuilderBenchmark"
+```
+
+`-Pbenchmark.profiler=cpu` is the same as passing `-prof cpu` in `benchmark.args`.
+
+For every benchmark (and every combination of parameters and every fork), the run log shows functions that take
+most of the time, and the full profile is written to
+`benchmarks/build/reports/teavm-perf/profiles/<backend>/<benchmark>.cpuprofile`. These files can be opened in Chrome
+DevTools (Performance panel, *Load profile*) or in tools like [speedscope](https://www.speedscope.app/).
+
+Profiles are collected via Chrome DevTools protocol: benchmark calls `console.profile()` before the first measurement
+iteration and `console.profileEnd()` after the last one. Note that when profiling is on, JS code is not obfuscated,
+so that profiles show meaningful function names, and the sampling profiler itself slows down benchmarks a little.
+So don't compare scores of runs with and without profiling.
 
 ## Comparing TeaVM versions
 

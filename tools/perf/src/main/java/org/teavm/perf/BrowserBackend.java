@@ -18,6 +18,8 @@ package org.teavm.perf;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import org.teavm.browserrunner.BrowserRunDescriptor;
 import org.teavm.browserrunner.BrowserRunner;
@@ -43,6 +45,9 @@ public abstract class BrowserBackend extends BenchmarkBackend {
             throw new BenchmarkException("Browser must be specified to run benchmarks for " + getName());
         }
         runner = new BrowserRunner(environment.getOutputDir(), getRunnerType(), browserFactory, false);
+        if (environment.isCpuProfiling() && supportsCpuProfiling()) {
+            runner.enableDevTools();
+        }
         try {
             runner.start();
         } catch (RuntimeException e) {
@@ -57,6 +62,23 @@ public abstract class BrowserBackend extends BenchmarkBackend {
         if (runner != null) {
             runner.stop();
             runner = null;
+        }
+    }
+
+    @Override
+    public boolean supportsCpuProfiling() {
+        // Profiles are collected via Chrome DevTools protocol
+        return browser.equals("browser-chrome");
+    }
+
+    @Override
+    public String takeCpuProfile(String title) throws BenchmarkException {
+        try {
+            return runner.takeConsoleProfile(title, 60, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            throw new BenchmarkException("CPU profile was not received from " + getName());
+        } catch (RuntimeException e) {
+            throw new BenchmarkException("Error receiving CPU profile from " + getName() + ": " + e.getMessage(), e);
         }
     }
 
