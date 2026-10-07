@@ -847,6 +847,22 @@ public final class TMath extends TObject {
     }
 
     public static double hypot(double x, double y) {
+        if (TDouble.isInfinite(x) || TDouble.isInfinite(y)) {
+            return TDouble.POSITIVE_INFINITY;
+        }
+        x = abs(x);
+        y = abs(y);
+        double max = x > y ? x : y;
+        if (max > 0x1p500) {
+            x *= 0x1p-600;
+            y *= 0x1p-600;
+            return sqrt(x * x + y * y) * 0x1p600;
+        }
+        if (max < 0x1p-500) {
+            x *= 0x1p600;
+            y *= 0x1p600;
+            return sqrt(x * x + y * y) * 0x1p-600;
+        }
         return sqrt(x * x + y * y);
     }
 
