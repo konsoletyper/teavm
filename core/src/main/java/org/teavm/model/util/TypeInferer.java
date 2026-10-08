@@ -244,7 +244,14 @@ public class TypeInferer {
         @Override
         public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
                 ArrayElementType type) {
-            arrayElemBuilder.addEdge(array.getIndex(), receiver.getIndex());
+            // Primitive load types are explicit in the IR. A nullable array phi
+            // can otherwise propagate OBJECT before its concrete array type,
+            // causing numeric C locals to be emitted as pointers.
+            if (type != ArrayElementType.OBJECT) {
+                types[receiver.getIndex()] = new InferenceType(InferenceKind.valueOf(type.name()), 0);
+            } else {
+                arrayElemBuilder.addEdge(array.getIndex(), receiver.getIndex());
+            }
         }
 
         @Override
