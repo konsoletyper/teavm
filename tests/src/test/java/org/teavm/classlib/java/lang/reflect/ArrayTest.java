@@ -81,4 +81,21 @@ public class ArrayTest {
         Array.set(array, 0, 1f);
         assertArrayEquals(new float[] { 1, 0, 0 }, (float[]) array, 0.1f);
     }
+
+    @Test
+    public void dynamicallyCreatedArrayClassesSurviveCollection() {
+        // None of these array classes are referenced statically. On 32-bit C
+        // targets, consecutive dynamic class entries must retain all pointer bits.
+        Class<?>[] components = { String.class, Integer.class, Long.class, ArrayList.class };
+        Object[] arrays = new Object[components.length];
+        for (int i = 0; i < components.length; ++i) {
+            arrays[i] = Array.newInstance(components[i], 37 + i);
+        }
+        System.gc();
+        for (int i = 0; i < components.length; ++i) {
+            assertEquals(37 + i, Array.getLength(arrays[i]));
+            assertEquals(components[i], arrays[i].getClass().getComponentType());
+        }
+    }
+
 }
