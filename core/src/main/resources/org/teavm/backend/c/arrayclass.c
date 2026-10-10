@@ -3,7 +3,11 @@
 #include "log.h"
 #include <string.h>
 
-static TEAVM_OBJECT_CLASS teavm_dynamicClassPool[TEAVM_DYNAMIC_CLASS_POOL_CAPACITY];
+/* Packed class pointers discard three low bits. Align every pool entry, not
+ * only the pool base: a 32-bit vtable can have a size congruent to 4 mod 8. */
+static struct {
+    alignas(8) TEAVM_OBJECT_CLASS value;
+} teavm_dynamicClassPool[TEAVM_DYNAMIC_CLASS_POOL_CAPACITY];
 static int32_t teavm_dynamicClassPoolSize = INT32_C(0);
 
 int32_t teavm_isSupertypeOfArray(TeaVM_Class* superclass, TeaVM_Class* subclass) {
@@ -25,7 +29,7 @@ TeaVM_Class* teavm_createArrayClass(TeaVM_Class* itemType) {
         teavm_printWString(L"Metaspace size\n");
         abort();
     }
-    TEAVM_OBJECT_CLASS* ptr = &teavm_dynamicClassPool[teavm_dynamicClassPoolSize++];
+    TEAVM_OBJECT_CLASS* ptr = &teavm_dynamicClassPool[teavm_dynamicClassPoolSize++].value;
     TeaVM_Class* classPtr = (TeaVM_Class*) ptr;
     classPtr->flags = 1;
     classPtr->modifiers = 0;
@@ -48,5 +52,5 @@ int teavm_arrayClassCount() {
 }
 
 extern TeaVM_Class* teavm_arrayClass(int32_t index) {
-    return &teavm_dynamicClassPool[index].parent;
+    return &teavm_dynamicClassPool[index].value.parent;
 }
