@@ -1594,4 +1594,44 @@ public class PatternTest {
         assertEquals(",", text.replaceAll("[^,]+", ""));
         assertTrue(text.matches("[^,]*,[^,]*"));
     }
+
+    @Test
+    public void stateMachines() {
+        checkFind("[a-z]+[0-9]+", "ab12 c3 d 4 ef567", "[0-4, 5-7, 12-17]", false);
+        checkFind("[a-z]+[0-9]+", "ab12", "[0-4]", true);
+        checkFind("[a-z]+[0-9]+", "ab", "[]", true);
+        checkFind("[a-z]+[a-c]x", "abcx bx abx", "[0-4, 8-11]", false);
+        checkFind("[ab]+b", "abab ab b", "[0-4, 5-7]", false);
+        checkFind("[a-z]+abc", "xxabc abc", "[0-5]", false);
+        checkFind("[a-z]+123", "ab123 a12 x1234", "[0-5, 10-14]", false);
+        checkFind("[0-9]+\\.[0-9]+", "1.5 12.34 .5 7. 8.9.10", "[0-3, 4-9, 16-19]", false);
+        checkFind("\"[^\"]*\"x", "\"ab\"x \"\"x \"c\"", "[0-5, 6-9]", false);
+        checkFind("x[a-z]+y", "xaby xy xay", "[0-4, 8-11]", false);
+        checkFind("x[a-z]+y", "xab", "[]", true);
+        checkFind("x[a-z]+y", "xa1", "[]", false);
+        checkFind("[a-z]+(?:\\d)", "ab1 c 2", "[0-3]", false);
+        checkFind("([a-z]+)[0-9]", "ab1", "[0-3]", false);
+        checkFind("[a-z]+[0-9]+?", "ab12 c3", "[0-3, 5-7]", false);
+        checkFind("[a-z]+[0-9]++", "ab12 c3", "[0-4, 5-7]", false);
+        checkFind("[a-z]+[0-9]*", "ab12 c d3", "[0-4, 5-6, 7-9]", false);
+        checkFind("[a-z][0-9]", "a1b2 c 3", "[0-2, 2-4]", false);
+        checkFind("(?:[a-z][0-9])+", "a1b2 c3 d", "[0-4, 5-7]", false);
+        checkFind("(?<=[a-z][0-9])x", "a1x 1x ax", "[2-3]", false);
+        checkFind("(?i)[a-z]+[0-9]", "aB1 Z9", "[0-3, 4-6]", false);
+        checkFind("[a-z]+|[0-9]+x", "ab 12x 3", "[0-2, 3-6]", false);
+        checkFind("[^,]+,", "a,bc,,d", "[0-2, 2-5]", false);
+        checkFind("[a-z]*,", "ab,,c", "[0-3, 3-4]", false);
+
+        checkHitEnd("x[a-z]+y", "xab", true, true);
+        checkHitEnd("x[a-z]+y", "xa1", true, false);
+        checkHitEnd("[a-z][0-9]", "a", true, true);
+        checkHitEnd("[a-z][0-9]", "a1", false, false);
+        checkHitEnd("[a-z][0-9]", "a1b", false, false);
+        checkHitEnd("[a-z]+[0-9]+", "ab12", true, true);
+        checkHitEnd("[a-z]+123", "ab12", true, true);
+        checkHitEnd("[a-z]+123", "ab1x", true, false);
+
+        var text = "x".repeat(100_000) + "1".repeat(100_000);
+        assertTrue(Pattern.compile("[a-z]+[0-9]+").matcher(text).matches());
+    }
 }

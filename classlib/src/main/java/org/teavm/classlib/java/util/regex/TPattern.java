@@ -429,6 +429,9 @@ public final class TPattern implements Serializable {
         if (lexemes.back() == TLexer.CHAR_VERTICAL_BAR) {
             children.add(new TEmptySet(fSet));
         }
+        for (int i = 0; i < children.size(); ++i) {
+            children.set(i, createStateMachines(children.get(i), fSet));
+        }
 
         if (flags != saveFlags && !saveChangedFlags) {
             flags = saveFlags;
@@ -466,6 +469,29 @@ public final class TPattern implements Serializable {
                         return new TJointSet(children, fSet);
                 }
         }
+    }
+
+    /**
+     * Replaces parts of chain of nodes that starts with {@code first} and ends before {@code end}
+     * with state machines. Returns new first node.
+     */
+    private TAbstractSet createStateMachines(TAbstractSet first, TAbstractSet end) {
+        TAbstractSet previous = null;
+        TAbstractSet node = first;
+        while (node != null && node != end) {
+            TAbstractSet machine = TStateMachineSet.create(node, end);
+            if (machine != null) {
+                if (previous == null) {
+                    first = machine;
+                } else {
+                    previous.setNext(machine);
+                }
+                node = machine;
+            }
+            previous = node;
+            node = node.getNext();
+        }
+        return first;
     }
 
     /**

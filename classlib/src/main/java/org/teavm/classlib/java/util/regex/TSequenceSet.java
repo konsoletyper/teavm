@@ -117,6 +117,10 @@ class TSequenceSet extends TLeafSet {
         return -1;
     }
 
+    String getString() {
+        return string;
+    }
+
     @Override
     public String getName() {
         return "sequence: " + string; //$NON-NLS-1$

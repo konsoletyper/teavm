@@ -94,6 +94,11 @@ public class PatternLiteralTest {
         check(Pattern.compile("(a)|(b)"), "(a)|(b)");
         check(Pattern.compile("(\\w)\\1"), "(\\w)\\1");
         check(Pattern.compile("\\p{javaLowerCase}+"), "\\p{javaLowerCase}+");
+        check(Pattern.compile("[a-z]+[0-9]+"), "[a-z]+[0-9]+");
+        check(Pattern.compile("[a-z]+[a-c]\\d"), "[a-z]+[a-c]\\d");
+        check(Pattern.compile("\\d+\\.\\d+"), "\\d+\\.\\d+");
+        check(Pattern.compile("[^,]+,"), "[^,]+,");
+        check(Pattern.compile("[\\w.]+@[^@\\s]+\\.com"), "[\\w.]+@[^@\\s]+\\.com");
     }
 
     @Test
