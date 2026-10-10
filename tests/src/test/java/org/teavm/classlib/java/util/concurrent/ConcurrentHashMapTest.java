@@ -303,4 +303,13 @@ public class ConcurrentHashMapTest {
             assertEquals((Object) (i + 1), map.get(i));
         }
     }
+
+    @Test
+    public void mergeRemovesEntryWhenFunctionReturnsNull() {
+        var map = new ConcurrentHashMap<String, Integer>();
+        map.put("a", 1);
+        assertNull(map.merge("a", 2, (oldValue, value) -> null));
+        assertFalse(map.containsKey("a"));
+        assertEquals(0, map.size());
+    }
 }
