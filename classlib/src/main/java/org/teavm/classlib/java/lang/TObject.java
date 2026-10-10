@@ -533,6 +533,10 @@ public class TObject {
                 }
                 timerId = -1;
             }
+            // A timed-out wait reaches here directly (EventQueue.offer and Platform.schedule call run(), not
+            // onTimer()), so nothing else marks the listener expired. Without this, the listener stays in the
+            // queue, and a later notify() takes it and wakes no thread.
+            expired = true;
             TThread.setCurrentThread(currentThread);
             monitorEnterWait(obj, lockCount, callback);
         }

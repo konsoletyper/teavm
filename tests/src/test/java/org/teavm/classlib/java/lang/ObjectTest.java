@@ -82,4 +82,44 @@ public class ObjectTest {
         long end = System.currentTimeMillis();
         assertTrue(end - start > 100);
     }
+
+    @Test
+    public void notifyAfterTimedOutWaitWakesWaiter() throws InterruptedException {
+        Object lock = new Object();
+        // [0]: the waiter's timed wait has ended and it waits again; [1]: the main thread has notified.
+        boolean[] state = new boolean[2];
+        Thread waiter = new Thread(() -> {
+            synchronized (lock) {
+                try {
+                    lock.wait(20);
+                    state[0] = true;
+                    while (!state[1]) {
+                        lock.wait();
+                    }
+                } catch (InterruptedException e) {
+                    // ends the thread
+                }
+            }
+        });
+        waiter.start();
+        while (true) {
+            synchronized (lock) {
+                // The waiter holds the lock from setting state[0] until it waits, so it waits now.
+                if (state[0]) {
+                    state[1] = true;
+                    lock.notify();
+                    break;
+                }
+            }
+            Thread.sleep(10);
+        }
+        waiter.join(2000);
+        boolean woken = !waiter.isAlive();
+        if (!woken) {
+            synchronized (lock) {
+                lock.notifyAll();
+            }
+        }
+        assertTrue(woken, "notify() after a timed-out wait() did not wake the waiting thread");
+    }
 }
