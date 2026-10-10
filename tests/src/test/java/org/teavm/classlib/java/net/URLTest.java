@@ -718,4 +718,20 @@ public class URLTest {
             return handler;
         }
     }
+
+    @Test
+    public void malformedUrlMessages() throws IOException {
+        try {
+            new URL(" no-colon ");
+            fail("MalformedURLException expected");
+        } catch (MalformedURLException e) {
+            assertEquals("no protocol:  no-colon ", e.getMessage());
+        }
+        try {
+            new URL("http", "host", -5, "/path");
+            fail("MalformedURLException expected");
+        } catch (MalformedURLException e) {
+            assertEquals("Invalid port number :-5", e.getMessage());
+        }
+    }
 }

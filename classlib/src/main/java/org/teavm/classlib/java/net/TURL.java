@@ -60,6 +60,7 @@ public final class TURL implements Serializable {
         if (spec == null) {
             throw new TMalformedURLException();
         }
+        String original = spec;
         spec = spec.trim();
 
         // The spec includes a protocol if it includes a colon character
@@ -115,7 +116,7 @@ public final class TURL implements Serializable {
             // values in the context, but still allow them to be over-ridden
             // by the values in the ("relative") spec.
             if (context == null) {
-                throw new TMalformedURLException();
+                throw new TMalformedURLException("no protocol: " + original);
             }
             set(context.getProtocol(), context.getHost(), context.getPort(), context.getAuthority(),
                     context.getUserInfo(), context.getPath(), context.getQuery(), null);
@@ -129,7 +130,7 @@ public final class TURL implements Serializable {
         if (strmHandler == null) {
             setupStreamHandler();
             if (strmHandler == null) {
-                throw new TMalformedURLException();
+                throw new TMalformedURLException("unknown protocol: " + protocol);
             }
         }
 
@@ -144,11 +145,14 @@ public final class TURL implements Serializable {
         try {
             strmHandler.parseURL(this, spec, ++index, spec.length());
         } catch (Exception e) {
-            throw new TMalformedURLException(e.toString());
+            // As in the JDK: the handler's message, with the handler's exception as the cause.
+            TMalformedURLException malformed = new TMalformedURLException(e.getMessage());
+            malformed.initCause(e);
+            throw malformed;
         }
 
         if (port < -1) {
-            throw new TMalformedURLException();
+            throw new TMalformedURLException("Invalid port number :" + port);
         }
     }
 
@@ -163,7 +167,7 @@ public final class TURL implements Serializable {
     public TURL(String protocol, String host, int port, String file, TURLStreamHandler handler)
             throws TMalformedURLException {
         if (port < -1) {
-            throw new TMalformedURLException();
+            throw new TMalformedURLException("Invalid port number :" + port);
         }
 
         if (host != null && host.contains(":") && host.charAt(0) != '[') {
@@ -194,7 +198,7 @@ public final class TURL implements Serializable {
         if (handler == null) {
             setupStreamHandler();
             if (strmHandler == null) {
-                throw new TMalformedURLException();
+                throw new TMalformedURLException("unknown protocol: " + protocol);
             }
         } else {
             strmHandler = handler;
