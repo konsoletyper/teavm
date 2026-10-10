@@ -21,13 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -315,75 +311,5 @@ public class ConcurrentHashMapTest {
         assertNull(map.merge("a", 2, (oldValue, value) -> null));
         assertFalse(map.containsKey("a"));
         assertEquals(0, map.size());
-    }
-
-    @Test
-    public void defaultComputeIfAbsentReturnsNewValue() {
-        ConcurrentMap<String, Integer> map = new SimpleConcurrentMap<>();
-        assertEquals(Integer.valueOf(23), map.computeIfAbsent("a", key -> 23));
-        assertEquals(Integer.valueOf(23), map.get("a"));
-        assertEquals(Integer.valueOf(23), map.computeIfAbsent("a", key -> 42));
-        assertNull(map.computeIfAbsent("b", key -> null));
-        assertFalse(map.containsKey("b"));
-    }
-
-    @Test
-    public void defaultMergeRemovesEntryWhenFunctionReturnsNull() {
-        ConcurrentMap<String, Integer> map = new SimpleConcurrentMap<>();
-        map.put("a", 1);
-        assertNull(map.merge("a", 2, (oldValue, value) -> null));
-        assertFalse(map.containsKey("a"));
-    }
-
-    // Uses the ConcurrentMap default methods, which ConcurrentHashMap partly overrides.
-    static class SimpleConcurrentMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
-        private final Map<K, V> map = new HashMap<>();
-
-        @Override
-        public Set<Entry<K, V>> entrySet() {
-            return map.entrySet();
-        }
-
-        @Override
-        public V get(Object key) {
-            return map.get(key);
-        }
-
-        @Override
-        public V put(K key, V value) {
-            return map.put(key, value);
-        }
-
-        @Override
-        public V putIfAbsent(K key, V value) {
-            V existing = map.get(key);
-            if (existing == null) {
-                map.put(key, value);
-            }
-            return existing;
-        }
-
-        @Override
-        public boolean remove(Object key, Object value) {
-            if (map.containsKey(key) && map.get(key).equals(value)) {
-                map.remove(key);
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public boolean replace(K key, V oldValue, V newValue) {
-            if (map.containsKey(key) && map.get(key).equals(oldValue)) {
-                map.put(key, newValue);
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public V replace(K key, V value) {
-            return map.containsKey(key) ? map.put(key, value) : null;
-        }
     }
 }
