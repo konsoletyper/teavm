@@ -825,4 +825,25 @@ public class ByteBufferTest {
         buffer.get(check);
         assertArrayEquals(new byte[] { 2 }, check);
     }
+
+    @Test
+    public void allocateDirectZeroFills() {
+        var buffers = new ByteBuffer[64];
+        for (int i = 0; i < buffers.length; ++i) {
+            buffers[i] = ByteBuffer.allocateDirect(1 + i * 7);
+            buffers[i].put(0, (byte) -1);
+        }
+        for (int i = 0; i < buffers.length; i += 2) {
+            buffers[i] = null;
+        }
+        for (int round = 0; round < 4; ++round) {
+            for (int i = 0; i < buffers.length; ++i) {
+                ByteBuffer buffer = ByteBuffer.allocateDirect(1 + i * 5);
+                for (int j = 0; j < buffer.capacity(); ++j) {
+                    assertEquals(0, buffer.get(j), "byte " + j + " of buffer " + i + " in round " + round);
+                }
+                buffer.put(0, (byte) -1);
+            }
+        }
+    }
 }
