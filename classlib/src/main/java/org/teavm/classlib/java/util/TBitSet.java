@@ -123,13 +123,11 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
 
     public long[] toLongArray() {
         long[] longs = new long[(length + 63) / 64];
-        int fullLongs = length / 64;
-        int i = 0;
-        for (; i < fullLongs; ++i) {
-            longs[i] = data[i * 2] | ((long) data[i * 2 + 1] << 32);
-        }
-        if ((((31 + length) / 32) & 1) == 1) {
-            longs[i] = data[i * 2];
+        int ints = (length + 31) / 32;
+        for (int i = 0; i < longs.length; ++i) {
+            long low = data[i * 2] & 0xFFFFFFFFL;
+            long high = i * 2 + 1 < ints ? (long) data[i * 2 + 1] << 32 : 0;
+            longs[i] = low | high;
         }
         return longs;
     }
