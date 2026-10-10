@@ -1303,4 +1303,25 @@ public class BitSetTest {
         assertEquals(-1, bs.previousClearBit(1));
         assertEquals(-1, bs.previousClearBit(0));
     }
+
+    @Test
+    public void toLongArrayKeepsHighHalfAndLastLong() {
+        BitSet bs = new BitSet();
+        bs.set(31);
+        assertArrayEquals(new long[] { 1L << 31 }, bs.toLongArray());
+
+        bs = new BitSet();
+        bs.set(0);
+        bs.set(40);
+        assertArrayEquals(new long[] { 1L | (1L << 40) }, bs.toLongArray());
+
+        bs = new BitSet();
+        bs.set(31);
+        bs.set(70);
+        bs.set(127);
+        assertArrayEquals(new long[] { 1L << 31, (1L << 6) | (1L << 63) }, bs.toLongArray());
+
+        long[] values = { 0x80000000L, -1L, 0x123456789ABCDEF0L, 1L << 63 };
+        assertArrayEquals(values, BitSet.valueOf(values).toLongArray());
+    }
 }
