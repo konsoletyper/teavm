@@ -158,11 +158,11 @@ public final class TSystem extends TObject {
             GC.writeBarrier(dest);
         }
 
-        var offset = Address.align(Address.fromInt(0).add(RuntimeArray.class, 1), itemSize).toInt();
-        Address srcAddress = src.toAddress().add(offset);
+        // Align each data address, not an offset: 32-bit array bases can differ modulo 8.
+        Address srcAddress = Address.align(src.toAddress().add(RuntimeArray.class, 1), itemSize);
         srcAddress = srcAddress.add(itemSize * srcPos);
 
-        Address destAddress = dest.toAddress().add(offset);
+        Address destAddress = Address.align(dest.toAddress().add(RuntimeArray.class, 1), itemSize);
         destAddress = destAddress.add(itemSize * destPos);
 
         Address.moveMemoryBlock(srcAddress, destAddress, length * itemSize);

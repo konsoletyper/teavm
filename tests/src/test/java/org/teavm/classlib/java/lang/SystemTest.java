@@ -33,6 +33,77 @@ import org.teavm.junit.TeaVMTest;
 @TeaVMTest
 @EachTestCompiledSeparately
 public class SystemTest {
+    private static volatile Object allocationPadding;
+
+    @Test
+    public void copiesLongArraysAcrossAllocations() {
+        // On 32-bit C, these byte arrays vary the following allocation's address modulo 8.
+        // Keep them observable so optimization cannot remove the alignment perturbation.
+        for (int sourcePadding = 4; sourcePadding <= 8; sourcePadding += 4) {
+            for (int targetPadding = 4; targetPadding <= 8; targetPadding += 4) {
+                allocationPadding = new byte[sourcePadding];
+                long[] src = new long[4];
+                allocationPadding = new byte[targetPadding];
+                long[] dest = new long[6];
+                for (int i = 0; i < src.length; ++i) {
+                    src[i] = 0x1122334455667788L + i;
+                }
+                System.arraycopy(src, 0, dest, 1, src.length);
+                assertEquals(0L, dest[0]);
+                assertEquals(0L, dest[5]);
+                for (int i = 0; i < src.length; ++i) {
+                    assertEquals(src[i], dest[i + 1]);
+                }
+                System.arraycopy(dest, 1, src, 0, src.length);
+                for (int i = 0; i < src.length; ++i) {
+                    assertEquals(0x1122334455667788L + i, src[i]);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void copiesDoubleArraysAcrossAllocations() {
+        for (int sourcePadding = 4; sourcePadding <= 8; sourcePadding += 4) {
+            for (int targetPadding = 4; targetPadding <= 8; targetPadding += 4) {
+                allocationPadding = new byte[sourcePadding];
+                double[] src = new double[4];
+                allocationPadding = new byte[targetPadding];
+                double[] dest = new double[6];
+                for (int i = 0; i < src.length; ++i) {
+                    src[i] = 123.456789 + i;
+                }
+                System.arraycopy(src, 0, dest, 1, src.length);
+                assertEquals(0.0, dest[0], 0.0);
+                assertEquals(0.0, dest[5], 0.0);
+                for (int i = 0; i < src.length; ++i) {
+                    assertEquals(src[i], dest[i + 1], 0.0);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void copiesLongArraysWithOverlap() {
+        for (int padding = 4; padding <= 8; padding += 4) {
+            allocationPadding = new byte[padding];
+            long[] array = new long[5];
+            for (int i = 0; i < array.length; ++i) {
+                array[i] = 0x1122334455667788L + i;
+            }
+            System.arraycopy(array, 0, array, 1, 4);
+            for (int i = 1; i < array.length; ++i) {
+                assertEquals(0x1122334455667788L + i - 1, array[i]);
+            }
+            System.arraycopy(array, 1, array, 0, 4);
+            for (int i = 0; i < 4; ++i) {
+                assertEquals(0x1122334455667788L + i, array[i]);
+            }
+            System.arraycopy(array, array.length, array, array.length, 0);
+            assertEquals(0x112233445566778bL, array[4]);
+        }
+    }
+
     @Test
     public void copiesArray() {
         Object a = new Object();
