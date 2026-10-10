@@ -269,9 +269,17 @@ public class BoundCheckInsertion {
                         r = Integer.compare(a, b);
                         break;
                     case DIVIDE:
+                        if (b == 0) {
+                            // Java requires an ArithmeticException here. Folding would raise it
+                            // inside the compiler, so leave the division for the backend to emit.
+                            return;
+                        }
                         r = a / b;
                         break;
                     case MODULO:
+                        if (b == 0) {
+                            return;
+                        }
                         r = a % b;
                         break;
                     case MULTIPLY:
