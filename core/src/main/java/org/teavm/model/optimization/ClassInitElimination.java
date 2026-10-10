@@ -25,6 +25,7 @@ import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.ProgramUtils;
@@ -44,6 +45,13 @@ public class ClassInitElimination implements MethodOptimization {
             Step step = stack.pop();
             int node = step.node;
             BasicBlock block = program.basicBlockAt(node);
+            // An exception can leave this block before any of its instructions run, so its exception handlers
+            // may assume only the classes that were initialized on entry to the block.
+            Set<String> initializedOnEntry = new HashSet<>(step.initializedClasses);
+            Set<Integer> handlers = new HashSet<>();
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                handlers.add(tryCatch.getHandler().getIndex());
+            }
 
             Instruction nextInsn;
             for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
@@ -63,7 +71,8 @@ public class ClassInitElimination implements MethodOptimization {
 
             for (int successor : domGraph.outgoingEdges(node)) {
                 Step next = new Step(successor);
-                next.initializedClasses.addAll(step.initializedClasses);
+                next.initializedClasses.addAll(handlers.contains(successor)
+                        ? initializedOnEntry : step.initializedClasses);
                 stack.push(next);
             }
         }
