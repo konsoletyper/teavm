@@ -166,11 +166,11 @@ public final class TCollections extends TObject {
     }
 
     public static <T> TList<T> singletonList(T o) {
-        return new TTemplateCollections.SingleElementList<>(o);
+        return new TTemplateCollections.SingleElementList<>(o, false);
     }
 
     public static <T> TSet<T> singleton(T o) {
-        return new TTemplateCollections.SingleElementSet<>(o);
+        return new TTemplateCollections.SingleElementSet<>(o, false);
     }
 
     public static <K, V> TMap<K, V> singletonMap(final K key, final V value) {

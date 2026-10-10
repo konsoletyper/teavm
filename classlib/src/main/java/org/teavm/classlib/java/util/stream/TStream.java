@@ -197,6 +197,6 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
 
     @SuppressWarnings("unchecked")
     default List<T> toList() {
-        return (List<T>) new TTemplateCollections.ImmutableArrayList<>(toArray());
+        return (List<T>) TTemplateCollections.ImmutableArrayList.allowingNull(toArray());
     }
 }

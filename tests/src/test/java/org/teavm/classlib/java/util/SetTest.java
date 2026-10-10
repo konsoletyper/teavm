@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -166,5 +167,12 @@ public class SetTest {
         for (Set<String> set : List.of(Set.<String>of(), Set.of("a"), Set.of("a", "b"), Set.of("a", "b", "c"))) {
             assertThrows(NullPointerException.class, () -> set.contains(null));
         }
+    }
+
+    @Test
+    public void singletonSetAcceptsNullLookup() {
+        assertFalse(Collections.singleton("a").contains(null));
+        assertTrue(Collections.singleton(null).contains(null));
+        assertFalse(Collections.emptySet().contains(null));
     }
 }

@@ -25,15 +25,32 @@ import java.util.function.Predicate;
 
 public final class TTemplateCollections {
 
+    static final ImmutableArrayList<Object> EMPTY_LIST = new ImmutableArrayList<>();
+    static final NElementSet<Object> EMPTY_SET = new NElementSet<>();
+    static final NEtriesMap<Object, Object> EMPTY_MAP = new NEtriesMap<>();
+
     private TTemplateCollections() {
     }
 
     public static class ImmutableArrayList<T> extends AbstractImmutableList<T> implements RandomAccess {
         private final T[] list;
+        private final boolean rejectsNull;
 
         @SafeVarargs
         public ImmutableArrayList(T... list) {
+            this(list, true);
+        }
+
+        private ImmutableArrayList(T[] list, boolean rejectsNull) {
             this.list = list;
+            this.rejectsNull = rejectsNull;
+        }
+
+        /**
+         * Creates a list that accepts null in lookups, as the list from {@code Stream.toList} does.
+         */
+        public static <T> ImmutableArrayList<T> allowingNull(T[] list) {
+            return new ImmutableArrayList<>(list, false);
         }
 
         @SuppressWarnings("unchecked")
@@ -51,6 +68,7 @@ public final class TTemplateCollections {
             }
 
             this.list = list;
+            this.rejectsNull = true;
         }
 
         @Override
@@ -62,13 +80,25 @@ public final class TTemplateCollections {
         public int size() {
             return list.length;
         }
+
+        @Override
+        boolean rejectsNull() {
+            return rejectsNull;
+        }
     }
 
     static class SingleElementList<T> extends AbstractImmutableList<T> implements RandomAccess {
         private T value;
+        private final boolean rejectsNull;
 
-        SingleElementList(T value) {
+        SingleElementList(T value, boolean rejectsNull) {
             this.value = value;
+            this.rejectsNull = rejectsNull;
+        }
+
+        @Override
+        boolean rejectsNull() {
+            return rejectsNull;
         }
 
         @Override
@@ -99,6 +129,11 @@ public final class TTemplateCollections {
         }
 
         @Override
+        boolean rejectsNull() {
+            return true;
+        }
+
+        @Override
         public int size() {
             return 2;
         }
@@ -116,9 +151,11 @@ public final class TTemplateCollections {
 
     static class SingleElementSet<T> extends AbstractImmutableSet<T> {
         private T element;
+        private final boolean rejectsNull;
 
-        SingleElementSet(T element) {
+        SingleElementSet(T element, boolean rejectsNull) {
             this.element = element;
+            this.rejectsNull = rejectsNull;
         }
 
         @Override
@@ -152,10 +189,10 @@ public final class TTemplateCollections {
             return 1;
         }
 
-        // As in the JDK's immutable collections, a null element or key throws NullPointerException.
+        // Set.of rejects a null element in lookups, as in the JDK; Collections.singleton accepts it.
         @Override
         public boolean contains(Object o) {
-            return Objects.requireNonNull(o).equals(element);
+            return rejectsNull ? Objects.requireNonNull(o).equals(element) : Objects.equals(o, element);
         }
     }
 
@@ -353,7 +390,7 @@ public final class TTemplateCollections {
         @Override
         public TSet<Entry<K, V>> entrySet() {
             if (entrySet == null) {
-                entrySet = new SingleElementSet<>(entry);
+                entrySet = new SingleElementSet<>(entry, true);
             }
             return entrySet;
         }
@@ -386,7 +423,7 @@ public final class TTemplateCollections {
         @Override
         public TSet<K> keySet() {
             if (keySet == null) {
-                keySet = new SingleElementSet<>(entry.getKey());
+                keySet = new SingleElementSet<>(entry.getKey(), true);
             }
             return keySet;
         }
@@ -394,7 +431,7 @@ public final class TTemplateCollections {
         @Override
         public TCollection<V> values() {
             if (values == null) {
-                values = new SingleElementList<>(entry.getValue());
+                values = new SingleElementList<>(entry.getValue(), true);
             }
             return values;
         }
@@ -659,19 +696,36 @@ public final class TTemplateCollections {
     }
 
     static abstract class AbstractImmutableList<T> extends TAbstractList<T> implements RandomAccess {
+        /**
+         * Whether lookups reject null, as for the lists from {@code List.of} and {@code List.copyOf} in the JDK.
+         * {@code Collections.emptyList}, {@code Collections.singletonList} and {@code Stream.toList} accept null.
+         */
+        boolean rejectsNull() {
+            return false;
+        }
+
         @Override
         public boolean contains(Object o) {
-            return indexOf(o) >= 0;
+            if (rejectsNull()) {
+                Objects.requireNonNull(o);
+            }
+            return super.contains(o);
         }
 
         @Override
         public int indexOf(Object o) {
-            return super.indexOf(Objects.requireNonNull(o));
+            if (rejectsNull()) {
+                Objects.requireNonNull(o);
+            }
+            return super.indexOf(o);
         }
 
         @Override
         public int lastIndexOf(Object o) {
-            return super.lastIndexOf(Objects.requireNonNull(o));
+            if (rejectsNull()) {
+                Objects.requireNonNull(o);
+            }
+            return super.lastIndexOf(o);
         }
 
         @Override
