@@ -841,6 +841,7 @@ public class ByteBufferTest {
     @Test
     public void absolutePutLongChecksAllEightBytes() {
         for (ByteBuffer buffer : new ByteBuffer[] { ByteBuffer.allocate(16), ByteBuffer.allocateDirect(16) }) {
+            buffer.putLong(8, 0x1122334455667788L);
             buffer.limit(12);
             try {
                 buffer.putLong(8, -1L);
@@ -849,7 +850,7 @@ public class ByteBufferTest {
                 // expected
             }
             buffer.limit(16);
-            assertEquals(0L, buffer.getLong(8));
+            assertEquals(0x1122334455667788L, buffer.getLong(8));
         }
     }
 }
