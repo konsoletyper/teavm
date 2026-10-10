@@ -25,7 +25,6 @@ import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
-import org.teavm.model.TryCatchBlock;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.ProgramUtils;
@@ -33,9 +32,11 @@ import org.teavm.model.util.ProgramUtils;
 public class ClassInitElimination implements MethodOptimization {
     @Override
     public boolean optimize(MethodOptimizationContext context, Program program) {
-        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
+        // Node 2 * i is the entry of block i, and node 2 * i + 1 is its body. Exception handlers are connected
+        // to the entry node, because an exception can leave a block before any of its instructions run.
+        Graph cfg = ProgramUtils.buildControlFlowGraph2(program);
         DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
-        Graph domGraph = GraphUtils.buildDominatorGraph(dom, program.basicBlockCount());
+        Graph domGraph = GraphUtils.buildDominatorGraph(dom, cfg.size());
 
         Step start = new Step(0);
         Deque<Step> stack = new ArrayDeque<>();
@@ -44,35 +45,29 @@ public class ClassInitElimination implements MethodOptimization {
         while (!stack.isEmpty()) {
             Step step = stack.pop();
             int node = step.node;
-            BasicBlock block = program.basicBlockAt(node);
-            // An exception can leave this block before any of its instructions run, so its exception handlers
-            // may assume only the classes that were initialized on entry to the block.
-            Set<String> initializedOnEntry = new HashSet<>(step.initializedClasses);
-            Set<Integer> handlers = new HashSet<>();
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                handlers.add(tryCatch.getHandler().getIndex());
-            }
 
-            Instruction nextInsn;
-            for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
-                nextInsn = insn.getNext();
-                if (insn instanceof InitClassInstruction) {
-                    InitClassInstruction initClass = (InitClassInstruction) insn;
-                    if (!step.initializedClasses.add(initClass.getClassName())) {
-                        insn.delete();
+            if (node % 2 == 1) {
+                BasicBlock block = program.basicBlockAt(node / 2);
+                Instruction nextInsn;
+                for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
+                    nextInsn = insn.getNext();
+                    if (insn instanceof InitClassInstruction) {
+                        InitClassInstruction initClass = (InitClassInstruction) insn;
+                        if (!step.initializedClasses.add(initClass.getClassName())) {
+                            insn.delete();
+                        }
+                        continue;
                     }
-                    continue;
-                }
-                if (insn instanceof InvokeInstruction) {
-                    InvokeInstruction invoke = (InvokeInstruction) insn;
-                    step.initializedClasses.add(invoke.getMethod().getClassName());
+                    if (insn instanceof InvokeInstruction) {
+                        InvokeInstruction invoke = (InvokeInstruction) insn;
+                        step.initializedClasses.add(invoke.getMethod().getClassName());
+                    }
                 }
             }
 
             for (int successor : domGraph.outgoingEdges(node)) {
                 Step next = new Step(successor);
-                next.initializedClasses.addAll(handlers.contains(successor)
-                        ? initializedOnEntry : step.initializedClasses);
+                next.initializedClasses.addAll(step.initializedClasses);
                 stack.push(next);
             }
         }
