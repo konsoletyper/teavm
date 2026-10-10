@@ -99,11 +99,11 @@ public interface TList<E> extends TSequencedCollection<E> {
     }
 
     static <E> TList<E> of() {
-        return TCollections.emptyList();
+        return new TTemplateCollections.ImmutableArrayList<>();
     }
 
     static <E> TList<E> of(E e) {
-        return TCollections.singletonList(e);
+        return new TTemplateCollections.SingleElementList<>(Objects.requireNonNull(e));
     }
 
     static <E> TList<E> of(E e1, E e2) {

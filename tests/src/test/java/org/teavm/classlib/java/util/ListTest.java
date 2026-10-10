@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
@@ -173,6 +174,16 @@ public class ListTest {
             fail();
         } catch (UnsupportedOperationException e) {
             // ok
+        }
+    }
+
+    @Test
+    public void immutableListRejectsNull() {
+        assertThrows(NullPointerException.class, () -> List.of((String) null));
+        for (List<String> list : List.of(List.<String>of(), List.of("a"), List.of("a", "b"), List.of("a", "b", "c"))) {
+            assertThrows(NullPointerException.class, () -> list.contains(null));
+            assertThrows(NullPointerException.class, () -> list.indexOf(null));
+            assertThrows(NullPointerException.class, () -> list.lastIndexOf(null));
         }
     }
 }

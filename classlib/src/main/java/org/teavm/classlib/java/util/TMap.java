@@ -190,7 +190,7 @@ public interface TMap<K, V> {
     }
 
     static <K, V> TMap<K, V> of() {
-        return TCollections.emptyMap();
+        return new TTemplateCollections.NEtriesMap<>();
     }
 
     static <K, V> TMap<K, V> of(K k1, V v1) {

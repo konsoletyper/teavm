@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
@@ -158,5 +159,12 @@ public class SetTest {
         b.add("foo");
 
         assertEquals(a.hashCode(), b.hashCode());
+    }
+
+    @Test
+    public void immutableSetRejectsNullLookup() {
+        for (Set<String> set : List.of(Set.<String>of(), Set.of("a"), Set.of("a", "b"), Set.of("a", "b", "c"))) {
+            assertThrows(NullPointerException.class, () -> set.contains(null));
+        }
     }
 }
