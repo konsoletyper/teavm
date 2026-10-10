@@ -56,6 +56,7 @@ include("tools:classlib-comparison-gen")
 include("tools:wasm-disassembly")
 include("tests")
 include("benchmarks")
+include("compiler-benchmarks")
 include("extras-slf4j")
 
 val teavmVersion = providers.gradleProperty("teavm.project.version").get()
