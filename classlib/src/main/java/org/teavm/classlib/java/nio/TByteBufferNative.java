@@ -516,7 +516,6 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 7) + ")");
         }
         var result = address.add(index).getLong();
-        position += 8;
         return swap ? Long.reverseBytes(result) : result;
     }
 
@@ -525,8 +524,8 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
         if (readOnly) {
             throw new TReadOnlyBufferException();
         }
-        if (index < 0 || index + 3 >= limit) {
-            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 3) + ")");
+        if (index < 0 || index + 7 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 7) + ")");
         }
         address.add(index).putLong(swap ? Long.reverseBytes(value) : value);
         return this;

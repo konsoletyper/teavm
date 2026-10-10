@@ -485,8 +485,8 @@ class TByteBufferJsImpl extends TByteBuffer implements TArrayBufferViewProvider 
         if (readOnly) {
             throw new TReadOnlyBufferException();
         }
-        if (index < 0 || index + 3 >= limit) {
-            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 3) + ")");
+        if (index < 0 || index + 7 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 7) + ")");
         }
         getDataView().setBigInt64(index, value, order == TByteOrder.LITTLE_ENDIAN);
         return this;

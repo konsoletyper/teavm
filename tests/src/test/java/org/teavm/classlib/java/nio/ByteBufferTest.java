@@ -825,4 +825,31 @@ public class ByteBufferTest {
         buffer.get(check);
         assertArrayEquals(new byte[] { 2 }, check);
     }
+
+    @Test
+    public void absoluteLongAccessKeepsPosition() {
+        for (ByteBuffer buffer : new ByteBuffer[] { ByteBuffer.allocate(16), ByteBuffer.allocateDirect(16) }) {
+            buffer.putLong(8, 0x0102030405060708L);
+            buffer.position(3);
+            assertEquals(0x0102030405060708L, buffer.getLong(8));
+            assertEquals(3, buffer.position());
+            buffer.getDouble(8);
+            assertEquals(3, buffer.position());
+        }
+    }
+
+    @Test
+    public void absolutePutLongChecksAllEightBytes() {
+        for (ByteBuffer buffer : new ByteBuffer[] { ByteBuffer.allocate(16), ByteBuffer.allocateDirect(16) }) {
+            buffer.limit(12);
+            try {
+                buffer.putLong(8, -1L);
+                fail("Exception expected");
+            } catch (IndexOutOfBoundsException e) {
+                // expected
+            }
+            buffer.limit(16);
+            assertEquals(0L, buffer.getLong(8));
+        }
+    }
 }
