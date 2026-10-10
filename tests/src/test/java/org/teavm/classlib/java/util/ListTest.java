@@ -23,9 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
 
@@ -185,5 +187,17 @@ public class ListTest {
             assertThrows(NullPointerException.class, () -> list.indexOf(null));
             assertThrows(NullPointerException.class, () -> list.lastIndexOf(null));
         }
+    }
+
+    @Test
+    public void nullTolerantListsAcceptNullLookup() {
+        assertFalse(Collections.emptyList().contains(null));
+        assertEquals(-1, Collections.emptyList().indexOf(null));
+        assertFalse(Collections.singletonList("a").contains(null));
+        assertTrue(Collections.singletonList(null).contains(null));
+        List<String> streamList = Stream.of("a", null, "b").toList();
+        assertTrue(streamList.contains(null));
+        assertEquals(1, streamList.indexOf(null));
+        assertEquals(1, streamList.lastIndexOf(null));
     }
 }
