@@ -99,6 +99,10 @@ public class PatternLiteralTest {
         check(Pattern.compile("\\d+\\.\\d+"), "\\d+\\.\\d+");
         check(Pattern.compile("[^,]+,"), "[^,]+,");
         check(Pattern.compile("[\\w.]+@[^@\\s]+\\.com"), "[\\w.]+@[^@\\s]+\\.com");
+        check(Pattern.compile("foo|bar|baz\\d"), "foo|bar|baz\\d");
+        check(Pattern.compile("(?:a|ab)c"), "(?:a|ab)c");
+        check(Pattern.compile("\\d{2,4}-[a-z]+?\\b"), "\\d{2,4}-[a-z]+?\\b");
+        check(Pattern.compile("[a-z]*+\\d?+x"), "[a-z]*+\\d?+x");
     }
 
     @Test

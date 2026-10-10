@@ -177,9 +177,10 @@ final class TPatternFactory {
         return new TSequenceSet(new StringBuffer(string));
     }
 
-    static TAbstractSet stateMachineSet(String bounds, String transitions, int firstAccepting,
-            TAbstractSet fallback) {
-        return new TStateMachineSet(bounds.toCharArray(), transitions.toCharArray(), firstAccepting, fallback);
+    static TAbstractSet stateMachineSet(String bounds, String transitions, int startState, int firstAccepting,
+            int mode, TAbstractSet fallback) {
+        return new TStateMachineSet(bounds.toCharArray(), transitions.toCharArray(), startState, firstAccepting,
+                mode, fallback);
     }
 
     static TCISequenceSet ciSequenceSet(String string) {

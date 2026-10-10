@@ -1634,4 +1634,40 @@ public class PatternTest {
         var text = "x".repeat(100_000) + "1".repeat(100_000);
         assertTrue(Pattern.compile("[a-z]+[0-9]+").matcher(text).matches());
     }
+
+    @Test
+    public void stateMachinesWithAlternativesAndQuantifiers() {
+        checkFind("bar|baz", "bar baz ba bax", "[0-3, 4-7]", false);
+        checkFind("GET|POST|PUT", "PUT GET POS POST", "[0-3, 4-7, 12-16]", false);
+        checkFind("foo|foobar", "foobar foo", "[0-3, 7-10]", false);
+        checkFind("(?:foo|foobar)bar", "foobar foobarbar", "[0-6, 7-13]", false);
+        checkFind("(?:ab|a)c", "abc ac abac", "[0-3, 4-6, 9-11]", false);
+        checkFind("(?:a|ab)c", "abc ac abac", "[0-3, 4-6, 9-11]", false);
+        checkFind("(?:ab|a\\d*)x", "ab a12x abx ax", "[3-7, 8-11, 12-14]", false);
+        checkFind("(bar|baz)\\d", "bar1 baz2 bax3", "[0-4, 5-9]", false);
+        checkFind("(?:[a-z]+|\\d+),", "ab,12,a1,", "[0-3, 3-6, 7-9]", false);
+        checkFind("\\d{4}-\\d{2}", "2026-10 99-1 12345-678", "[0-7, 14-21]", false);
+        checkFind("[a-z]{2,}\\d", "a1 ab2 abc3", "[3-6, 7-11]", false);
+        checkFind("x[a-z]{1,3}", "x xa xabcd", "[2-4, 5-9]", false);
+        checkFind("x[a-z]{1,3}?", "x xa xabcd", "[2-4, 5-7]", false);
+        checkFind("x[a-z]{1,3}+", "x xa xabcd", "[2-4, 5-9]", false);
+        checkFind("[a-z]+?\\d", "ab1 c2", "[0-3, 4-6]", false);
+        checkFind("<[a-z]+?>", "<ab> <> <a1>", "[0-4]", false);
+        checkFind("x[a-z]+?", "xabc", "[0-2]", false);
+        checkFind("x[a-z]*?y", "xaby xy", "[0-4, 5-7]", false);
+        checkFind("x[a-z]*+", "xabc x", "[0-4, 5-6]", false);
+        checkFind("[a-z]++a", "aa ba", "[]", false);
+        checkFind("x[a-z]?\\d", "xa1 x2 xab3", "[0-3, 4-6]", false);
+        checkFind("x[a-z]??", "xa", "[0-1]", false);
+        checkFind("[a-z]*,?", "ab, c", "[0-3, 3-3, 4-5, 5-5]", false);
+
+        checkHitEnd("bar|baz", "ba", true, true);
+        checkHitEnd("foo|foobar", "foo", false, false);
+        checkHitEnd("foo|foobar", "foob", false, true);
+        checkHitEnd("x[a-z]{1,3}", "xab", true, true);
+        checkHitEnd("x[a-z]{1,3}", "xabc", false, false);
+        checkHitEnd("x[a-z]+?", "xab", false, false);
+        checkHitEnd("x[a-z]*+", "xab", true, true);
+        checkHitEnd("(?:a|ab)c", "ab", true, true);
+    }
 }

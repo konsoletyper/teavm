@@ -429,8 +429,14 @@ public final class TPattern implements Serializable {
         if (lexemes.back() == TLexer.CHAR_VERTICAL_BAR) {
             children.add(new TEmptySet(fSet));
         }
-        for (int i = 0; i < children.size(); ++i) {
-            children.set(i, createStateMachines(children.get(i), fSet));
+        TAbstractSet alternativesMachine = TStateMachineSet.createAlternatives(children, fSet);
+        if (alternativesMachine != null) {
+            children.clear();
+            children.add(alternativesMachine);
+        } else {
+            for (int i = 0; i < children.size(); ++i) {
+                children.set(i, createStateMachines(children.get(i), fSet));
+            }
         }
 
         if (flags != saveFlags && !saveChangedFlags) {
