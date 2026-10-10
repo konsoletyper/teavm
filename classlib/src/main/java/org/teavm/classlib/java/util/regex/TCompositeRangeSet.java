@@ -103,7 +103,7 @@ package org.teavm.classlib.java.util.regex;
  * consisting of all others characters from the parent range. This class
  * represents the parent range split in such a manner.
  */
-class TCompositeRangeSet extends TJointSet {
+class TCompositeRangeSet extends TJointSet implements TCodePointSet {
 
     // range without surrogates
     TAbstractSet withoutSurrogates;
@@ -142,6 +142,44 @@ class TCompositeRangeSet extends TJointSet {
             return shift;
         }
         return -1;
+    }
+
+    @Override
+    public int ways() {
+        return withoutSurrogates instanceof TSupplRangeSet ? 3 : 2;
+    }
+
+    /**
+     * The ways of the range without surrogates (two ways of {@link TSupplRangeSet}, or one way of a leaf like
+     * {@link TRangeSet}) come first, then the way of the range of surrogates, as {@link #matches} tries them.
+     */
+    @Override
+    public int consume(int way, int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        int surrogatesWay;
+        if (withoutSurrogates instanceof TSupplRangeSet) {
+            int step = ((TSupplRangeSet) withoutSurrogates).consume(way, stringIndex, testString, matchResult);
+            if (step >= 0) {
+                return step;
+            }
+            surrogatesWay = 2;
+        } else {
+            if (way == 0) {
+                // the same checks as TLeafSet.matches
+                TLeafSet leaf = (TLeafSet) withoutSurrogates;
+                if (stringIndex + leaf.charCount() > matchResult.getRightBound()) {
+                    matchResult.hitEnd = true;
+                } else if (leaf.accepts(stringIndex, testString) > 0) {
+                    return 1;
+                }
+            }
+            surrogatesWay = 1;
+        }
+
+        if (way > surrogatesWay
+                || !((TLowHighSurrogateRangeSet) withSurrogates).accepts(stringIndex, testString, matchResult)) {
+            return -1;
+        }
+        return 4 * surrogatesWay + 1;
     }
 
     /**

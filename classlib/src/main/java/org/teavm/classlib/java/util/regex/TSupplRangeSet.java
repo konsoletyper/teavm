@@ -103,7 +103,7 @@ package org.teavm.classlib.java.util.regex;
  * character can be supplementary (2 chars needed to represent) or from basic
  * multilingual pane (1 needed char to represent it).
  */
-class TSupplRangeSet extends TJointSet {
+class TSupplRangeSet extends TJointSet implements TCodePointSet {
 
     protected TAbstractCharClass chars;
 
@@ -122,26 +122,46 @@ class TSupplRangeSet extends TJointSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        int step = consume(0, stringIndex, testString, matchResult);
+        if (step == 1) {
+            int offset = next.matches(stringIndex + 1, testString, matchResult);
+            if (offset > 0) {
+                return offset;
+            }
+            step = consume(1, stringIndex, testString, matchResult);
+        }
+
+        return step < 0 ? -1 : next.matches(stringIndex + 2, testString, matchResult);
+    }
+
+    @Override
+    public int ways() {
+        return 2;
+    }
+
+    /**
+     * Way 0 consumes a single char, way 1 consumes a surrogate pair.
+     */
+    @Override
+    public int consume(int way, int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         int strLength = matchResult.getRightBound();
 
         if (stringIndex >= strLength) {
             matchResult.hitEnd = true;
-        } else {
-            char high = testString.charAt(stringIndex++);
+            return -1;
+        }
 
-            if (contains(high)) {
-                int offset = next.matches(stringIndex, testString, matchResult);
-                if (offset > 0) {
-                    return offset;
-                }
-            }
+        char high = testString.charAt(stringIndex);
+        if (way == 0 && contains(high)) {
+            return 1;
+        }
 
-            if (stringIndex < strLength) {
-                char low = testString.charAt(stringIndex++);
+        if (way <= 1 && stringIndex + 1 < strLength) {
+            char low = testString.charAt(stringIndex + 1);
 
-                if (Character.isSurrogatePair(high, low) && contains(Character.toCodePoint(high, low))) {
-                    return next.matches(stringIndex, testString, matchResult);
-                }
+            if (Character.isSurrogatePair(high, low) && contains(Character.toCodePoint(high, low))) {
+                // way 1, two chars
+                return 4 + 2;
             }
         }
 

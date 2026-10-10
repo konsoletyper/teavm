@@ -372,6 +372,14 @@ final class TPatternFactory {
         return new TRelCompositeGroupQuantifierSet(quantifier, innerSet, null, type, setCounter);
     }
 
+    static TCodePointQuantifierSet codePointQuantifierSet(TAbstractSet innerSet, int type) {
+        return new TCodePointQuantifierSet(innerSet, null, type);
+    }
+
+    static TReluctantCodePointQuantifierSet reluctantCodePointQuantifierSet(TAbstractSet innerSet, int type) {
+        return new TReluctantCodePointQuantifierSet(innerSet, null, type);
+    }
+
     static TDotQuantifierSet dotQuantifierSet(TAbstractSet innerSet, int type, TAbstractLineTerminator lt) {
         return new TDotQuantifierSet(innerSet, null, type, lt);
     }

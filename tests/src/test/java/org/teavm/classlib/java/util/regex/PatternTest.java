@@ -1447,4 +1447,151 @@ public class PatternTest {
         matcher.matches();
         assertEquals(afterMatches, matcher.hitEnd(), "hitEnd after matches() for " + regex + " on " + input);
     }
+
+    @Test
+    public void charClassQuantifiers() {
+        checkFind("[a-z]*a", "banana", "[0-6]", true);
+        checkFind("[^\"]*\"x", "ab\"c\"x", "[3-6]", false);
+        checkFind("\"[^\"]*\"", "x\"ab\"y\"cd\"", "[1-5, 6-10]", false);
+        checkFind("[^,]+", "a,b,,c", "[0-1, 2-3, 5-6]", false);
+        checkFind("[^\"]+", "", "[]", true);
+        checkFind("[^\"]+", "a", "[0-1]", true);
+        checkFind("([^\"]*)\\1", "abab", "[0-4, 4-4]", true);
+        checkFind("(?:[^\"]*\")+", "a\"b\"", "[0-4]", true);
+        checkFind("a[^\"]*?b", "axxbxxb", "[0-4]", false);
+        checkFind("[^\"]+?", "abc", "[0-1, 1-2, 2-3]", false);
+        checkFind("x[^\"]*?y", "xab", "[]", true);
+        checkFind("[^\"]*+\"", "ab\"", "[0-3]", false);
+        checkFind("[^\"]*+.", "ab", "[]", true);
+        checkFind("[^\"]++x", "abx", "[]", true);
+
+        var matcher = Pattern.compile("([^,]*),([^,]*?)(,|$)").matcher("ab,cd,ef");
+        assertTrue(matcher.lookingAt());
+        assertEquals("ab", matcher.group(1));
+        assertEquals("cd", matcher.group(2));
+        assertEquals(",", matcher.group(3));
+    }
+
+    @Test
+    public void charClassQuantifiersWithSurrogates() {
+        var emoji = "\uD83D\uDE00";
+        checkFind("[^a]+", "x" + emoji + "y", "[0-4]", true);
+        checkFind("[^a]+", "x\uD800y\uDC00", "[0-4]", true);
+        checkFind("[^a]+", "\uDC00\uD800a\uD800", "[0-2, 3-4]", false);
+        checkFind("[^a]", "a" + emoji, "[1-3]", false);
+        checkFind("[^\\uD83D]+", emoji + "\uD83Dx", "[0-2, 3-4]", false);
+        checkFind("[^\\uDE00]+", emoji + "\uDE00x", "[0-2, 3-4]", false);
+        checkFind("[" + emoji + "]+", emoji + emoji + "\uD83D", "[0-4]", false);
+        checkFind("[^" + emoji + "]+", "a" + emoji + "b", "[0-1, 3-4]", false);
+        checkFind("[\\uD83Da]+", "a" + emoji + "\uD83Da", "[0-1, 3-5]", false);
+        checkFind("[\\uDE00a]+", "a" + emoji + "\uDE00a", "[0-1, 3-5]", false);
+        checkFind("[\\uD800-\\uDBFF]+", "\uD83D\uD83D" + emoji, "[0-2]", false);
+        checkFind("[a\\P{L}]+", "\uD83D1" + emoji, "[0-4]", true);
+        checkFind("\\p{L}+", "ab\uD801\uDC281", "[0-4]", false);
+        checkFind("[a-c]+" + emoji, "ab" + emoji, "[0-4]", false);
+        checkFind("[^a]+\uDE00", emoji, "[]", true);
+        checkFind("[^a]+?", emoji + "\uD800", "[0-2, 2-3]", false);
+        checkFind("[^a]*?a", emoji + "a", "[0-3]", false);
+        checkFind("\\uD800+", "\uD800\uD800\uD800\uDC00x", "[0-2]", false);
+        checkFind("x\\uDC00+", "x\uDC00\uDC00\uD800\uDC00", "[0-3]", false);
+        checkFind("\\uDC00*?x", "\uDC00\uDC00x", "[0-3]", false);
+        checkFind("[^a]+?\uDE00", emoji, "[]", true);
+
+        // going back over a lone surrogate that the last way of the node consumed
+        checkFind("[^a]*b", "\uD800c", "[]", true);
+        checkFind("[\\uD83Da]*b", "\uD83Dc", "[]", false);
+        checkFind("[^a]*?b", "\uD800c", "[]", true);
+        checkFind("[\\uD83Da]*?b", "\uD83Dc", "[]", false);
+        checkFind("\\uD800*b", "\uD800\uD800c", "[]", false);
+        checkFind("x\\uDC00+b", "x\uDC00\uDC00c", "[]", false);
+        checkFind("[^a]+b", emoji + "\uD800" + emoji + "c", "[]", true);
+        checkFind("[a\\P{L}]*?b", emoji + "\uD83Dc", "[]", false);
+    }
+
+    @Test
+    public void reluctantDotQuantifiers() {
+        checkFind("a.*?b", "axx", "[]", true);
+        checkFind("a.*?b", "axbxb", "[0-3]", false);
+        checkFind("a(.*?)b", "a\uD83D\uDE00b", "[0-4]", false);
+        checkFind("(?s)a.*?b", "a\n\nb", "[0-4]", false);
+        checkFind("a.*?b", "a\nb", "[]", false);
+        checkFind("a.+?", "abc", "[0-2]", false);
+        checkFind(".*?x", "\uD83Dx", "[0-2]", false);
+        checkFind(".+?", "\uD83D\uDE00a", "[0-2, 2-3]", false);
+    }
+
+    @Test
+    public void charClassQuantifiersOverLongInput() {
+        var text = "a".repeat(100_000);
+
+        var matcher = Pattern.compile("\"([^\"]+)\"").matcher("\"" + text + "\"");
+        assertTrue(matcher.matches());
+        assertEquals(text, matcher.group(1));
+
+        matcher = Pattern.compile("\\[\\[([^\\[\\]]*)\\]\\]").matcher("[[" + text + "]]");
+        assertTrue(matcher.matches());
+        assertEquals(text, matcher.group(1));
+
+        assertTrue(Pattern.compile("[a-z]*").matcher(text).matches());
+        assertTrue(Pattern.compile("\\p{L}+").matcher(text).matches());
+
+        matcher = Pattern.compile("[^\"]*x").matcher(text + "x" + text);
+        assertTrue(matcher.lookingAt());
+        assertEquals(100_001, matcher.end());
+
+        matcher = Pattern.compile("\"([^\"]*?)\"").matcher("\"" + text + "\"");
+        assertTrue(matcher.matches());
+        assertEquals(text, matcher.group(1));
+    }
+
+    @Test
+    public void reluctantDotQuantifiersOverLongInput() {
+        var text = "x".repeat(100_000);
+
+        var matcher = Pattern.compile("a(.*?)b").matcher("a" + text + "b");
+        assertTrue(matcher.matches());
+        assertEquals(text, matcher.group(1));
+
+        matcher = Pattern.compile("(.+?)b").matcher(text + "b" + text + "b");
+        assertTrue(matcher.lookingAt());
+        assertEquals(text, matcher.group(1));
+
+        matcher = Pattern.compile("(?s)a(.*?)b").matcher("a" + text + "\nb");
+        assertTrue(matcher.matches());
+        assertEquals(text + "\n", matcher.group(1));
+
+        assertFalse(Pattern.compile("a.*?b").matcher("a" + text).find());
+    }
+
+    @Test
+    public void quantifiersOverLongInputWithSurrogates() {
+        var emoji = "\uD83D\uDE00";
+        var text = emoji.repeat(50_000);
+        assertTrue(Pattern.compile("[^\"]+").matcher(text).matches());
+        assertTrue(Pattern.compile("[" + emoji + "]+").matcher(text).matches());
+        assertTrue(Pattern.compile("[^\"]*?\"").matcher(text + "\"").matches());
+        assertTrue(Pattern.compile(".*?b").matcher(text + "b").matches());
+
+        var loneSurrogates = "\uD800".repeat(100_000);
+        assertTrue(Pattern.compile("[^a]+").matcher(loneSurrogates).matches());
+        assertTrue(Pattern.compile("[\\uD800-\\uDBFF]*").matcher(loneSurrogates).matches());
+        assertTrue(Pattern.compile("\\uD800+").matcher(loneSurrogates).matches());
+    }
+
+    @Test
+    public void findOverLongInput() {
+        var first = "x".repeat(100_000);
+        var second = "y".repeat(100_000);
+        var text = first + "," + second;
+
+        var matcher = Pattern.compile("[^,]+").matcher(text);
+        assertTrue(matcher.find());
+        assertEquals(first, matcher.group());
+        assertTrue(matcher.find());
+        assertEquals(second, matcher.group());
+        assertFalse(matcher.find());
+
+        assertEquals(",", text.replaceAll("[^,]+", ""));
+        assertTrue(text.matches("[^,]*,[^,]*"));
+    }
 }

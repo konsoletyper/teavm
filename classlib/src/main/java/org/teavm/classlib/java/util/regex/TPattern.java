@@ -671,6 +671,8 @@ public final class TPattern implements Serializable {
                         } else {
                             q = new TDotAllQuantifierSet(term, last, quant);
                         }
+                    } else if (term instanceof TCodePointSet) {
+                        q = new TCodePointQuantifierSet(term, last, quant);
                     } else {
                         q = new TGroupQuantifierSet(term, last, quant);
                     }
@@ -680,8 +682,14 @@ public final class TPattern implements Serializable {
 
                 case TLexer.QUANT_STAR_R:
                 case TLexer.QUANT_PLUS_R: {
+                    TQuantifierSet q;
+
                     lexemes.next();
-                    TGroupQuantifierSet q = new TReluctantGroupQuantifierSet(term, last, quant);
+                    if (term instanceof TCodePointSet) {
+                        q = new TReluctantCodePointQuantifierSet(term, last, quant);
+                    } else {
+                        q = new TReluctantGroupQuantifierSet(term, last, quant);
+                    }
                     term.setNext(q);
                     return q;
                 }

@@ -41,7 +41,7 @@ package org.teavm.classlib.java.util.regex;
  *
  * @author Nikolay A. Kuznetsov
  */
-final class TDotSet extends TJointSet {
+final class TDotSet extends TJointSet implements TCodePointSet {
 
     TAbstractLineTerminator lt;
 
@@ -52,6 +52,21 @@ final class TDotSet extends TJointSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        int shift = consume(0, stringIndex, testString, matchResult);
+        return shift < 0 ? -1 : next.matches(stringIndex + shift, testString, matchResult);
+    }
+
+    @Override
+    public int ways() {
+        return 1;
+    }
+
+    @Override
+    public int consume(int way, int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        if (way > 0) {
+            return -1;
+        }
+
         int strLength = matchResult.getRightBound();
 
         if (stringIndex + 1 > strLength) {
@@ -64,12 +79,11 @@ final class TDotSet extends TJointSet {
             char low = testString.charAt(stringIndex + 1);
 
             if (Character.isSurrogatePair(high, low)) {
-                return lt.isLineTerminator(Character.toCodePoint(high, low)) ? -1 : next.matches(stringIndex + 2,
-                        testString, matchResult);
+                return lt.isLineTerminator(Character.toCodePoint(high, low)) ? -1 : 2;
             }
         }
 
-        return lt.isLineTerminator(high) ? -1 : next.matches(stringIndex + 1, testString, matchResult);
+        return lt.isLineTerminator(high) ? -1 : 1;
     }
 
     @Override

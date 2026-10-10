@@ -78,6 +78,9 @@ public class PatternLiteralTest {
         check(Pattern.compile("a\\B"), "a\\B");
         check(Pattern.compile(".+"), ".+");
         check(Pattern.compile("(?s).+"), "(?s).+");
+        check(Pattern.compile("a.*?a"), "a.*?a");
+        check(Pattern.compile("(?s)l.+?\\d"), "(?s)l.+?\\d");
+        check(Pattern.compile("[^a-z ]*?\\d"), "[^a-z ]*?\\d");
         check(Pattern.compile("\\Aa|c\\z"), "\\Aa|c\\z");
         check(Pattern.compile("\\Ga"), "\\Ga");
         check(Pattern.compile("[\\p{L}]+"), "[\\p{L}]+");

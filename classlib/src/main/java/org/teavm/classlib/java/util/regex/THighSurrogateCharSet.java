@@ -101,7 +101,7 @@ package org.teavm.classlib.java.util.regex;
 /**
  * This class represents high surrogate character.
  */
-class THighSurrogateCharSet extends TJointSet {
+class THighSurrogateCharSet extends TJointSet implements TCodePointSet {
 
     /*
      * Note that we can use high and low surrogate characters that don't combine
@@ -136,6 +136,24 @@ class THighSurrogateCharSet extends TJointSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        if (consume(0, stringIndex, testString, matchResult) < 0) {
+            return -1;
+        }
+
+        return next.matches(stringIndex + 1, testString, matchResult);
+    }
+
+    @Override
+    public int ways() {
+        return 1;
+    }
+
+    @Override
+    public int consume(int way, int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        if (way > 0) {
+            return -1;
+        }
+
         int strLength = matchResult.getRightBound();
 
         if (stringIndex + 1 > strLength) {
@@ -157,11 +175,7 @@ class THighSurrogateCharSet extends TJointSet {
             }
         }
 
-        if (this.high == high) {
-            return next.matches(stringIndex + 1, testString, matchResult);
-        }
-
-        return -1;
+        return this.high == high ? 1 : -1;
     }
 
     @Override

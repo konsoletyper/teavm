@@ -41,10 +41,25 @@ package org.teavm.classlib.java.util.regex;
  *
  * @author Nikolay A. Kuznetsov
  */
-class TDotAllSet extends TJointSet {
+class TDotAllSet extends TJointSet implements TCodePointSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        int shift = consume(0, stringIndex, testString, matchResult);
+        return shift < 0 ? -1 : next.matches(stringIndex + shift, testString, matchResult);
+    }
+
+    @Override
+    public int ways() {
+        return 1;
+    }
+
+    @Override
+    public int consume(int way, int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        if (way > 0) {
+            return -1;
+        }
+
         int strLength = matchResult.getRightBound();
 
         if (stringIndex + 1 > strLength) {
@@ -58,10 +73,10 @@ class TDotAllSet extends TJointSet {
             char low = testString.charAt(stringIndex + 1);
 
             if (Character.isSurrogatePair(high, low)) {
-                return next.matches(stringIndex + 2, testString, matchResult);
+                return 2;
             }
         }
-        return next.matches(stringIndex + 1, testString, matchResult);
+        return 1;
     }
 
     @Override

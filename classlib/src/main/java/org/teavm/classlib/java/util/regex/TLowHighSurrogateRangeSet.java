@@ -142,18 +142,30 @@ class TLowHighSurrogateRangeSet extends TJointSet {
      */
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        if (!accepts(stringIndex, testString, matchResult)) {
+            return -1;
+        }
+
+        return next.matches(stringIndex + 1, testString, matchResult);
+    }
+
+    /**
+     * Checks whether this node consumes the char at the given index, as {@link #matches} does, but does not pass
+     * control to the next node.
+     */
+    boolean accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         int startStr = matchResult.getLeftBound();
         int strLength = matchResult.getRightBound();
 
         if (stringIndex + 1 > strLength) {
             matchResult.hitEnd = true;
-            return -1;
+            return false;
         }
 
         char ch = testString.charAt(stringIndex);
 
         if (!surrChars.contains(ch)) {
-            return -1;
+            return false;
         }
 
         if (Character.isHighSurrogate(ch)) {
@@ -162,7 +174,7 @@ class TLowHighSurrogateRangeSet extends TJointSet {
                 char low = testString.charAt(stringIndex + 1);
 
                 if (Character.isLowSurrogate(low)) {
-                    return -1;
+                    return false;
                 }
             }
         } else if (Character.isLowSurrogate(ch)) {
@@ -171,12 +183,12 @@ class TLowHighSurrogateRangeSet extends TJointSet {
                 char high = testString.charAt(stringIndex - 1);
 
                 if (Character.isHighSurrogate(high)) {
-                    return -1;
+                    return false;
                 }
             }
         }
 
-        return next.matches(stringIndex + 1, testString, matchResult);
+        return true;
     }
 
     @Override
