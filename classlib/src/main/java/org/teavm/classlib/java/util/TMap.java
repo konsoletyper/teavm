@@ -189,9 +189,8 @@ public interface TMap<K, V> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     static <K, V> TMap<K, V> of() {
-        return (TMap<K, V>) TTemplateCollections.EMPTY_MAP;
+        return TCollections.emptyMap();
     }
 
     static <K, V> TMap<K, V> of(K k1, V v1) {

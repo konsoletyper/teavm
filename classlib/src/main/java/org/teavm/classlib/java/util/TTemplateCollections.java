@@ -25,32 +25,15 @@ import java.util.function.Predicate;
 
 public final class TTemplateCollections {
 
-    static final ImmutableArrayList<Object> EMPTY_LIST = new ImmutableArrayList<>();
-    static final NElementSet<Object> EMPTY_SET = new NElementSet<>();
-    static final NEtriesMap<Object, Object> EMPTY_MAP = new NEtriesMap<>();
-
     private TTemplateCollections() {
     }
 
     public static class ImmutableArrayList<T> extends AbstractImmutableList<T> implements RandomAccess {
         private final T[] list;
-        private final boolean rejectsNull;
 
         @SafeVarargs
         public ImmutableArrayList(T... list) {
-            this(list, true);
-        }
-
-        private ImmutableArrayList(T[] list, boolean rejectsNull) {
             this.list = list;
-            this.rejectsNull = rejectsNull;
-        }
-
-        /**
-         * Creates a list that accepts null in lookups, as the list from {@code Stream.toList} does.
-         */
-        public static <T> ImmutableArrayList<T> allowingNull(T[] list) {
-            return new ImmutableArrayList<>(list, false);
         }
 
         @SuppressWarnings("unchecked")
@@ -68,7 +51,6 @@ public final class TTemplateCollections {
             }
 
             this.list = list;
-            this.rejectsNull = true;
         }
 
         @Override
@@ -80,25 +62,13 @@ public final class TTemplateCollections {
         public int size() {
             return list.length;
         }
-
-        @Override
-        boolean rejectsNull() {
-            return rejectsNull;
-        }
     }
 
     static class SingleElementList<T> extends AbstractImmutableList<T> implements RandomAccess {
         private T value;
-        private final boolean rejectsNull;
 
-        SingleElementList(T value, boolean rejectsNull) {
+        SingleElementList(T value) {
             this.value = value;
-            this.rejectsNull = rejectsNull;
-        }
-
-        @Override
-        boolean rejectsNull() {
-            return rejectsNull;
         }
 
         @Override
@@ -129,11 +99,6 @@ public final class TTemplateCollections {
         }
 
         @Override
-        boolean rejectsNull() {
-            return true;
-        }
-
-        @Override
         public int size() {
             return 2;
         }
@@ -151,11 +116,9 @@ public final class TTemplateCollections {
 
     static class SingleElementSet<T> extends AbstractImmutableSet<T> {
         private T element;
-        private final boolean rejectsNull;
 
-        SingleElementSet(T element, boolean rejectsNull) {
+        SingleElementSet(T element) {
             this.element = element;
-            this.rejectsNull = rejectsNull;
         }
 
         @Override
@@ -189,10 +152,9 @@ public final class TTemplateCollections {
             return 1;
         }
 
-        // Set.of rejects a null element in lookups, as in the JDK; Collections.singleton accepts it.
         @Override
         public boolean contains(Object o) {
-            return rejectsNull ? Objects.requireNonNull(o).equals(element) : Objects.equals(o, element);
+            return Objects.equals(o, element);
         }
     }
 
@@ -207,7 +169,7 @@ public final class TTemplateCollections {
 
         @Override
         public boolean contains(Object o) {
-            return Objects.requireNonNull(o).equals(first) || o.equals(second);
+            return Objects.equals(o, first) || Objects.equals(o, second);
         }
 
         @Override
@@ -356,8 +318,7 @@ public final class TTemplateCollections {
 
         @Override
         public boolean contains(Object o) {
-            Objects.requireNonNull(o);
-            if (data.length == 0) {
+            if (data.length == 0 || o == null) {
                 return false;
             }
 
@@ -390,14 +351,14 @@ public final class TTemplateCollections {
         @Override
         public TSet<Entry<K, V>> entrySet() {
             if (entrySet == null) {
-                entrySet = new SingleElementSet<>(entry, true);
+                entrySet = new SingleElementSet<>(entry);
             }
             return entrySet;
         }
 
         @Override
         public V get(Object key) {
-            return Objects.requireNonNull(key).equals(entry.getKey()) ? entry.getValue() : null;
+            return entry.getKey().equals(key) ? entry.getValue() : null;
         }
 
         @Override
@@ -412,18 +373,18 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsValue(Object value) {
-            return Objects.requireNonNull(value).equals(entry.getValue());
+            return entry.getValue().equals(value);
         }
 
         @Override
         public boolean containsKey(Object key) {
-            return Objects.requireNonNull(key).equals(entry.getKey());
+            return entry.getKey().equals(key);
         }
 
         @Override
         public TSet<K> keySet() {
             if (keySet == null) {
-                keySet = new SingleElementSet<>(entry.getKey(), true);
+                keySet = new SingleElementSet<>(entry.getKey());
             }
             return keySet;
         }
@@ -431,7 +392,7 @@ public final class TTemplateCollections {
         @Override
         public TCollection<V> values() {
             if (values == null) {
-                values = new SingleElementList<>(entry.getValue(), true);
+                values = new SingleElementList<>(entry.getValue());
             }
             return values;
         }
@@ -462,7 +423,6 @@ public final class TTemplateCollections {
 
         @Override
         public V get(Object key) {
-            Objects.requireNonNull(key);
             return first.getKey().equals(key)
                     ? first.getValue()
                     : second.getKey().equals(key) ? second.getValue() : null;
@@ -480,13 +440,11 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsValue(Object value) {
-            Objects.requireNonNull(value);
             return first.getValue().equals(value) || second.getValue().equals(value);
         }
 
         @Override
         public boolean containsKey(Object key) {
-            Objects.requireNonNull(key);
             return first.getKey().equals(key) || second.getKey().equals(key);
         }
 
@@ -578,7 +536,9 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsValue(Object value) {
-            Objects.requireNonNull(value);
+            if (value == null) {
+                return false;
+            }
             for (Entry<K, V> entry : data) {
                 if (entry.getValue().equals(value)) {
                     return true;
@@ -589,8 +549,7 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsKey(Object key) {
-            Objects.requireNonNull(key);
-            if (data.length == 0) {
+            if (key == null || data.length == 0) {
                 return false;
             }
             int suggestedIndex = Math.abs(key.hashCode()) % data.length;
@@ -607,11 +566,9 @@ public final class TTemplateCollections {
             return false;
         }
 
-        // An empty map has an empty table; do not divide by its length.
         @Override
         public V get(Object key) {
-            Objects.requireNonNull(key);
-            if (data.length == 0) {
+            if (key == null || data.length == 0) {
                 return null;
             }
             int suggestedIndex = Math.abs(key.hashCode()) % data.length;
@@ -696,38 +653,6 @@ public final class TTemplateCollections {
     }
 
     static abstract class AbstractImmutableList<T> extends TAbstractList<T> implements RandomAccess {
-        /**
-         * Whether lookups reject null, as for the lists from {@code List.of} and {@code List.copyOf} in the JDK.
-         * {@code Collections.emptyList}, {@code Collections.singletonList} and {@code Stream.toList} accept null.
-         */
-        boolean rejectsNull() {
-            return false;
-        }
-
-        @Override
-        public boolean contains(Object o) {
-            if (rejectsNull()) {
-                Objects.requireNonNull(o);
-            }
-            return super.contains(o);
-        }
-
-        @Override
-        public int indexOf(Object o) {
-            if (rejectsNull()) {
-                Objects.requireNonNull(o);
-            }
-            return super.indexOf(o);
-        }
-
-        @Override
-        public int lastIndexOf(Object o) {
-            if (rejectsNull()) {
-                Objects.requireNonNull(o);
-            }
-            return super.lastIndexOf(o);
-        }
-
         @Override
         public void clear() {
             throw new UnsupportedOperationException();

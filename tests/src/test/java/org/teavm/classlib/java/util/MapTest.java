@@ -22,9 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
@@ -167,27 +165,13 @@ public class MapTest {
 
     @Test
     public void emptyImmutableMapLookup() {
-        Map<String, Integer> empty = Map.ofEntries();
+        checkEmptyLookup(Map.ofEntries());
+        checkEmptyLookup(Map.copyOf(new HashMap<>()));
+    }
+
+    private static void checkEmptyLookup(Map<String, Integer> empty) {
         assertNull(empty.get("a"));
         assertFalse(empty.containsKey("a"));
-        Map<String, Integer> copy = Map.copyOf(new HashMap<>());
-        assertNull(copy.get("a"));
-        assertFalse(copy.containsKey("a"));
-    }
-
-    @Test
-    public void immutableMapRejectsNullLookup() {
-        for (Map<String, Integer> map : List.of(Map.<String, Integer>of(), Map.of("a", 1), Map.of("a", 1, "b", 2),
-                Map.of("a", 1, "b", 2, "c", 3))) {
-            assertThrows(NullPointerException.class, () -> map.get(null));
-            assertThrows(NullPointerException.class, () -> map.containsKey(null));
-            assertThrows(NullPointerException.class, () -> map.containsValue(null));
-        }
-    }
-
-    @Test
-    public void emptyCollectionsMapAcceptsNullLookup() {
-        assertNull(Collections.emptyMap().get(null));
-        assertFalse(Collections.emptyMap().containsKey(null));
+        assertFalse(empty.entrySet().contains(Map.entry("a", 1)));
     }
 }

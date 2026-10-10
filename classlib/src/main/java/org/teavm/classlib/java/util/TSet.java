@@ -19,14 +19,13 @@ import java.util.Objects;
 
 public interface TSet<E> extends TCollection<E> {
 
-    @SuppressWarnings("unchecked")
     static <E> TSet<E> of() {
-        return (TSet<E>) TTemplateCollections.EMPTY_SET;
+        return TCollections.emptySet();
     }
 
     static <E> TSet<E> of(E e) {
         Objects.requireNonNull(e);
-        return new TTemplateCollections.SingleElementSet<>(e, true);
+        return new TTemplateCollections.SingleElementSet<>(e);
     }
 
     static <E> TSet<E> of(E e1, E e2) {
