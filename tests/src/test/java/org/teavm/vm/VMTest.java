@@ -704,4 +704,30 @@ public class VMTest {
         }
         return "copied " + java.lang.reflect.Array.getLength(copy);
     }
+
+    @Test
+    public void exceptionHandlerInitializesClass() {
+        assertEquals("B", classInitInHandler(true));
+        assertEquals("A", classInitInHandler(false));
+    }
+
+    private static String classInitInHandler(boolean fail) {
+        try {
+            failIf(fail);
+            return InitInHandler.A.name();
+        } catch (IllegalStateException e) {
+            return InitInHandler.B.name();
+        }
+    }
+
+    private static void failIf(boolean fail) {
+        if (fail) {
+            throw new IllegalStateException();
+        }
+    }
+
+    enum InitInHandler {
+        A,
+        B
+    }
 }
