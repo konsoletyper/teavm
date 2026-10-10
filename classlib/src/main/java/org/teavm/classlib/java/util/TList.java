@@ -98,13 +98,12 @@ public interface TList<E> extends TSequencedCollection<E> {
                 : new TReversedList<>(this);
     }
 
-    @SuppressWarnings("unchecked")
     static <E> TList<E> of() {
-        return (TList<E>) TTemplateCollections.EMPTY_LIST;
+        return TCollections.emptyList();
     }
 
     static <E> TList<E> of(E e) {
-        return new TTemplateCollections.SingleElementList<>(Objects.requireNonNull(e), true);
+        return TCollections.singletonList(e);
     }
 
     static <E> TList<E> of(E e1, E e2) {
