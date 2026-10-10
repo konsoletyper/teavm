@@ -152,9 +152,10 @@ public final class TTemplateCollections {
             return 1;
         }
 
+        // As in the JDK's immutable collections, a null element or key throws NullPointerException.
         @Override
         public boolean contains(Object o) {
-            return Objects.equals(o, element);
+            return Objects.requireNonNull(o).equals(element);
         }
     }
 
@@ -169,7 +170,7 @@ public final class TTemplateCollections {
 
         @Override
         public boolean contains(Object o) {
-            return Objects.equals(o, first) || Objects.equals(o, second);
+            return Objects.requireNonNull(o).equals(first) || o.equals(second);
         }
 
         @Override
@@ -318,7 +319,8 @@ public final class TTemplateCollections {
 
         @Override
         public boolean contains(Object o) {
-            if (data.length == 0 || o == null) {
+            Objects.requireNonNull(o);
+            if (data.length == 0) {
                 return false;
             }
 
@@ -358,7 +360,7 @@ public final class TTemplateCollections {
 
         @Override
         public V get(Object key) {
-            return entry.getKey().equals(key) ? entry.getValue() : null;
+            return Objects.requireNonNull(key).equals(entry.getKey()) ? entry.getValue() : null;
         }
 
         @Override
@@ -373,12 +375,12 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsValue(Object value) {
-            return entry.getValue().equals(value);
+            return Objects.requireNonNull(value).equals(entry.getValue());
         }
 
         @Override
         public boolean containsKey(Object key) {
-            return entry.getKey().equals(key);
+            return Objects.requireNonNull(key).equals(entry.getKey());
         }
 
         @Override
@@ -423,6 +425,7 @@ public final class TTemplateCollections {
 
         @Override
         public V get(Object key) {
+            Objects.requireNonNull(key);
             return first.getKey().equals(key)
                     ? first.getValue()
                     : second.getKey().equals(key) ? second.getValue() : null;
@@ -440,11 +443,13 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsValue(Object value) {
+            Objects.requireNonNull(value);
             return first.getValue().equals(value) || second.getValue().equals(value);
         }
 
         @Override
         public boolean containsKey(Object key) {
+            Objects.requireNonNull(key);
             return first.getKey().equals(key) || second.getKey().equals(key);
         }
 
@@ -536,9 +541,7 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsValue(Object value) {
-            if (value == null) {
-                return false;
-            }
+            Objects.requireNonNull(value);
             for (Entry<K, V> entry : data) {
                 if (entry.getValue().equals(value)) {
                     return true;
@@ -549,7 +552,8 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsKey(Object key) {
-            if (key == null || data.length == 0) {
+            Objects.requireNonNull(key);
+            if (data.length == 0) {
                 return false;
             }
             int suggestedIndex = Math.abs(key.hashCode()) % data.length;
@@ -566,9 +570,11 @@ public final class TTemplateCollections {
             return false;
         }
 
+        // An empty map has an empty table; do not divide by its length.
         @Override
         public V get(Object key) {
-            if (key == null) {
+            Objects.requireNonNull(key);
+            if (data.length == 0) {
                 return null;
             }
             int suggestedIndex = Math.abs(key.hashCode()) % data.length;
@@ -628,7 +634,7 @@ public final class TTemplateCollections {
                         }
 
                         Object key = e.getKey();
-                        if (key == null) {
+                        if (key == null || data.length == 0) {
                             return false;
                         }
                         int suggestedIndex = Math.abs(key.hashCode()) % data.length;
@@ -653,6 +659,21 @@ public final class TTemplateCollections {
     }
 
     static abstract class AbstractImmutableList<T> extends TAbstractList<T> implements RandomAccess {
+        @Override
+        public boolean contains(Object o) {
+            return indexOf(o) >= 0;
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            return super.indexOf(Objects.requireNonNull(o));
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            return super.lastIndexOf(Objects.requireNonNull(o));
+        }
+
         @Override
         public void clear() {
             throw new UnsupportedOperationException();

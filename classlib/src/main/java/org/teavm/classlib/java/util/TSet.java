@@ -20,7 +20,7 @@ import java.util.Objects;
 public interface TSet<E> extends TCollection<E> {
 
     static <E> TSet<E> of() {
-        return TCollections.emptySet();
+        return new TTemplateCollections.NElementSet<>();
     }
 
     static <E> TSet<E> of(E e) {
