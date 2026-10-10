@@ -165,6 +165,22 @@ public final class TCollections extends TObject {
         return (TMap<K, V>) EMPTY_MAP;
     }
 
+    public static <E> TSortedSet<E> emptySortedSet() {
+        return emptyNavigableSet();
+    }
+
+    public static <E> TNavigableSet<E> emptyNavigableSet() {
+        return new TUnmodifiableNavigableSet<>(new TTreeSet<>());
+    }
+
+    public static <K, V> TSortedMap<K, V> emptySortedMap() {
+        return emptyNavigableMap();
+    }
+
+    public static <K, V> TNavigableMap<K, V> emptyNavigableMap() {
+        return new TUnmodifiableNavigableMap<>(new TTreeMap<>());
+    }
+
     public static <T> TList<T> singletonList(T o) {
         return new TTemplateCollections.SingleElementList<>(o);
     }
@@ -487,7 +503,7 @@ public final class TCollections extends TObject {
         };
     }
 
-    private static <T> TIterator<T> unmodifiableIterator(final TIterator<? extends T> c) {
+    static <T> TIterator<T> unmodifiableIterator(final TIterator<? extends T> c) {
         return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
@@ -557,7 +573,7 @@ public final class TCollections extends TObject {
         };
     }
 
-    private static <K, V> TSet<Entry<K, V>> unmodifiableMapEntrySet(
+    static <K, V> TSet<Entry<K, V>> unmodifiableMapEntrySet(
             final TSet<? extends Entry<? extends K, ? extends V>> c) {
         return new TAbstractSet<>() {
             @Override public int size() {
@@ -587,6 +603,24 @@ public final class TCollections extends TObject {
         };
     }
 
+    public static <T> TSortedSet<T> unmodifiableSortedSet(TSortedSet<T> s) {
+        return new TUnmodifiableSortedSet<>(s);
+    }
+
+    public static <T> TNavigableSet<T> unmodifiableNavigableSet(TNavigableSet<T> s) {
+        return new TUnmodifiableNavigableSet<>(s);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> TSortedMap<K, V> unmodifiableSortedMap(TSortedMap<K, ? extends V> m) {
+        return new TUnmodifiableSortedMap<>((TSortedMap<K, V>) m);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> TNavigableMap<K, V> unmodifiableNavigableMap(TNavigableMap<K, ? extends V> m) {
+        return new TUnmodifiableNavigableMap<>((TNavigableMap<K, V>) m);
+    }
+
     public static <T> TCollection<T> synchronizedCollection(TCollection<T> c) {
         return c;
     }
@@ -600,6 +634,22 @@ public final class TCollections extends TObject {
     }
 
     public static <K, V> TMap<K, V> synchronizedMap(TMap<K, V> m) {
+        return m;
+    }
+
+    public static <T> TSortedSet<T> synchronizedSortedSet(TSortedSet<T> s) {
+        return s;
+    }
+
+    public static <T> TNavigableSet<T> synchronizedNavigableSet(TNavigableSet<T> s) {
+        return s;
+    }
+
+    public static <K, V> TSortedMap<K, V> synchronizedSortedMap(TSortedMap<K, V> m) {
+        return m;
+    }
+
+    public static <K, V> TNavigableMap<K, V> synchronizedNavigableMap(TNavigableMap<K, V> m) {
         return m;
     }
 
@@ -652,6 +702,24 @@ public final class TCollections extends TObject {
 
     public static <K, V> TMap<K, V> checkedMap(TMap<K, V> m, Class<K> keyType, Class<V> valueType) {
         return new TCheckedMap<>(m, keyType, valueType);
+    }
+
+    public static <E> TSortedSet<E> checkedSortedSet(TSortedSet<E> s, Class<E> type) {
+        return new TCheckedSortedSet<>(s, type);
+    }
+
+    public static <E> TNavigableSet<E> checkedNavigableSet(TNavigableSet<E> s, Class<E> type) {
+        return new TCheckedNavigableSet<>(s, type);
+    }
+
+    public static <K, V> TSortedMap<K, V> checkedSortedMap(TSortedMap<K, V> m, Class<K> keyType,
+            Class<V> valueType) {
+        return new TCheckedSortedMap<>(m, keyType, valueType);
+    }
+
+    public static <K, V> TNavigableMap<K, V> checkedNavigableMap(TNavigableMap<K, V> m, Class<K> keyType,
+            Class<V> valueType) {
+        return new TCheckedNavigableMap<>(m, keyType, valueType);
     }
 
     public static int frequency(TCollection<?> c, Object o) {
