@@ -142,10 +142,10 @@ abstract class TAbstractCharClass extends TSpecialToken {
 
         @Override
         void describe(TPatternWriter writer) {
-            if (altSurrogates != alt || !mayContainSupplCodepoints || !lowHighSurrogates.isEmpty()) {
+            if (altSurrogates != alt || !lowHighSurrogates.isEmpty()) {
                 throw TPatternWriter.unsupported();
             }
-            writer.create(this, SurrogatesCharClass.class, "surrogatesCharClass", alt);
+            writer.create(this, SurrogatesCharClass.class, "surrogatesCharClass", alt, mayContainSupplCodepoints);
             writer.describeBits(this, "addSurrogateRange", surrogates);
         }
     }
@@ -190,7 +190,7 @@ abstract class TAbstractCharClass extends TSpecialToken {
             alt = !alt;
             altSurrogates = !altSurrogates;
         }
-        if (!mayContainSupplCodepoints) {
+        if (value) {
             mayContainSupplCodepoints = true;
         }
         return this;

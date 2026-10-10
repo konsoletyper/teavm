@@ -53,6 +53,7 @@ class TCompositeQuantifierSet extends TLeafQuantifierSet {
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         int min = quantifier.min();
         int max = quantifier.max();
+        int start = stringIndex;
         int i = 0;
 
         for (; i < min; i++) {
@@ -62,7 +63,7 @@ class TCompositeQuantifierSet extends TLeafQuantifierSet {
                 return -1;
             }
 
-            int shift = leaf.accepts(stringIndex, testString);
+            int shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift < 1) {
                 return -1;
             }
@@ -75,7 +76,7 @@ class TCompositeQuantifierSet extends TLeafQuantifierSet {
                 matchResult.hitEnd = true;
                 break;
             }
-            shift = leaf.accepts(stringIndex, testString);
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift < 1) {
                 break;
             }
@@ -87,7 +88,7 @@ class TCompositeQuantifierSet extends TLeafQuantifierSet {
             if (shift >= 0) {
                 return shift;
             }
-            stringIndex -= leaf.charCount();
+            stringIndex = leaf.stepBack(stringIndex, start, testString);
         }
         return -1;
 

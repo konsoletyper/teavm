@@ -51,7 +51,7 @@ class TPossessiveAltQuantifierSet extends TAltQuantifierSet {
         int shift = 0;
 
         if (stringIndex + leaf.charCount() <= matchResult.getRightBound()) {
-            shift = leaf.accepts(stringIndex, testString);
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift >= 1) {
                 stringIndex += shift;
             }

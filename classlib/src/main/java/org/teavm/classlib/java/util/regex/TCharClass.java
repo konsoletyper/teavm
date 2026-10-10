@@ -588,10 +588,10 @@ class TCharClass extends TAbstractCharClass {
 
         @Override
         void describe(TPatternWriter writer) {
-            if (altSurrogates != alt || !mayContainSupplCodepoints || !lowHighSurrogates.isEmpty()) {
+            if (altSurrogates != alt || !lowHighSurrogates.isEmpty()) {
                 throw TPatternWriter.unsupported();
             }
-            writer.create(this, BitSetCharClass.class, "bitSetCharClass", alt);
+            writer.create(this, BitSetCharClass.class, "bitSetCharClass", alt, mayContainSupplCodepoints);
             writer.describeBits(this, "addCharClassRange", bs);
         }
 

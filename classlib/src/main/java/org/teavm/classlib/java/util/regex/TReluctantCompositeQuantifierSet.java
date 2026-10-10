@@ -60,7 +60,7 @@ class TReluctantCompositeQuantifierSet extends TCompositeQuantifierSet {
                 return -1;
             }
 
-            shift = leaf.accepts(stringIndex, testString);
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift < 1) {
                 return -1;
             }
@@ -74,7 +74,7 @@ class TReluctantCompositeQuantifierSet extends TCompositeQuantifierSet {
             }
 
             if (stringIndex + leaf.charCount() <= matchResult.getRightBound()) {
-                shift = leaf.accepts(stringIndex, testString);
+                shift = leaf.accepts(stringIndex, testString, matchResult);
                 stringIndex += shift;
                 i++;
             } else if (i < max) {

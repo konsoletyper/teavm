@@ -50,6 +50,7 @@ class TLeafQuantifierSet extends TQuantifierSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        int start = stringIndex;
         int i = 0;
         int shift = 0;
 
@@ -58,7 +59,7 @@ class TLeafQuantifierSet extends TQuantifierSet {
                 matchResult.hitEnd = true;
                 break;
             }
-            shift = leaf.accepts(stringIndex, testString);
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift <= 0) {
                 break;
             }
@@ -72,7 +73,7 @@ class TLeafQuantifierSet extends TQuantifierSet {
                 return shift;
             }
 
-            stringIndex -= leaf.charCount();
+            stringIndex = leaf.stepBack(stringIndex, start, testString);
         }
         return -1;
     }

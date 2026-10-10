@@ -54,7 +54,7 @@ class TCharSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return (this.ch == testString.charAt(strIndex)) ? 1 : -1;
     }
 
@@ -119,7 +119,7 @@ class TCharSet extends TLeafSet {
         if (set instanceof TCharSet) {
             return ((TCharSet) set).getChar() == ch;
         } else if (set instanceof TRangeSet) {
-            return ((TRangeSet) set).accepts(0, Character.toString(ch)) > 0;
+            return ((TRangeSet) set).getChars().contains(ch);
         } else if (set instanceof TSupplRangeSet) {
             return ((TSupplRangeSet) set).contains(ch);
         } else if (set instanceof TSupplCharSet) {

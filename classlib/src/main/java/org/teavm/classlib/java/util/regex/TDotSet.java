@@ -41,7 +41,7 @@ package org.teavm.classlib.java.util.regex;
  *
  * @author Nikolay A. Kuznetsov
  */
-final class TDotSet extends TJointSet {
+final class TDotSet extends TLeafSet {
 
     TAbstractLineTerminator lt;
 
@@ -51,25 +51,24 @@ final class TDotSet extends TJointSet {
     }
 
     @Override
-    public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
-        int strLength = matchResult.getRightBound();
+    public int accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        return accepts(stringIndex, testString, matchResult.getRightBound());
+    }
 
-        if (stringIndex + 1 > strLength) {
-            matchResult.hitEnd = true;
-            return -1;
-        }
+    private int accepts(int stringIndex, CharSequence testString, int rightBound) {
         char high = testString.charAt(stringIndex);
-
-        if (Character.isHighSurrogate(high) && (stringIndex + 2 <= strLength)) {
+        if (Character.isHighSurrogate(high) && stringIndex + 1 < rightBound) {
             char low = testString.charAt(stringIndex + 1);
-
-            if (Character.isSurrogatePair(high, low)) {
-                return lt.isLineTerminator(Character.toCodePoint(high, low)) ? -1 : next.matches(stringIndex + 2,
-                        testString, matchResult);
+            if (Character.isLowSurrogate(low)) {
+                return lt.isLineTerminator(Character.toCodePoint(high, low)) ? -1 : 2;
             }
         }
+        return lt.isLineTerminator(high) ? -1 : 1;
+    }
 
-        return lt.isLineTerminator(high) ? -1 : next.matches(stringIndex + 1, testString, matchResult);
+    @Override
+    public int stepBack(int stringIndex, int leftLimit, CharSequence testString) {
+        return stepBackCodePoint(stringIndex, leftLimit, testString);
     }
 
     @Override
@@ -78,23 +77,8 @@ final class TDotSet extends TJointSet {
     }
 
     @Override
-    public TAbstractSet getNext() {
-        return this.next;
-    }
-
-    @Override
-    public void setNext(TAbstractSet next) {
-        this.next = next;
-    }
-
-    @Override
     public int getType() {
         return TAbstractSet.TYPE_DOTSET;
-    }
-
-    @Override
-    public boolean hasConsumed(TMatchResultImpl matchResult) {
-        return true;
     }
 
     @Override

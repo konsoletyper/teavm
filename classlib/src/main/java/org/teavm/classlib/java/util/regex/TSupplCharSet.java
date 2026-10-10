@@ -127,7 +127,7 @@ class TSupplCharSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         char high = testString.charAt(strIndex++);
         char low = testString.charAt(strIndex);
         return ((this.high == high) && (this.low == low)) ? 2 : -1;

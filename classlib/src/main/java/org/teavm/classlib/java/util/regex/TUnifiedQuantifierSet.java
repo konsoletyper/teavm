@@ -61,10 +61,11 @@ class TUnifiedQuantifierSet extends TLeafQuantifierSet {
                 matchResult.hitEnd = true;
                 break;
             }
-            if (leaf.accepts(stringIndex, testString) <= 0) {
+            int shift = leaf.accepts(stringIndex, testString, matchResult);
+            if (shift <= 0) {
                 break;
             }
-            stringIndex += leaf.charCount();
+            stringIndex += shift;
         }
 
         return next.matches(stringIndex, testString, matchResult);
@@ -76,10 +77,10 @@ class TUnifiedQuantifierSet extends TLeafQuantifierSet {
         if (startSearch < 0) {
             return -1;
         }
-        int newSearch = startSearch - leaf.charCount();
-        while (newSearch >= stringIndex && leaf.accepts(newSearch, testString) > 0) {
+        int newSearch = leaf.stepBack(startSearch, stringIndex, testString);
+        while (newSearch >= stringIndex && leaf.accepts(newSearch, testString, matchResult) > 0) {
             startSearch = newSearch;
-            newSearch -= leaf.charCount();
+            newSearch = leaf.stepBack(newSearch, stringIndex, testString);
         }
 
         return startSearch;

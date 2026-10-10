@@ -57,7 +57,7 @@ class TPossessiveCompositeQuantifierSet extends TCompositeQuantifierSet {
                 matchResult.hitEnd = true;
                 return -1;
             }
-            int shift = leaf.accepts(stringIndex, testString);
+            int shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift < 1) {
                 return -1;
             }
@@ -70,7 +70,7 @@ class TPossessiveCompositeQuantifierSet extends TCompositeQuantifierSet {
                 matchResult.hitEnd = true;
                 break;
             }
-            shift = leaf.accepts(stringIndex, testString);
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift < 1) {
                 break;
             }

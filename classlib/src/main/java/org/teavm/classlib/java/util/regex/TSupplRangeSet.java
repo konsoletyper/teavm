@@ -103,16 +103,16 @@ package org.teavm.classlib.java.util.regex;
  * character can be supplementary (2 chars needed to represent) or from basic
  * multilingual pane (1 needed char to represent it).
  */
-class TSupplRangeSet extends TJointSet {
+class TSupplRangeSet extends TLeafSet {
 
     protected TAbstractCharClass chars;
 
     protected boolean alt;
 
     public TSupplRangeSet(TAbstractCharClass cs, TAbstractSet next) {
+        super(next);
         this.chars = cs.getInstance();
         this.alt = cs.alt;
-        this.next = next;
     }
 
     public TSupplRangeSet(TAbstractCharClass cc) {
@@ -121,31 +121,27 @@ class TSupplRangeSet extends TJointSet {
     }
 
     @Override
-    public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
-        int strLength = matchResult.getRightBound();
+    public int accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        return accepts(stringIndex, testString, matchResult.getLeftBound(), matchResult.getRightBound());
+    }
 
-        if (stringIndex >= strLength) {
-            matchResult.hitEnd = true;
-        } else {
-            char high = testString.charAt(stringIndex++);
-
-            if (contains(high)) {
-                int offset = next.matches(stringIndex, testString, matchResult);
-                if (offset > 0) {
-                    return offset;
-                }
-            }
-
-            if (stringIndex < strLength) {
-                char low = testString.charAt(stringIndex++);
-
-                if (Character.isSurrogatePair(high, low) && contains(Character.toCodePoint(high, low))) {
-                    return next.matches(stringIndex, testString, matchResult);
-                }
+    private int accepts(int stringIndex, CharSequence testString, int leftBound, int rightBound) {
+        char high = testString.charAt(stringIndex);
+        if (Character.isHighSurrogate(high) && stringIndex + 1 < rightBound) {
+            char low = testString.charAt(stringIndex + 1);
+            if (Character.isLowSurrogate(low)) {
+                return contains(Character.toCodePoint(high, low)) ? 2 : -1;
             }
         }
+        if (isInsidePair(stringIndex, testString, leftBound)) {
+            return -1;
+        }
+        return contains(high) ? 1 : -1;
+    }
 
-        return -1;
+    @Override
+    public int stepBack(int stringIndex, int leftLimit, CharSequence testString) {
+        return stepBackCodePoint(stringIndex, leftLimit, testString);
     }
 
     @Override
@@ -174,21 +170,6 @@ class TSupplRangeSet extends TJointSet {
 
     protected TAbstractCharClass getChars() {
         return chars;
-    }
-
-    @Override
-    public TAbstractSet getNext() {
-        return next;
-    }
-
-    @Override
-    public void setNext(TAbstractSet next) {
-        this.next = next;
-    }
-
-    @Override
-    public boolean hasConsumed(TMatchResultImpl mr) {
-        return true;
     }
 
     @Override

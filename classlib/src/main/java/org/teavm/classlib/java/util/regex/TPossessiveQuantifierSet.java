@@ -55,7 +55,7 @@ class TPossessiveQuantifierSet extends TLeafQuantifierSet {
                 matchResult.hitEnd = true;
                 break;
             }
-            shift = leaf.accepts(stringIndex, testString);
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift < 1) {
                 break;
             }

@@ -52,7 +52,7 @@ class TCICharSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return (this.ch == testString.charAt(strIndex) || this.supplement == testString.charAt(strIndex)) ? 1 : -1;
     }
 

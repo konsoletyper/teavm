@@ -101,7 +101,7 @@ package org.teavm.classlib.java.util.regex;
 /*
  * This class is a range that contains only surrogate characters.
  */
-class TLowHighSurrogateRangeSet extends TJointSet {
+class TLowHighSurrogateRangeSet extends TLeafSet {
 
     protected TAbstractCharClass surrChars;
 
@@ -118,65 +118,26 @@ class TLowHighSurrogateRangeSet extends TJointSet {
         this.alt = surrChars.alt;
     }
 
-    /**
-     * Returns the next.
-     */
     @Override
-    public TAbstractSet getNext() {
-        return this.next;
+    public int accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        return accepts(stringIndex, testString, matchResult.getLeftBound(), matchResult.getRightBound());
     }
 
-    /**
-     * Sets next abstract set.
-     *
-     * @param next
-     *            The next to set.
-     */
-    @Override
-    public void setNext(TAbstractSet next) {
-        this.next = next;
-    }
-
-    /**
-     * Returns stringIndex+shift, the next position to match
-     */
-    @Override
-    public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
-        int startStr = matchResult.getLeftBound();
-        int strLength = matchResult.getRightBound();
-
-        if (stringIndex + 1 > strLength) {
-            matchResult.hitEnd = true;
-            return -1;
-        }
-
+    private int accepts(int stringIndex, CharSequence testString, int leftBound, int rightBound) {
         char ch = testString.charAt(stringIndex);
-
         if (!surrChars.contains(ch)) {
             return -1;
         }
-
         if (Character.isHighSurrogate(ch)) {
-
-            if (stringIndex + 1 < strLength) {
-                char low = testString.charAt(stringIndex + 1);
-
-                if (Character.isLowSurrogate(low)) {
-                    return -1;
-                }
+            if (stringIndex + 1 < rightBound && Character.isLowSurrogate(testString.charAt(stringIndex + 1))) {
+                return -1;
             }
         } else if (Character.isLowSurrogate(ch)) {
-
-            if (stringIndex > startStr) {
-                char high = testString.charAt(stringIndex - 1);
-
-                if (Character.isHighSurrogate(high)) {
-                    return -1;
-                }
+            if (stringIndex > leftBound && Character.isHighSurrogate(testString.charAt(stringIndex - 1))) {
+                return -1;
             }
         }
-
-        return next.matches(stringIndex + 1, testString, matchResult);
+        return 1;
     }
 
     @Override
@@ -201,11 +162,6 @@ class TLowHighSurrogateRangeSet extends TJointSet {
 
     protected TAbstractCharClass getChars() {
         return surrChars;
-    }
-
-    @Override
-    public boolean hasConsumed(TMatchResultImpl matchResult) {
-        return true;
     }
 
     @Override

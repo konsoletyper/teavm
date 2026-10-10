@@ -58,7 +58,7 @@ class TReluctantQuantifierSet extends TLeafQuantifierSet {
             }
 
             if (stringIndex + leaf.charCount() <= matchResult.getRightBound()) {
-                shift = leaf.accepts(stringIndex, testString);
+                shift = leaf.accepts(stringIndex, testString, matchResult);
                 stringIndex += shift;
             } else {
                 matchResult.hitEnd = true;

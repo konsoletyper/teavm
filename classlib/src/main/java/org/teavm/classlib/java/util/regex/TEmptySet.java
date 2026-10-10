@@ -48,7 +48,7 @@ class TEmptySet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int stringIndex, CharSequence testString) {
+    public int accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return 0;
     }
 

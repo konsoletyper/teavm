@@ -49,7 +49,7 @@ class TCISequenceSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         for (int i = 0; i < string.length(); i++) {
             if (string.charAt(i) != testString.charAt(strIndex + i)
                     && TPattern.getSupplement(string.charAt(i)) != testString.charAt(strIndex + i)) {

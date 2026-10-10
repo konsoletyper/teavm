@@ -103,58 +103,33 @@ package org.teavm.classlib.java.util.regex;
  * consisting of all others characters from the parent range. This class
  * represents the parent range split in such a manner.
  */
-class TCompositeRangeSet extends TJointSet {
-
+class TCompositeRangeSet extends TLeafSet {
     // range without surrogates
-    TAbstractSet withoutSurrogates;
+    TLeafSet withoutSurrogates;
 
     // range containing surrogates only
-    TAbstractSet withSurrogates;
+    TLeafSet withSurrogates;
 
-    public TCompositeRangeSet(TAbstractSet withoutSurrogates, TAbstractSet withSurrogates, TAbstractSet next) {
-        this.withoutSurrogates = withoutSurrogates;
-        this.withSurrogates = withSurrogates;
-        setNext(next);
-    }
-
-    public TCompositeRangeSet(TAbstractSet withoutSurrogates, TAbstractSet withSurrogates) {
+    public TCompositeRangeSet(TLeafSet withoutSurrogates, TLeafSet withSurrogates, TAbstractSet next) {
+        super(next);
         this.withoutSurrogates = withoutSurrogates;
         this.withSurrogates = withSurrogates;
     }
 
-    /**
-     * Returns the next.
-     */
-    @Override
-    public TAbstractSet getNext() {
-        return this.next;
+    public TCompositeRangeSet(TLeafSet withoutSurrogates, TLeafSet withSurrogates) {
+        this.withoutSurrogates = withoutSurrogates;
+        this.withSurrogates = withSurrogates;
     }
 
     @Override
-    public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
-        int shift = withoutSurrogates.matches(stringIndex, testString, matchResult);
-
-        if (shift < 0) {
-            shift = withSurrogates.matches(stringIndex, testString, matchResult);
-        }
-
-        if (shift >= 0) {
-            return shift;
-        }
-        return -1;
+    public int accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        int shift = withoutSurrogates.accepts(stringIndex, testString, matchResult);
+        return shift >= 0 ? shift : withSurrogates.accepts(stringIndex, testString, matchResult);
     }
 
-    /**
-     * Sets next abstract set.
-     *
-     * @param next
-     *            The next to set.
-     */
     @Override
-    public void setNext(TAbstractSet next) {
-        this.next = next;
-        withSurrogates.setNext(next);
-        withoutSurrogates.setNext(next);
+    public int stepBack(int stringIndex, int leftLimit, CharSequence testString) {
+        return stepBackCodePoint(stringIndex, leftLimit, testString);
     }
 
     public TAbstractSet getSurrogates() {
@@ -168,11 +143,6 @@ class TCompositeRangeSet extends TJointSet {
     @Override
     protected String getName() {
         return "CompositeRangeSet: " + " <nonsurrogate> " + withoutSurrogates + " <surrogate> " + withSurrogates;
-    }
-
-    @Override
-    public boolean hasConsumed(TMatchResultImpl matchResult) {
-        return true;
     }
 
     @Override

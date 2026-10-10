@@ -60,7 +60,7 @@ class TRangeSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return chars.contains(testString.charAt(strIndex)) ? 1 : -1;
     }
 

@@ -101,7 +101,7 @@ package org.teavm.classlib.java.util.regex;
 /**
  * This class represents high surrogate character.
  */
-class THighSurrogateCharSet extends TJointSet {
+class THighSurrogateCharSet extends TLeafSet {
 
     /*
      * Note that we can use high and low surrogate characters that don't combine
@@ -115,53 +115,20 @@ class THighSurrogateCharSet extends TJointSet {
         this.high = high;
     }
 
-    /**
-     * Returns the next.
-     */
     @Override
-    public TAbstractSet getNext() {
-        return this.next;
+    public int accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        return accepts(stringIndex, testString, matchResult.getRightBound());
     }
 
-    /**
-     * Sets next abstract set.
-     *
-     * @param next
-     *            The next to set.
-     */
-    @Override
-    public void setNext(TAbstractSet next) {
-        this.next = next;
-    }
-
-    @Override
-    public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
-        int strLength = matchResult.getRightBound();
-
-        if (stringIndex + 1 > strLength) {
-            matchResult.hitEnd = true;
+    private int accepts(int stringIndex, CharSequence testString, int rightBound) {
+        /*
+         * we consider high surrogate followed by low surrogate as a
+         * codepoint
+         */
+        if (stringIndex + 1 < rightBound && Character.isLowSurrogate(testString.charAt(stringIndex + 1))) {
             return -1;
         }
-
-        char high = testString.charAt(stringIndex);
-
-        if (stringIndex + 1 < strLength) {
-            char low = testString.charAt(stringIndex + 1);
-
-            /*
-             * we consider high surrogate followed by low surrogate as a
-             * codepoint
-             */
-            if (Character.isLowSurrogate(low)) {
-                return -1;
-            }
-        }
-
-        if (this.high == high) {
-            return next.matches(stringIndex + 1, testString, matchResult);
-        }
-
-        return -1;
+        return testString.charAt(stringIndex) == high ? 1 : -1;
     }
 
     @Override
@@ -263,11 +230,6 @@ class THighSurrogateCharSet extends TJointSet {
             return ((THighSurrogateCharSet) set).high == this.high;
         }
 
-        return true;
-    }
-
-    @Override
-    public boolean hasConsumed(TMatchResultImpl matchResult) {
         return true;
     }
 

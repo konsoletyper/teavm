@@ -64,8 +64,11 @@ final class TPatternFactory {
         return TAbstractLineTerminator.getInstance(unix ? TPattern.UNIX_LINES : 0);
     }
 
-    static TAbstractCharClass bitSetCharClass(boolean negative) {
-        return new TCharClass.BitSetCharClass(new BitSet()).setNegative(negative);
+    static TAbstractCharClass bitSetCharClass(boolean negative, boolean mayContainSupplCodepoints) {
+        var charClass = new TCharClass.BitSetCharClass(new BitSet());
+        charClass.setNegative(negative);
+        charClass.mayContainSupplCodepoints = mayContainSupplCodepoints;
+        return charClass;
     }
 
     static TCharClass charClass(boolean ci, boolean uci, boolean invertedSurrogates, boolean inverted,
@@ -88,8 +91,11 @@ final class TPatternFactory {
         }
     }
 
-    static TAbstractCharClass surrogatesCharClass(boolean negative) {
-        return new TAbstractCharClass.SurrogatesCharClass(new BitSet()).setNegative(negative);
+    static TAbstractCharClass surrogatesCharClass(boolean negative, boolean mayContainSupplCodepoints) {
+        var charClass = new TAbstractCharClass.SurrogatesCharClass(new BitSet());
+        charClass.setNegative(negative);
+        charClass.mayContainSupplCodepoints = mayContainSupplCodepoints;
+        return charClass;
     }
 
     static TAbstractCharClass withoutSurrogatesCharClass(TAbstractCharClass base, boolean negative,
@@ -112,7 +118,7 @@ final class TPatternFactory {
         bits.set(from, to);
     }
 
-    static TCompositeRangeSet compositeRangeSet(TAbstractSet withoutSurrogates, TAbstractSet withSurrogates) {
+    static TCompositeRangeSet compositeRangeSet(TLeafSet withoutSurrogates, TLeafSet withSurrogates) {
         return new TCompositeRangeSet(withoutSurrogates, withSurrogates);
     }
 
