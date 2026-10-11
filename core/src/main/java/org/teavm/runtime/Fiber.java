@@ -246,10 +246,16 @@ public final class Fiber {
         Thread javaThread = Thread.currentThread();
         if (fiber.isResuming()) {
             fiber.state = STATE_RUNNING;
-            if (fiber.exception != null) {
-                throw fiber.exception;
+            // Take the outcome of this call and clear it, so that it does not leak into a later call. Without
+            // this, the exception of one failed call was thrown again by every later call that completed normally.
+            Throwable exception = fiber.exception;
+            Object result = fiber.result;
+            fiber.exception = null;
+            fiber.result = null;
+            if (exception != null) {
+                throw exception;
             }
-            return fiber.result;
+            return result;
         }
         PendingCall pendingCall = new PendingCall(call, lastPendingCall);
         if (lastPendingCall != null) {

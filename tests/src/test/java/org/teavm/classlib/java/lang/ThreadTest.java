@@ -60,6 +60,29 @@ public class ThreadTest {
     }
 
     @Test
+    public void sleepAfterInterruptedSleep() throws InterruptedException {
+        var mainThread = Thread.currentThread();
+        new Thread(() -> {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                // ok
+            }
+            mainThread.interrupt();
+        }).start();
+        try {
+            Thread.sleep(5000);
+            fail("Exception expected");
+        } catch (InterruptedException e) {
+            // expected
+        }
+        // A later suspension on the same thread must not throw the earlier exception again.
+        long start = System.currentTimeMillis();
+        Thread.sleep(20);
+        assertTrue(System.currentTimeMillis() - start >= 20);
+    }
+
+    @Test
     public void catchesAsyncException() {
         try {
             throwException();
