@@ -1,5 +1,0 @@
-$block
-    @a := 85
-    @b := 2
-    @c := @a % @b as int
-    return @c

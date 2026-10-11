@@ -15,67 +15,52 @@
  */
 package org.teavm.model.transformation;
 
-import static org.junit.Assert.assertTrue;
-import java.io.IOException;
+import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
-import org.teavm.model.Instruction;
+import org.junit.rules.TestName;
 import org.teavm.model.ListingParseUtils;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
-import org.teavm.model.instructions.BinaryInstruction;
-import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.text.ListingBuilder;
 
 public class BoundCheckInsertionTest {
-    private static final MethodReference METHOD =
-            new MethodReference("Test", "test", ValueType.object("java.lang.Object"));
+    private static final String PREFIX = "model/transformation/bound-check-insertion/";
+    private static final MethodReference METHOD = new MethodReference("Test", "test", ValueType.INTEGER);
+    @Rule
+    public TestName name = new TestName();
 
-    /**
-     * A constant division by zero must not be folded. Folding evaluates the division inside the
-     * compiler, so the pass threw ArithmeticException instead of leaving the division for the
-     * backend to emit, and the C target failed to compile legal Java.
-     */
     @Test
-    public void constantDivisionByZeroIsNotFolded() throws IOException {
-        Program program =
-                ListingParseUtils.parseFromResource("model/text/constantDivisionByZero.txt");
-        new BoundCheckInsertion().transformProgram(program, METHOD);
+    public void divisionByZero() {
+        doTest();
     }
 
     @Test
-    public void constantModuloByZeroIsNotFolded() throws IOException {
-        Program program = ListingParseUtils.parseFromResource("model/text/constantModuloByZero.txt");
-        new BoundCheckInsertion().transformProgram(program, METHOD);
+    public void moduloByZero() {
+        doTest();
     }
 
-    /**
-     * The guard must reject only a zero divisor. An ordinary constant division still has to reach the
-     * folding arithmetic, and the pass must leave the program's instructions alone: it records
-     * constants for its own bound-check decisions and never rewrites them, so a reader expecting the
-     * division to disappear would be wrong.
-     */
     @Test
-    public void constantDivisionByNonZeroIsStillHandled() throws IOException {
-        Program program = ListingParseUtils.parseFromResource("model/text/constantDivisionFolds.txt");
-        new BoundCheckInsertion().transformProgram(program, METHOD);
-
-        boolean divisionPreserved = false;
-        for (Instruction instruction : program.basicBlockAt(0)) {
-            if (instruction instanceof BinaryInstruction
-                    && ((BinaryInstruction) instruction).getOperation() == BinaryOperation.DIVIDE) {
-                divisionPreserved = true;
-            }
-        }
-        assertTrue("this pass records constants, it does not rewrite them", divisionPreserved);
+    public void divisionByNonZero() {
+        doTest();
     }
 
-    /**
-     * The modulo guard has the same two sides as the division one, so it is pinned separately rather
-     * than assumed to follow: a non-zero constant remainder must still be handled.
-     */
     @Test
-    public void constantModuloByNonZeroIsHandled() throws IOException {
-        Program program = ListingParseUtils.parseFromResource("model/text/constantModuloFolds.txt");
-        new BoundCheckInsertion().transformProgram(program, METHOD);
+    public void moduloByNonZero() {
+        doTest();
+    }
+
+    private void doTest() {
+        String originalPath = PREFIX + name.getMethodName() + ".original.txt";
+        String expectedPath = PREFIX + name.getMethodName() + ".expected.txt";
+        Program original = ListingParseUtils.parseFromResource(originalPath);
+        Program expected = ListingParseUtils.parseFromResource(expectedPath);
+
+        new BoundCheckInsertion().transformProgram(original, METHOD);
+
+        String originalText = new ListingBuilder().buildListing(original, "");
+        String expectedText = new ListingBuilder().buildListing(expected, "");
+        Assert.assertEquals(expectedText, originalText);
     }
 }
