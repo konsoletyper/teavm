@@ -89,6 +89,13 @@ let $rt_instanceMainStarter = (f, ctor, mainClass) => (args, callback) => {
 }
 
 let $rt_eraseClinit = target => target.$clinit = () => {};
+let $rt_failedClinit = () => $rt_throw(teavm_javaConstructor("java.lang.NoClassDefFoundError", "()V")());
+let $rt_clinitError = err => {
+    let ex = $rt_wrapException(err);
+    return ex instanceof teavm_javaClass("java.lang.Error") ? err
+        : $rt_exception(teavm_javaConstructor("java.lang.ExceptionInInitializerError",
+            "(Ljava/lang/Throwable;)V")(ex));
+};
 
 let $dbg_class = obj => {
     let cls = obj.constructor;

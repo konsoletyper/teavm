@@ -796,4 +796,104 @@ public class VMTest {
             return "thrown by initializer";
         }
     }
+
+    @Test
+    public void failedClassInitializerIsNotRunAgain() {
+        try {
+            FailingInitializer.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertEquals(IllegalStateException.class, e.getCause().getClass());
+        }
+        try {
+            FailingInitializer.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void errorFromClassInitializerIsNotWrapped() {
+        try {
+            FailingInitializerWithError.value();
+            fail("Initializer did not throw");
+        } catch (InitializerTestError e) {
+            // expected
+        }
+        try {
+            FailingInitializerWithError.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void failedAsyncClassInitializerIsNotRunAgain() {
+        try {
+            FailingAsyncInitializer.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertEquals(IllegalStateException.class, e.getCause().getClass());
+        }
+        try {
+            FailingAsyncInitializer.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    static class FailingInitializer {
+        static final String VALUE;
+
+        static {
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class FailingInitializerWithError {
+        static final String VALUE;
+
+        static {
+            throwInitializerTestError();
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class FailingAsyncInitializer {
+        static final String VALUE;
+
+        static {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class InitializerTestError extends Error {
+    }
+
+    private static void throwInitializerTestError() {
+        throw new InitializerTestError();
+    }
 }
