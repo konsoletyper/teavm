@@ -140,7 +140,8 @@ class ProxyDependencySupport {
         }
         var itf = agent.getClassSource().get(itfName);
         for (var method : itf.getMethods()) {
-            if (method.hasModifier(ElementModifier.BRIDGE)) {
+            if (method.hasModifier(ElementModifier.BRIDGE) || method.hasModifier(ElementModifier.STATIC)
+                    || method.getLevel() == AccessLevel.PRIVATE) {
                 continue;
             }
             var signature = new Signature(method.getName(), method.getDescriptor().getParameterTypes());
