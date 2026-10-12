@@ -37,7 +37,7 @@ public final class Allocator {
         int itemSize = RuntimeClass.isPrimitive(tag.itemType) ? tag.itemType.size : Address.sizeOf();
         int sizeInBytes = Address.align(Address.fromInt(Structure.sizeOf(RuntimeArray.class)), itemSize).toInt();
         sizeInBytes += itemSize * size;
-        sizeInBytes = Address.align(Address.fromInt(sizeInBytes), Address.sizeOf()).toInt();
+        sizeInBytes = Address.align(Address.fromInt(sizeInBytes), RuntimeObject.ALIGNMENT).toInt();
         Address result = GC.alloc(sizeInBytes).toAddress();
         Address.fillZero(result, sizeInBytes);
 

@@ -803,7 +803,7 @@ public class ClassGenerator {
 
             if (cls != null && needsData(cls)) {
                 String structName = context.getNames().forClass(className);
-                sizeExpr = "(int32_t) (intptr_t) TEAVM_ALIGN(sizeof(" + structName + "), sizeof(void*))";
+                sizeExpr = "(int32_t) (intptr_t) TEAVM_ALIGN(sizeof(" + structName + "), 8)";
             } else {
                 sizeExpr = "0";
             }
