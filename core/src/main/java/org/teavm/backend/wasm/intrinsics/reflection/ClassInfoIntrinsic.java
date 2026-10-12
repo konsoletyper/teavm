@@ -33,13 +33,10 @@ import org.teavm.backend.wasm.model.instruction.WasmNullCondition;
 public class ClassInfoIntrinsic implements WasmGCInlineIntrinsic {
     private final WasmGCClassInfoProvider classInfoProvider;
     private final WasmFunctionTypes functionTypes;
-    private final ReflectionMetadataGenerator metadataGenerator;
 
-    public ClassInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider, WasmFunctionTypes functionTypes,
-            ReflectionMetadataGenerator metadataGenerator) {
+    public ClassInfoIntrinsic(WasmGCClassInfoProvider classInfoProvider, WasmFunctionTypes functionTypes) {
         this.classInfoProvider = classInfoProvider;
         this.functionTypes = functionTypes;
-        this.metadataGenerator = metadataGenerator;
     }
 
     @Override
@@ -178,7 +175,6 @@ public class ClassInfoIntrinsic implements WasmGCInlineIntrinsic {
                 break;
             }
             case "reflection":
-                metadataGenerator.generate();
                 fieldAccess(invocation, context, builder, ClassInfoStruct::reflectionInfoIndex);
                 break;
             case "rewind": {
