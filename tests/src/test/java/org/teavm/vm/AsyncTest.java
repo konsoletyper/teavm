@@ -41,6 +41,9 @@ import org.teavm.runtime.EventQueue;
 @EachTestCompiledSeparately
 @SkipJVM
 public class AsyncTest {
+    private int sum;
+    private String concatenated;
+
     @Test
     public void primitives() {
         assertEquals(23, getPrimitive());
@@ -186,6 +189,58 @@ public class AsyncTest {
     }
 
     private static synchronized void dummySyncStaticMethod() {
+    }
+
+    @Test
+    public void asyncBodyCallsSuspendableCode() throws InterruptedException {
+        var thread = new Thread(() -> sum = sumInAsyncBody());
+        thread.setDaemon(true);
+        thread.start();
+        thread.join(5000);
+        assertEquals(3, sum);
+    }
+
+    @Async
+    private native int sumInAsyncBody();
+
+    private void sumInAsyncBody(AsyncCallback<Integer> callback) {
+        // perhapsSuspend can suspend, so this method is compiled as suspendable too. Here it does not suspend.
+        var result = perhapsSuspend(false, 1) + perhapsSuspend(false, 2);
+        // Not setTimeout(Runnable): the thread above makes Runnable.run suspendable, and on C a suspendable
+        // Runnable can not run from the event queue.
+        if (PlatformDetector.isC()) {
+            EventQueue.offer(() -> callback.complete(result));
+        } else {
+            Window.setTimeout(() -> callback.complete(result), 0);
+        }
+    }
+
+    @Test
+    // On C, the suspendable Arrays.toString methods that this test creates fail to compile.
+    @SkipPlatform(TestPlatform.C)
+    public void suspendWithSuspendableArrayCopy() throws InterruptedException {
+        // This override makes every Throwable constructor suspendable. Arrays.copyOf can throw,
+        // so it becomes suspendable too.
+        new SuspendableStackTraceException();
+        var thread = new Thread(() -> concatenated = concatAcrossSuspension(4, "x"));
+        thread.setDaemon(true);
+        thread.start();
+        thread.join(5000);
+        assertEquals("x4,x43,x432,x4321,x43210,x43210", concatenated);
+    }
+
+    private String concatAcrossSuspension(int depth, String prefix) {
+        var local = prefix + depth;
+        var rest = depth == 0 ? returnSamePrimitive(local) : concatAcrossSuspension(depth - 1, local);
+        return local + "," + rest;
+    }
+
+    private class SuspendableStackTraceException extends RuntimeException {
+        @Override
+        public Throwable fillInStackTrace() {
+            perhapsSuspend(false, 0);
+            return this;
+        }
     }
 
     @Async
