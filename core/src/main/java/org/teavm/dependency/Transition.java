@@ -64,6 +64,11 @@ class Transition {
     }
 
     private void mergeDomains(DependencyType[] types) {
+        // After the merge, the destination shares the source's type set, so it has all of the source's types at
+        // once. Propagation is re-entrant, so some of them can still be on their way to the destination. Later
+        // deliveries skip them, because the destination already has them. Deliver all of them now, not only
+        // this batch.
+        types = source.typeSet.getTypesForNode(source, destination, null);
         destination.dependencyAnalyzer.merging = true;
         destination.moveToSeparateDomain();
         destination.scheduleMultipleTypes(types, () -> {
