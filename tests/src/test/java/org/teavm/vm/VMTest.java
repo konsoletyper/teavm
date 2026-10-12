@@ -736,7 +736,7 @@ public class VMTest {
             caught = true;
         }
         assertTrue(caught, "Exception was not caught (upper bound)");
-        
+
         caught = false;
         try {
             array[-1] = 1;
@@ -784,5 +784,83 @@ public class VMTest {
     enum InitInHandler {
         A,
         B
+    }
+
+    @Test
+    public void exceptionHandlerSeesParameterBeforeNullCheck() {
+        var key = newKey();
+        assertEquals("attached built", attachOrCancel(new WorkingBuilder(), key));
+        assertTrue(key.valid);
+        key = newKey();
+        assertEquals("cancelled: build failed", attachOrCancel(new FailingBuilder(), key));
+        assertFalse(key.valid);
+    }
+
+    @Test
+    public void exceptionHandlerSeesLocalBeforeNullCheck() {
+        assertEquals("attached built", assignAndAttach(new WorkingBuilder()));
+        assertEquals("key assigned: build failed", assignAndAttach(new FailingBuilder()));
+    }
+
+    private static String attachOrCancel(Builder builder, Key key) {
+        try {
+            Object built = builder.build(key);
+            key.attach(built);
+            return "attached " + built;
+        } catch (IllegalStateException e) {
+            key.cancel();
+            return "cancelled: " + e.getMessage();
+        }
+    }
+
+    private static String assignAndAttach(Builder builder) {
+        Key key = null;
+        try {
+            key = newKey();
+            Object built = builder.build(key);
+            key.attach(built);
+            return "attached " + built;
+        } catch (IllegalStateException e) {
+            return (key != null ? "key assigned: " : "key not assigned: ") + e.getMessage();
+        }
+    }
+
+    private static final List<Key> KEYS = new ArrayList<>();
+
+    // The compiler cannot prove that the result is not null, so each call on it gets a null check
+    private static Key newKey() {
+        KEYS.add(new Key());
+        return KEYS.get(KEYS.size() - 1);
+    }
+
+    interface Builder {
+        Object build(Key key);
+    }
+
+    static class WorkingBuilder implements Builder {
+        @Override
+        public Object build(Key key) {
+            return "built";
+        }
+    }
+
+    static class FailingBuilder implements Builder {
+        @Override
+        public Object build(Key key) {
+            throw new IllegalStateException("build failed");
+        }
+    }
+
+    static class Key {
+        boolean valid = true;
+        Object attachment;
+
+        void attach(Object attachment) {
+            this.attachment = attachment;
+        }
+
+        void cancel() {
+            valid = false;
+        }
     }
 }

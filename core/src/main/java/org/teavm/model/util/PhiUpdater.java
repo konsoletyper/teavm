@@ -440,10 +440,25 @@ public class PhiUpdater {
         }
 
         for (var phi : program.basicBlockAt(successor).getPhis()) {
-            for (var incoming : phi.getIncomings()) {
+            var incomings = phi.getIncomings();
+            var incomingCount = incomings.size();
+            for (var i = 0; i < incomingCount; ++i) {
+                var incoming = incomings.get(i);
                 if (incoming.getSource() == currentBlock) {
                     var value = variableMap[incoming.getValue().getIndex()];
                     if (value != null) {
+                        // An exception can leave the block before any later version is assigned,
+                        // so the handler needs every version
+                        var versions = allVersions ? definedVersions.get(incoming.getValue().getIndex()) : null;
+                        if (versions != null) {
+                            for (var version : versions) {
+                                var versionIncoming = new Incoming();
+                                versionIncoming.setSource(currentBlock);
+                                versionIncoming.setValue(version);
+                                incomings.add(versionIncoming);
+                                usedPhis.set(version.getIndex());
+                            }
+                        }
                         incoming.setValue(value);
                         usedPhis.set(value.getIndex());
                     } else {

@@ -59,6 +59,11 @@ public class PhiUpdaterTest {
         doTest(1);
     }
 
+    @Test
+    public void existingExceptionPhiFromParameter() {
+        doTest(1);
+    }
+
     private void doTest() {
         doTest(0);
     }
