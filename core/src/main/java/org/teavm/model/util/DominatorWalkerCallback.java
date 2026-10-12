@@ -37,6 +37,8 @@ public interface DominatorWalkerCallback<T> {
     /**
      * Visits block and returns visit state. This state is saved by walker and then passed to
      * {@link #endVisit(BasicBlock, Object)} after all of this block's descendants visited.
+     * Exception handlers of a block are not considered its descendants, since an exception
+     * can leave the block before any of its instructions run.
      *
      * @return state that further will be passed to {@link #endVisit(BasicBlock, Object)}
      */

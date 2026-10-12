@@ -15,12 +15,15 @@
  */
 package org.teavm.model.util;
 
-import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 
 public interface DominatorWalkerContext {
-    DominatorTree getDominatorTree();
-
+    /**
+     * Returns control flow graph, where node {@code 2 * i} is the entry of block {@code i}
+     * and node {@code 2 * i + 1} is its body.
+     *
+     * @see ProgramUtils#buildControlFlowGraph2(org.teavm.model.Program)
+     */
     Graph getControlFlowGraph();
 
     boolean isVisited(int blockIndex);
@@ -28,8 +31,8 @@ public interface DominatorWalkerContext {
     boolean isExceptionHandler(int blockIndex);
 
     default boolean allPredecessorsVisited(int blockIndex) {
-        for (int predecessor : getControlFlowGraph().incomingEdges(blockIndex)) {
-            if (!isVisited(predecessor)) {
+        for (int predecessor : getControlFlowGraph().incomingEdges(blockIndex * 2)) {
+            if (!isVisited(predecessor / 2)) {
                 return false;
             }
         }
