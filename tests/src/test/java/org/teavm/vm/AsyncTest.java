@@ -41,6 +41,8 @@ import org.teavm.runtime.EventQueue;
 @EachTestCompiledSeparately
 @SkipJVM
 public class AsyncTest {
+    private int sum;
+
     @Test
     public void primitives() {
         assertEquals(23, getPrimitive());
@@ -186,6 +188,30 @@ public class AsyncTest {
     }
 
     private static synchronized void dummySyncStaticMethod() {
+    }
+
+    @Test
+    public void asyncBodyCallsSuspendableCode() throws InterruptedException {
+        var thread = new Thread(() -> sum = sumInAsyncBody());
+        thread.setDaemon(true);
+        thread.start();
+        thread.join(5000);
+        assertEquals(3, sum);
+    }
+
+    @Async
+    private native int sumInAsyncBody();
+
+    private void sumInAsyncBody(AsyncCallback<Integer> callback) {
+        // perhapsSuspend can suspend, so this method is compiled as suspendable too. Here it does not suspend.
+        var result = perhapsSuspend(false, 1) + perhapsSuspend(false, 2);
+        // Not setTimeout(Runnable): the thread above makes Runnable.run suspendable, and on C a suspendable
+        // Runnable can not run from the event queue.
+        if (PlatformDetector.isC()) {
+            EventQueue.offer(() -> callback.complete(result));
+        } else {
+            Window.setTimeout(() -> callback.complete(result), 0);
+        }
     }
 
     @Async
