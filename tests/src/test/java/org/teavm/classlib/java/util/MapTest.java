@@ -162,4 +162,16 @@ public class MapTest {
         assertEquals(Map.of("a", 10, "b", 20), hashMap);
         assertEquals(Map.of("a", 10, "b", 20), treeMap);
     }
+
+    @Test
+    public void emptyImmutableMapLookup() {
+        checkEmptyLookup(Map.ofEntries());
+        checkEmptyLookup(Map.copyOf(new HashMap<>()));
+    }
+
+    private static void checkEmptyLookup(Map<String, Integer> empty) {
+        assertNull(empty.get("a"));
+        assertFalse(empty.containsKey("a"));
+        assertFalse(empty.entrySet().contains(Map.entry("a", 1)));
+    }
 }
