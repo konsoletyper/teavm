@@ -69,6 +69,11 @@ public final class EventQueue {
     }
 
     public static void kill(int id) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            // offer() schedules a host timer on Wasm GC, so the timer must be cancelled there.
+            killWasmGC(id);
+            return;
+        }
         for (int i = 0; i < size; ++i) {
             if (data[i].id == id) {
                 remove(i);
@@ -78,7 +83,7 @@ public final class EventQueue {
     }
 
     @Import(name = "kill", module = "teavmAsync")
-    private static native int killWasmGC(int id);
+    private static native void killWasmGC(int id);
 
     public static void process() {
         while (size > 0 && !finished) {
