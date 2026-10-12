@@ -562,6 +562,43 @@ public class VMTest {
     }
 
     @Test
+    public void exceptionHandlerChecksNull() {
+        var cell = new Cell();
+        assertEquals("set", setOrClear(new Cell[] { cell }, false));
+        assertEquals("value", cell.value);
+        try {
+            setOrClear(new Cell[] { null }, true);
+            fail("NullPointerException expected");
+        } catch (NullPointerException e) {
+            // expected
+        }
+    }
+
+    private static String setOrClear(Cell[] cells, boolean fail) {
+        var cell = cells[0];
+        try {
+            failIf(fail);
+            cell.set("value");
+            return "set";
+        } catch (IllegalStateException e) {
+            cell.clear();
+            return "cleared " + e.getMessage();
+        }
+    }
+
+    static class Cell {
+        Object value;
+
+        void set(Object value) {
+            this.value = value;
+        }
+
+        void clear() {
+            value = null;
+        }
+    }
+
+    @Test
     public void arrayMonitor() throws InterruptedException {
         int[] array = { 1, 2, 3 };
         synchronized (array) {

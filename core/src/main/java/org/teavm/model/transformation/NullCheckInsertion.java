@@ -17,6 +17,7 @@ package org.teavm.model.transformation;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
+import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.teavm.model.BasicBlock;
@@ -36,6 +37,7 @@ import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DominatorWalker;
 import org.teavm.model.util.DominatorWalkerCallback;
+import org.teavm.model.util.DominatorWalkerContext;
 import org.teavm.model.util.PhiUpdater;
 
 public class NullCheckInsertion {
@@ -61,6 +63,7 @@ public class NullCheckInsertion {
         boolean changed;
         boolean[] notNullVariables;
         BlockNullness blockNullness;
+        DominatorWalkerContext context;
 
         InsertionVisitor(int variableCount) {
             notNullVariables = new boolean[variableCount];
@@ -70,8 +73,19 @@ public class NullCheckInsertion {
         }
 
         @Override
+        public void setContext(DominatorWalkerContext context) {
+            this.context = context;
+        }
+
+        @Override
         public BlockNullness visit(BasicBlock block) {
             blockNullness = new BlockNullness();
+            if (context.isExceptionHandler(block.getIndex())) {
+                // An exception can leave a protected block before its null checks run,
+                // so a handler can't rely on null checks of its dominators
+                blockNullness.oldNotNullVariables = notNullVariables.clone();
+                Arrays.fill(notNullVariables, 1, notNullVariables.length, false);
+            }
 
             if (block.getExceptionVariable() != null) {
                 notNullVariables[block.getExceptionVariable().getIndex()] = true;
@@ -87,8 +101,12 @@ public class NullCheckInsertion {
 
         @Override
         public void endVisit(BasicBlock block, BlockNullness state) {
-            for (int variable : state.notNullVariables.toArray()) {
-                notNullVariables[variable] = false;
+            if (state.oldNotNullVariables != null) {
+                notNullVariables = state.oldNotNullVariables;
+            } else {
+                for (int variable : state.notNullVariables.toArray()) {
+                    notNullVariables[variable] = false;
+                }
             }
         }
 
@@ -164,5 +182,6 @@ public class NullCheckInsertion {
 
     static class BlockNullness {
         IntSet notNullVariables = new IntHashSet();
+        boolean[] oldNotNullVariables;
     }
 }
