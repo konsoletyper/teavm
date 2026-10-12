@@ -20,6 +20,8 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.ValueType;
 
 public class WeakReferenceTransformer implements ClassHolderTransformer {
     @Override
@@ -27,6 +29,9 @@ public class WeakReferenceTransformer implements ClassHolderTransformer {
         if (!cls.getName().equals(WeakReference.class.getName())) {
             return;
         }
+        var field = new FieldHolder("registry");
+        field.setType(ValueType.parse(Object.class));
+        cls.addField(field);
         for (var method : cls.getMethods()) {
             switch (method.getName()) {
                 case "<init>":

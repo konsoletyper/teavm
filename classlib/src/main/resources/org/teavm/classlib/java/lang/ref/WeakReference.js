@@ -21,7 +21,9 @@ function init(target, queue) {
     if (queue !== null && supported && target !== null) {
         let registry = queue[teavm_javaField("java.lang.ref.ReferenceQueue", "registry")];
         if (registry !== null) {
-            registry.register(target, this);
+            registry.register(target, { ref: new teavm_globals.WeakRef(this) }, value);
+            registry.register(this, { token: value }, value);
+            this[teavm_javaField("java.lang.ref.WeakReference", "registry")] = registry;
         }
     }
 }
@@ -37,5 +39,10 @@ function get() {
     return value;
 }
 function clear() {
+    let registry = this[teavm_javaField("java.lang.ref.WeakReference", "registry")];
+    if (registry !== null) {
+        registry.unregister(this[teavm_javaField("java.lang.ref.WeakReference", "value")]);
+        this[teavm_javaField("java.lang.ref.WeakReference", "registry")] = null;
+    }
     this[teavm_javaField("java.lang.ref.WeakReference", "value")] = null;
 }

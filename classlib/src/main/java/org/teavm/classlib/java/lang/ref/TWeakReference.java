@@ -43,6 +43,7 @@ public class TWeakReference<T> extends TReference<T> {
 
     @Override
     public boolean enqueue() {
+        clear();
         return true;
     }
 }
