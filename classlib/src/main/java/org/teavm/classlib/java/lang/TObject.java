@@ -528,6 +528,7 @@ public class TObject {
                 }
                 timerId = -1;
             }
+            expired = true;
             TThread.setCurrentThread(currentThread);
             monitorEnterWait(obj, lockCount, callback);
         }
@@ -546,11 +547,30 @@ public class TObject {
                 }
                 timerId = -1;
             }
+            expired = true;
+            // As in the JDK, wait() holds the monitor again when it throws InterruptedException.
             if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(() -> callback.error(new TInterruptedException()));
+                EventQueue.offer(this::reacquireThenFail);
             } else {
-                Platform.postpone(() -> callback.error(new TInterruptedException()));
+                Platform.postpone(this::reacquireThenFail);
             }
+        }
+
+        private void reacquireThenFail() {
+            TThread.setCurrentThread(currentThread);
+            monitorEnterWait(obj, lockCount, new AsyncCallback<>() {
+                @Override
+                public void complete(Void result) {
+                    // As in the JDK, throwing InterruptedException clears the thread's interrupt status.
+                    TThread.interrupted();
+                    callback.error(new TInterruptedException());
+                }
+
+                @Override
+                public void error(Throwable e) {
+                    callback.error(e);
+                }
+            });
         }
     }
 
