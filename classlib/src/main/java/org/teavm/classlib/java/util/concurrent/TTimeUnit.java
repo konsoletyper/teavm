@@ -36,12 +36,20 @@ public enum TTimeUnit {
         if (sourceNanos < targetNanos) {
             return sourceDuration / (targetNanos / sourceNanos);
         } else {
-            return sourceDuration * (sourceNanos / targetNanos);
+            // As in the JDK, a conversion that overflows saturates to Long.MAX_VALUE or Long.MIN_VALUE.
+            long ratio = sourceNanos / targetNanos;
+            long max = Long.MAX_VALUE / ratio;
+            if (sourceDuration > max) {
+                return Long.MAX_VALUE;
+            } else if (sourceDuration < -max) {
+                return Long.MIN_VALUE;
+            }
+            return sourceDuration * ratio;
         }
     }
 
     public long toNanos(long duration) {
-        return duration * nanoseconds;
+        return NANOSECONDS.convert(duration, this);
     }
 
     public long toMicros(long duration) {
@@ -68,15 +76,28 @@ public enum TTimeUnit {
         return DAYS.convert(duration, this);
     }
 
+    // As in the JDK, a timeout of zero or less does not wait. A positive timeout shorter than 1 ms waits 1 ms,
+    // because wait(0) and join(0) wait forever.
+    private long waitMillis(long timeout) {
+        long millis = toMillis(timeout);
+        return millis == 0 ? 1 : millis;
+    }
+
     public void timedWait(Object obj, long timeout) throws InterruptedException {
-        obj.wait(toMillis(timeout));
+        if (timeout > 0) {
+            obj.wait(waitMillis(timeout));
+        }
     }
 
     public void timedJoin(Thread thread, long timeout) throws InterruptedException {
-        thread.join(toMillis(timeout));
+        if (timeout > 0) {
+            thread.join(waitMillis(timeout));
+        }
     }
 
     public void sleep(long timeout) throws InterruptedException {
-        Thread.sleep(toMillis(timeout));
+        if (timeout > 0) {
+            Thread.sleep(waitMillis(timeout));
+        }
     }
 }
