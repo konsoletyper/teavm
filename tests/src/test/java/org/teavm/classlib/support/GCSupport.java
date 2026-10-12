@@ -65,8 +65,10 @@ public final class GCSupport {
             var div = doc.createElement("div");
             div.appendChild(doc.createTextNode("hello"));
             doc.getBody().appendChild(div);
-            triggerGCInJS();
             waitImpl();
+            // A JS WeakRef keeps its target until the end of the job that created or dereferenced it,
+            // so collect in a new job, before the caller checks its references again
+            triggerGCInJS();
         } else {
             Runtime.getRuntime().gc();
             Runtime.getRuntime().gc();
