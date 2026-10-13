@@ -1,0 +1,31 @@
+$0
+    @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
+    @3 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    if @3 != 0 then goto $2 else goto $1
+$1
+    goto $3
+$2
+    @4 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    switch @4 case 0 goto $5 else goto $1
+$3
+    @param_2 := phi @param from $1, @param_1 from $5
+    @this_2 := phi @this from $1, @this_1 from $5
+    invokeStatic `Foo.suspend()V`
+    @5 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @5 != 0 then goto $6 else goto $4
+$4
+    invoke `TestClass.run()V` @this_2
+    invokeStatic `Foo.useItf(LItf;)V` @param_2
+    return
+$5
+    @6 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @param_1 := weak cast @6 to `LItf;`
+    @7 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @this_1 := weak cast @7 to `LTestClass;`
+    goto $3
+$6
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @this_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @param_2
+    @8 := 0
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @8
+    return

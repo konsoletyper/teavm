@@ -1,0 +1,10 @@
+var @this as this
+var @size as size
+
+$start
+    @array := newArray F[@size]
+    @data := data @array as float
+    invokeStatic `Foo.suspend()V`
+    @index := 0
+    @result := @data[@index] as float
+    return @result

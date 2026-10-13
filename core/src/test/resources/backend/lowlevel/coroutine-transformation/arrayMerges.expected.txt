@@ -1,0 +1,61 @@
+var @this as this
+var @size as size
+$0
+    @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
+    @16 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    if @16 != 0 then goto $5 else goto $4
+$1
+    @subs := newArray `LSub;`[@size]
+    @strings := newArray `Ljava/lang/String;`[@size]
+    @flags := newArray Z[@size]
+    @ints := newArray `[I`[@size]
+    goto $3
+$2
+    @bases := newArray `LBase;`[@size]
+    @integers := newArray `Ljava/lang/Integer;`[@size]
+    @bytes := newArray B[@size]
+    @longs := newArray `[J`[@size]
+    goto $3
+$3
+    @refArray := phi @subs from $1, @bases from $2
+    @unrelatedArray := phi @strings from $1, @integers from $2
+    @primitiveArray := phi @flags from $1, @bytes from $2
+    @nestedArray := phi @ints from $1, @longs from $2
+    goto $6
+$4
+    @c := invokeStatic `Foo.cond()Z`
+    if @c != 0 then goto $1 else goto $2
+$5
+    @17 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    switch @17 case 0 goto $8 else goto $4
+$6
+    @nestedArray_2 := phi @nestedArray from $3, @nestedArray_1 from $8
+    @primitiveArray_2 := phi @primitiveArray from $3, @primitiveArray_1 from $8
+    @unrelatedArray_2 := phi @unrelatedArray from $3, @unrelatedArray_1 from $8
+    @refArray_2 := phi @refArray from $3, @refArray_1 from $8
+    invokeStatic `Foo.suspend()V`
+    @18 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @18 != 0 then goto $9 else goto $7
+$7
+    invokeStatic `Foo.useBases([LBase;)V` @refArray_2
+    invokeStatic `Foo.useObjects([Ljava/lang/Object;)V` @unrelatedArray_2
+    invokeStatic `Foo.useObject(Ljava/lang/Object;)V` @primitiveArray_2
+    invokeStatic `Foo.useObjects([Ljava/lang/Object;)V` @nestedArray_2
+    return
+$8
+    @19 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @nestedArray_1 := weak cast @19 to `[Ljava/lang/Object;`
+    @primitiveArray_1 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @20 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @unrelatedArray_1 := weak cast @20 to `[Ljava/lang/Object;`
+    @21 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @refArray_1 := weak cast @21 to `[LBase;`
+    goto $6
+$9
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @refArray_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @unrelatedArray_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @primitiveArray_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @nestedArray_2
+    @22 := 0
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @22
+    return

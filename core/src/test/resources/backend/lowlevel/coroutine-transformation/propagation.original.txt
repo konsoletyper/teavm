@@ -1,0 +1,24 @@
+var @this as this
+
+$start
+    @field := field Foo.base as `LBase;`
+    @invoked := invokeStatic `Foo.left()LLeft;`
+    @assigned := @invoked
+    @checked := nullCheck @field
+    @strings := invokeStatic `Foo.strings()[Ljava/lang/String;`
+    @stringData := data @strings as object
+    @zero := 0
+    @element := @stringData[@zero] as object
+    goto $loop
+$loop
+    @carried := phi @field from $start, @next from $loop
+    invokeStatic `Foo.suspend()V`
+    invokeStatic `Foo.useLeft(LLeft;)V` @assigned
+    invokeStatic `Foo.useBase(LBase;)V` @checked
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @element
+    invokeStatic `Foo.useBase(LBase;)V` @carried
+    @next := field Foo.base as `LBase;`
+    @c := invokeStatic `Foo.cond()Z`
+    if @c != 0 then goto $loop else goto $exit
+$exit
+    return

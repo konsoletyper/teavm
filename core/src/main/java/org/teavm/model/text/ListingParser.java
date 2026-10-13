@@ -375,7 +375,14 @@ public class ListingParser {
                         parseInvoke(receiver);
                         break;
                     case "cast":
-                        parseCast(receiver);
+                        parseCast(receiver, false);
+                        break;
+                    case "weak":
+                        lexer.nextToken();
+                        if (lexer.getToken() != ListingToken.IDENTIFIER || !lexer.getTokenValue().equals("cast")) {
+                            unexpected();
+                        }
+                        parseCast(receiver, true);
                         break;
                     case "new":
                         parseNew(receiver);
@@ -811,16 +818,19 @@ public class ListingParser {
         currentBlock.getTryCatchBlocks().add(tryCatch);
     }
 
-    private void parseCast(Variable receiver) throws IOException, ListingParseException {
+    private void parseCast(Variable receiver, boolean weak) throws IOException, ListingParseException {
         lexer.nextToken();
         Variable value = expectVariable();
         expect(ListingToken.IDENTIFIER);
         switch ((String) lexer.getTokenValue()) {
             case "from":
+                if (weak) {
+                    unexpected();
+                }
                 parseNumericCast(receiver, value);
                 break;
             case "to":
-                parseObjectCast(receiver, value);
+                parseObjectCast(receiver, value, weak);
                 break;
             default:
                 unexpected();
@@ -906,7 +916,8 @@ public class ListingParser {
         }
     }
 
-    private void parseObjectCast(Variable receiver, Variable value) throws IOException, ListingParseException {
+    private void parseObjectCast(Variable receiver, Variable value, boolean weak)
+            throws IOException, ListingParseException {
         lexer.nextToken();
         ValueType type = expectValueType();
 
@@ -914,6 +925,7 @@ public class ListingParser {
         insn.setReceiver(receiver);
         insn.setValue(value);
         insn.setTargetType(type);
+        insn.setWeak(weak);
         addInstruction(insn);
     }
 

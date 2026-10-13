@@ -1,0 +1,47 @@
+var @this as this
+var @size as size
+$0
+    @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
+    @7 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    if @7 != 0 then goto $2 else goto $1
+$1
+    @s := 'str'
+    @strings := newArray `Ljava/lang/String;`[@size]
+    @flags := newArray Z[@size]
+    @matrix := newArray `[I`[@size]
+    goto $3
+$2
+    @8 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    switch @8 case 0 goto $5 else goto $1
+$3
+    @matrix_2 := phi @matrix from $1, @matrix_1 from $5
+    @flags_2 := phi @flags from $1, @flags_1 from $5
+    @strings_2 := phi @strings from $1, @strings_1 from $5
+    @s_2 := phi @s from $1, @s_1 from $5
+    invokeStatic `Foo.suspend()V`
+    @9 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @9 != 0 then goto $6 else goto $4
+$4
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @s_2
+    invokeStatic `Foo.useStrings([Ljava/lang/String;)V` @strings_2
+    invokeStatic `Foo.useFlags([Z)V` @flags_2
+    invokeStatic `Foo.useMatrix([[I)V` @matrix_2
+    return
+$5
+    @10 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @matrix_1 := weak cast @10 to `[[I`
+    @11 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @flags_1 := weak cast @11 to `[Z`
+    @12 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @strings_1 := weak cast @12 to `[Ljava/lang/String;`
+    @13 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @s_1 := weak cast @13 to `Ljava/lang/String;`
+    goto $3
+$6
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @s_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @strings_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @flags_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @matrix_2
+    @14 := 0
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @14
+    return
