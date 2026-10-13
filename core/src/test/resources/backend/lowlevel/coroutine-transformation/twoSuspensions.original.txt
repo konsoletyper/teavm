@@ -1,0 +1,12 @@
+var @this as this
+
+$start
+    @i := 1
+    @l := 2L
+    @f := 3.0F
+    @d := 4.0
+    invokeStatic `Foo.suspend()V`
+    @i2 := @i + @i as int
+    invokeStatic `Foo.suspend()V`
+    invokeStatic `Foo.use(IJFDI)V` @i, @l, @f, @d, @i2
+    return

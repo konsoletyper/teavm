@@ -1,0 +1,28 @@
+var @this as this
+
+$start
+    @c := invokeStatic `Foo.cond()Z`
+    if @c != 0 then goto $first else goto $second
+$first
+    @missingA1 := new MissingA
+    @missingB1 := new MissingB
+    @sameMissing1 := new MissingA
+    @child1 := new MissingChild
+    goto $joint
+$second
+    @missingB2 := new MissingB
+    @missingA2 := new MissingA
+    @sameMissing2 := new MissingA
+    @parent2 := invokeStatic `Foo.missing()LMissingParent;`
+    goto $joint
+$joint
+    @ab := phi @missingA1 from $first, @missingB2 from $second
+    @ba := phi @missingB1 from $first, @missingA2 from $second
+    @same := phi @sameMissing1 from $first, @sameMissing2 from $second
+    @ancestor := phi @child1 from $first, @parent2 from $second
+    invokeStatic `Foo.suspend()V`
+    invokeStatic `Foo.useObject(Ljava/lang/Object;)V` @ab
+    invokeStatic `Foo.useObject(Ljava/lang/Object;)V` @ba
+    invokeStatic `Foo.useMissing(LMissingA;)V` @same
+    invokeStatic `Foo.useMissing(LMissingParent;)V` @ancestor
+    return

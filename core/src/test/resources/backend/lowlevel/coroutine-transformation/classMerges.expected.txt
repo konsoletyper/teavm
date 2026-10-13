@@ -1,0 +1,106 @@
+var @this as this
+var @size as size
+$0
+    @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
+    @32 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    if @32 != 0 then goto $7 else goto $6
+$1
+    @c2 := invokeStatic `Foo.cond()Z`
+    if @c2 != 0 then goto $3 else goto $4
+$2
+    @sub1 := new Sub
+    @base1 := new Base
+    @impl1 := new Impl
+    @left1 := new Left
+    @lefts1 := newArray `LLeft;`[@size]
+    @otherA1 := new OtherA
+    goto $5
+$3
+    @base2 := new Base
+    @sub2 := new Sub
+    @itf2 := invokeStatic `Foo.itf()LItf;`
+    @right2 := new Right
+    @rights2 := newArray `LRight;`[@size]
+    @otherB2 := new OtherB
+    goto $5
+$4
+    @base3 := new Base
+    @sub3 := new Sub
+    @itf3 := invokeStatic `Foo.itf()LItf;`
+    @right3 := new Right
+    @rights3 := newArray `LRight;`[@size]
+    @otherB3 := new OtherB
+    goto $5
+$5
+    @subBase := phi @sub1 from $2, @base2 from $3, @base3 from $4
+    @baseSub := phi @base1 from $2, @sub2 from $3, @sub3 from $4
+    @implItf := phi @impl1 from $2, @itf2 from $3, @itf3 from $4
+    @siblings := phi @left1 from $2, @right2 from $3, @right3 from $4
+    @siblingArrays := phi @lefts1 from $2, @rights2 from $3, @rights3 from $4
+    @three1 := phi @left1 from $2, @right2 from $3, @base3 from $4
+    @three2 := phi @base1 from $2, @right2 from $3, @left1 from $4
+    @three3 := phi @right3 from $4, @base2 from $3, @left1 from $2
+    @objectOnly := phi @otherA1 from $2, @otherB2 from $3, @otherB3 from $4
+    goto $8
+$6
+    @c1 := invokeStatic `Foo.cond()Z`
+    if @c1 != 0 then goto $2 else goto $1
+$7
+    @33 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    switch @33 case 0 goto $10 else goto $6
+$8
+    @objectOnly_2 := phi @objectOnly from $5, @objectOnly_1 from $10
+    @three3_2 := phi @three3 from $5, @three3_1 from $10
+    @three2_2 := phi @three2 from $5, @three2_1 from $10
+    @three1_2 := phi @three1 from $5, @three1_1 from $10
+    @siblingArrays_2 := phi @siblingArrays from $5, @siblingArrays_1 from $10
+    @siblings_2 := phi @siblings from $5, @siblings_1 from $10
+    @implItf_2 := phi @implItf from $5, @implItf_1 from $10
+    @baseSub_2 := phi @baseSub from $5, @baseSub_1 from $10
+    @subBase_2 := phi @subBase from $5, @subBase_1 from $10
+    invokeStatic `Foo.suspend()V`
+    @34 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @34 != 0 then goto $11 else goto $9
+$9
+    invokeStatic `Foo.useBase(LBase;)V` @subBase_2
+    invokeStatic `Foo.useBase(LBase;)V` @baseSub_2
+    invokeStatic `Foo.useItf(LItf;)V` @implItf_2
+    invokeStatic `Foo.useBase(LBase;)V` @siblings_2
+    invokeStatic `Foo.useBases([LBase;)V` @siblingArrays_2
+    invokeStatic `Foo.useBase(LBase;)V` @three1_2
+    invokeStatic `Foo.useBase(LBase;)V` @three2_2
+    invokeStatic `Foo.useBase(LBase;)V` @three3_2
+    invokeStatic `Foo.useObject(Ljava/lang/Object;)V` @objectOnly_2
+    return
+$10
+    @objectOnly_1 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @35 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @three3_1 := weak cast @35 to `LBase;`
+    @36 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @three2_1 := weak cast @36 to `LBase;`
+    @37 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @three1_1 := weak cast @37 to `LBase;`
+    @38 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @siblingArrays_1 := weak cast @38 to `[LBase;`
+    @39 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @siblings_1 := weak cast @39 to `LBase;`
+    @40 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @implItf_1 := weak cast @40 to `LItf;`
+    @41 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @baseSub_1 := weak cast @41 to `LBase;`
+    @42 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @subBase_1 := weak cast @42 to `LBase;`
+    goto $8
+$11
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @subBase_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @baseSub_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @implItf_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @siblings_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @siblingArrays_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @three1_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @three2_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @three3_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @objectOnly_2
+    @43 := 0
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @43
+    return

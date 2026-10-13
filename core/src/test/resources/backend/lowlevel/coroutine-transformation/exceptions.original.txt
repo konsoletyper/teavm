@@ -1,0 +1,19 @@
+var @this as this
+
+$start
+    invokeStatic `Foo.mayThrow()V`
+    goto $next
+    catch java.lang.IllegalStateException goto $typed
+$next
+    invokeStatic `Foo.mayThrow()V`
+    return
+    catch goto $any
+$typed
+    @typedException := exception
+    invokeStatic `Foo.suspend()V`
+    invokeStatic `Foo.useIllegalState(Ljava/lang/IllegalStateException;)V` @typedException
+    return
+$any
+    @anyException := exception
+    invokeStatic `Foo.suspend()V`
+    throw @anyException

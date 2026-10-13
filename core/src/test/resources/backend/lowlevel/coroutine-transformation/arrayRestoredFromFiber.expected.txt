@@ -1,0 +1,33 @@
+var @this as this
+var @size as size
+
+$start
+    @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
+    @7 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    if @7 != 0 then goto $resume else goto $create
+$create
+    @array := newArray F[@size]
+    goto $call
+$resume
+    @8 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    switch @8 case 0 goto $restore else goto $create
+$call
+    @array_2 := phi @array from $create, @array_1 from $restore
+    invokeStatic `Foo.suspend()V`
+    @9 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @9 != 0 then goto $save else goto $load
+$load
+    @data := data @array_2 as float
+    @index := 0
+    @result := @data[@index] as float
+    return @result
+$restore
+    @10 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @array_1 := weak cast @10 to `[F`
+    goto $call
+$save
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @array_2
+    @11 := 0
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @11
+    @12 := 0.0F
+    return @12

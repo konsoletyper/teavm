@@ -1,0 +1,54 @@
+var @this as this
+var @size as size
+
+$start
+    @c1 := invokeStatic `Foo.cond()Z`
+    if @c1 != 0 then goto $first else goto $middle
+$middle
+    @c2 := invokeStatic `Foo.cond()Z`
+    if @c2 != 0 then goto $second else goto $third
+$first
+    @sub1 := new Sub
+    @base1 := new Base
+    @impl1 := new Impl
+    @left1 := new Left
+    @lefts1 := newArray `LLeft;`[@size]
+    @otherA1 := new OtherA
+    goto $joint
+$second
+    @base2 := new Base
+    @sub2 := new Sub
+    @itf2 := invokeStatic `Foo.itf()LItf;`
+    @right2 := new Right
+    @rights2 := newArray `LRight;`[@size]
+    @otherB2 := new OtherB
+    goto $joint
+$third
+    @base3 := new Base
+    @sub3 := new Sub
+    @itf3 := invokeStatic `Foo.itf()LItf;`
+    @right3 := new Right
+    @rights3 := newArray `LRight;`[@size]
+    @otherB3 := new OtherB
+    goto $joint
+$joint
+    @subBase := phi @sub1 from $first, @base2 from $second, @base3 from $third
+    @baseSub := phi @base1 from $first, @sub2 from $second, @sub3 from $third
+    @implItf := phi @impl1 from $first, @itf2 from $second, @itf3 from $third
+    @siblings := phi @left1 from $first, @right2 from $second, @right3 from $third
+    @siblingArrays := phi @lefts1 from $first, @rights2 from $second, @rights3 from $third
+    @three1 := phi @left1 from $first, @right2 from $second, @base3 from $third
+    @three2 := phi @base1 from $first, @right2 from $second, @left1 from $third
+    @three3 := phi @right3 from $third, @base2 from $second, @left1 from $first
+    @objectOnly := phi @otherA1 from $first, @otherB2 from $second, @otherB3 from $third
+    invokeStatic `Foo.suspend()V`
+    invokeStatic `Foo.useBase(LBase;)V` @subBase
+    invokeStatic `Foo.useBase(LBase;)V` @baseSub
+    invokeStatic `Foo.useItf(LItf;)V` @implItf
+    invokeStatic `Foo.useBase(LBase;)V` @siblings
+    invokeStatic `Foo.useBases([LBase;)V` @siblingArrays
+    invokeStatic `Foo.useBase(LBase;)V` @three1
+    invokeStatic `Foo.useBase(LBase;)V` @three2
+    invokeStatic `Foo.useBase(LBase;)V` @three3
+    invokeStatic `Foo.useObject(Ljava/lang/Object;)V` @objectOnly
+    return

@@ -1,0 +1,29 @@
+var @this as this
+var @size as size
+
+$start
+    @c := invokeStatic `Foo.cond()Z`
+    if @c != 0 then goto $first else goto $second
+$first
+    @subs := newArray `LSub;`[@size]
+    @strings := newArray `Ljava/lang/String;`[@size]
+    @flags := newArray Z[@size]
+    @ints := newArray `[I`[@size]
+    goto $joint
+$second
+    @bases := newArray `LBase;`[@size]
+    @integers := newArray `Ljava/lang/Integer;`[@size]
+    @bytes := newArray B[@size]
+    @longs := newArray `[J`[@size]
+    goto $joint
+$joint
+    @refArray := phi @subs from $first, @bases from $second
+    @unrelatedArray := phi @strings from $first, @integers from $second
+    @primitiveArray := phi @flags from $first, @bytes from $second
+    @nestedArray := phi @ints from $first, @longs from $second
+    invokeStatic `Foo.suspend()V`
+    invokeStatic `Foo.useBases([LBase;)V` @refArray
+    invokeStatic `Foo.useObjects([Ljava/lang/Object;)V` @unrelatedArray
+    invokeStatic `Foo.useObject(Ljava/lang/Object;)V` @primitiveArray
+    invokeStatic `Foo.useObjects([Ljava/lang/Object;)V` @nestedArray
+    return

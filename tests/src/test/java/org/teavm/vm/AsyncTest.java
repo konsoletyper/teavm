@@ -135,6 +135,23 @@ public class AsyncTest {
 
     @Test
     @AsyncEnabled
+    public void arraysAndObjectsLiveAcrossSuspension() {
+        var floats = new float[] { 1.5f, 2.5f };
+        var matrix = new int[][] { { 3 }, { 4, 5 } };
+        var flags = new boolean[] { true };
+        var strings = new String[] { "a", "b" };
+        var sb = new StringBuilder("foo");
+        Object nothing = null;
+        assertEquals(23, getPrimitive());
+        assertEquals(4f, floats[0] + floats[1], 0.01f);
+        assertEquals(5, matrix[1][1]);
+        assertEquals(true, flags[0]);
+        assertEquals("ab", strings[0] + strings[1]);
+        assertEquals("foo", sb.append(nothing == null ? "" : "!").toString());
+    }
+
+    @Test
+    @AsyncEnabled
     public void passStringConstant() {
         assertEquals("foo", returnSamePrimitive("foo"));
     }

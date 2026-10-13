@@ -1,0 +1,45 @@
+var @this as this
+
+$start
+    @null := null
+    @one := 1
+    @c1 := invokeStatic `Foo.cond()Z`
+    if @c1 != 0 then goto $string else goto $noString
+$string
+    @s := 'str'
+    goto $joint
+$noString
+    goto $joint
+$joint
+    @nullOrString := phi @null from $noString, @s from $string
+    goto $loop
+$loop
+    @nullLoop := phi @null from $joint, @nullLoop from $loop
+    @nullThenBase := phi @null from $joint, @base from $loop
+    invokeStatic `Foo.suspend()V`
+    @base := new Base
+    @c2 := invokeStatic `Foo.cond()Z`
+    if @c2 != 0 then goto $loop else goto $split
+$split
+    @c3 := invokeStatic `Foo.cond()Z`
+    if @c3 != 0 then goto $values else goto $noValues
+$values
+    @t := 'str'
+    @floats := newArray F[@one]
+    goto $merge
+$noValues
+    goto $merge
+$merge
+    @loopString := phi @t from $values, @nullLoop from $noValues
+    @loopFloats := phi @floats from $values, @nullLoop from $noValues
+    @nullString := phi @t from $values, @null from $noValues
+    @nullFloats := phi @floats from $values, @null from $noValues
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @nullOrString
+    invokeStatic `Foo.useBase(LBase;)V` @nullThenBase
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @loopString
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @nullString
+    invokeStatic `Foo.useFloats([F)V` @nullFloats
+    @data := data @loopFloats as float
+    @index := 0
+    @result := @data[@index] as float
+    return @result

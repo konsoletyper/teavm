@@ -1,0 +1,5 @@
+$start
+    invokeStatic `Foo.suspend()V`
+    invoke `TestClass.run()V` @this
+    invokeStatic `Foo.useItf(LItf;)V` @param
+    return
