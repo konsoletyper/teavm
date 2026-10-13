@@ -1,0 +1,67 @@
+var @this as this
+$0
+    @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
+    @7 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    if @7 != 0 then goto $2 else goto $1
+$1
+    @i := 1
+    @l := 2L
+    @f := 3.0F
+    @d := 4.0
+    goto $3
+$2
+    @8 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    switch @8 case 0 goto $5 case 1 goto $9 else goto $1
+$3
+    @d_3 := phi @d from $1, @d_1 from $5
+    @f_3 := phi @f from $1, @f_1 from $5
+    @l_3 := phi @l from $1, @l_1 from $5
+    @i_3 := phi @i from $1, @i_1 from $5
+    invokeStatic `Foo.suspend()V`
+    @9 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @9 != 0 then goto $6 else goto $4
+$4
+    @i2_1 := @i_3 + @i_3 as int
+    goto $7
+$5
+    @d_1 := invoke `org.teavm.runtime.Fiber.popDouble()D` @fiber
+    @f_1 := invoke `org.teavm.runtime.Fiber.popFloat()F` @fiber
+    @l_1 := invoke `org.teavm.runtime.Fiber.popLong()J` @fiber
+    @i_1 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    goto $3
+$6
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @i_3
+    invoke `org.teavm.runtime.Fiber.push(J)V` @fiber, @l_3
+    invoke `org.teavm.runtime.Fiber.push(F)V` @fiber, @f_3
+    invoke `org.teavm.runtime.Fiber.push(D)V` @fiber, @d_3
+    @10 := 0
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @10
+    return
+$7
+    @i2_2 := phi @i2 from $9, @i2_1 from $4
+    @d_4 := phi @d_2 from $9, @d_3 from $4
+    @f_4 := phi @f_2 from $9, @f_3 from $4
+    @l_4 := phi @l_2 from $9, @l_3 from $4
+    @i_4 := phi @i_2 from $9, @i_3 from $4
+    invokeStatic `Foo.suspend()V`
+    @11 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @11 != 0 then goto $10 else goto $8
+$8
+    invokeStatic `Foo.use(IJFDI)V` @i_4, @l_4, @f_4, @d_4, @i2_2
+    return
+$9
+    @i2 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    @d_2 := invoke `org.teavm.runtime.Fiber.popDouble()D` @fiber
+    @f_2 := invoke `org.teavm.runtime.Fiber.popFloat()F` @fiber
+    @l_2 := invoke `org.teavm.runtime.Fiber.popLong()J` @fiber
+    @i_2 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    goto $7
+$10
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @i_4
+    invoke `org.teavm.runtime.Fiber.push(J)V` @fiber, @l_4
+    invoke `org.teavm.runtime.Fiber.push(F)V` @fiber, @f_4
+    invoke `org.teavm.runtime.Fiber.push(D)V` @fiber, @d_4
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @i2_2
+    @12 := 1
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @12
+    return
