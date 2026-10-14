@@ -39,6 +39,17 @@ public class JsConsolePrintStreamTest {
     }
 
     @Test
+    public void keepsCharacterSplitAcrossFlush() {
+        var bytes = "a\u20acb".getBytes(StandardCharsets.UTF_8);
+        var stream = new CapturingPrintStream();
+        stream.write(bytes, 0, 2);
+        stream.flush();
+        stream.write(bytes, 2, bytes.length - 2);
+        stream.flush();
+        assertEquals("a\u20acb", stream.output.toString());
+    }
+
+    @Test
     public void writesArrayLongerThanBuffer() {
         // 67 UTF-8 bytes: three 32-byte encoder chunks, with a multi-byte character across the first boundary
         var text = "0123456789abcdefghijklmnopqrstu\u20acvwxyz\u00e9ABCDEFGHIJKLMNOPQRSTUVWXYZ";

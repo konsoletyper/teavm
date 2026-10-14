@@ -182,8 +182,8 @@ public abstract class JsConsolePrintStream extends PrintStream {
 
         private void flush() {
             if (buffer.position() > 0) {
-                output(true);
-                decoder.reset();
+                // Flushing is not the end of the stream: keep an incomplete UTF-8 sequence pending
+                output(false);
             }
         }
 
