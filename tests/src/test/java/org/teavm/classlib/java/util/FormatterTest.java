@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import java.math.BigDecimal;
 import java.util.DuplicateFormatFlagsException;
 import java.util.FormatFlagsConversionMismatchException;
 import java.util.Formattable;
@@ -283,6 +284,27 @@ public class FormatterTest {
         assertEquals("12.050", new Formatter(Locale.US).format("%4.3f", 12.05).toString());
     }
     
+    @Test
+    public void roundsFloatHalfUp() {
+        assertEquals("0.3", new Formatter(Locale.US).format("%.1f", 0.25).toString());
+        assertEquals("0.13", new Formatter(Locale.US).format("%.2f", 0.125).toString());
+        assertEquals("0.63", new Formatter(Locale.US).format("%.2f", 0.625).toString());
+        assertEquals("3", new Formatter(Locale.US).format("%.0f", 2.5).toString());
+        assertEquals("1", new Formatter(Locale.US).format("%.0f", 0.5).toString());
+        assertEquals("-0.13", new Formatter(Locale.US).format("%.2f", -0.125).toString());
+        assertEquals("10.0", new Formatter(Locale.US).format("%.1f", 9.95).toString());
+        assertEquals("2.3", new Formatter(Locale.US).format("%.1f", 2.25f).toString());
+        assertEquals("0.13", new Formatter(Locale.US).format("%.2f", new BigDecimal("0.125")).toString());
+    }
+
+    @Test
+    public void roundsFloatFromShortestDecimalRepresentation() {
+        // Formatter rounds the digits of Double.toString, not the exact binary value
+        assertEquals("1.01", new Formatter(Locale.US).format("%.2f", 1.005).toString());
+        assertEquals("2.68", new Formatter(Locale.US).format("%.2f", 2.675).toString());
+        assertEquals("0.4", new Formatter(Locale.US).format("%.1f", 0.35).toString());
+    }
+
     @Test
     public void formatsEscapePercent() {
         assertEquals("%", new Formatter().format("%%", "%").toString());

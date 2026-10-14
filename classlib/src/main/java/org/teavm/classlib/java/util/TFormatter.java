@@ -23,6 +23,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -285,6 +286,7 @@ public final class TFormatter implements Closeable, Flushable {
             }
             format.setMaximumFractionDigits(precision);
             format.setMinimumFractionDigits(precision);
+            format.setRoundingMode(RoundingMode.HALF_UP);
             format.setGroupingUsed((flags & TFormattableFlags.GROUPING_SEPARATOR) != 0);
             if ((flags & TFormattableFlags.PARENTHESIZED_NEGATIVE) != 0) {
                 format.setNegativePrefix("(");
