@@ -188,6 +188,15 @@ public final class TFormatter implements Closeable, Flushable {
 
                 formatSpecifierStart = index;
                 char specifier = parseFormatSpecifier();
+                // %n and %% do not correspond to any argument
+                if (specifier == 'n') {
+                    formatLineSeparator();
+                    continue;
+                }
+                if (specifier == '%') {
+                    formatPercent();
+                    continue;
+                }
                 configureFormat();
                 formatValue(specifier);
             }
@@ -246,12 +255,35 @@ public final class TFormatter implements Closeable, Flushable {
                     formatFloat(specifier, false);
                     break;
 
-                case '%':
-                    out.append("%");
-                    break;
                 default:
                     throw new UnknownFormatConversionException(String.valueOf(specifier));
             }
+        }
+
+        private void formatLineSeparator() throws IOException {
+            if (flags != 0) {
+                throw new TIllegalFormatFlagsException(flagsToString(flags));
+            }
+            if (width != -1) {
+                throw new TIllegalFormatWidthException(width);
+            }
+            if (precision != -1) {
+                throw new TIllegalFormatPrecisionException(precision);
+            }
+            out.append(System.lineSeparator());
+        }
+
+        private void formatPercent() throws IOException {
+            if ((flags & ~TFormattableFlags.LEFT_JUSTIFY) != 0) {
+                throw new TIllegalFormatFlagsException(flagsToString(flags & ~TFormattableFlags.LEFT_JUSTIFY));
+            }
+            if (precision != -1) {
+                throw new TIllegalFormatPrecisionException(precision);
+            }
+            if ((flags & TFormattableFlags.LEFT_JUSTIFY) != 0 && width == -1) {
+                throw new TMissingFormatWidthException(format.substring(formatSpecifierStart, index));
+            }
+            formatGivenString(false, "%");
         }
 
         private void formatFloat(char specifier, boolean upperCase) throws IOException {
