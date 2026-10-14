@@ -130,8 +130,9 @@ public abstract class JsConsolePrintStream extends PrintStream {
     @Override
     public void flush() {
         if (flushAction != null) {
+            var action = flushAction;
             flushAction = null;
-            flushAction.run();
+            action.run();
         }
     }
 
@@ -167,6 +168,7 @@ public abstract class JsConsolePrintStream extends PrintStream {
             while (len > 0) {
                 var count = Math.min(len, buffer.remaining());
                 buffer.put(b, off, count);
+                off += count;
                 len -= count;
                 output();
             }
@@ -181,6 +183,7 @@ public abstract class JsConsolePrintStream extends PrintStream {
         private void flush() {
             if (buffer.position() > 0) {
                 output(true);
+                decoder.reset();
             }
         }
 
