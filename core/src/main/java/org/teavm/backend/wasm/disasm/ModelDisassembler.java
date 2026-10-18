@@ -32,17 +32,22 @@ import org.teavm.backend.wasm.parser.WasmHollowType;
  */
 public class ModelDisassembler {
     private final DisassemblyWriter writer;
-    private final ModelNameProvider names = new ModelNameProvider();
+    private final ModelNameProvider names;
 
     public ModelDisassembler(DisassemblyWriter writer) {
+        this(writer, true);
+    }
+
+    public ModelDisassembler(DisassemblyWriter writer, boolean withLocalNames) {
         this.writer = writer;
+        this.names = new ModelNameProvider(withLocalNames);
     }
 
     public static String toString(WasmFunction function) {
         var buffer = new StringWriter();
         var writer = new DisassemblyTextWriter(new PrintWriter(buffer));
         writer.setWithIndices(false);
-        new ModelDisassembler(writer).disassemble(function);
+        new ModelDisassembler(writer, false).disassemble(function);
         writer.flush();
         return buffer.toString();
     }

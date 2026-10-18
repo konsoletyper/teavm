@@ -196,7 +196,7 @@ public class WasmLivenessAnalysisTest {
         body.getLocal(a).drop();
 
         assertLiveIn(function.getBody(), "b", "a", "", "");
-        assertLiveIn(handler.list, "b", "", "a");
+        assertLiveIn(handler.list, "b", "", "");
         assertLiveIn(tryInsn.getBody(), "b", "b", "a b", "b", "b", "a b", "b", "", "");
     }
 

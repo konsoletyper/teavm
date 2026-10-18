@@ -17,56 +17,71 @@ package org.teavm.backend.wasm.analysis;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.instruction.WasmInstruction;
 
-/**
- * <p>Cursor over instructions of a single list, produced by {@link WasmLivenessAnalysis#iterate}.
- * Initially points to the first instruction of the list. After the last instruction cursor points to
- * the end of the list, where {@link #getInstruction()} returns {@code null}.</p>
- *
- * <p>Live-in set is the set of locals live right before current instruction. It takes into account
- * all successors of the instruction, including branch targets and exception handlers.
- * Live-out set is the set of locals live right after current instruction, i.e. at the point where
- * control falls through to the next instruction of the list. For instructions that never fall
- * through (like {@code br} or {@code return}) live-out set is meaningless.</p>
- */
 public class WasmLivenessCursor {
     private WasmFunction function;
-    private WasmInstruction[] instructions;
-    private BitSet[] liveSets;
+    private int[][] genSets;
+    private int[][] killSets;
+    private BitSet liveInSet;
+    private BitSet liveOutSet;
     private int index;
+    private WasmInstruction instruction;
+    private WasmInstruction nextInstruction;
 
-    WasmLivenessCursor(WasmFunction function, WasmInstruction[] instructions, BitSet[] liveSets) {
+    WasmLivenessCursor(WasmFunction function, int[][] genSets, int[][] killSets, BitSet liveInSet,
+            WasmInstruction instruction) {
         this.function = function;
-        this.instructions = instructions;
-        this.liveSets = liveSets;
+        this.genSets = genSets;
+        this.killSets = killSets;
+        this.liveInSet = liveInSet;
+        this.instruction = instruction;
+        advance();
     }
 
-    /**
-     * Returns current instruction, or {@code null} if cursor points to the end of the list.
-     */
+    private void advance() {
+        nextInstruction = instruction != null ? instruction.getNext() : null;
+        var gen = genSets[index];
+        var kill = killSets[index];
+        if (gen == null && kill == null) {
+            liveOutSet = liveInSet;
+        } else {
+            liveOutSet = (BitSet) liveInSet.clone();
+            if (kill != null) {
+                for (int local : kill) {
+                    liveOutSet.clear(local);
+                }
+            }
+            if (gen != null) {
+                for (int local : gen) {
+                    liveOutSet.set(local);
+                }
+            }
+        }
+    }
+
     public WasmInstruction getInstruction() {
-        return index < instructions.length ? instructions[index] : null;
+        return instruction;
     }
 
     public boolean isAtEnd() {
-        return index == instructions.length;
+        return index == genSets.length - 1;
     }
 
-    /**
-     * Moves cursor to the next instruction.
-     *
-     * @return {@code false} if cursor reached the end of the list.
-     */
     public boolean next() {
-        if (index == instructions.length) {
+        if (index == genSets.length) {
             throw new NoSuchElementException();
         }
-        return ++index < instructions.length;
+        var hasNext = ++index < genSets.length - 1;
+        liveInSet = liveOutSet;
+        instruction = nextInstruction;
+        advance();
+        return hasNext;
     }
 
     /**
@@ -74,7 +89,7 @@ public class WasmLivenessCursor {
      * of the list, checks whether local is live at the end of the list.
      */
     public boolean isLiveIn(WasmLocal local) {
-        return liveSets[index].get(local.getIndex());
+        return liveInSet.get(local.getIndex());
     }
 
     /**
@@ -82,20 +97,28 @@ public class WasmLivenessCursor {
      */
     public boolean isLiveOut(WasmLocal local) {
         checkNotAtEnd();
-        return liveSets[index + 1].get(local.getIndex());
+        return liveOutSet.get(local.getIndex());
     }
 
     public List<WasmLocal> getLiveIn() {
-        return toLocals(liveSets[index]);
+        return toLocals(liveInSet);
     }
 
     public List<WasmLocal> getLiveOut() {
         checkNotAtEnd();
-        return toLocals(liveSets[index + 1]);
+        return toLocals(liveOutSet);
+    }
+
+    public List<? extends WasmLocal> getGenSet() {
+        return toLocals(genSets[index]);
+    }
+
+    public List<? extends WasmLocal> getKillSet() {
+        return toLocals(killSets[index]);
     }
 
     private void checkNotAtEnd() {
-        if (index == instructions.length) {
+        if (index == genSets.length) {
             throw new IllegalStateException("Cursor points to the end of the list");
         }
     }
@@ -104,6 +127,18 @@ public class WasmLivenessCursor {
         var locals = function.getLocalVariables();
         var result = new ArrayList<WasmLocal>(set.cardinality());
         for (var i = set.nextSetBit(0); i >= 0; i = set.nextSetBit(i + 1)) {
+            result.add(locals.get(i));
+        }
+        return result;
+    }
+
+    private List<? extends WasmLocal> toLocals(int[] set) {
+        if (set == null) {
+            return Collections.emptyList();
+        }
+        var locals = function.getLocalVariables();
+        var result = new ArrayList<WasmLocal>(set.length);
+        for (var i : set) {
             result.add(locals.get(i));
         }
         return result;

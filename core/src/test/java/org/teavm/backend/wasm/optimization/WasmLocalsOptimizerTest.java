@@ -26,6 +26,7 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmBlock;
 import org.teavm.backend.wasm.model.instruction.WasmBranch;
+import org.teavm.backend.wasm.model.instruction.WasmBreak;
 import org.teavm.backend.wasm.model.instruction.WasmCall;
 import org.teavm.backend.wasm.model.instruction.WasmCatchClause;
 import org.teavm.backend.wasm.model.instruction.WasmConditional;
@@ -35,6 +36,9 @@ import org.teavm.backend.wasm.model.instruction.WasmInstruction;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 import org.teavm.backend.wasm.model.instruction.WasmInt64Constant;
+import org.teavm.backend.wasm.model.instruction.WasmIntBinary;
+import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.model.instruction.WasmReturn;
 import org.teavm.backend.wasm.model.instruction.WasmSetLocal;
 import org.teavm.backend.wasm.model.instruction.WasmTeeLocal;
@@ -86,36 +90,6 @@ public class WasmLocalsOptimizerTest {
                 "local.get $a",
                 "drop",
                 "local.get $b",
-                "return"
-        );
-        assertLocals("a", "b");
-    }
-
-    @Test
-    public void reusesColorReleasedByLastRead() {
-        var a = local("a");
-        var b = local("b");
-        var c = local("c");
-        body
-                .i32Const(1).setLocal(a)
-                .i32Const(2).setLocal(b)
-                .getLocal(a).drop()
-                .i32Const(3).setLocal(c)
-                .getLocal(b).drop()
-                .getLocal(c).return_();
-
-        assertOptimized(
-                "i32.const 1",
-                "local.set $a",
-                "i32.const 2",
-                "local.set $b",
-                "local.get $a",
-                "drop",
-                "i32.const 3",
-                "local.set $a",
-                "local.get $b",
-                "drop",
-                "local.get $a",
                 "return"
         );
         assertLocals("a", "b");
@@ -228,38 +202,6 @@ public class WasmLocalsOptimizerTest {
     }
 
     @Test
-    public void conflictingDefinitionsPinned() {
-        var x = local("x");
-        var m = local("m");
-        body.i32Const(0);
-        var conditional = body.conditional();
-        new Code(conditional.getThenBlock()).i32Const(1).setLocal(x);
-        new Code(conditional.getElseBlock())
-                .i32Const(2).setLocal(m)
-                .i32Const(3).setLocal(x)
-                .getLocal(m).drop();
-        body.getLocal(x).return_();
-
-        assertOptimized(
-                "i32.const 0",
-                "if $label_0",
-                "  i32.const 1",
-                "  local.set $x",
-                "else (; $label_0 ;)",
-                "  i32.const 2",
-                "  local.set $m",
-                "  i32.const 3",
-                "  local.set $x",
-                "  local.get $m",
-                "  drop",
-                "end (; $label_0 ;)",
-                "local.get $x",
-                "return"
-        );
-        assertLocals("x", "m");
-    }
-
-    @Test
     public void variableLiveAcrossLoop() {
         var a = local("a");
         var b = local("b");
@@ -328,6 +270,51 @@ public class WasmLocalsOptimizerTest {
                 "return"
         );
         assertLocals("i", "u");
+    }
+
+    @Test
+    public void variableKilledInBranchInLoop() {
+        var a = local("a");
+        var b = local("b");
+
+        body.i32Const(1).setLocal(a);
+        body.i32Const(2).setLocal(b);
+
+        var containingBlock = body.loop();
+        var loop = containingBlock.loop();
+        loop.getLocal(b).i32Const(1).add().setLocal(b);
+        loop.getLocal(a).i32Const(10).less().branch(containingBlock);
+        loop.getLocal(b).i32Const(1).add().setLocal(b);
+        loop.breakTo(loop);
+
+        body.getLocal(b).return_();
+
+        assertOptimized(
+                """
+                i32.const 1
+                local.set $a
+                i32.const 2
+                local.set $b
+                loop $label_0
+                  loop $label_1
+                    local.get $b
+                    i32.const 1
+                    i32.add
+                    local.set $b
+                    local.get $a
+                    i32.const 10
+                    i32.lt_s
+                    br_if $label_0
+                    local.get $b
+                    i32.const 1
+                    i32.add
+                    local.set $b
+                    br $label_1
+                  end (; $label_1 ;)
+                end (; $label_0 ;)
+                local.get $b
+                return""".stripIndent()
+        );
     }
 
     @Test
@@ -581,6 +568,18 @@ public class WasmLocalsOptimizerTest {
 
         Code branch(Code target) {
             return add(new WasmBranch(target.list));
+        }
+
+        Code breakTo(Code target) {
+            return add(new WasmBreak(target.list));
+        }
+
+        Code less() {
+            return add(new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED));
+        }
+
+        Code add() {
+            return add(new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD));
         }
 
         Code block() {

@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.optimization;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -136,9 +137,7 @@ import org.teavm.backend.wasm.model.instruction.WasmUnreachable;
  * <p>{@code local.tee} is always kept, even if the removed {@code local.get} was the only read of the value,
  * since the value may be read elsewhere, including targets of branches and exception handlers.
  * {@link WasmDeadStoreOptimizer} decides this precisely, using liveness computed after this pass.</p>
- *
- * <p>Additionally, identity copies, i.e. {@code local.get X ... local.set X} with no writes to {@code X}
- * in between, are removed, see {@link #handleIdentityCopy(WasmSetLocal)}.</p>
+
  *
  * <p>Before the main pass, conditional jumps over blocks are turned into {@code if} instructions,
  * see {@link #reconstructConditionals(WasmInstructionList)}. This merges blocks, so that the main pass
@@ -159,7 +158,8 @@ public class WasmInstructionsOptimizer {
     private int frameStart;
     private Value top;
     private Spill topSpill;
-    private final Map<WasmInstructionList, List<BranchRef>> branchRefs = new HashMap<>();
+    private final Map<WasmInstructionList, Set<WasmInstruction>> branchRefs = new HashMap<>();
+    private final Map<WasmInstructionList, List<WasmCatchClause>> branchCatchRefs = new HashMap<>();
     private final WasmTypeInference conditionTypeInference = new WasmTypeInference();
     private final Set<WasmInstruction> conditionInstructions = new HashSet<>();
     private final WasmArrayConstructionOptimizer arrayConstructionOptimizer = new WasmArrayConstructionOptimizer();
@@ -241,6 +241,7 @@ public class WasmInstructionsOptimizer {
         while (insn != null) {
             if (insn instanceof WasmBlock block) {
                 if (!block.isLoop()) {
+                    optimizeLastBreak(block.getBody());
                     var replacement = reconstructConditional(block);
                     if (replacement != null) {
                         // Condition may contain blocks as well, so examine the replacement from the beginning
@@ -250,12 +251,39 @@ public class WasmInstructionsOptimizer {
                 }
                 reconstructConditionals(block.getBody());
             } else if (insn instanceof WasmConditional conditional) {
+                optimizeLastBreak(conditional.getThenBlock());
+                optimizeLastBreak(conditional.getElseBlock());
                 reconstructConditionals(conditional.getThenBlock());
                 reconstructConditionals(conditional.getElseBlock());
             } else if (insn instanceof WasmTry tryInsn) {
                 reconstructConditionals(tryInsn.getBody());
             }
             insn = insn.getNext();
+        }
+    }
+
+    private void optimizeLastBreak(WasmInstructionList list) {
+        var last = list.getLast();
+        if (last == null) {
+            return;
+        }
+        if (last instanceof WasmBreak br) {
+            if (br.getTarget() == list) {
+                removeRef(list, br);
+                br.delete();
+            } else {
+                var beforeLast = last.getPrevious();
+                if (beforeLast instanceof WasmBranch beforeBr) {
+                    if (beforeBr.getTarget() == list) {
+                        removeRef(beforeBr.getTarget(), beforeBr);
+                        beforeBr.setTarget(br.getTarget());
+                        refs(beforeBr.getTarget()).add(beforeBr);
+                        br.delete();
+                        removeRef(br.getTarget(), br);
+                        WasmInstructionUtil.negate(beforeBr.getPrevious());
+                    }
+                }
+            }
         }
     }
 
@@ -281,7 +309,7 @@ public class WasmInstructionsOptimizer {
         if (innerRefs.size() != 1) {
             return null;
         }
-        var jump = asJump(innerRefs.get(0).insn, inner.getBody());
+        var jump = asJump(innerRefs.iterator().next(), inner.getBody());
         if (jump == null || !isCondition(inner.getBody().getFirst(), jump)
                 || isReferencedFromCondition(outer.getBody(), inner.getBody())) {
             return null;
@@ -417,8 +445,51 @@ public class WasmInstructionsOptimizer {
         conditional.insertNext(branch);
         conditional.delete();
         removeRef(br.getTarget(), br);
-        refs(br.getTarget()).add(new BranchRef(branch, null));
+        refs(br.getTarget()).add(branch);
         return true;
+    }
+
+    /*
+      Replaces condition in form
+
+      if (result i32)
+        1|0
+      else
+        0|1
+      end
+
+      with eqz eqz or eqz respectively
+     */
+    private void checkTrueFalseCondition(WasmConditional conditional) {
+        if (conditional.getType() == null || conditional.getType().getOutputTypes().size() != 1
+                || conditional.getType().getOutputTypes().get(0) != WasmType.INT32) {
+            return;
+        }
+        if (!isSingleInstruction(conditional.getThenBlock()) || !isSingleInstruction(conditional.getElseBlock())) {
+            return;
+        }
+        if (!(conditional.getThenBlock().getFirst() instanceof WasmInt32Constant thenCst)
+                || !(conditional.getElseBlock().getFirst() instanceof WasmInt32Constant elseCst)) {
+            return;
+        }
+        if (thenCst.getValue() == 1 && elseCst.getValue() == 0) {
+            WasmInstructionUtil.negate(conditional.getPrevious());
+            insertEqzBefore(conditional);
+            conditional.delete();
+        } else if (thenCst.getValue() == 0 && elseCst.getValue() == 1) {
+            WasmInstructionUtil.negate(conditional.getPrevious());
+            conditional.delete();
+        }
+    }
+
+    private boolean isSingleInstruction(WasmInstructionList list) {
+        return list.getFirst() != null && list.getLast() == list.getFirst();
+    }
+
+    private void insertEqzBefore(WasmInstruction insn) {
+        var eqz = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ);
+        eqz.setLocation(insn.getLocation());
+        insn.insertPrevious(eqz);
     }
 
     /**
@@ -474,6 +545,7 @@ public class WasmInstructionsOptimizer {
             elseSet.delete();
         }
         conditional.insertNext(result);
+        checkTrueFalseCondition(conditional);
         return result;
     }
 
@@ -528,8 +600,16 @@ public class WasmInstructionsOptimizer {
     }
 
     private boolean isReferencedFromCondition(WasmInstructionList target, WasmInstructionList list) {
-        for (var ref : refs(target)) {
-            var insn = ref.insn;
+        for (var insn : refs(target)) {
+            while (insn != null && insn.getOwner() != list) {
+                insn = insn.getOwner().getBreakTarget();
+            }
+            if (insn != null && conditionInstructions.contains(insn)) {
+                return true;
+            }
+        }
+        for (var ref : catchRefs(target)) {
+            WasmInstruction insn = ref.getOwner();
             while (insn != null && insn.getOwner() != list) {
                 insn = insn.getOwner().getBreakTarget();
             }
@@ -586,46 +666,71 @@ public class WasmInstructionsOptimizer {
         }
     }
 
-    private List<BranchRef> refs(WasmInstructionList target) {
-        return branchRefs.computeIfAbsent(target, k -> new ArrayList<>());
+    private Set<WasmInstruction> refs(WasmInstructionList target) {
+        return branchRefs.computeIfAbsent(target, k -> new LinkedHashSet<>());
+    }
+
+    private List<WasmCatchClause> catchRefs(WasmInstructionList target) {
+        return branchCatchRefs.computeIfAbsent(target, k -> new ArrayList<>());
     }
 
     private void removeRef(WasmInstructionList target, WasmInstruction insn) {
-        refs(target).removeIf(ref -> ref.insn == insn);
+        var set = branchRefs.get(target);
+        if (set != null) {
+            set.remove(insn);
+        }
     }
 
     private void retargetToArms(WasmInstructionList target, WasmConditional conditional) {
         var refs = branchRefs.remove(target);
-        if (refs == null) {
-            return;
-        }
-        for (var ref : refs) {
-            var insn = ref.insn;
-            while (insn.getOwner() != conditional.getThenBlock() && insn.getOwner() != conditional.getElseBlock()) {
-                insn = insn.getOwner().getBreakTarget();
+        if (refs != null) {
+            for (var ref : refs) {
+                var insn = ref;
+                if (insn.getOwner() == null) {
+                    continue;
+                }
+                while (insn.getOwner() != conditional.getThenBlock() && insn.getOwner() != conditional.getElseBlock()) {
+                    insn = insn.getOwner().getBreakTarget();
+                }
+                retarget(ref, target, insn.getOwner());
             }
-            retarget(ref, target, insn.getOwner());
+        }
+        var catchRefs = branchCatchRefs.remove(target);
+        if (catchRefs != null) {
+            for (var ref : catchRefs) {
+                WasmInstruction insn = ref.getOwner();
+                if (insn.getOwner() == null) {
+                    continue;
+                }
+                while (insn.getOwner() != conditional.getThenBlock() && insn.getOwner() != conditional.getElseBlock()) {
+                    insn = insn.getOwner().getBreakTarget();
+                }
+                retarget(ref, insn.getOwner());
+            }
         }
     }
 
-    private void retarget(BranchRef ref, WasmInstructionList from, WasmInstructionList to) {
-        if (ref.clause != null) {
-            ref.clause.setTarget(to);
-        } else if (ref.insn instanceof WasmBranch branch) {
+    private void retarget(WasmInstruction ref, WasmInstructionList from, WasmInstructionList to) {
+        if (ref instanceof WasmBranch branch) {
             branch.setTarget(to);
-        } else if (ref.insn instanceof WasmBreak br) {
+        } else if (ref instanceof WasmBreak br) {
             br.setTarget(to);
-        } else if (ref.insn instanceof WasmNullBranch branch) {
+        } else if (ref instanceof WasmNullBranch branch) {
             branch.setTarget(to);
-        } else if (ref.insn instanceof WasmCastBranch branch) {
+        } else if (ref instanceof WasmCastBranch branch) {
             branch.setTarget(to);
-        } else if (ref.insn instanceof WasmSwitch switchInsn) {
+        } else if (ref instanceof WasmSwitch switchInsn) {
             switchInsn.getTargets().replaceAll(t -> t == from ? to : t);
             if (switchInsn.getDefaultTarget() == from) {
                 switchInsn.setDefaultTarget(to);
             }
         }
         refs(to).add(ref);
+    }
+
+    private void retarget(WasmCatchClause ref, WasmInstructionList to) {
+        ref.setTarget(to);
+        catchRefs(to).add(ref);
     }
 
     private void processList(WasmInstructionList list) {
@@ -651,35 +756,6 @@ public class WasmInstructionsOptimizer {
         frameStart = savedFrameStart;
     }
 
-    /**
-     * <p>Handles {@code local.set} that writes to a local the value that was read from the same local, while
-     * the local was not written since then. Such copies appear after coalescing of locals.</p>
-     *
-     * <p>Identity copy is turned into a special spill, positioned where the value was read. If a later
-     * {@code local.get} is kept on stack, both {@code local.set} and the later {@code local.get} are removed,
-     * so the value read by the original {@code local.get} stays on stack. Otherwise, when the spill is
-     * discarded, both {@code local.get} and {@code local.set} are removed. In both cases, the spill that
-     * was the last one for the local before the copy becomes the last one again, since the copy does not
-     * change the value of the local.</p>
-     */
-    private boolean handleIdentityCopy(WasmSetLocal set) {
-        var value = top;
-        if (value == null || value.copyOf == null) {
-            return false;
-        }
-        var index = set.getLocal().getIndex();
-        if (value.copyOf.getLocal() != set.getLocal() || value.definitionCount != definitionCounts[index]) {
-            return false;
-        }
-        top = value.previous;
-        discardSpills(value.position);
-        var spill = new Spill(value.position, topSpill, set);
-        spill.identityGet = value.copyOf;
-        spill.shadowed = lastSpills[index];
-        topSpill = spill;
-        lastSpills[index] = spill;
-        return true;
-    }
 
     private void retire(Spill spill) {
         spill.alive = false;
@@ -845,16 +921,6 @@ public class WasmInstructionsOptimizer {
         }
     }
 
-    private static class BranchRef {
-        final WasmInstruction insn;
-        final WasmCatchClause clause;
-
-        BranchRef(WasmInstruction insn, WasmCatchClause clause) {
-            this.insn = insn;
-            this.clause = clause;
-        }
-    }
-
     private class BranchRefCollector extends WasmDefaultInstructionVisitor {
         @Override
         public void visit(WasmBranch instruction) {
@@ -888,12 +954,12 @@ public class WasmInstructionsOptimizer {
         public void visit(WasmTry instruction) {
             super.visit(instruction);
             for (var clause : instruction.getCatches()) {
-                refs(clause.getTarget()).add(new BranchRef(instruction, clause));
+                catchRefs(clause.getTarget()).add(clause);
             }
         }
 
         private void addRef(WasmInstructionList target, WasmInstruction insn) {
-            refs(target).add(new BranchRef(insn, null));
+            refs(target).add(insn);
         }
     }
 
@@ -1008,9 +1074,6 @@ public class WasmInstructionsOptimizer {
 
         @Override
         public void visit(WasmSetLocal instruction) {
-            if (handleIdentityCopy(instruction)) {
-                return;
-            }
             definitionCounts[instruction.getLocal().getIndex()]++;
             consume(1);
             var spill = new Spill(nextPosition++, topSpill, instruction);

@@ -120,12 +120,6 @@ public class TestComparator {
                             public boolean functionStart(int index, int size) {
                                 var name = functionNames.get(index);
                                 if (name != null) {
-                                    if (name.equals("java.nio.Buffer::capacity")) {
-                                        System.out.println(path + " " + size);
-                                        if (size > 9) {
-                                            System.out.println("size > 9");
-                                        }
-                                    }
                                     moduleInfo.functionSizes.put(name, size);
                                 }
                                 return false;

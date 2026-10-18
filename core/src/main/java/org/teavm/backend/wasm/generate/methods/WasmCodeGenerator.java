@@ -134,7 +134,6 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
     private MethodReference currentMethod;
     private Program currentProgram;
     private WasmFunction currentWasmFunction;
-    private WasmInstructionList rootBuilder;
     private int currentFirstVariable;
     private BasicBlock currentBlock;
     private BasicBlock expectedBasicBlock;
@@ -934,7 +933,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         }
         insertPhis(builder, continueTarget);
         var continueLabel = labels[continueTarget.getIndex()];
-        if (continueLabel != null) {
+        if (continueLabel != null && continueLabel.getBreakTarget() != builder.list.getBreakTarget()) {
             builder.breakTo(continueLabel);
         }
     }

@@ -36,6 +36,11 @@ public class ModelNameProvider implements NameProvider, WasmEntityIndexer {
     private final Indexes<WasmFunction> functions = new Indexes<>();
     private final Indexes<WasmCompositeType> types = new Indexes<>();
     private final Indexes<WasmGlobal> globals = new Indexes<>();
+    private boolean withLocalNames;
+
+    public ModelNameProvider(boolean withLocalNames) {
+        this.withLocalNames = withLocalNames;
+    }
 
     @Override
     public int function(WasmFunction function) {
@@ -60,6 +65,9 @@ public class ModelNameProvider implements NameProvider, WasmEntityIndexer {
 
     @Override
     public String local(int functionIndex, int index) {
+        if (!withLocalNames) {
+            return null;
+        }
         var function = functions.get(functionIndex);
         if (function == null) {
             return null;

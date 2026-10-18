@@ -62,8 +62,6 @@ import org.teavm.backend.wasm.model.instruction.WasmTry;
  * after the analysis was created.</p>
  */
 public class WasmLivenessAnalysis {
-    private static final BitSet EMPTY = new BitSet();
-
     private WasmFunction function;
     private Map<WasmInstructionList, ListInfo> listInfos = new HashMap<>();
     private Map<WasmInstruction, InstructionNode> instructionNodes = new HashMap<>();
@@ -108,54 +106,82 @@ public class WasmLivenessAnalysis {
         for (var insn = list.getFirst(); insn != null; insn = insn.getNext()) {
             ++count;
         }
-        var instructions = new WasmInstruction[count];
-        var liveSets = new BitSet[count + 1];
-        liveSets[count] = info.exit.live;
+        var liveSet = (BitSet) info.exit.live.clone();
+        var genSets = new int[count + 1][];
+        var killSets = new int[count + 1][];
         var index = count;
         for (var insn = list.getLast(); insn != null; insn = insn.getPrevious()) {
-            instructions[--index] = insn;
-            liveSets[index] = transfer(insn, liveSets[index + 1]);
+            transfer(insn, genSets, killSets, --index, liveSet);
         }
 
-        return new WasmLivenessCursor(function, instructions, liveSets);
+        return new WasmLivenessCursor(function, genSets, killSets, liveSet, list.getFirst());
     }
 
-    /**
-     * Computes live-in set of an instruction from its live-out set. Never modifies given set,
-     * may return either given set or set stored in a joint node, if live set does not change.
-     */
-    private BitSet transfer(WasmInstruction insn, BitSet after) {
+    private void transfer(WasmInstruction insn, int[][] genSets, int[][] killSets, int index, BitSet liveSet) {
         var node = instructionNodes.get(insn);
         if (node != null) {
-            return node.live;
-        }
-        if (insn instanceof WasmGetLocal) {
-            var index = ((WasmGetLocal) insn).getLocal().getIndex();
-            if (after.get(index)) {
-                return after;
+            transferLivenessInfo(genSets, killSets, index, liveSet, node.live);
+            var diff = (BitSet) node.live.clone();
+            diff.andNot(liveSet);
+            if (!diff.isEmpty()) {
+                killSets[index] = extract(diff);
             }
-            var result = (BitSet) after.clone();
-            result.set(index);
-            return result;
+            liveSet.or(diff);
+            return;
+        }
+        if (insn instanceof WasmGetLocal getLocal) {
+            if (!liveSet.get(getLocal.getLocal().getIndex())) {
+                killSets[index] = new int[] { getLocal.getLocal().getIndex() };
+                liveSet.set(getLocal.getLocal().getIndex());
+            }
         } else if (insn instanceof WasmSetLocal || insn instanceof WasmTeeLocal) {
-            var index = insn instanceof WasmSetLocal
+            var localIndex = insn instanceof WasmSetLocal
                     ? ((WasmSetLocal) insn).getLocal().getIndex()
                     : ((WasmTeeLocal) insn).getLocal().getIndex();
-            if (!after.get(index)) {
-                return after;
+            if (liveSet.get(localIndex)) {
+                genSets[index] = new int[] { localIndex };
+                liveSet.clear(localIndex);
             }
-            var result = (BitSet) after.clone();
-            result.clear(index);
-            return result;
-        } else if (insn instanceof WasmBlock) {
-            return listInfos.get(((WasmBlock) insn).getBody()).entry.live;
-        } else if (insn instanceof WasmTry) {
-            return listInfos.get(((WasmTry) insn).getBody()).entry.live;
+        } else if (insn instanceof WasmBlock block) {
+            transferInstructionList(block.getBody(), genSets, killSets, index, liveSet);
+        } else if (insn instanceof WasmTry tryInsn) {
+            transferInstructionList(tryInsn.getBody(), genSets, killSets, index, liveSet);
         } else if (insn.isTerminating()) {
-            return EMPTY;
-        } else {
-            return after;
+            if (!liveSet.isEmpty()) {
+                killSets[index] = extract(liveSet);
+                liveSet.clear();
+            }
         }
+    }
+
+    private void transferInstructionList(WasmInstructionList list, int[][] genSets, int[][] killSets, int index,
+            BitSet liveSet) {
+        transferLivenessInfo(genSets, killSets, index, liveSet, listInfos.get(list).entry.live);
+    }
+
+    private void transferLivenessInfo(int[][] genSets, int[][] killSets, int index, BitSet liveSet, BitSet live) {
+        var diff = (BitSet) live.clone();
+        diff.andNot(liveSet);
+        if (!diff.isEmpty()) {
+            killSets[index] = extract(diff);
+        }
+        liveSet.or(live);
+
+        diff = (BitSet) liveSet.clone();
+        diff.andNot(live);
+        if (!diff.isEmpty()) {
+            genSets[index] = extract(diff);
+        }
+        liveSet.andNot(diff);
+    }
+
+    private int[] extract(BitSet bitSet) {
+        var result = new int[bitSet.cardinality()];
+        var index = 0;
+        for (var bit = bitSet.nextSetBit(0); bit >= 0; bit = bitSet.nextSetBit(bit + 1)) {
+            result[index++] = bit;
+        }
+        return result;
     }
 
     private void propagate() {

@@ -15,12 +15,18 @@
  */
 package org.teavm.backend.wasm.optimization;
 
+import com.carrotsearch.hppc.IntArrayList;
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.teavm.backend.wasm.analysis.WasmDominanceOrderWalker;
 import org.teavm.backend.wasm.analysis.WasmLivenessAnalysis;
 import org.teavm.backend.wasm.analysis.WasmLivenessCursor;
@@ -28,81 +34,66 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmBlock;
-import org.teavm.backend.wasm.model.instruction.WasmConditional;
+import org.teavm.backend.wasm.model.instruction.WasmBreak;
 import org.teavm.backend.wasm.model.instruction.WasmDefaultInstructionVisitor;
 import org.teavm.backend.wasm.model.instruction.WasmGetLocal;
 import org.teavm.backend.wasm.model.instruction.WasmInstruction;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmSetLocal;
 import org.teavm.backend.wasm.model.instruction.WasmTeeLocal;
-import org.teavm.backend.wasm.model.instruction.WasmTry;
+import org.teavm.common.Graph;
+import org.teavm.common.GraphBuilder;
 
-/**
- * <p>Reduces number of locals by merging locals of the same type that are never live simultaneously.
- * This works similarly to register allocation for SSA, but since number of locals is unlimited,
- * there's no spilling.</p>
- *
- * <p>Every local gets a <em>color</em>, and all locals of the same color are eventually replaced
- * by a single local. Instructions are visited in dominance order by {@link WasmDominanceOrderWalker},
- * while maintaining which color is occupied by which local. When a local is defined first time
- * ({@code local.set} or {@code local.tee}), it gets a color of the same type that is not occupied
- * by any live local, or a new color, if there's no such color. When a local is read last time,
- * its color is released. On forks in dominator tree the state is saved, and restored when walk proceeds
- * to the other branch. At join points state from dominator lacks locals defined after the dominator,
- * so it's complemented by locals that are live at the join point.</p>
- *
- * <p>Locals that are live at the start of the function (i.e. parameters and locals that rely on
- * default value) get distinct colors before the walk. Parameters always keep their indexes.</p>
- *
- * <p>Since instructions are visited in their textual order and every forward edge points to an instruction
- * that follows its source, a local that is live at a reachable point has always got its color before
- * the walk reaches this point. Thus, interference of two locals is always detected at the definition
- * of one of them. For a local with single definition, the color is chosen at the definition, so it never
- * conflicts. However, a local may have multiple definitions (e.g. one in every branch of a conditional),
- * and a color chosen at the first definition may be occupied at another one. In this case, the local is
- * <em>pinned</em>, i.e. it gets a dedicated color that is never shared with other locals, and the whole
- * allocation is repeated.</p>
- */
 public class WasmLocalsOptimizer {
     private WasmFunction function;
     private List<WasmLocal> locals;
     private WasmLivenessAnalysis liveness;
-    private boolean[] pinned;
-    private boolean conflict;
 
     private int[] colors;
-    private List<WasmType> colorTypes = new ArrayList<>();
-    private List<String> colorNames = new ArrayList<>();
-    private List<WasmLocal> colorLocals = new ArrayList<>();
-    private Map<WasmType, List<Integer>> sharedColorsByType = new HashMap<>();
-    private int[] owners = new int[16];
-
     private WasmLivenessCursor cursor;
-    private ArrayDeque<WasmLivenessCursor> cursorStack = new ArrayDeque<>();
+    private IntSet[] skippedColors;
+    private boolean needsCoalescing;
+    private List<ColorInfo> colorInfos = new ArrayList<>();
+    private List<WasmLocal> colorLocals = new ArrayList<>();
+    private Map<WasmType, IntArrayList> availableColorsByType = new HashMap<>();
+    private IntArrayList owners = new IntArrayList();
+    private Graph assignmentGraph;
 
     private boolean friendlyToDebugger;
 
     public void optimize(WasmFunction function) {
+        if (function.getLocalVariables().isEmpty()) {
+            return;
+        }
         this.function = function;
         locals = function.getLocalVariables();
-        if (!locals.isEmpty()) {
-            liveness = new WasmLivenessAnalysis(function);
-            pinned = new boolean[locals.size()];
-            do {
-                conflict = false;
-                allocate();
-            } while (conflict);
-            rewrite();
+        liveness = new WasmLivenessAnalysis(function);
+        skippedColors = new IntSet[locals.size()];
+        prepareAssignmentGraph();
+        colors = new int[locals.size()];
+        Arrays.fill(colors, -1);
+        allocate();
+        if (needsCoalescing) {
+            Arrays.fill(colors, -1);
+            colorInfos.clear();
+            owners.clear();
+            availableColorsByType.clear();
+            allocate();
         }
+        rewrite();
+        skippedColors = null;
+        liveness = null;
+        colors = null;
+        availableColorsByType.clear();
         this.function = null;
         locals = null;
-        liveness = null;
-        pinned = null;
-        colors = null;
-        colorTypes.clear();
-        colorNames.clear();
-        colorLocals.clear();
-        sharedColorsByType.clear();
+    }
+
+    private void prepareAssignmentGraph() {
+        var builder = new GraphBuilder(locals.size());
+        var assignmentFinder = new WasmLocalAssignmentFinder(builder);
+        assignmentFinder.visitMany(function.getBody());
+        assignmentGraph = builder.build();
     }
 
     public void setFriendlyToDebugger(boolean debuggerFriendly) {
@@ -110,87 +101,89 @@ public class WasmLocalsOptimizer {
     }
 
     private void allocate() {
-        colors = new int[locals.size()];
-        Arrays.fill(colors, -1);
-        colorTypes.clear();
-        colorNames.clear();
-        sharedColorsByType.clear();
-
         var parameterCount = Math.min(function.getType().getParameterTypes().size(), locals.size());
         for (var i = 0; i < parameterCount; ++i) {
             colors[i] = newColor(locals.get(i));
         }
         var entryLive = liveness.iterate(function.getBody()).getLiveIn();
         for (var local : entryLive) {
-            if (colors[local.getIndex()] < 0) {
-                colors[local.getIndex()] = newColor(local);
+            var color = colors[local.getIndex()];
+            if (color < 0) {
+                color = newColor(local);
+                colors[local.getIndex()] = color;
             }
-        }
-        for (var i = parameterCount; i < locals.size(); ++i) {
-            if (pinned[i]) {
-                colors[i] = newColor(locals.get(i));
-            }
+            owners.set(color, local.getIndex());
         }
 
         new Walker().walk(function.getBody());
     }
 
     private int newColor(WasmLocal local) {
-        var color = colorTypes.size();
-        colorTypes.add(local.getType());
-        colorNames.add(local.getName());
-        if (!pinned[local.getIndex()]) {
-            sharedColorsByType.computeIfAbsent(local.getType(), k -> new ArrayList<>()).add(color);
-        }
-        if (color >= owners.length) {
-            owners = Arrays.copyOf(owners, owners.length * 2);
-        }
-        owners[color] = -1;
+        var color = colorInfos.size();
+        var colorInfo = new ColorInfo(local.getType(), local.getName());
+        colorInfos.add(colorInfo);
+        owners.add(-1);
         return color;
     }
 
-    /**
-     * Checks whether color is not occupied by a local that is live after current instruction.
-     * Color may still keep owner which is already dead, if the owner died on an edge, not by a read.
-     */
-    private boolean isFree(int color, int except) {
-        var owner = owners[color];
-        return owner < 0 || owner == except || !cursor.isLiveOut(locals.get(owner));
+    private boolean isFreeFor(int color, WasmLocal local) {
+        if (!isFree(color)) {
+            return false;
+        }
+        var set = skippedColors[local.getIndex()];
+        return set == null || !set.contains(color);
     }
 
-    private void use(WasmLocal local) {
+    private boolean isFree(int color) {
+        return owners.get(color) < 0;
+    }
+
+    private void kill(WasmLocal local) {
         var index = local.getIndex();
         var color = colors[index];
-        if (color >= 0 && owners[color] == index && !cursor.isLiveOut(local)) {
-            owners[color] = -1;
+        if (color >= 0 && owners.get(color) == index) {
+            availableColorsByType.computeIfAbsent(local.getType(), k -> new IntArrayList()).add(color);
+            owners.set(color, -1);
         }
     }
 
-    private void define(WasmLocal local) {
+    private void gen(WasmLocal local) {
         var index = local.getIndex();
-        if (pinned[index]) {
-            return;
-        }
         var color = colors[index];
         if (color < 0) {
             color = findFreeColor(local);
             colors[index] = color;
-            if (colorNames.get(color) == null) {
-                colorNames.set(color, local.getName());
+            if (colorInfos.get(color).name == null) {
+                colorInfos.get(color).name = local.getName();
             }
-        } else if (!isFree(color, index)) {
-            pinned[index] = true;
-            conflict = true;
-            return;
+        } else {
+            assert owners.get(color) == index || owners.get(color) < 0;
         }
-        owners[color] = cursor.isLiveOut(local) ? index : -1;
+        owners.set(color, index);
     }
 
     private int findFreeColor(WasmLocal local) {
-        var candidates = sharedColorsByType.get(local.getType());
+        var coalescingColor = coalescingCandidate(local);
+        if (coalescingColor >= 0) {
+            return coalescingColor;
+        }
+        var candidates = availableColorsByType.get(local.getType());
         if (candidates != null) {
-            for (var color : candidates) {
-                if (isFree(color, -1) && isMatchedName(colorNames.get(color), local.getName())) {
+            for (var candidate : candidates) {
+                if (!isFree(candidate.value)) {
+                    var backup = candidates.toArray();
+                    candidates.clear();
+                    for (var color : backup) {
+                        if (isFree(color)) {
+                            candidates.add(color);
+                        }
+                    }
+                    break;
+                }
+            }
+            for (var candidate : candidates) {
+                var color = candidate.value;
+                if (isMatchedName(color, local)) {
                     return color;
                 }
             }
@@ -198,44 +191,85 @@ public class WasmLocalsOptimizer {
         return newColor(local);
     }
 
-    /**
-     * Marks all locals live after current instruction as owners of their colors.
-     */
-    private void acquireLiveOut() {
-        for (var local : cursor.getLiveOut()) {
-            var color = colors[local.getIndex()];
-            if (color >= 0) {
-                owners[color] = local.getIndex();
+    private int coalescingCandidate(WasmLocal local) {
+        for (var target : assignmentGraph.outgoingEdges(local.getIndex())) {
+            if (assignmentGraph.incomingEdgesCount(target) > 1) {
+                for (var sibling : assignmentGraph.incomingEdges(target)) {
+                    if (sibling != local.getIndex()) {
+                        var color = colors[sibling];
+                        if (color >= 0 && isMatchedName(color, local)) {
+                            if (isFreeFor(color, local)) {
+                                return color;
+                            } else {
+                                scheduleCoalescing(color, local);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (assignmentGraph.incomingEdgesCount(local.getIndex()) > 0) {
+            for (var source : assignmentGraph.incomingEdges(local.getIndex())) {
+                var color = colors[source];
+                if (color >= 0 && isFreeFor(color, local) && isMatchedName(color, local)) {
+                    return color;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private void scheduleCoalescing(int color, WasmLocal local) {
+        needsCoalescing = true;
+        for (var liveOut : cursor.getLiveOut()) {
+            if (liveOut != local && !isPhiInput(liveOut) && !isPhi(liveOut)) {
+                skipColor(liveOut, color);
             }
         }
     }
 
-    private void rewrite() {
-        colorLocals.clear();
-        for (var i = 0; i < colorTypes.size(); ++i) {
-            colorLocals.add(null);
+    private void skipColor(WasmLocal local, int color) {
+        var set = skippedColors[local.getIndex()];
+        if (set == null) {
+            set = new IntHashSet();
+            skippedColors[local.getIndex()] = set;
         }
-        for (var i = 0; i < locals.size(); ++i) {
-            var color = colors[i];
+        set.add(color);
+    }
+
+    private boolean isPhiInput(WasmLocal local) {
+        for (var target : assignmentGraph.outgoingEdges(local.getIndex())) {
+            if (assignmentGraph.incomingEdgesCount(target) > 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isPhi(WasmLocal local) {
+        return assignmentGraph.incomingEdgesCount(local.getIndex()) > 1;
+    }
+
+    private void rewrite() {
+        colorLocals = new ArrayList<>(Collections.nCopies(colorInfos.size(), null));
+        for (var local = 0; local < colors.length; ++local) {
+            var color = colors[local];
             if (color >= 0 && colorLocals.get(color) == null) {
-                colorLocals.set(color, locals.get(i));
+                colorLocals.set(color, locals.get(local));
             }
         }
 
         var rewriter = new Rewriter();
         rewriter.visitMany(function.getBody());
 
-        var newLocals = new ArrayList<WasmLocal>();
-        for (int i = 0; i < colorLocals.size(); i++) {
-            var local = colorLocals.get(i);
+        var usedLocals = new ArrayList<WasmLocal>();
+        for (var local : colorLocals) {
             if (local != null) {
-                newLocals.add(local);
+                usedLocals.add(local);
             }
         }
-        for (var color = 0; color < newLocals.size(); ++color) {
-            colorLocals.get(color).setName(colorNames.get(color));
-        }
-        function.replaceLocals(newLocals);
+
+        function.replaceLocals(usedLocals);
     }
 
     private WasmLocal map(WasmLocal local) {
@@ -245,11 +279,13 @@ public class WasmLocalsOptimizer {
             // Only read in unreachable code
             color = colorLocals.size();
             colors[index] = color;
-            colorTypes.add(local.getType());
-            colorNames.add(local.getName());
             colorLocals.add(local);
         }
         return colorLocals.get(color);
+    }
+
+    private boolean isMatchedName(int color, WasmLocal local) {
+        return isMatchedName(colorInfos.get(color).name, local.getName());
     }
 
     private boolean isMatchedName(String a, String b) {
@@ -257,15 +293,22 @@ public class WasmLocalsOptimizer {
     }
 
     private class Walker extends WasmDominanceOrderWalker<int[]> {
+        private ArrayDeque<WasmLivenessCursor> cursorStack = new ArrayDeque<>();
+        private Set<WasmInstruction> instructionsToSkip = new HashSet<>();
+
         @Override
         protected int[] saveState() {
-            return Arrays.copyOf(owners, colorTypes.size());
+            return owners.toArray();
         }
 
         @Override
         protected void restoreState(int[] state) {
-            System.arraycopy(state, 0, owners, 0, state.length);
-            Arrays.fill(owners, state.length, colorTypes.size(), -1);
+            for (var i = 0; i < state.length; ++i) {
+                owners.set(i, state[i]);
+            }
+            for (var i = state.length; i < owners.size(); ++i) {
+                owners.set(i, -1);
+            }
         }
 
         @Override
@@ -274,9 +317,34 @@ public class WasmLocalsOptimizer {
                 cursorStack.push(cursor);
             }
             cursor = liveness.iterate(list);
+            if (list.getLast() instanceof WasmBreak br) {
+                if (!(br.getTarget().getBreakTarget() instanceof WasmBlock block) || !block.isLoop()) {
+                    var insn = br.getPrevious();
+                    while (insn instanceof WasmSetLocal) {
+                        instructionsToSkip.add(insn);
+                        insn = insn.getPrevious();
+                    }
+                }
+            }
             if (list == function.getBody()) {
                 for (var local : cursor.getLiveIn()) {
-                    owners[colors[local.getIndex()]] = local.getIndex();
+                    owners.set(colors[local.getIndex()], local.getIndex());
+                }
+            } else {
+                for (int i = 0; i < owners.size(); ++i) {
+                    var owner = owners.get(i);
+                    if (owner >= 0) {
+                        var local = locals.get(owners.get(i));
+                        if (!cursor.isLiveIn(local)) {
+                            kill(local);
+                        }
+                    }
+                }
+                for (var local : cursor.getLiveIn()) {
+                    var color = colors[local.getIndex()];
+                    if (color <= 0 || owners.get(color) < 0) {
+                        gen(local);
+                    }
                 }
             }
         }
@@ -287,21 +355,28 @@ public class WasmLocalsOptimizer {
         }
 
         @Override
-        protected void enterInstruction(WasmInstruction instruction) {
-            if (instruction instanceof WasmGetLocal) {
-                use(((WasmGetLocal) instruction).getLocal());
-            } else if (instruction instanceof WasmSetLocal) {
-                define(((WasmSetLocal) instruction).getLocal());
-            } else if (instruction instanceof WasmTeeLocal) {
-                define(((WasmTeeLocal) instruction).getLocal());
-            }
-        }
-
-        @Override
         protected void exitInstruction(WasmInstruction instruction) {
-            if (instruction instanceof WasmBlock || instruction instanceof WasmConditional
-                    || instruction instanceof WasmTry) {
-                acquireLiveOut();
+            if (!instructionsToSkip.remove(instruction)) {
+                if (!instruction.isTerminating()) {
+                    for (var local : cursor.getKillSet()) {
+                        kill(local);
+                    }
+                    for (var local : cursor.getGenSet()) {
+                        gen(local);
+                    }
+                    for (var local : cursor.getLiveOut()) {
+                        var color = colors[local.getIndex()];
+                        if (color > 0) {
+                            assert owners.get(color) == local.getIndex();
+                        }
+                    }
+                    for (var i = 0; i < colors.length; ++i) {
+                        var color = colors[i];
+                        if (color >= 0 && owners.get(color) == i) {
+                            assert cursor.isLiveOut(locals.get(i));
+                        }
+                    }
+                }
             }
             cursor.next();
         }
@@ -321,6 +396,16 @@ public class WasmLocalsOptimizer {
         @Override
         public void visit(WasmTeeLocal instruction) {
             instruction.setLocal(map(instruction.getLocal()));
+        }
+    }
+
+    private static class ColorInfo {
+        WasmType type;
+        String name;
+
+        ColorInfo(WasmType type, String name) {
+            this.type = type;
+            this.name = name;
         }
     }
 }

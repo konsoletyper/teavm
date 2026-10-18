@@ -47,6 +47,7 @@ import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmReturn;
 import org.teavm.backend.wasm.model.instruction.WasmUnreachable;
 import org.teavm.backend.wasm.optimization.WasmDeadStoreOptimizer;
+import org.teavm.backend.wasm.optimization.WasmIdentityCopyOptimizer;
 import org.teavm.backend.wasm.optimization.WasmInstructionsOptimizer;
 import org.teavm.backend.wasm.optimization.WasmLocalsOptimizer;
 import org.teavm.backend.wasm.transformation.CoroutineTransformation;
@@ -300,7 +301,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             } else {
                 generateNativeMethodBody(method, function);
             }
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             var buffer = new StringWriter();
             var printWriter = new PrintWriter(buffer);
             e.printStackTrace(printWriter);
@@ -339,14 +340,13 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         if (function.getBody().getLast() instanceof WasmReturn) {
             function.getBody().getLast().delete();
         }
+        new WasmInstructionsOptimizer().optimize(function);
+        new WasmDeadStoreOptimizer().optimize(function);
         var localsOptimizer = new WasmLocalsOptimizer();
         localsOptimizer.setFriendlyToDebugger(friendlyToDebugger);
         localsOptimizer.optimize(function);
+        new WasmIdentityCopyOptimizer().visitMany(function.getBody());
         new WasmInstructionsOptimizer().optimize(function);
-        new WasmDeadStoreOptimizer().optimize(function);
-        localsOptimizer = new WasmLocalsOptimizer();
-        localsOptimizer.setFriendlyToDebugger(friendlyToDebugger);
-        localsOptimizer.optimize(function);
         if (isSuspend) {
             if (coroutineTransformation == null) {
                 coroutineTransformation = new CoroutineTransformation(functionTypes, this, classInfoProvider);
