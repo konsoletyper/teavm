@@ -16,6 +16,8 @@
 package org.teavm.backend.wasm.types;
 
 import org.teavm.backend.wasm.WasmGCUtil;
+import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.MethodReference;
 import org.teavm.model.PrimitiveType;
@@ -27,10 +29,13 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
     public static final PreciseValueType OBJECT_TYPE = new PreciseValueType(ValueType.object("java.lang.Object"),
             false);
     private ClassHierarchy hierarchy;
+    private WasmGCTypeMapper typeMapper;
 
-    public PreciseTypeInference(Program program, MethodReference reference, ClassHierarchy hierarchy) {
+    public PreciseTypeInference(Program program, MethodReference reference, ClassHierarchy hierarchy,
+            WasmGCTypeMapper typeMapper) {
         super(program, reference);
         this.hierarchy = hierarchy;
+        this.typeMapper = typeMapper;
     }
 
     @Override
@@ -85,6 +90,10 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
                     var p = ((ValueType.Object) a.valueType).getClassName();
                     var q = ((ValueType.Object) b.valueType).getClassName();
                     if (p.equals(q)) {
+                        return a;
+                    }
+                    if (typeMapper != null && typeMapper.mapType(a.valueType) == WasmType.EXTERN
+                            && typeMapper.mapType(b.valueType) == WasmType.EXTERN) {
                         return a;
                     }
                     var first = hierarchy.getClassSource().get(p);
