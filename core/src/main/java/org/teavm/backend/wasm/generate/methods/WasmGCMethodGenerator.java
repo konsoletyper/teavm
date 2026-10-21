@@ -331,7 +331,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         Objects.requireNonNull(method.getProgram());
         eliminateMultipleNullConstantUsages(method.getProgram());
         var decompiler = getDecompiler();
-        var categoryProvider = new WasmGCVariableCategoryProvider(hierarchy);
+        var categoryProvider = new WasmGCVariableCategoryProvider(hierarchy, typeMapper);
         var methodCompact = compactMode && !method.hasModifier(ElementModifier.STATIC)
                 && typeMapper.mapType(ValueType.object(method.getOwnerName())) instanceof WasmType.Reference;
         categoryProvider.setCompactMode(methodCompact);
@@ -339,7 +339,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         allocator.allocateRegisters(method.getReference(), method.getProgram(), friendlyToDebugger);
         var ast = decompiler.decompileRegular(method);
         var firstVar = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
-        var typeInference = new PreciseTypeInference(method.getProgram(), method.getReference(), hierarchy);
+        var typeInference = new PreciseTypeInference(method.getProgram(), method.getReference(), hierarchy, typeMapper);
         typeInference.setPhisSkipped(true);
         typeInference.setBackPropagation(true);
         typeInference.ensure();
