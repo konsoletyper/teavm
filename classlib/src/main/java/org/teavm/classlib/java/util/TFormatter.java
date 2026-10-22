@@ -281,7 +281,7 @@ public final class TFormatter implements Closeable, Flushable {
                 throw new TIllegalFormatPrecisionException(precision);
             }
             if ((flags & TFormattableFlags.LEFT_JUSTIFY) != 0 && width == -1) {
-                throw new TMissingFormatWidthException(format.substring(formatSpecifierStart, index));
+                throw new TMissingFormatWidthException(format.substring(formatSpecifierStart - 1, index));
             }
             formatGivenString(false, "%");
         }

@@ -315,7 +315,8 @@ public class FormatterTest {
     public void formatsEscapedPercentWithWidth() {
         assertEquals("    %", new Formatter().format("%5%").toString());
         assertEquals("%    ", new Formatter().format("%-5%").toString());
-        assertThrows(MissingFormatWidthException.class, () -> new Formatter().format("%-%"));
+        var missingWidth = assertThrows(MissingFormatWidthException.class, () -> new Formatter().format("%-%"));
+        assertEquals("%-%", missingWidth.getFormatSpecifier());
         assertThrows(IllegalFormatPrecisionException.class, () -> new Formatter().format("%.2%"));
         assertThrows(IllegalFormatFlagsException.class, () -> new Formatter().format("%05%"));
     }
