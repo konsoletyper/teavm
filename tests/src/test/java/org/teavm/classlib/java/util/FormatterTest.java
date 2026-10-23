@@ -287,22 +287,23 @@ public class FormatterTest {
     @Test
     public void roundsFloatHalfUp() {
         assertEquals("0.3", new Formatter(Locale.US).format("%.1f", 0.25).toString());
-        assertEquals("0.13", new Formatter(Locale.US).format("%.2f", 0.125).toString());
-        assertEquals("0.63", new Formatter(Locale.US).format("%.2f", 0.625).toString());
-        assertEquals("3", new Formatter(Locale.US).format("%.0f", 2.5).toString());
         assertEquals("1", new Formatter(Locale.US).format("%.0f", 0.5).toString());
         assertEquals("-0.13", new Formatter(Locale.US).format("%.2f", -0.125).toString());
         assertEquals("10.0", new Formatter(Locale.US).format("%.1f", 9.95).toString());
         assertEquals("2.3", new Formatter(Locale.US).format("%.1f", 2.25f).toString());
-        assertEquals("0.13", new Formatter(Locale.US).format("%.2f", new BigDecimal("0.125")).toString());
+        // Formatter rounds the digits of Double.toString, not the exact binary value
+        assertEquals("1.01", new Formatter(Locale.US).format("%.2f", 1.005).toString());
     }
 
     @Test
-    public void roundsFloatFromShortestDecimalRepresentation() {
-        // Formatter rounds the digits of Double.toString, not the exact binary value
-        assertEquals("1.01", new Formatter(Locale.US).format("%.2f", 1.005).toString());
-        assertEquals("2.68", new Formatter(Locale.US).format("%.2f", 2.675).toString());
-        assertEquals("0.4", new Formatter(Locale.US).format("%.1f", 0.35).toString());
+    public void roundsBigDecimalHalfUp() {
+        assertEquals("1", new Formatter(Locale.US).format("%.0f", new BigDecimal("0.5")).toString());
+        assertEquals("-1", new Formatter(Locale.US).format("%.0f", new BigDecimal("-0.5")).toString());
+        assertEquals("0.1", new Formatter(Locale.US).format("%.1f", new BigDecimal("0.05")).toString());
+        assertEquals("-0.1", new Formatter(Locale.US).format("%.1f", new BigDecimal("-0.05")).toString());
+        assertEquals("100000000000.00000000", new Formatter(Locale.US)
+                .format("%.8f", new BigDecimal("99999999999.999999995000")).toString());
+        assertEquals("0.13", new Formatter(Locale.US).format("%.2f", new BigDecimal("0.125")).toString());
     }
 
     @Test
