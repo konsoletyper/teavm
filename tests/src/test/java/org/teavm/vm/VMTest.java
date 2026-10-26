@@ -730,4 +730,33 @@ public class VMTest {
         A,
         B
     }
+
+    @Test
+    public void interfaceCallDoesNotInitializeInterface() {
+        assertEquals("ok", readInterfaceConstant(new InterfaceWithConstantA()));
+        assertEquals("ok", readInterfaceConstant(new InterfaceWithConstantB()));
+    }
+
+    private static String readInterfaceConstant(InterfaceWithConstant obj) {
+        obj.foo();
+        return InterfaceWithConstant.VALUE.toString();
+    }
+
+    interface InterfaceWithConstant {
+        Object VALUE = new StringBuilder("ok");
+
+        void foo();
+    }
+
+    static class InterfaceWithConstantA implements InterfaceWithConstant {
+        @Override
+        public void foo() {
+        }
+    }
+
+    static class InterfaceWithConstantB implements InterfaceWithConstant {
+        @Override
+        public void foo() {
+        }
+    }
 }
