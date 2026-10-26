@@ -48,11 +48,16 @@ public final class DoubleAnalyzer {
             return;
         }
 
+        // A subnormal mantissa is shifted left until it has the implicit bit. Its rounding interval stays half an
+        // ulp of the subnormal, which is 2^shift times wider than half an ulp of the shifted mantissa.
+        int shift = 0;
         if (exponent == 0) {
             mantissa <<= 1;
+            shift++;
             while ((mantissa & (1L << 52)) == 0) {
                 mantissa <<= 1;
                 exponent--;
+                shift++;
             }
         } else {
             mantissa |= 1L << 52;
@@ -75,11 +80,38 @@ public final class DoubleAnalyzer {
             mantissaShift = 12 + binExponentCorrection;
             decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
         }
-        var decMantissaHi = mulAndShiftRight((mantissa << 1) + 1, mantissa10Table[decExponent + 1],
+        if (shift > 0) {
+            // A subnormal interval can be wide enough to leave a one-digit decimal (see below), and its upper bound
+            // can overflow. A subnormal has fewer significant digits than a normal number, so use one digit less.
+            decExponent++;
+            binExponentCorrection = exponent - exp10Table[decExponent + 1];
+            mantissaShift = 12 + binExponentCorrection;
+            decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
+        }
+        var decMantissaHi = mulAndShiftRight((mantissa << 1) + (1L << shift), mantissa10Table[decExponent + 1],
                 mantissaShift - 1);
-        var decMantissaLow = mulAndShiftRight((mantissa << 1) - 1, mantissa10Table[decExponent + 1],
-                mantissaShift - 1);
+        // Below a power of two the next double is closer, so the lower bound is a quarter of an ulp away
+        var powerOfTwo = shift == 0 && mantissa == 1L << 52 && exponent > 1;
+        var decMantissaLow = powerOfTwo
+                ? mulAndShiftRight((mantissa << 2) - 1, mantissa10Table[decExponent + 1], mantissaShift - 2)
+                : mulAndShiftRight((mantissa << 1) - (1L << shift), mantissa10Table[decExponent + 1],
+                        mantissaShift - 1);
 
+        // The value is mantissa * 2^(binExp + 1), and decMantissa has units of 10^decExp. A computed bound is up to
+        // 3 units below the exact one. When the exact bound is a whole number of units, a decimal can sit exactly
+        // on it. The JDK includes both bounds when the mantissa is even, and excludes them when it is odd.
+        // binExp >= decExp is needed for such a bound to exist.
+        var decExp = decExponent - MAX_ABS_DEC_EXP - 17;
+        var binExp = exponent - 1076;
+        if (binExp >= decExp) {
+            var even = ((mantissa >>> shift) & 1) == 0;
+            decMantissaHi = exactBound(decMantissaHi, decExp, (mantissa << 1) + (1L << shift), binExp, even, true);
+            decMantissaLow = powerOfTwo
+                    ? exactBound(decMantissaLow, decExp, (mantissa << 2) - 1, binExp - 1, even, false)
+                    : exactBound(decMantissaLow, decExp, (mantissa << 1) - (1L << shift), binExp, even, false);
+        }
+
+        var exactMantissa = decMantissa;
         var lowerPos = findLowerDistance(decMantissa, decMantissaLow);
         var upperPos = findUpperDistance(decMantissa, decMantissaHi);
         var posCmp = Long.compareUnsigned(lowerPos, upperPos);
@@ -88,7 +120,24 @@ public final class DoubleAnalyzer {
         } else if (posCmp < 0) {
             decMantissa = Long.divideUnsigned(decMantissa, upperPos) * upperPos + upperPos;
         } else {
-            decMantissa = Long.divideUnsigned(decMantissa + (upperPos / 2), upperPos) * upperPos;
+            var lower = Long.divideUnsigned(decMantissa, upperPos);
+            var half = upperPos / 2;
+            if (half > 0 && isExact(lower * upperPos + half, decExp, mantissa, binExp + 1)) {
+                // The value is exactly halfway between two decimals. The JDK takes the one with the even digit.
+                decMantissa = ((lower & 1) == 0 ? lower : lower + 1) * upperPos;
+            } else {
+                decMantissa = Long.divideUnsigned(decMantissa + half, upperPos) * upperPos;
+            }
+        }
+        if (shift > 0 && decMantissa / 10 <= (posCmp > 0 ? lowerPos : upperPos)) {
+            // The shortest decimal has one digit. Take the closest two-digit decimal instead (JDK 19 and later).
+            // Only a subnormal interval is wide enough for the two to differ: Double.MIN_VALUE is 4.9E-324.
+            // All values here are below 2^63.
+            var pos = exactMantissa < 1000000000000000000L ? 10000000000000000L : 100000000000000000L;
+            var twoDigits = (exactMantissa + pos / 2) / pos * pos;
+            if (twoDigits > decMantissaLow && twoDigits <= decMantissaHi) {
+                decMantissa = twoDigits;
+            }
         }
 
         if (Long.compareUnsigned(decMantissa, 1000000000000000000L) >= 0) {
@@ -103,6 +152,38 @@ public final class DoubleAnalyzer {
 
         result.mantissa = decMantissa;
         result.exponent = decExponent - MAX_ABS_DEC_EXP;
+    }
+
+    // Returns the bound for the comparisons in findLowerDistance (decimal > bound) and findUpperDistance
+    // (decimal <= bound). If the exact bound is binMantissa * 2^binExp, a whole number of units of 10^decExp,
+    // the result includes or excludes it exactly.
+    private static long exactBound(long bound, int decExp, long binMantissa, int binExp, boolean inclusive,
+            boolean upper) {
+        for (var i = 0; i < 3; ++i) {
+            if (isExact(bound + i, decExp, binMantissa, binExp)) {
+                return upper == inclusive ? bound + i : bound + i - 1;
+            }
+        }
+        return bound;
+    }
+
+    // Checks that decMantissa * 10^decExp == binMantissa * 2^binExp exactly. decMantissa is unsigned.
+    static boolean isExact(long decMantissa, int decExp, long binMantissa, int binExp) {
+        var decZeros = Long.numberOfTrailingZeros(decMantissa);
+        var binZeros = Long.numberOfTrailingZeros(binMantissa);
+        // Powers of two must match, then the odd parts must differ by exactly 5^|decExp|
+        if (decZeros + decExp != binZeros + binExp || decExp > 27 || decExp < -27) {
+            return false;
+        }
+        var decOdd = decMantissa >>> decZeros;
+        var binOdd = binMantissa >>> binZeros;
+        long pow5 = 1;
+        for (var i = Math.abs(decExp); i > 0; --i) {
+            pow5 *= 5;
+        }
+        return decExp >= 0
+                ? binOdd % pow5 == 0 && binOdd / pow5 == decOdd
+                : Long.remainderUnsigned(decOdd, pow5) == 0 && Long.divideUnsigned(decOdd, pow5) == binOdd;
     }
 
     static long findLowerDistance(long mantissa, long lower) {
