@@ -968,6 +968,85 @@ public class VMTest {
         }
     }
 
+    // Each stage reassigns the variable, so a handler must see the version assigned before the stage that threw
+    @Test
+    public void exceptionHandlerSeesVersionOfLocalAtThrowPoint() {
+        assertEquals("caught v0", reassignLocal(0));
+        assertEquals("caught v1", reassignLocal(1));
+        assertEquals("caught v2", reassignLocal(2));
+        assertEquals("completed v3", reassignLocal(3));
+    }
+
+    @Test
+    public void exceptionHandlerSeesVersionOfParameterAtThrowPoint() {
+        assertEquals("caught p", reassignParameter(0, "p"));
+        assertEquals("caught p1", reassignParameter(1, "p"));
+        assertEquals("caught p2", reassignParameter(2, "p"));
+        assertEquals("completed p3", reassignParameter(3, "p"));
+    }
+
+    @Test
+    public void exceptionHandlerSeesParameterAtEachNullCheck() {
+        for (var failAt = 0; failAt < 3; ++failAt) {
+            var key = newKey();
+            var expected = "caught " + (failAt == 0 ? null : failAt == 1 ? "first" : "second");
+            assertEquals(expected, checkKeyBetweenThrows(failAt, key));
+            assertFalse(key.valid);
+        }
+        var key = newKey();
+        assertEquals("completed second", checkKeyBetweenThrows(3, key));
+        assertTrue(key.valid);
+    }
+
+    private static String reassignLocal(int failAt) {
+        String value = "v0";
+        try {
+            failAtStage(failAt, 0);
+            value = "v1";
+            failAtStage(failAt, 1);
+            value = "v2";
+            failAtStage(failAt, 2);
+            value = "v3";
+            return "completed " + value;
+        } catch (IllegalStateException e) {
+            return "caught " + value;
+        }
+    }
+
+    private static String reassignParameter(int failAt, String value) {
+        try {
+            failAtStage(failAt, 0);
+            value = value + "1";
+            failAtStage(failAt, 1);
+            value = value.substring(0, 1) + "2";
+            failAtStage(failAt, 2);
+            value = value.substring(0, 1) + "3";
+            return "completed " + value;
+        } catch (IllegalStateException e) {
+            return "caught " + value;
+        }
+    }
+
+    private static String checkKeyBetweenThrows(int failAt, Key key) {
+        try {
+            failAtStage(failAt, 0);
+            key.attach("first");
+            failAtStage(failAt, 1);
+            key.attach("second");
+            failAtStage(failAt, 2);
+            return "completed " + key.attachment;
+        } catch (IllegalStateException e) {
+            key.cancel();
+            return "caught " + key.attachment;
+        }
+    }
+
+    private static void failAtStage(int failAt, int stage) {
+        if (failAt == stage) {
+            throw new IllegalStateException("stage " + stage);
+        }
+    }
+
     private static final List<Key> KEYS = new ArrayList<>();
 
     // The compiler cannot prove that the result is not null, so each call on it gets a null check
