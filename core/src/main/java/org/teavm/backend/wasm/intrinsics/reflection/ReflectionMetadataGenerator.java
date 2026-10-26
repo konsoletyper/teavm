@@ -30,6 +30,7 @@ import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.ValueCache;
+import org.teavm.backend.wasm.generate.WasmGCFunctionSplitter;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfo;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
@@ -140,6 +141,7 @@ public class ReflectionMetadataGenerator {
             }
         }
 
+        var splitter = new WasmGCFunctionSplitter(initFunction, module, functionTypes, names);
         for (var className : classes.getClassNames()) {
             var annotations = annotationsByClass.get(className);
             var cls = classes.get(className);
@@ -154,8 +156,7 @@ public class ReflectionMetadataGenerator {
             var metadata = generateClassMetadata(className, annotations, fields, methods, typeParameters,
                     innerClasses);
             if (metadata != null) {
-                var builder = initFunction.getBody().builder();
-                builder
+                splitter.next()
                         .getGlobal(classInfoProvider.getClassInfo(className).getPointer())
                         .transferFrom(metadata.builder())
                         .structSet(classInfoStruct.structure(), classInfoStruct.reflectionInfoIndex());

@@ -15,13 +15,17 @@
  */
 package org.teavm.wasm;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,6 +34,7 @@ import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.backend.wasm.disasm.Disassembler;
 import org.teavm.backend.wasm.disasm.DisassemblyHTMLWriter;
+import org.teavm.backend.wasm.disasm.DisassemblyTextWriter;
 import org.teavm.browserrunner.BrowserRunDescriptor;
 import org.teavm.browserrunner.BrowserRunner;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
@@ -102,5 +107,46 @@ public class WasmIntegrationTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    public void reflectionMetadataGeneratedOnce() throws IOException {
+        if (!wasmGCNeeded) {
+            return;
+        }
+
+        var wasmGCTarget = new WasmGCTarget();
+        wasmGCTarget.setObfuscated(false);
+        wasmGCTarget.setDebugInfoLocation(WasmDebugInfoLocation.EMBEDDED);
+        wasmGCTarget.setDebugInfoLevel(WasmDebugInfoLevel.DEOBFUSCATION);
+        var teavm = new TeaVMBuilder(wasmGCTarget).build();
+        var outputDir = new File(targetFile, "reflection-once");
+        teavm.installPlugins();
+        teavm.setEntryPoint(ReflectionEntry.class.getName());
+        teavm.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
+        outputDir.mkdirs();
+        teavm.build(outputDir, "test.wasm");
+        if (!teavm.getProblemProvider().getSevereProblems().isEmpty()) {
+            var log = new ConsoleTeaVMToolLog(false);
+            TeaVMProblemRenderer.describeProblems(teavm, log);
+            throw new RuntimeException("TeaVM compilation error");
+        }
+
+        var disassembly = new StringWriter();
+        try (var output = new PrintWriter(disassembly)) {
+            new Disassembler(new DisassemblyTextWriter(output)).disassemble(
+                    Files.readAllBytes(new File(outputDir, "test.wasm").toPath()));
+        }
+
+        // ReflectionEntry reads reflection metadata from two methods. teavm@initReflection must still set
+        // the reflection info of each class only once. The writes can be in the $part functions that
+        // teavm@initReflection calls.
+        var initReflectionName = Pattern.compile("\\(; \\d+ ;\\) \\$teavm@initReflection[ $]");
+        var reflectionInfoWrite = Pattern.compile("struct\\.set .* \\$reflection$", Pattern.MULTILINE);
+        var reflectionInfoWrites = Stream.of(disassembly.toString().split("\n  \\(func "))
+                .filter(function -> initReflectionName.matcher(function).lookingAt())
+                .mapToLong(function -> reflectionInfoWrite.matcher(function).results().count())
+                .sum();
+        assertEquals(1, reflectionInfoWrites);
     }
 }

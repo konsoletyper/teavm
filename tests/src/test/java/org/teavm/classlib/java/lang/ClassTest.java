@@ -436,4 +436,58 @@ public class ClassTest {
         public static class D {
         }
     }
+
+    @Test
+    public void failedInitializerThroughForNameIsNotRunAgain() throws Exception {
+        // TeaVM finds a class by name only when the name is a constant at the call
+        assertThrows(ExceptionInInitializerError.class, () -> Class.forName(
+                "org.teavm.classlib.java.lang.ClassTest$FailingInitializerForName", true,
+                ClassTest.class.getClassLoader()));
+        assertThrows(NoClassDefFoundError.class, () -> Class.forName(
+                "org.teavm.classlib.java.lang.ClassTest$FailingInitializerForName", true,
+                ClassTest.class.getClassLoader()));
+        // Without a read of VALUE, TeaVM removes the initializer, and Class.forName runs nothing
+        assertThrows(NoClassDefFoundError.class, () -> FailingInitializerForName.VALUE.length());
+    }
+
+    @Test
+    public void failedInitializerBlocksReflectiveInstance() throws Exception {
+        assertThrows(ExceptionInInitializerError.class, () -> Class.forName(
+                "org.teavm.classlib.java.lang.ClassTest$FailingInitializerForNewInstance", true,
+                ClassTest.class.getClassLoader()));
+        try {
+            var instance = FailingInitializerForNewInstance.class.newInstance();
+            fail("Instance created after its class failed to initialize, VALUE is " + instance.get());
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    // The JVM runs every test of this class in one class loader, so each test needs a failing class of its own
+    public static class FailingInitializerForName {
+        static final String VALUE;
+
+        static {
+            failInitializer();
+            VALUE = "initialized";
+        }
+    }
+
+    public static class FailingInitializerForNewInstance implements Supplier<String> {
+        static final String VALUE;
+
+        static {
+            failInitializer();
+            VALUE = "initialized";
+        }
+
+        @Override
+        public String get() {
+            return VALUE;
+        }
+    }
+
+    static void failInitializer() {
+        throw new IllegalStateException();
+    }
 }
