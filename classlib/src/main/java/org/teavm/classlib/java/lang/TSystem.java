@@ -186,13 +186,35 @@ public final class TSystem extends TObject {
         if (properties == null) {
             Properties defaults = new Properties();
             defaults.put("java.version", "21");
+            // The JDK always defines the vendor, and code reads it without a null check.
+            defaults.put("java.vendor", "TeaVM");
+            defaults.put("java.vm.vendor", "TeaVM");
             defaults.put("os.name", "TeaVM");
+            // A JDK always sets os.arch, and libraries read it without a null check. "teavm" names no real CPU, so
+            // such libraries take their portable code paths.
+            defaults.put("os.arch", "teavm");
             defaults.put("file.separator", VirtualFileSystemProvider.getInstance().isWindows() ? "\\" : "/");
             defaults.put("path.separator", VirtualFileSystemProvider.getInstance().isWindows() ? ";" : ":");
             defaults.put("line.separator", lineSeparator());
             defaults.put("java.io.tmpdir", getTempDir());
             defaults.put("java.vm.version", "21");
             defaults.put("user.home", getHomeDir());
+            // More properties that the JDK always defines. Code saves and restores them with System.setProperty,
+            // which throws for a null value.
+            defaults.put("java.runtime.name", "TeaVM Runtime Environment");
+            defaults.put("java.runtime.version", "21");
+            defaults.put("java.specification.version", "21");
+            defaults.put("java.specification.name", "Java Platform API Specification");
+            defaults.put("java.vm.name", "TeaVM");
+            defaults.put("java.vm.specification.version", "21");
+            defaults.put("java.class.version", "65.0");
+            defaults.put("java.class.path", "");
+            defaults.put("java.home", "/");
+            defaults.put("os.version", "");
+            defaults.put("user.name", "?");
+            defaults.put("user.dir", VirtualFileSystemProvider.getInstance().getUserDir());
+            defaults.put("file.encoding", "UTF-8");
+            defaults.put("native.encoding", "UTF-8");
             properties = new Properties(defaults);
         }
     }

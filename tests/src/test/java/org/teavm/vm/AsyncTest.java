@@ -41,6 +41,8 @@ import org.teavm.runtime.EventQueue;
 @EachTestCompiledSeparately
 @SkipJVM
 public class AsyncTest {
+    private int sum;
+
     @Test
     public void primitives() {
         assertEquals(23, getPrimitive());
@@ -186,6 +188,69 @@ public class AsyncTest {
     }
 
     private static synchronized void dummySyncStaticMethod() {
+    }
+
+    @Test
+    public void asyncBodyCallsSuspendableCode() throws InterruptedException {
+        var thread = new Thread(() -> sum = sumInAsyncBody());
+        thread.setDaemon(true);
+        thread.start();
+        thread.join(5000);
+        assertEquals(3, sum);
+    }
+
+    @Async
+    private native int sumInAsyncBody();
+
+    private void sumInAsyncBody(AsyncCallback<Integer> callback) {
+        // perhapsSuspend can suspend, so this method is compiled as suspendable too. Here it does not suspend.
+        var result = perhapsSuspend(false, 1) + perhapsSuspend(false, 2);
+        // Not setTimeout(Runnable): the thread above makes Runnable.run suspendable, and on C a suspendable
+        // Runnable can not run from the event queue.
+        if (PlatformDetector.isC()) {
+            EventQueue.offer(() -> callback.complete(result));
+        } else {
+            Window.setTimeout(() -> callback.complete(result), 0);
+        }
+    }
+
+    @Test
+    public void interfaceCallToInheritedSuspendingMethod() throws InterruptedException {
+        SuspendingCall[] calls = { new InheritsSuspending(), new PlainCall(), new InheritsSuspending() };
+        var sb = new StringBuilder();
+        for (var i = 0; i < calls.length; ++i) {
+            sb.append(callThroughInterface(calls[i], i + 2, sb)).append(' ');
+        }
+        assertEquals("[614 [421 [1228 ", sb.toString());
+    }
+
+    private static int callThroughInterface(SuspendingCall call, int x, StringBuilder sb)
+            throws InterruptedException {
+        var before = x * 7;
+        sb.append('[');
+        var result = call.m(x);
+        return before + result * 100;
+    }
+
+    interface SuspendingCall {
+        int m(int x) throws InterruptedException;
+    }
+
+    static class SuspendingBase {
+        public int m(int x) throws InterruptedException {
+            Thread.sleep(5);
+            return x * 3;
+        }
+    }
+
+    static final class InheritsSuspending extends SuspendingBase implements SuspendingCall {
+    }
+
+    static final class PlainCall implements SuspendingCall {
+        @Override
+        public int m(int x) {
+            return x + 1;
+        }
     }
 
     @Async

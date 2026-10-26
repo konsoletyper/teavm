@@ -165,6 +165,20 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    @Export(name = "teavm_throwNoClassDefFoundError")
+    public static void throwNoClassDefFoundError() {
+        throwException(new NoClassDefFoundError());
+    }
+
+    // Marks the class of the calling <clinit> as failed.
+    @Unmanaged
+    public static native void markInitializerFailed();
+
+    public static Throwable initializerError(Throwable e) {
+        return e instanceof Error ? e : new ExceptionInInitializerError(e);
+    }
+
+    @Unmanaged
     private static int callStackSize() {
         Address stackFrame = ShadowStack.getStackTop();
         int size = 0;

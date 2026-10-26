@@ -108,6 +108,7 @@ import org.teavm.backend.c.intrinsic.reflection.TypeVariableReferenceIntrinsic;
 import org.teavm.backend.c.intrinsic.reflection.WildcardTypeInfoIntrinsic;
 import org.teavm.backend.c.runtime.CResources;
 import org.teavm.backend.c.transform.CFileSystemTransformer;
+import org.teavm.backend.c.transform.ClassInitFailureTransformer;
 import org.teavm.backend.c.transform.ClassLoaderCResourceTransformation;
 import org.teavm.backend.c.transform.SynchronizedMethodTransformer;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
@@ -131,6 +132,7 @@ import org.teavm.interop.Platforms;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassHolderSource;
@@ -337,6 +339,12 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class,
                 "throwArrayIndexOutOfBoundsException", void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwNoClassDefFoundError",
+                void.class)).use();
+        dependencyAnalyzer.linkMethod(ClassInitFailureTransformer.MARK_FAILED).use();
+        dependencyAnalyzer.linkMethod(ClassInitFailureTransformer.INITIALIZER_ERROR)
+                .propagateClass(1, Throwable.class.getName())
+                .use();
         dependencyAnalyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class))
                 .propagateClass(0, NullPointerException.class.getName())
                 .use();
@@ -413,6 +421,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     @Override
     public void afterOptimizations(Program program, MethodReader method) {
         classInitializerEliminator.apply(program);
+        if (isDynamicInitializer(method)) {
+            new ClassInitFailureTransformer().apply(program);
+        }
         new CoroutineTransformation(controller.getUnprocessedClassSource(), asyncMethods, hasThreads)
                 .apply(program, method.getReference());
         var shadowStackTransformer = !incremental
@@ -420,6 +431,15 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 : new ShadowStackTransformer(characteristics);
         shadowStackTransformer.apply(program, method);
         writeBarrierInsertion.apply(program);
+    }
+
+    private boolean isDynamicInitializer(MethodReader method) {
+        var className = method.getOwnerName();
+        return method.getName().equals("<clinit>") && method.hasModifier(ElementModifier.STATIC)
+                && characteristics.isManaged(method.getReference())
+                && !characteristics.isStaticInit(className) && !characteristics.isStructure(className)
+                && !characteristics.isReflectionSpecial(className)
+                && controller.getClassInitializerInfo().isDynamicInitializer(className);
     }
 
     @Override

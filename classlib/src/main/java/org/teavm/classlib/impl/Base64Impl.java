@@ -59,14 +59,20 @@ public final class Base64Impl {
     }
 
     public static byte[] decode(byte[] text, int[] mapping) {
-        int outputSize = (text.length / 4) * 3;
-        int rem = text.length % 4;
-        if (rem == 2 || rem == 3) {
-            outputSize += rem - 1;
+        int inputSize = text.length;
+        while (inputSize > 0 && text[inputSize - 1] == '=') {
+            --inputSize;
         }
-        int i;
-        for (i = text.length - 1; i >= 0 && text[i] == '='; --i) {
-            --outputSize;
+        int padding = text.length - inputSize;
+        int rem = inputSize % 4;
+        // As in the JDK: a last unit of one character, and padding that does not complete the last unit,
+        // are errors. Padding is optional.
+        if (rem == 1 || padding != 0 && (rem == 0 || rem + padding != 4)) {
+            throw new IllegalArgumentException();
+        }
+        int outputSize = (inputSize / 4) * 3;
+        if (rem != 0) {
+            outputSize += rem - 1;
         }
         byte[] output = new byte[outputSize];
         decode(text, output, mapping);
@@ -113,7 +119,11 @@ public final class Base64Impl {
     }
 
     private static int decode(int[] mapping, byte c) {
-        return mapping[c];
+        int result = mapping[c & 0xFF];
+        if (result < 0) {
+            throw new IllegalArgumentException();
+        }
+        return result;
     }
 
     public static byte[] encode(byte[] data, byte[] mapping, boolean pad) {
