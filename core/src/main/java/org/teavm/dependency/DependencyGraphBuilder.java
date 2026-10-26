@@ -44,6 +44,7 @@ import org.teavm.model.text.ListingBuilder;
 
 class DependencyGraphBuilder {
     private static final MethodDescriptor GET_CLASS = new MethodDescriptor("getClass", Class.class);
+    private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
     private DependencyAnalyzer dependencyAnalyzer;
     private DependencyNode[] nodes;
     private DependencyNode resultNode;
@@ -211,7 +212,27 @@ class DependencyGraphBuilder {
         }
     }
 
+    // A class initializer throws into the code that triggers it, so the types it throws must reach that code's
+    // exception handlers, as the thrown types of an invoked method do. Initializing a class also initializes its
+    // superclasses, so their initializers can throw there too.
+    private void connectInitializerExceptions(String className) {
+        ClassReaderSource classSource = dependencyAnalyzer.getClassSource();
+        for (ClassReader cls = classSource.get(className); cls != null;
+                cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null) {
+            if (cls.getMethod(CLINIT) != null) {
+                MethodDependency clinit = dependencyAnalyzer.linkMethod(new MethodReference(cls.getName(), CLINIT));
+                clinit.getThrown().addConsumer(currentExceptionConsumer);
+            }
+        }
+    }
+
     private AbstractInstructionAnalyzer reader = new AbstractInstructionAnalyzer() {
+        @Override
+        public void initClass(String className) {
+            super.initClass(className);
+            connectInitializerExceptions(className);
+        }
+
         @Override
         public void assign(VariableReader receiver, VariableReader assignee) {
             DependencyNode valueNode = nodes[assignee.getIndex()];

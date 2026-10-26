@@ -759,4 +759,41 @@ public class VMTest {
         public void foo() {
         }
     }
+
+    @Test
+    public void exceptionFromClassInitializerReachesHandler() {
+        try {
+            ThrowingInitializer.value();
+            fail("Initializer did not throw");
+        } catch (Throwable e) {
+            // The JVM wraps the exception in ExceptionInInitializerError
+            var cause = e instanceof ExceptionInInitializerError ? e.getCause() : e;
+            assertEquals("thrown by initializer", ((InitializerException) cause).describe());
+        }
+    }
+
+    static class ThrowingInitializer {
+        static final String VALUE;
+
+        static {
+            throwInitializerException();
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    private static void throwInitializerException() {
+        throw new InitializerException();
+    }
+
+    // describe() is called only in the handler, so it exists in the output only if the exception type
+    // reaches the handler
+    static class InitializerException extends RuntimeException {
+        String describe() {
+            return "thrown by initializer";
+        }
+    }
 }
