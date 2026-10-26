@@ -141,9 +141,10 @@ public class WasmIntegrationTest {
         // ReflectionEntry reads reflection metadata from two methods. teavm@initReflection must still set
         // the reflection info of each class only once. The writes can be in the $part functions that
         // teavm@initReflection calls.
+        var initReflectionName = Pattern.compile("\\(; \\d+ ;\\) \\$teavm@initReflection[ $]");
         var reflectionInfoWrite = Pattern.compile("struct\\.set .* \\$reflection$", Pattern.MULTILINE);
         var reflectionInfoWrites = Stream.of(disassembly.toString().split("\n  \\(func "))
-                .filter(function -> function.startsWith("$teavm@initReflection"))
+                .filter(function -> initReflectionName.matcher(function).lookingAt())
                 .mapToLong(function -> reflectionInfoWrite.matcher(function).results().count())
                 .sum();
         assertEquals(1, reflectionInfoWrites);
