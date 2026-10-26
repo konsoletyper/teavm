@@ -44,6 +44,14 @@ public class WasmGCSupport {
         throw new CloneNotSupportedException();
     }
 
+    public static void failedInitializer() {
+        throw new NoClassDefFoundError();
+    }
+
+    public static Throwable initializerError(Throwable e) {
+        return e instanceof Error ? e : new ExceptionInInitializerError(e);
+    }
+
     public static int nextObjectId() {
         var x = lastObjectId;
         x ^= x << 13;

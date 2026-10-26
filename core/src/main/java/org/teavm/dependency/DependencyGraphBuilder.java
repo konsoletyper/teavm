@@ -222,8 +222,22 @@ class DependencyGraphBuilder {
             if (cls.getMethod(CLINIT) != null) {
                 MethodDependency clinit = dependencyAnalyzer.linkMethod(new MethodReference(cls.getName(), CLINIT));
                 clinit.getThrown().addConsumer(currentExceptionConsumer);
+                clinit.getThrown().addConsumer(initializerFailureConsumer(currentExceptionConsumer));
             }
         }
+    }
+
+    // A failed initializer throws ExceptionInInitializerError the first time, unless it threw an Error, and
+    // NoClassDefFoundError on every later use of the class. The backends create these errors, so no <clinit>
+    // declares them. They can occur only when the initializer throws something.
+    private DependencyConsumer initializerFailureConsumer(DependencyConsumer handlers) {
+        ClassHierarchy hierarchy = dependencyAnalyzer.getClassHierarchy();
+        return type -> {
+            if (!hierarchy.isSuperType(ValueType.object(Error.class.getName()), type.getValueType(), false)) {
+                handlers.consume(dependencyAnalyzer.getClassType(ExceptionInInitializerError.class.getName()));
+            }
+            handlers.consume(dependencyAnalyzer.getClassType(NoClassDefFoundError.class.getName()));
+        };
     }
 
     private AbstractInstructionAnalyzer reader = new AbstractInstructionAnalyzer() {

@@ -451,8 +451,15 @@ public class Renderer implements RenderingManager {
             writer.outdent().append("case 1:").indent().softNewLine();
         }
 
+        writer.append("try").ws().append("{").indent().softNewLine();
         writer.appendMethod(new MethodReference(cls.getName(), clinit.getDescriptor()))
                 .append("();").softNewLine();
+        writer.outdent().append("}").ws().append("catch").ws().append("($$e)").ws().append("{").indent()
+                .softNewLine();
+        writer.appendClassInit(cls.getName()).ws().append("=").ws().appendFunction("$rt_failedClinit")
+                .append(";").softNewLine();
+        writer.append("throw ").appendFunction("$rt_clinitError").append("($$e);").softNewLine();
+        writer.outdent().append("}").softNewLine();
 
         if (isAsync) {
             writer.append("if").ws().append("(").appendFunction("$rt_suspending").append("())").ws().append("{")
