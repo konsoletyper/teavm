@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -138,14 +139,13 @@ public class WasmIntegrationTest {
         }
 
         // ReflectionEntry reads reflection metadata from two methods. teavm@initReflection must still set
-        // the reflection info of each class only once.
-        var text = disassembly.toString();
-        var initStart = text.indexOf("$teavm@initReflection (type");
-        var initEnd = text.indexOf("\n  (func ", initStart);
-        var reflectionInfoWrites = Pattern.compile("struct\\.set .* \\$reflection$", Pattern.MULTILINE)
-                .matcher(text.substring(initStart, initEnd))
-                .results()
-                .count();
+        // the reflection info of each class only once. The writes can be in the $part functions that
+        // teavm@initReflection calls.
+        var reflectionInfoWrite = Pattern.compile("struct\\.set .* \\$reflection$", Pattern.MULTILINE);
+        var reflectionInfoWrites = Stream.of(disassembly.toString().split("\n  \\(func "))
+                .filter(function -> function.startsWith("$teavm@initReflection"))
+                .mapToLong(function -> reflectionInfoWrite.matcher(function).results().count())
+                .sum();
         assertEquals(1, reflectionInfoWrites);
     }
 }
