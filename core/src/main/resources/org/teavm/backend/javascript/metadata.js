@@ -77,9 +77,9 @@ let $rt_metadata = data => {
         }
 
         let clinit = data[i++];
-        m.clinit = clinit !== 0
-            ? () => { m.clinit = () => {}; clinit(); }
-            : () => {};
+        // The class initializer replaces itself after it runs, with a no-op on success and with a function that
+        // throws NoClassDefFoundError on failure, so this entry must not replace itself
+        m.clinit = clinit !== 0 ? clinit : () => {};
 
         let virtualMethods = data[i++];
         if (virtualMethods !== 0) {

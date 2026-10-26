@@ -118,6 +118,7 @@ extern TeaVM_Object* teavm_getClassObject(TeaVM_Class* cls);
 
 extern void* teavm_throwClassCastException();
 extern void teavm_throwNullPointerException();
+extern void teavm_throwNoClassDefFoundError();
 extern void teavm_throwArrayIndexOutOfBoundsException();
 
 static inline int32_t teavm_isSupertypeOf(TeaVM_Class* superclass, TeaVM_Class* subclass) {

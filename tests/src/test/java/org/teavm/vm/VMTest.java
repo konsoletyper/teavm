@@ -759,4 +759,173 @@ public class VMTest {
         public void foo() {
         }
     }
+
+    @Test
+    public void exceptionFromClassInitializerReachesHandler() {
+        try {
+            ThrowingInitializer.value();
+            fail("Initializer did not throw");
+        } catch (Throwable e) {
+            // The JVM wraps the exception in ExceptionInInitializerError
+            var cause = e instanceof ExceptionInInitializerError ? e.getCause() : e;
+            assertEquals("thrown by initializer", ((InitializerException) cause).describe());
+        }
+    }
+
+    static class ThrowingInitializer {
+        static final String VALUE;
+
+        static {
+            throwInitializerException();
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    private static void throwInitializerException() {
+        throw new InitializerException();
+    }
+
+    // describe() is called only in the handler, so it exists in the output only if the exception type
+    // reaches the handler
+    static class InitializerException extends RuntimeException {
+        String describe() {
+            return "thrown by initializer";
+        }
+    }
+
+    @Test
+    public void failedClassInitializerIsNotRunAgain() {
+        try {
+            FailingInitializer.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertEquals(IllegalStateException.class, e.getCause().getClass());
+        }
+        try {
+            FailingInitializer.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void errorFromClassInitializerIsNotWrapped() {
+        try {
+            FailingInitializerWithError.value();
+            fail("Initializer did not throw");
+        } catch (InitializerTestError e) {
+            // expected
+        }
+        try {
+            FailingInitializerWithError.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void failedAsyncClassInitializerIsNotRunAgain() {
+        try {
+            FailingAsyncInitializer.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertEquals(IllegalStateException.class, e.getCause().getClass());
+        }
+        try {
+            FailingAsyncInitializer.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    static class FailingInitializer {
+        static final String VALUE;
+
+        static {
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class FailingInitializerWithError {
+        static final String VALUE;
+
+        static {
+            throwInitializerTestError();
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class FailingAsyncInitializer {
+        static final String VALUE;
+
+        static {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class InitializerTestError extends Error {
+    }
+
+    private static void throwInitializerTestError() {
+        throw new InitializerTestError();
+    }
+
+    @Test
+    public void errorsFromFailedClassInitializerReachHandlers() {
+        try {
+            FailingInitializerForHandlers.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertTrue(e.getException() instanceof IllegalStateException);
+        }
+        try {
+            FailingInitializerForHandlers.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (Error e) {
+            assertTrue(e instanceof NoClassDefFoundError);
+            // The JDK reports the first failure as the cause; TeaVM gives no cause
+            assertTrue(e.getCause() == null || e.getCause() instanceof ExceptionInInitializerError);
+        }
+    }
+
+    // The JVM runs every test of this class in one class loader, so this test needs a failing class of its own
+    static class FailingInitializerForHandlers {
+        static final String VALUE;
+
+        static {
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
 }
