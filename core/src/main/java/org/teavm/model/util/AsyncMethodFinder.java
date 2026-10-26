@@ -103,9 +103,16 @@ public class AsyncMethodFinder {
             }
             for (String iface : cls.getInterfaces()) {
                 classSource.getAncestors(iface).forEach(ifaceCls -> {
+                    // The ancestors of an interface include java.lang.Object. The walk above already adds the
+                    // methods of Object that can be in the family.
+                    if (!ifaceCls.hasModifier(ElementModifier.INTERFACE)) {
+                        return;
+                    }
                     for (MethodReader ifaceMethod : ifaceCls.getMethods()) {
+                        // addOverriddenToFamily already added the overridden methods of a method in the family.
                         if (ifaceMethod.hasModifier(ElementModifier.STATIC)
-                                || ifaceMethod.getLevel() == AccessLevel.PRIVATE) {
+                                || ifaceMethod.getLevel() == AccessLevel.PRIVATE
+                                || asyncFamilyMethods.containsKey(ifaceMethod.getReference())) {
                             continue;
                         }
                         MethodReader impl = classSource.resolveImplementation(clsName, ifaceMethod.getDescriptor());
