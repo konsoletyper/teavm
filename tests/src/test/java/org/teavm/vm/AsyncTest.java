@@ -214,6 +214,45 @@ public class AsyncTest {
         }
     }
 
+    @Test
+    public void interfaceCallToInheritedSuspendingMethod() throws InterruptedException {
+        SuspendingCall[] calls = { new InheritsSuspending(), new PlainCall(), new InheritsSuspending() };
+        var sb = new StringBuilder();
+        for (var i = 0; i < calls.length; ++i) {
+            sb.append(callThroughInterface(calls[i], i + 2, sb)).append(' ');
+        }
+        assertEquals("[614 [421 [1228 ", sb.toString());
+    }
+
+    private static int callThroughInterface(SuspendingCall call, int x, StringBuilder sb)
+            throws InterruptedException {
+        var before = x * 7;
+        sb.append('[');
+        var result = call.m(x);
+        return before + result * 100;
+    }
+
+    interface SuspendingCall {
+        int m(int x) throws InterruptedException;
+    }
+
+    static class SuspendingBase {
+        public int m(int x) throws InterruptedException {
+            Thread.sleep(5);
+            return x * 3;
+        }
+    }
+
+    static final class InheritsSuspending extends SuspendingBase implements SuspendingCall {
+    }
+
+    static final class PlainCall implements SuspendingCall {
+        @Override
+        public int m(int x) {
+            return x + 1;
+        }
+    }
+
     @Async
     private native JSString getJsString();
 
