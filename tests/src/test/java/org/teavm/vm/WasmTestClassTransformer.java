@@ -42,7 +42,7 @@ import org.teavm.model.instructions.RaiseInstruction;
 public class WasmTestClassTransformer implements ClassHolderTransformer {
     static final int VIRTUAL_METHOD_COUNT = 1000;
     private static final int SUBCLASS_COUNT = 900;
-    private static final int ANNOTATED_CLASS_COUNT = 400;
+    private static final int ANNOTATED_CLASS_COUNT = 800;
     private static final int ANNOTATION_VALUE_COUNT = 2000;
     private static final String GENERATED_PREFIX = WasmTest.class.getName() + "Generated";
 
