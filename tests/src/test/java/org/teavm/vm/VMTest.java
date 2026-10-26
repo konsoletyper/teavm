@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
@@ -707,6 +708,62 @@ public class VMTest {
             // continue
         }
         array[index] = 2;
+    }
+
+    @Test
+    @Disabled("Known gap: a handler phi misses the version a parameter had before its null or bound check "
+            + "(PhiUpdater, fixed separately by PR #8)")
+    public void exceptionPathChecksParameters() {
+        for (var fail : new boolean[] { false, true }) {
+            try {
+                setParameterAfterCatch(null, fail);
+                fail("NullPointerException expected");
+            } catch (NullPointerException e) {
+                // expected
+            }
+            try {
+                setParameterInHandler(null, fail);
+                fail("NullPointerException expected");
+            } catch (NullPointerException e) {
+                // expected
+            }
+            for (var index : new int[] { -1, 2, 3 }) {
+                try {
+                    storeParameterInHandler(new int[2], index, fail);
+                    fail("ArrayIndexOutOfBoundsException expected");
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    // expected
+                }
+            }
+        }
+    }
+
+    private static void setParameterAfterCatch(Cell cell, boolean fail) {
+        try {
+            failIf(fail);
+            cell.set("try");
+        } catch (IllegalStateException e) {
+            // continue
+        }
+        cell.set("after");
+    }
+
+    private static void setParameterInHandler(Cell cell, boolean fail) {
+        try {
+            failIf(fail);
+            cell.set("try");
+        } catch (IllegalStateException e) {
+            cell.set("handler");
+        }
+    }
+
+    private static void storeParameterInHandler(int[] array, int index, boolean fail) {
+        try {
+            failIf(fail);
+            array[index] = 1;
+        } catch (IllegalStateException e) {
+            array[index] = 2;
+        }
     }
 
     static class Cell {
