@@ -586,6 +586,129 @@ public class VMTest {
         }
     }
 
+    @Test
+    public void exceptionHandlerSuccessorChecksNull() {
+        var cell = new Cell();
+        setAfterCatch(new Cell[] { cell }, false);
+        assertEquals("after", cell.value);
+        setAfterCatch(new Cell[] { cell }, true);
+        assertEquals("after", cell.value);
+        for (var fail : new boolean[] { false, true }) {
+            try {
+                setAfterCatch(new Cell[] { null }, fail);
+                fail("NullPointerException expected");
+            } catch (NullPointerException e) {
+                // expected
+            }
+        }
+    }
+
+    private static void setAfterCatch(Cell[] cells, boolean fail) {
+        var cell = cells[0];
+        try {
+            failIf(fail);
+            cell.set("try");
+        } catch (IllegalStateException e) {
+            // continue
+        }
+        cell.set("after");
+    }
+
+    @Test
+    public void nestedExceptionHandlerChecksNull() {
+        assertEquals("value", readInNestedHandler(new Cell[] { new Cell() }, false, false));
+        assertEquals("inner", readInNestedHandler(new Cell[] { new Cell() }, false, true));
+        assertEquals("outer", readInNestedHandler(new Cell[] { new Cell() }, true, false));
+        assertEquals("outer", readInNestedHandler(new Cell[] { new Cell() }, true, true));
+        for (var failInner : new boolean[] { false, true }) {
+            for (var failOuter : new boolean[] { false, true }) {
+                try {
+                    readInNestedHandler(new Cell[] { null }, failOuter, failInner);
+                    fail("NullPointerException expected");
+                } catch (NullPointerException e) {
+                    // expected
+                }
+            }
+        }
+    }
+
+    private static String readInNestedHandler(Cell[] cells, boolean failOuter, boolean failInner) {
+        var cell = cells[0];
+        try {
+            failIf(failOuter);
+            cell.set("outer try");
+            try {
+                failIf(failInner);
+                cell.set("value");
+                return (String) cell.value;
+            } catch (IllegalStateException e) {
+                cell.set("inner");
+                return (String) cell.value;
+            }
+        } catch (IllegalStateException e) {
+            cell.set("outer");
+            return (String) cell.value;
+        }
+    }
+
+    @Test
+    public void exceptionHandlerChecksBounds() {
+        for (var fail : new boolean[] { false, true }) {
+            var array = new int[2];
+            storeInHandler(array, 1, fail);
+            assertEquals(fail ? 2 : 1, array[1]);
+            for (var index : new int[] { -1, 2, 3 }) {
+                try {
+                    storeInHandler(array, index, fail);
+                    fail("ArrayIndexOutOfBoundsException expected");
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    // expected
+                }
+            }
+        }
+    }
+
+    private static void storeInHandler(int[] arrayParam, int indexParam, boolean fail) {
+        // Read the values from the heap, so they are local variables rather than parameters
+        var array = new int[][] { arrayParam }[0];
+        var index = new int[] { indexParam }[0];
+        try {
+            failIf(fail);
+            array[index] = 1;
+        } catch (IllegalStateException e) {
+            array[index] = 2;
+        }
+    }
+
+    @Test
+    public void exceptionHandlerSuccessorChecksBounds() {
+        for (var fail : new boolean[] { false, true }) {
+            var array = new int[2];
+            storeAfterCatch(array, 1, fail);
+            assertEquals(2, array[1]);
+            for (var index : new int[] { -1, 2, 3 }) {
+                try {
+                    storeAfterCatch(array, index, fail);
+                    fail("ArrayIndexOutOfBoundsException expected");
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    // expected
+                }
+            }
+        }
+    }
+
+    private static void storeAfterCatch(int[] arrayParam, int indexParam, boolean fail) {
+        var array = new int[][] { arrayParam }[0];
+        var index = new int[] { indexParam }[0];
+        try {
+            failIf(fail);
+            array[index] = 1;
+        } catch (IllegalStateException e) {
+            // continue
+        }
+        array[index] = 2;
+    }
+
     static class Cell {
         Object value;
 
@@ -754,6 +877,35 @@ public class VMTest {
             return InitInHandler.A.name();
         } catch (IllegalStateException e) {
             return InitInHandler.B.name();
+        }
+    }
+
+    @Test
+    public void exceptionHandlerSuccessorInitializesClass() {
+        assertEquals("initialized", readAfterCatch(true));
+        assertEquals("initialized", readAfterCatch(false));
+        assertEquals(List.of("InitAfterCatch"), INIT_LOG);
+    }
+
+    private static String readAfterCatch(boolean fail) {
+        try {
+            failIf(fail);
+            InitAfterCatch.touched = true;
+        } catch (IllegalStateException e) {
+            // continue
+        }
+        return InitAfterCatch.value;
+    }
+
+    static final List<String> INIT_LOG = new ArrayList<>();
+
+    static class InitAfterCatch {
+        static boolean touched;
+        static String value;
+
+        static {
+            INIT_LOG.add("InitAfterCatch");
+            value = "initialized";
         }
     }
 

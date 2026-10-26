@@ -51,6 +51,16 @@ public class BoundCheckInsertionTest {
         doTest();
     }
 
+    @Test
+    public void checkInHandler() {
+        doTest();
+    }
+
+    @Test
+    public void checkInHandlerOfFirstBlock() {
+        doTest();
+    }
+
     private void doTest() {
         String originalPath = PREFIX + name.getMethodName() + ".original.txt";
         String expectedPath = PREFIX + name.getMethodName() + ".expected.txt";

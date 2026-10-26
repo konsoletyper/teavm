@@ -1,0 +1,14 @@
+var @this as this
+
+$start
+    @array := invokeStatic `Foo.array()[I`
+    @index := invokeStatic `Foo.index()I`
+    @a := @array[@index] as int
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+$catch
+    @b := @array[@index] as int
+    goto $end
+$end
+    @c := @array[@index] as int
+    return @c

@@ -1,0 +1,22 @@
+var @this as this
+
+$start
+    @array := invokeStatic `Foo.array()[I`
+    @index := invokeStatic `Foo.index()I`
+    goto $try
+$try
+    invokeStatic `Foo.bar()V`
+    @index_1 := boundCheck @index upper @array lower
+    @a := @array[@index_1] as int
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+$catch
+    @index_2 := phi @index from $try, @index_1 from $try
+    @index_3 := boundCheck @index_2 upper @array lower
+    @b := @array[@index_3] as int
+    goto $end
+$end
+    @index_4 := phi @index_1 from $try, @index_3 from $catch
+    @index_5 := boundCheck @index_4 upper @array lower
+    @c := @array[@index_5] as int
+    return @c
