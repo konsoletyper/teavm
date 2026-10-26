@@ -896,4 +896,36 @@ public class VMTest {
     private static void throwInitializerTestError() {
         throw new InitializerTestError();
     }
+
+    @Test
+    public void errorsFromFailedClassInitializerReachHandlers() {
+        try {
+            FailingInitializerForHandlers.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertTrue(e.getException() instanceof IllegalStateException);
+        }
+        try {
+            FailingInitializerForHandlers.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (Error e) {
+            assertTrue(e instanceof NoClassDefFoundError);
+            // The JDK reports the first failure as the cause; TeaVM gives no cause
+            assertTrue(e.getCause() == null || e.getCause() instanceof ExceptionInInitializerError);
+        }
+    }
+
+    // The JVM runs every test of this class in one class loader, so this test needs a failing class of its own
+    static class FailingInitializerForHandlers {
+        static final String VALUE;
+
+        static {
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
 }
