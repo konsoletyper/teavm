@@ -18,8 +18,11 @@ package org.teavm.classlib.java.lang;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTest;
@@ -106,5 +109,29 @@ public class ObjectTest {
             thread.join(2000);
         }
         assertEquals(threads.length, entered[0]);
+    }
+
+    @Test
+    public void contendedMonitorBlocksUntilReleased() throws InterruptedException {
+        var lock = new Object();
+        var events = new ArrayList<String>();
+        var error = new RuntimeException[1];
+        var other = new Thread(() -> {
+            try {
+                synchronized (lock) {
+                    events.add("other");
+                }
+            } catch (RuntimeException e) {
+                error[0] = e;
+            }
+        });
+        synchronized (lock) {
+            other.start();
+            Thread.sleep(50);
+            events.add("main");
+        }
+        other.join();
+        assertNull(error[0]);
+        assertEquals(List.of("main", "other"), events);
     }
 }
