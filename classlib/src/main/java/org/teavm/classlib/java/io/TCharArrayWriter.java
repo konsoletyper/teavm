@@ -121,7 +121,7 @@ public class TCharArrayWriter extends Writer {
     @Override
     public TCharArrayWriter append(CharSequence csq) {
         if (null == csq) {
-            append("NULL", 0, 4);
+            append("null", 0, 4);
         } else {
             append(csq, 0, csq.length());
         }
@@ -131,7 +131,7 @@ public class TCharArrayWriter extends Writer {
     @Override
     public TCharArrayWriter append(CharSequence csq, int start, int end) {
         if (null == csq) {
-            csq = "NULL";
+            csq = "null";
         }
         String output = csq.subSequence(start, end).toString();
         write(output, 0, output.length());

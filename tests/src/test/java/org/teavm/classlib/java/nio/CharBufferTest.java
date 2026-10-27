@@ -693,4 +693,30 @@ public class CharBufferTest {
             }
         }
     }
+
+    // CharBuffer.append(CharSequence csq): "If csq is null, then the four characters "null" are appended to this
+    // character buffer." append(CharSequence csq, int start, int end): "If csq is null, then characters will be
+    // appended as if csq contained the four characters "null"."
+    @Test
+    public void appendNullCharSequence() {
+        var buffer = CharBuffer.allocate(8);
+        buffer.append(null);
+        assertEquals(4, buffer.position());
+        assertEquals("null", buffer.flip().toString());
+
+        for (int start = -1; start <= 5; ++start) {
+            for (int end = -1; end <= 5; ++end) {
+                String expected = start >= 0 && start <= end && end <= 4 ? "null".substring(start, end) : "IOOBE";
+                var target = CharBuffer.allocate(8);
+                String actual;
+                try {
+                    target.append(null, start, end);
+                    actual = target.flip().toString();
+                } catch (IndexOutOfBoundsException e) {
+                    actual = "IOOBE";
+                }
+                assertEquals(expected, actual, "start=" + start + ", end=" + end);
+            }
+        }
+    }
 }

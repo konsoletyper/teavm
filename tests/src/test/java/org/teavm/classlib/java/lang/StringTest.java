@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -383,6 +384,51 @@ public class StringTest {
         String str = String.join("/");
         assertEquals(0, str.length());
         assertEquals("", str);
+    }
+
+    // String.join(CharSequence delimiter, CharSequence... elements) and
+    // join(CharSequence delimiter, Iterable<? extends CharSequence> elements): "Note that if an element is null,
+    // then "null" is added."
+    @Test
+    public void joinNullElements() {
+        CharSequence nullSequence = null;
+        assertEquals("null", String.join("/", nullSequence));
+        assertEquals("a/null/b", String.join("/", "a", null, "b"));
+        assertEquals("null/a/null", String.join("/", null, "a", null));
+        assertEquals("null--null", String.join("--", nullSequence, nullSequence));
+        assertEquals("a/null/b", String.join("/", Arrays.asList("a", null, "b")));
+        assertEquals("null/a/null", String.join("/", Arrays.asList(null, "a", null)));
+        assertEquals("null", String.join("/", Arrays.asList(nullSequence)));
+    }
+
+    // String.substring(int beginIndex, int endIndex) throws IndexOutOfBoundsException "if the beginIndex is
+    // negative, or endIndex is larger than the length of this String object, or beginIndex is larger than
+    // endIndex". subSequence(int, int) behaves as substring. This holds for empty ranges too.
+    @Test
+    public void substringChecksBounds() {
+        String str = "null";
+        for (int begin = -1; begin <= 5; ++begin) {
+            for (int end = -1; end <= 5; ++end) {
+                String expected = begin >= 0 && begin <= end && end <= 4 ? "null".substring(begin, end) : "IOOBE";
+                String where = "begin=" + begin + ", end=" + end;
+                String actual;
+                try {
+                    actual = str.substring(begin, end);
+                } catch (IndexOutOfBoundsException e) {
+                    actual = "IOOBE";
+                }
+                assertEquals(expected, actual, where);
+                try {
+                    actual = str.subSequence(begin, end).toString();
+                } catch (IndexOutOfBoundsException e) {
+                    actual = "IOOBE";
+                }
+                assertEquals(expected, actual, where);
+            }
+        }
+        assertThrows(IndexOutOfBoundsException.class, () -> str.substring(5));
+        assertThrows(IndexOutOfBoundsException.class, () -> str.substring(-1));
+        assertEquals("", str.substring(4));
     }
     
     @Test
