@@ -779,6 +779,117 @@ public class VMTest {
     }
 
     @Test
+    public void exceptionHandlerReliesOnCheckBeforeTryBlock() {
+        assertEquals("cleared", checkBeforeTryBlock(new Cell[] { new Cell() }));
+        assertThrowsNpe(() -> checkBeforeTryBlock(new Cell[] { null }));
+    }
+
+    private static String checkBeforeTryBlock(Cell[] cells) {
+        var cell = cells[0];
+        cell.set("value");
+        try {
+            failIf(true);
+            return "ok";
+        } catch (IllegalStateException e) {
+            cell.clear();
+            return "cleared";
+        }
+    }
+
+    @Test
+    public void exceptionHandlerOfSeveralBlocksChecksNull() {
+        assertEquals("cleared", checkInLaterBlock(new Cell[] { new Cell() }, 1));
+        assertThrowsNpe(() -> checkInLaterBlock(new Cell[] { null }, 0));
+    }
+
+    private static String checkInLaterBlock(Cell[] cells, int failAt) {
+        var cell = cells[0];
+        try {
+            for (var i = 0; i < 3; ++i) {
+                failIf(i == failAt);
+                cell.set(i);
+            }
+            return "done";
+        } catch (IllegalStateException e) {
+            cell.clear();
+            return "cleared";
+        }
+    }
+
+    @Test
+    public void nestedExceptionHandlersCheckNull() {
+        assertEquals("inner cleared", checkInNestedTry(new Cell[] { new Cell() }, false, true));
+        assertEquals("outer cleared", checkInNestedTry(new Cell[] { new Cell() }, true, false));
+        assertThrowsNpe(() -> checkInNestedTry(new Cell[] { null }, true, false));
+    }
+
+    private static String checkInNestedTry(Cell[] cells, boolean failOuter, boolean failInner) {
+        var cell = cells[0];
+        try {
+            failIf(failOuter);
+            cell.set("outer");
+            try {
+                failIf(failInner);
+                return "inner ok";
+            } catch (IllegalStateException e) {
+                cell.clear();
+                return "inner cleared";
+            }
+        } catch (IllegalStateException e) {
+            cell.clear();
+            return "outer cleared";
+        }
+    }
+
+    @Test
+    public void exceptionHandlerInLoopChecksNull() {
+        assertEquals("cs", checkInLoop(new Cell[] { new Cell() }));
+        assertThrowsNpe(() -> checkInLoop(new Cell[] { null }));
+    }
+
+    private static String checkInLoop(Cell[] cells) {
+        var cell = cells[0];
+        var sb = new StringBuilder();
+        for (var i = 0; i < 2; ++i) {
+            try {
+                failIf(i == 0);
+                cell.set(i);
+                sb.append('s');
+            } catch (IllegalStateException e) {
+                cell.clear();
+                sb.append('c');
+            }
+        }
+        return sb.toString();
+    }
+
+    @Test
+    public void finallyBlockChecksNull() {
+        assertEquals("set", checkInFinally(new Cell[] { new Cell() }, false));
+        assertThrowsNpe(() -> checkInFinally(new Cell[] { null }, true));
+    }
+
+    private static String checkInFinally(Cell[] cells, boolean fail) {
+        var cell = cells[0];
+        try {
+            failIf(fail);
+            cell.set("value");
+            return "set";
+        } finally {
+            cell.clear();
+        }
+    }
+
+    private static void assertThrowsNpe(Runnable runnable) {
+        try {
+            runnable.run();
+            fail("NullPointerException expected");
+        } catch (NullPointerException e) {
+            // expected
+        }
+    }
+
+    @Test
     public void arrayMonitor() throws InterruptedException {
         int[] array = { 1, 2, 3 };
         synchronized (array) {
