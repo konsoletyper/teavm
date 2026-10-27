@@ -296,7 +296,8 @@ public class AsyncTest {
     }
 
     @Test
-    // On C, the suspendable Arrays.toString methods that this test creates fail to compile.
+    // On C, the suspendable Throwable constructor makes Allocator.allocateArray suspendable. EventQueue's
+    // static initializer calls it before any fiber exists, and the program crashes reading the null fiber.
     @SkipPlatform(TestPlatform.C)
     public void suspendWithSuspendableArrayCopy() throws InterruptedException {
         // This override makes every Throwable constructor suspendable. Arrays.copyOf can throw,
@@ -310,6 +311,7 @@ public class AsyncTest {
     }
 
     @Test
+    // Skipped on C for the same reason as suspendWithSuspendableArrayCopy
     @SkipPlatform(TestPlatform.C)
     public void suspendWithSuspendableArrayCopyGrowsStackRepeatedly() throws InterruptedException {
         // Enough frames that the fiber's object stack grows several times while it unwinds and rewinds
