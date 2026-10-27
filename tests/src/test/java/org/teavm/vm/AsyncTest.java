@@ -183,6 +183,47 @@ public class AsyncTest {
     }
 
     @Test
+    public void primitiveArrayElementsAfterSuspension() throws InterruptedException {
+        // A coroutine restores these arrays with Fiber.popObject() after Thread.sleep, so their variables can
+        // lose their array types. The elements must still have their primitive types.
+        var booleans = new boolean[] { true };
+        var bytes = new byte[] { -2 };
+        var shorts = new short[] { -3 };
+        var chars = new char[] { 'x' };
+        var ints = new int[] { 4 };
+        var longs = new long[] { 3 };
+        var floats = new float[] { 2.5f };
+        var doubles = new double[] { 1.5 };
+        var intMatrix = new int[][] { { 5, 6 } };
+        var doubleMatrix = new double[][] { { 7.5 } };
+        var strings = new String[] { "s" };
+        for (var i = 0; i < 3; ++i) {
+            Thread.sleep(1);
+            assertEquals(true, booleans[0]);
+            assertEquals(-2 - i, bytes[0]);
+            assertEquals(-3 - i, shorts[0]);
+            assertEquals('x' + i, chars[0]);
+            assertEquals(4 + i, ints[0]);
+            assertEquals(3L + i, longs[0]);
+            assertEquals(2.5f + i, floats[0], 0);
+            assertEquals(1.5 + i, doubles[0], 0);
+            assertEquals(6 + i, intMatrix[0][1]);
+            assertEquals(7.5 + i, doubleMatrix[0][0], 0);
+            assertEquals("s".repeat(i + 1), strings[0]);
+            bytes[0]--;
+            shorts[0]--;
+            chars[0]++;
+            ints[0]++;
+            longs[0]++;
+            floats[0]++;
+            doubles[0]++;
+            intMatrix[0][1]++;
+            doubleMatrix[0][0]++;
+            strings[0] += "s";
+        }
+    }
+
+    @Test
     public void monitorTest() {
         dummySyncStaticMethod();
     }
