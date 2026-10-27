@@ -31,6 +31,10 @@ public class TDeflater implements TAutoCloseable {
     public static final int FILTERED = 1;
     public static final int HUFFMAN_ONLY = 2;
     public static final int NO_COMPRESSION = 0;
+    // The JDK's public flush modes, for deflate(byte[], int, int, int).
+    public static final int NO_FLUSH = 0;
+    public static final int SYNC_FLUSH = 2;
+    public static final int FULL_FLUSH = 3;
     static final int Z_NO_FLUSH = 0;
     static final int Z_SYNC_FLUSH = 2;
     static final int Z_FINISH = 4;
@@ -70,10 +74,19 @@ public class TDeflater implements TAutoCloseable {
     }
 
     public int deflate(byte[] buf, int off, int nbytes) {
-        return deflate(buf, off, nbytes, flushParm);
+        return deflateImpl(buf, off, nbytes, flushParm);
     }
 
-    int deflate(byte[] buf, int off, int nbytes, int flushParam) {
+    // Public, as in the JDK since Java 7. The JDK accepts only the three flush modes, and once
+    // finish() was called it finishes the stream whatever mode the caller passes.
+    public int deflate(byte[] buf, int off, int nbytes, int flush) {
+        if (flush != NO_FLUSH && flush != SYNC_FLUSH && flush != FULL_FLUSH) {
+            throw new IllegalArgumentException();
+        }
+        return deflateImpl(buf, off, nbytes, flushParm == Z_FINISH ? Z_FINISH : flush);
+    }
+
+    private int deflateImpl(byte[] buf, int off, int nbytes, int flushParam) {
         if (impl == null) {
             throw new IllegalStateException();
         }
@@ -91,6 +104,10 @@ public class TDeflater implements TAutoCloseable {
                 break;
             case JZlib.Z_STREAM_END:
                 finished = true;
+                break;
+            case JZlib.Z_BUF_ERROR:
+                // Zlib reports "no progress possible" this way. The JDK's Deflater returns 0 bytes
+                // for it, and callers loop until deflate returns 0.
                 break;
             default:
                 throw new RuntimeException("Error: " + err);

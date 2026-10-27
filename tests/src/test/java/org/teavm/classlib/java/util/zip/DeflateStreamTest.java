@@ -15,15 +15,26 @@
  */
 package org.teavm.classlib.java.util.zip;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.teavm.classlib.java.util.zip.ZipTestUtil.readHex;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -92,4 +103,130 @@ public class DeflateStreamTest {
         return offset;
     }
 
+    // A second flush with nothing new to flush made zlib report Z_BUF_ERROR, which used to throw.
+    @Test
+    public void gzipFlushTwiceRoundTrips() throws IOException {
+        var bytes = new ByteArrayOutputStream();
+        var gzip = new GZIPOutputStream(bytes);
+        var data = longString.getBytes(StandardCharsets.UTF_8);
+        gzip.write(data, 0, 100);
+        gzip.flush();
+        gzip.flush();
+        gzip.write(data, 100, data.length - 100);
+        gzip.flush();
+        gzip.close();
+        var input = new GZIPInputStream(new ByteArrayInputStream(bytes.toByteArray()));
+        assertArrayEquals(data, input.readAllBytes());
+    }
+
+    @Test
+    public void streamsRoundTripWithSmallBuffersAndOneByteReads() throws IOException {
+        var data = (longString + longString).getBytes(StandardCharsets.UTF_8);
+        for (int bufSize : new int[] { 1, 2, 7, 512 }) {
+            var bytes = new ByteArrayOutputStream();
+            var out = new DeflaterOutputStream(bytes, new Deflater(), bufSize);
+            for (int i = 0; i < data.length; i += 13) {
+                out.write(data, i, Math.min(13, data.length - i));
+            }
+            out.close();
+            var in = new InflaterInputStream(new OneByteInputStream(bytes.toByteArray()), new Inflater(), bufSize);
+            assertArrayEquals(data, in.readAllBytes(), "buffer " + bufSize);
+        }
+    }
+
+    // A stream cut short at any position must end in EOFException, not loop or return a short result.
+    @Test
+    public void truncatedStreamsThrowAtEveryPosition() throws IOException {
+        var data = longString.getBytes(StandardCharsets.UTF_8);
+        var zlibBytes = new ByteArrayOutputStream();
+        try (var out = new DeflaterOutputStream(zlibBytes)) {
+            out.write(data);
+        }
+        var zlib = zlibBytes.toByteArray();
+        for (int len = 0; len < zlib.length; len++) {
+            var truncated = Arrays.copyOf(zlib, len);
+            var in = new InflaterInputStream(new ByteArrayInputStream(truncated));
+            assertThrows(EOFException.class, () -> readToEnd(in), "zlib length " + len);
+        }
+
+        var gzipBytes = new ByteArrayOutputStream();
+        try (var out = new GZIPOutputStream(gzipBytes)) {
+            out.write(data);
+        }
+        var gzip = gzipBytes.toByteArray();
+        for (int len = 0; len < gzip.length; len++) {
+            var truncated = Arrays.copyOf(gzip, len);
+            assertThrows(EOFException.class, () -> readToEnd(new GZIPInputStream(new ByteArrayInputStream(truncated))),
+                    "gzip length " + len);
+        }
+
+        var zipBytes = new ByteArrayOutputStream();
+        try (var out = new ZipOutputStream(zipBytes)) {
+            out.putNextEntry(new ZipEntry("test.txt"));
+            out.write(data);
+        }
+        var zip = zipBytes.toByteArray();
+        int dataStart = 30 + (zip[26] & 0xFF) + ((zip[27] & 0xFF) << 8) + (zip[28] & 0xFF) + ((zip[29] & 0xFF) << 8);
+        // The entry's compressed length is what a raw inflater consumes before it finishes.
+        var raw = new Inflater(true);
+        raw.setInput(zip, dataStart, zip.length - dataStart);
+        try {
+            raw.inflate(new byte[data.length + 10]);
+        } catch (DataFormatException e) {
+            throw new AssertionError(e);
+        }
+        assertTrue(raw.finished());
+        int dataEnd = dataStart + (int) raw.getBytesRead();
+        for (int len = dataStart; len < dataEnd; len++) {
+            var in = new ZipInputStream(new EndOnceInputStream(Arrays.copyOf(zip, len)));
+            assertEquals("test.txt", in.getNextEntry().getName());
+            assertThrows(EOFException.class, () -> readToEnd(in), "zip length " + len);
+        }
+    }
+
+    // Reads to -1, and fails rather than spinning if read keeps returning 0.
+    private static void readToEnd(InputStream in) throws IOException {
+        var buf = new byte[64];
+        int reads = 0;
+        while (in.read(buf) != -1) {
+            if (++reads > 10000) {
+                throw new AssertionError("read made no progress");
+            }
+        }
+    }
+
+    @Test
+    public void damagedZlibHeaderFailsTheStream() {
+        var in = new InflaterInputStream(new ByteArrayInputStream(new byte[] { 0x78, 0x00, 0x03, 0x00 }));
+        assertThrows(IOException.class, in::readAllBytes);
+    }
+
+    // Fails a reader that keeps reading after the end, so a loop that ignores the end fails instead of hanging.
+    private static class EndOnceInputStream extends ByteArrayInputStream {
+        private int ends;
+
+        EndOnceInputStream(byte[] data) {
+            super(data);
+        }
+
+        @Override
+        public synchronized int read(byte[] b, int off, int len) {
+            int n = super.read(b, off, len);
+            if (n == -1 && ++ends > 100) {
+                throw new AssertionError("read past the end of the input " + ends + " times");
+            }
+            return n;
+        }
+    }
+
+    private static class OneByteInputStream extends ByteArrayInputStream {
+        OneByteInputStream(byte[] data) {
+            super(data);
+        }
+
+        @Override
+        public synchronized int read(byte[] b, int off, int len) {
+            return super.read(b, off, Math.min(len, 1));
+        }
+    }
 }

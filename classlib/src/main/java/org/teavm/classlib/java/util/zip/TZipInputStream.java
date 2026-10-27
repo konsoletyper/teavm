@@ -266,20 +266,26 @@ public class TZipInputStream extends TInflaterInputStream implements TZipConstan
             crc.update(buffer, start, toRead);
             return toRead;
         }
-        if (inf.needsInput()) {
-            fill();
-            if (len > 0) {
-                entryIn += len;
-            }
+        if (length == 0) {
+            return 0;
         }
         int read;
         try {
-            read = inf.inflate(buffer, start, length);
+            // inflate returns 0 when it needs input. At the end of the input the entry is truncated, as in the JDK.
+            while ((read = inf.inflate(buffer, start, length)) == 0) {
+                if (inf.finished() || inf.needsDictionary()) {
+                    return -1;
+                }
+                if (inf.needsInput()) {
+                    fill();
+                    if (len == -1) {
+                        throw new EOFException();
+                    }
+                    entryIn += len;
+                }
+            }
         } catch (TDataFormatException e) {
             throw new TZipException(e.getMessage());
-        }
-        if (read == 0 && inf.finished()) {
-            return -1;
         }
         crc.update(buffer, start, read);
         return read;

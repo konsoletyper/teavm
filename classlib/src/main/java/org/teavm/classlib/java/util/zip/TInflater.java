@@ -28,6 +28,8 @@ public class TInflater implements TAutoCloseable {
     int inLength;
     int inRead;
     private boolean needsDictionary;
+    // The zlib header's two bytes, kept as inflate consumes them. jzlib does not expose them.
+    private final byte[] header = new byte[2];
     private Inflater impl;
 
     public TInflater() {
@@ -106,13 +108,31 @@ public class TInflater implements TAutoCloseable {
             throw new IllegalStateException();
         }
 
+        // As in the JDK, 0 means "call needsInput() or needsDictionary()". jzlib reports an error for both:
+        // before any setInput, and again for each call until setDictionary.
+        if (needsDictionary || impl.next_in == null) {
+            return 0;
+        }
+
         long lastInSize = impl.total_in;
         long lastOutSize = impl.total_out;
-        boolean neededDict = needsDictionary;
-        needsDictionary = false;
         impl.setOutput(buf, off, nbytes);
 
+        byte[] inArray = impl.next_in;
+        int inIndex = impl.next_in_index;
         int errCode = impl.inflate(0);
+        if (!nowrap && lastInSize < 2) {
+            // Keep the header bytes as inflate consumes them, which may take more than one call.
+            int upTo = (int) Math.min(2, impl.total_in);
+            for (int k = (int) lastInSize; k < upTo; k++) {
+                header[k] = inArray[inIndex + k - (int) lastInSize];
+            }
+            // jzlib accepts a header that fails the FCHECK test (CMF * 256 + FLG a multiple of 31) when its method
+            // is deflate. It does check the method and the window size, as zlib does.
+            if (upTo == 2 && (((header[0] & 0xFF) << 8) | (header[1] & 0xFF)) % 31 != 0) {
+                throw new TDataFormatException();
+            }
+        }
         switch (errCode) {
             case JZlib.Z_OK:
                 break;
@@ -122,12 +142,12 @@ public class TInflater implements TAutoCloseable {
             case JZlib.Z_STREAM_END:
                 finished = true;
                 break;
+            case JZlib.Z_BUF_ERROR:
+                // Zlib reports "no progress possible" this way. The JDK's Inflater returns 0 bytes for it, not an
+                // error.
+                break;
             default:
                 throw new TDataFormatException("Error occurred: " + errCode);
-        }
-
-        if (needsDictionary && neededDict) {
-            throw new TDataFormatException();
         }
 
         inRead += impl.total_in - lastInSize;
@@ -169,6 +189,7 @@ public class TInflater implements TAutoCloseable {
                 buf = Arrays.copyOfRange(buf, off, buf.length);
             }
             impl.setDictionary(buf, nbytes);
+            needsDictionary = false;
         } else {
             throw new ArrayIndexOutOfBoundsException();
         }
