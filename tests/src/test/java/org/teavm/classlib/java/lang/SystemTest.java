@@ -324,4 +324,37 @@ public class SystemTest {
         }
         assertEquals(snapshot, env);
     }
+
+    // System.loadLibrary: "UnsatisfiedLinkError - if either the libname argument contains a file path, the native
+    // library is not statically linked with the VM, or the library cannot be mapped to a native library image by
+    // the host system." System.load: "UnsatisfiedLinkError - if either the filename is not an absolute path name,
+    // the native library is not statically linked with the VM, or the library cannot be mapped to a native library
+    // image by the host system." TeaVM programs cannot load native libraries.
+    // "The call System.loadLibrary(name) is effectively equivalent to the call Runtime.getRuntime().loadLibrary(name)",
+    // and likewise for load.
+    @Test
+    public void nativeLibrariesAreNotFound() {
+        var runtime = Runtime.getRuntime();
+        for (var name : List.of("teavm-test-no-such-library", "", "teavm-test/no-such-library",
+                "/teavm-test/no-such-library.so")) {
+            assertThrows(UnsatisfiedLinkError.class, () -> System.loadLibrary(name), name);
+            assertThrows(UnsatisfiedLinkError.class, () -> runtime.loadLibrary(name), name);
+        }
+        for (var name : List.of("/teavm-test/no-such-library.so", "/teavm-test/libno-such-library.dylib",
+                "C:\\teavm-test\\no-such-library.dll", "no-such-library.so", "")) {
+            assertThrows(UnsatisfiedLinkError.class, () -> System.load(name), name);
+            assertThrows(UnsatisfiedLinkError.class, () -> runtime.load(name), name);
+        }
+    }
+
+    // System.load / System.loadLibrary / Runtime.load / Runtime.loadLibrary:
+    // "NullPointerException - if filename is null" ("if libname is null" for loadLibrary)
+    @Test
+    public void nativeLibraryNameMustNotBeNull() {
+        var runtime = Runtime.getRuntime();
+        assertThrows(NullPointerException.class, () -> System.load(null));
+        assertThrows(NullPointerException.class, () -> System.loadLibrary(null));
+        assertThrows(NullPointerException.class, () -> runtime.load(null));
+        assertThrows(NullPointerException.class, () -> runtime.loadLibrary(null));
+    }
 }

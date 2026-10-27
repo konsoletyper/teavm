@@ -107,6 +107,14 @@ public class TRuntime {
         return Navigator.hardwareConcurrency();
     }
 
+    public void load(String filename) {
+        TSystem.load(filename);
+    }
+
+    public void loadLibrary(String libname) {
+        TSystem.loadLibrary(libname);
+    }
+
     public static Version version() {
         if (version == null) {
             version = new Version();

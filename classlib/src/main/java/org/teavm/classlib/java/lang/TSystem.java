@@ -336,6 +336,22 @@ public final class TSystem extends TObject {
         return "\n";
     }
     
+    // Native libraries cannot load. Callers that try to load one fall back to Java code when the load throws
+    // UnsatisfiedLinkError, as it does on a JVM without the library.
+    public static void load(String filename) {
+        if (filename == null) {
+            throw new NullPointerException();
+        }
+        throw new UnsatisfiedLinkError();
+    }
+
+    public static void loadLibrary(String libname) {
+        if (libname == null) {
+            throw new NullPointerException();
+        }
+        throw new UnsatisfiedLinkError();
+    }
+
     public static String getenv(String name) {
         if (name == null) {
             throw new NullPointerException();
