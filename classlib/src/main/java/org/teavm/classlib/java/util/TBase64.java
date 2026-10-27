@@ -26,7 +26,7 @@ public final class TBase64 {
     }
 
     public static Encoder getUrlEncoder() {
-        return new Encoder(Base64Impl.urlAlphabet, false);
+        return new Encoder(Base64Impl.urlAlphabet, true);
     }
 
     public static class Encoder {
