@@ -119,6 +119,6 @@ public class TOptionalDouble {
 
     @Override
     public String toString() {
-        return isPresent() ? "OptionalDouble.of(" + value + ")" : "OptionalDouble.empty()";
+        return isPresent() ? "OptionalDouble[" + value + "]" : "OptionalDouble.empty";
     }
 }

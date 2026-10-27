@@ -148,6 +148,6 @@ public final class TOptional<T> {
 
     @Override
     public String toString() {
-        return value != null ? "Optional.of(" + value + ")" : "Optional.empty()";
+        return value != null ? "Optional[" + value + "]" : "Optional.empty";
     }
 }

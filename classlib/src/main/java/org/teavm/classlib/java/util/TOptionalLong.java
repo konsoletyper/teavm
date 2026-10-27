@@ -119,6 +119,6 @@ public class TOptionalLong {
 
     @Override
     public String toString() {
-        return isPresent() ? "OptionalLong.of(" + value + ")" : "OptionalLong.empty()";
+        return isPresent() ? "OptionalLong[" + value + "]" : "OptionalLong.empty";
     }
 }
