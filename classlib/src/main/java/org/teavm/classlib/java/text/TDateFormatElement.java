@@ -530,10 +530,12 @@ abstract class TDateFormatElement {
                 if (index >= text.length()) {
                     break;
                 }
-                int next = Arrays.binarySearch(node.chars, Character.toLowerCase(text.charAt(index++)));
+                int next = Arrays.binarySearch(node.chars, Character.toLowerCase(text.charAt(index)));
                 if (next < 0) {
-                    return null;
+                    // The longest name that matched so far wins.
+                    break;
                 }
+                ++index;
                 node = node.childNodes[next];
             }
             if (node.tz != null) {
