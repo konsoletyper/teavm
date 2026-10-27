@@ -18,9 +18,13 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.io.TSerializable;
 
 public class TEventObject implements TSerializable {
-    private final Object source;
+    // As in the JDK: protected, so subclasses can read it, and transient.
+    protected transient Object source;
     
     public TEventObject(Object source) {
+        if (source == null) {
+            throw new IllegalArgumentException();
+        }
         this.source = source;
     }
     

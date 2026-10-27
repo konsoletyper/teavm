@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.util.concurrent;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 public enum TTimeUnit {
     NANOSECONDS(1),
     MICROSECONDS(1_000),
@@ -46,6 +49,26 @@ public enum TTimeUnit {
             }
             return sourceDuration * ratio;
         }
+    }
+
+    public long convert(Duration duration) {
+        var secs = duration.getSeconds();
+        var nanos = duration.getNano();
+        if (secs < 0 && nanos > 0) {
+            // A negative Duration keeps negative seconds and positive nanoseconds. As the other conversions do,
+            // round toward zero.
+            secs++;
+            nanos -= 1_000_000_000;
+        }
+        var s = convert(secs, SECONDS);
+        var n = convert(nanos, NANOSECONDS);
+        var sum = s + n;
+        // The sum overflows when both parts have the same sign and the sum's sign differs. The nanoseconds part
+        // never has the opposite sign to the seconds part, so this also keeps a saturated seconds part saturated.
+        if (((s ^ sum) & (n ^ sum)) < 0) {
+            return s < 0 ? Long.MIN_VALUE : Long.MAX_VALUE;
+        }
+        return sum;
     }
 
     public long toNanos(long duration) {
@@ -98,6 +121,46 @@ public enum TTimeUnit {
     public void sleep(long timeout) throws InterruptedException {
         if (timeout > 0) {
             Thread.sleep(waitMillis(timeout));
+        }
+    }
+
+    public ChronoUnit toChronoUnit() {
+        switch (this) {
+            case NANOSECONDS:
+                return ChronoUnit.NANOS;
+            case MICROSECONDS:
+                return ChronoUnit.MICROS;
+            case MILLISECONDS:
+                return ChronoUnit.MILLIS;
+            case SECONDS:
+                return ChronoUnit.SECONDS;
+            case MINUTES:
+                return ChronoUnit.MINUTES;
+            case HOURS:
+                return ChronoUnit.HOURS;
+            default:
+                return ChronoUnit.DAYS;
+        }
+    }
+
+    public static TTimeUnit of(ChronoUnit chronoUnit) {
+        switch (chronoUnit) {
+            case NANOS:
+                return NANOSECONDS;
+            case MICROS:
+                return MICROSECONDS;
+            case MILLIS:
+                return MILLISECONDS;
+            case SECONDS:
+                return SECONDS;
+            case MINUTES:
+                return MINUTES;
+            case HOURS:
+                return HOURS;
+            case DAYS:
+                return DAYS;
+            default:
+                throw new IllegalArgumentException();
         }
     }
 }

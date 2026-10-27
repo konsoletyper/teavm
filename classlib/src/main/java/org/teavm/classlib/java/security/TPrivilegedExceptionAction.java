@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.security;
 
+import org.teavm.classlib.java.lang.TException;
+
 public interface TPrivilegedExceptionAction<T> {
-    T run();
+    T run() throws TException;
 }

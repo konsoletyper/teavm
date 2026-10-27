@@ -17,7 +17,10 @@ package org.teavm.classlib.java.lang;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import java.util.function.Supplier;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
 
@@ -285,5 +288,104 @@ public class StringBuilderTest {
         assertArrayEquals(new int[] { 56972, 56178 }, new StringBuilder().append(
                 new char[] { (char) 56972, (char) 56178 }).codePoints().toArray());
         assertArrayEquals(new int[] { 56178 }, new StringBuilder().append((char) 56178).codePoints().toArray());
+    }
+
+    // StringBuilder/StringBuffer.append(CharSequence s): "If s is null, then the four characters "null" are
+    // appended." append(StringBuffer sb): "If sb is null, then the four characters "null" are appended."
+    // insert(int dstOffset, CharSequence s): "If s is null, then the four characters "null" are inserted into
+    // this sequence."
+    @Test
+    public void nullCharSequenceAppendedAsNull() {
+        CharSequence nullSequence = null;
+        assertEquals("abnull", new StringBuilder("ab").append(nullSequence).toString());
+        assertEquals("abnull", new StringBuilder("ab").append((StringBuffer) null).toString());
+        assertEquals("null", new StringBuilder().append(nullSequence).toString());
+        assertEquals("abnullnull", new StringBuilder("ab").append(nullSequence).append(nullSequence).toString());
+
+        assertEquals("abnull", new StringBuffer("ab").append(nullSequence).toString());
+        assertEquals("abnull", new StringBuffer("ab").append((StringBuffer) null).toString());
+        assertEquals("null", new StringBuffer().append(nullSequence).toString());
+    }
+
+    @Test
+    public void nullCharSequenceInsertedAsNull() {
+        CharSequence nullSequence = null;
+        for (int index = 0; index <= 2; ++index) {
+            String expected = "ab".substring(0, index) + "null" + "ab".substring(index);
+            assertEquals(expected, new StringBuilder("ab").insert(index, nullSequence).toString());
+            assertEquals(expected, new StringBuffer("ab").insert(index, nullSequence).toString());
+        }
+        // "IndexOutOfBoundsException - if the offset is invalid."
+        assertThrows(IndexOutOfBoundsException.class, () -> new StringBuilder("ab").insert(-1, nullSequence));
+        assertThrows(IndexOutOfBoundsException.class, () -> new StringBuilder("ab").insert(3, nullSequence));
+        assertThrows(IndexOutOfBoundsException.class, () -> new StringBuffer("ab").insert(3, nullSequence));
+    }
+
+    // append(CharSequence s, int start, int end): "If s is null, then this method appends characters as if the s
+    // parameter was a sequence which contains the four characters "null"." It throws IndexOutOfBoundsException
+    // "if start is negative, or start is greater than end or end is greater than s.length()".
+    @Test
+    public void nullCharSequenceRangeAppendedAsNull() {
+        CharSequence nullSequence = null;
+        for (int start = -1; start <= 5; ++start) {
+            for (int end = -1; end <= 5; ++end) {
+                int s = start;
+                int e = end;
+                String expected = s >= 0 && s <= e && e <= 4 ? "ab" + "null".substring(s, e) : "IOOBE";
+                String where = "start=" + s + ", end=" + e;
+                assertEquals(expected, outcome(() -> new StringBuilder("ab").append(nullSequence, s, e)), where);
+                assertEquals(expected, outcome(() -> new StringBuffer("ab").append(nullSequence, s, e)), where);
+            }
+        }
+    }
+
+    // insert(int dstOffset, CharSequence s, int start, int end): "If s is null, then this method inserts characters
+    // as if the s parameter was a sequence containing the four characters "null"." It throws
+    // IndexOutOfBoundsException "if dstOffset is negative or greater than this.length(), or start or end are
+    // negative, or start is greater than end or end is greater than s.length()".
+    @Test
+    public void nullCharSequenceRangeInsertedAsNull() {
+        CharSequence nullSequence = null;
+        for (int index = -1; index <= 3; ++index) {
+            for (int start = -1; start <= 5; ++start) {
+                for (int end = -1; end <= 5; ++end) {
+                    int i = index;
+                    int s = start;
+                    int e = end;
+                    String expected = i >= 0 && i <= 2 && s >= 0 && s <= e && e <= 4
+                            ? "ab".substring(0, i) + "null".substring(s, e) + "ab".substring(i)
+                            : "IOOBE";
+                    String where = "index=" + i + ", start=" + s + ", end=" + e;
+                    assertEquals(expected, outcome(() -> new StringBuilder("ab").insert(i, nullSequence, s, e)),
+                            where);
+                    assertEquals(expected, outcome(() -> new StringBuffer("ab").insert(i, nullSequence, s, e)),
+                            where);
+                }
+            }
+        }
+    }
+
+    // Known gap, not fixed here: the range inserts don't check dstOffset. insert(int dstOffset, CharSequence s,
+    // int start, int end) throws IndexOutOfBoundsException "if dstOffset is negative or greater than
+    // this.length()", and insert(int index, char[] str, int offset, int len) throws StringIndexOutOfBoundsException
+    // "if index is negative or greater than length()".
+    @Test
+    @Disabled("insert(int, CharSequence, int, int) and insert(int, char[], int, int) don't check the insert index")
+    public void rangeInsertRejectsInvalidIndex() {
+        for (int index : new int[] { -1, 3, 4 }) {
+            int i = index;
+            assertEquals("IOOBE", outcome(() -> new StringBuilder("ab").insert(i, "xy", 0, 1)), "index=" + i);
+            assertEquals("IOOBE", outcome(() -> new StringBuilder("ab").insert(i, new char[] { 'x' }, 0, 1)),
+                    "index=" + i);
+            assertEquals("IOOBE", outcome(() -> new StringBuffer("ab").insert(i, "xy", 0, 1)), "index=" + i);
+        }
+    }
+
+    private static String outcome(Supplier<CharSequence> action) {
+        try {
+            return action.get().toString();
+        } catch (IndexOutOfBoundsException ex) {
+            return "IOOBE";
+        }
     }
 }

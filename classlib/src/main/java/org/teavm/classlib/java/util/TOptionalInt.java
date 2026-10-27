@@ -119,6 +119,6 @@ public class TOptionalInt {
 
     @Override
     public String toString() {
-        return isPresent() ? "OptionalInt.of(" + value + ")" : "OptionalInt.empty()";
+        return isPresent() ? "OptionalInt[" + value + "]" : "OptionalInt.empty";
     }
 }

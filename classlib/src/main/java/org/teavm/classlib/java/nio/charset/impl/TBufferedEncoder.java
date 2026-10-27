@@ -107,10 +107,6 @@ public abstract class TBufferedEncoder extends TCharsetEncoder {
             return in.hasRemaining();
         }
 
-        public boolean hasMoreInput(int sz) {
-            return in.remaining() >= sz;
-        }
-
         public boolean hasMoreOutput() {
             return out.hasRemaining();
         }

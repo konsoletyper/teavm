@@ -106,6 +106,19 @@ public class CFileSystem implements VirtualFileSystem {
     }
 
     @Override
+    public String tempDirectory() {
+        Address resultPtr = Memory.malloc(Address.sizeOf());
+        int length = tempDirectory(resultPtr);
+        Address result = resultPtr.getAddress();
+        Memory.free(resultPtr);
+
+        char[] chars = new char[length];
+        Memory.memcpy(Address.ofData(chars), result, chars.length * 2);
+        Memory.free(result);
+        return canonicalize(new String(chars));
+    }
+
+    @Override
     public String[] getRoots() {
         return isWindows() ? new String[] { "C:" } : new String[] { "" };
     }

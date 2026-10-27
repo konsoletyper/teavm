@@ -32,6 +32,32 @@ public class TPackage implements AnnotatedElement {
         return name;
     }
 
+    // The JDK reads these from the JAR manifest, and returns null when a package has no manifest, for example for
+    // classes loaded from a directory. A TeaVM program has no manifest.
+    public String getSpecificationTitle() {
+        return null;
+    }
+
+    public String getSpecificationVersion() {
+        return null;
+    }
+
+    public String getSpecificationVendor() {
+        return null;
+    }
+
+    public String getImplementationTitle() {
+        return null;
+    }
+
+    public String getImplementationVersion() {
+        return null;
+    }
+
+    public String getImplementationVendor() {
+        return null;
+    }
+
     public static TPackage getPackage(String name) {
         TPackage pkg = packages.get(name);
         if (pkg == null) {

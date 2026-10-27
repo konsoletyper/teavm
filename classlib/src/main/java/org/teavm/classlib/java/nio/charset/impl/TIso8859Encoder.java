@@ -27,33 +27,28 @@ public class TIso8859Encoder extends TBufferedEncoder {
     protected TCoderResult arrayEncode(char[] inArray, int inPos, int inSize, byte[] outArray, int outPos, int outSize,
             Controller controller) {
         TCoderResult result = null;
+        // The JDK's surrogate rules (sun.nio.cs.Surrogate.Parser). The position stays on the character that a
+        // result reports, because the caller skips the reported length.
         while (inPos < inSize && outPos < outSize) {
-            char c = inArray[inPos++];
-            if (Character.isHighSurrogate(c)) {
-                if (inPos == inSize) {
-                    if (!controller.hasMoreInput(2)) {
+            char c = inArray[inPos];
+            if (c < 256) {
+                outArray[outPos++] = (byte) c;
+                inPos++;
+            } else if (Character.isHighSurrogate(c)) {
+                if (inPos + 1 >= inSize) {
+                    if (!controller.hasMoreInput()) {
                         result = TCoderResult.UNDERFLOW;
-                    } else {
-                        inPos--;
-                    }
-                    break;
-                } else {
-                    char next = inArray[inPos];
-                    if (!Character.isLowSurrogate(next)) {
-                        result = TCoderResult.malformedForLength(1);
-                    } else {
-                        --inPos;
-                        result = TCoderResult.unmappableForLength(2);
                     }
                     break;
                 }
+                result = Character.isLowSurrogate(inArray[inPos + 1])
+                        ? TCoderResult.unmappableForLength(2)
+                        : TCoderResult.malformedForLength(1);
+                break;
             } else if (Character.isLowSurrogate(c)) {
                 result = TCoderResult.malformedForLength(1);
-            }
-            if (c < 256) {
-                outArray[outPos++] = (byte) c;
+                break;
             } else {
-                --inPos;
                 result = TCoderResult.unmappableForLength(1);
                 break;
             }

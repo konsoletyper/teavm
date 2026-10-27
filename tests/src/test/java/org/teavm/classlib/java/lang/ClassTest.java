@@ -26,6 +26,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -435,5 +436,108 @@ public class ClassTest {
         
         public static class D {
         }
+    }
+
+    @Test
+    public void failedInitializerThroughForNameIsNotRunAgain() throws Exception {
+        // TeaVM finds a class by name only when the name is a constant at the call
+        assertThrows(ExceptionInInitializerError.class, () -> Class.forName(
+                "org.teavm.classlib.java.lang.ClassTest$FailingInitializerForName", true,
+                ClassTest.class.getClassLoader()));
+        assertThrows(NoClassDefFoundError.class, () -> Class.forName(
+                "org.teavm.classlib.java.lang.ClassTest$FailingInitializerForName", true,
+                ClassTest.class.getClassLoader()));
+        // Without a read of VALUE, TeaVM removes the initializer, and Class.forName runs nothing
+        assertThrows(NoClassDefFoundError.class, () -> FailingInitializerForName.VALUE.length());
+    }
+
+    @Test
+    public void failedInitializerBlocksReflectiveInstance() throws Exception {
+        assertThrows(ExceptionInInitializerError.class, () -> Class.forName(
+                "org.teavm.classlib.java.lang.ClassTest$FailingInitializerForNewInstance", true,
+                ClassTest.class.getClassLoader()));
+        try {
+            var instance = FailingInitializerForNewInstance.class.newInstance();
+            fail("Instance created after its class failed to initialize, VALUE is " + instance.get());
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    // The JVM runs every test of this class in one class loader, so each test needs a failing class of its own
+    public static class FailingInitializerForName {
+        static final String VALUE;
+
+        static {
+            failInitializer();
+            VALUE = "initialized";
+        }
+    }
+
+    public static class FailingInitializerForNewInstance implements Supplier<String> {
+        static final String VALUE;
+
+        static {
+            failInitializer();
+            VALUE = "initialized";
+        }
+
+        @Override
+        public String get() {
+            return VALUE;
+        }
+    }
+
+    static void failInitializer() {
+        throw new IllegalStateException();
+    }
+
+    @Test
+    public void classValuedAnnotationKeepsClassNames() {
+        var annotation = AnnotatedWithClassValue.class.getAnnotation(ClassValued.class);
+        assertEquals(ClassTest.class.getName() + "$AnnotationValueTarget", annotation.value().getName());
+        assertEquals(ClassTest.class.getName() + "$AnnotationDefaultTarget", annotation.other().getName());
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface ClassValued {
+        Class<?> value();
+
+        Class<?> other() default AnnotationDefaultTarget.class;
+    }
+
+    @ClassValued(AnnotationValueTarget.class)
+    static class AnnotatedWithClassValue {
+    }
+
+    static class AnnotationValueTarget {
+    }
+
+    static class AnnotationDefaultTarget {
+    }
+
+    // Package's Javadoc: each of the six getters returns the value, "null is returned if it is not known".
+    // For a Package defined automatically by the class loader (as for classes in the unnamed module, or loaded
+    // without a manifest), "the specification and implementation titles, versions, and vendors are unspecified",
+    // and the built-in loaders give packages in named modules "no specification and implementation versioning
+    // information". A TeaVM program has no manifest, so none of them is ever known.
+    @Test
+    public void packageWithoutManifest() {
+        assertNoVersioningInfo(ClassTest.class.getPackage());
+        assertNoVersioningInfo(Nested.class.getPackage());
+        assertNoVersioningInfo(String.class.getPackage());
+        assertNoVersioningInfo(List.class.getPackage());
+    }
+
+    private static void assertNoVersioningInfo(Package pkg) {
+        assertNull(pkg.getSpecificationTitle());
+        assertNull(pkg.getSpecificationVersion());
+        assertNull(pkg.getSpecificationVendor());
+        assertNull(pkg.getImplementationTitle());
+        assertNull(pkg.getImplementationVersion());
+        assertNull(pkg.getImplementationVendor());
+    }
+
+    static class Nested {
     }
 }

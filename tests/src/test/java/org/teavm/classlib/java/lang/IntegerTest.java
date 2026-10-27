@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
 
@@ -323,5 +324,141 @@ public class IntegerTest {
     @Test
     public void toUnsignedLong() {
         assertEquals(0xFFFFFFFFL, Integer.toUnsignedLong(-1));
+    }
+
+    // Javadoc of Integer.parseUnsignedInt(String, int): "The characters in the string must all be digits of
+    // the specified radix (as determined by whether Character.digit(char, int) returns a nonnegative value),
+    // except that the first character may be an ASCII plus sign '+'."
+    @Test
+    public void parseUnsignedInt() {
+        assertEquals(0, Integer.parseUnsignedInt("0"));
+        assertEquals(-1, Integer.parseUnsignedInt("4294967295"));
+        assertEquals(Integer.MIN_VALUE, Integer.parseUnsignedInt("2147483648"));
+        assertEquals("3000000000", Integer.toUnsignedString(Integer.parseUnsignedInt("3000000000")));
+        assertEquals(255, Integer.parseUnsignedInt("ff", 16));
+        assertEquals(255, Integer.parseUnsignedInt("FF", 16));
+        assertEquals(-1, Integer.parseUnsignedInt("ffffffff", 16));
+        assertEquals(-1, Integer.parseUnsignedInt("1z141z3", 36));
+        assertEquals(-1, Integer.parseUnsignedInt("00000000000000000000000000004294967295"));
+    }
+
+    // Javadoc: "An exception of type NumberFormatException is thrown if any of the following situations
+    // occurs: [...] The value represented by the string is larger than the largest unsigned int, 2^32-1."
+    @Test
+    public void parseUnsignedIntAllRadixes() {
+        long[] valid = { 0, 1, 2, 35, 36, Integer.MAX_VALUE - 1L, Integer.MAX_VALUE, 1L << 31, (1L << 31) + 1,
+                (1L << 32) - 2, (1L << 32) - 1 };
+        long[] tooBig = { 1L << 32, (1L << 32) + 1, 1L << 33, Long.MAX_VALUE };
+        for (int r = Character.MIN_RADIX; r <= Character.MAX_RADIX; ++r) {
+            int radix = r;
+            for (long v : valid) {
+                String s = Long.toString(v, radix);
+                String msg = s + " radix " + radix;
+                assertEquals((int) v, Integer.parseUnsignedInt(s, radix), msg);
+                assertEquals((int) v, Integer.parseUnsignedInt(s.toUpperCase(), radix), msg);
+                assertEquals((int) v, Integer.parseUnsignedInt("+" + s, radix), msg);
+                assertEquals((int) v, Integer.parseUnsignedInt("000" + s, radix), msg);
+                assertEquals(s, Integer.toUnsignedString((int) v, radix), msg);
+            }
+            for (long v : tooBig) {
+                String s = Long.toString(v, radix);
+                assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt(s, radix),
+                        s + " radix " + radix);
+            }
+            String max = Long.toString((1L << 32) - 1, radix);
+            // one digit too many, one value too big, and a string that overflows even a long
+            for (String s : new String[] { max + "0", max + "1", Long.toString(1L << 32, radix),
+                    max + max + max }) {
+                assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt(s, radix),
+                        s + " radix " + radix);
+                assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt("+" + s, radix),
+                        s + " radix " + radix);
+            }
+        }
+    }
+
+    @Test
+    public void parseUnsignedIntRoundTrips() {
+        int[] radixes = { 2, 3, 7, 8, 10, 16, 32, 36 };
+        long seed = 12345;
+        for (int i = 0; i < 2000; ++i) {
+            seed = seed * 6364136223846793005L + 1442695040888963407L;
+            int value = (int) (seed >>> 32);
+            for (int radix : radixes) {
+                String s = Integer.toUnsignedString(value, radix);
+                assertEquals(value, Integer.parseUnsignedInt(s, radix), s + " radix " + radix);
+            }
+            assertEquals(value, Integer.parseUnsignedInt(Integer.toUnsignedString(value)));
+        }
+    }
+
+    // Javadoc: "The first argument is null or is a string of length zero"; "the first character may be a
+    // plus sign '+' provided that the string is longer than length 1"; and the method summary says
+    // "An ASCII minus sign '-' is not permitted", so even "-0" is rejected.
+    @Test
+    public void parseUnsignedIntRejectsSignsAndEmpty() {
+        assertEquals(0, Integer.parseUnsignedInt("+0"));
+        assertEquals(-1, Integer.parseUnsignedInt("+4294967295"));
+        for (String s : new String[] { "", "+", "-", "-0", "-1", "-4294967295", "+-1", "-+1", "++1", "--1",
+                "1+", "1-", " 1", "1 " }) {
+            assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt(s), "\"" + s + "\"");
+            assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt(s, 16), "\"" + s + "\"");
+        }
+        assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt(null));
+        assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt(null, 10));
+    }
+
+    // Javadoc: "The radix is either smaller than Character.MIN_RADIX or larger than Character.MAX_RADIX."
+    @Test
+    public void parseUnsignedIntRejectsBadRadix() {
+        for (int radix : new int[] { Integer.MIN_VALUE, -1, 0, 1, 37, Integer.MAX_VALUE }) {
+            assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt("0", radix));
+            assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt("1", radix));
+        }
+    }
+
+    // Javadoc: "Any character of the string is not a digit of the specified radix, except that the first
+    // character may be a plus sign '+'".
+    @Test
+    public void parseUnsignedIntRejectsInvalidCharAtEveryPosition() {
+        char[] bad = { ' ', '\t', '\0', '.', ',', '/', ':', '@', '[', '`', '{', '-', '_', '\u00E9', '\u2028' };
+        for (int radix = Character.MIN_RADIX; radix <= Character.MAX_RADIX; ++radix) {
+            for (String valid : new String[] { Long.toString((1L << 32) - 1, radix), Long.toString(radix - 1, radix),
+                    "+1" }) {
+                for (int pos = 0; pos <= valid.length(); ++pos) {
+                    for (char c : bad) {
+                        checkInvalid(valid, pos, c, radix);
+                    }
+                    if (radix < Character.MAX_RADIX) {
+                        checkInvalid(valid, pos, Character.forDigit(radix, Character.MAX_RADIX), radix);
+                        checkInvalid(valid, pos, Character.toUpperCase(Character.forDigit(radix,
+                                Character.MAX_RADIX)), radix);
+                    }
+                    if (pos > 0) {
+                        checkInvalid(valid, pos, '+', radix);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void checkInvalid(String valid, int pos, char c, int radix) {
+        String replaced = valid.substring(0, pos) + c + valid.substring(Math.min(pos + 1, valid.length()));
+        String inserted = valid.substring(0, pos) + c + valid.substring(pos);
+        assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt(replaced, radix),
+                "\"" + replaced + "\" radix " + radix);
+        assertThrows(NumberFormatException.class, () -> Integer.parseUnsignedInt(inserted, radix),
+                "\"" + inserted + "\" radix " + radix);
+    }
+
+    // Accepted gap: the JDK accepts any character for which Character.digit is nonnegative, including non-ASCII
+    // digits and fullwidth Latin letters; TeaVM (here and in parseInt) only accepts ASCII digits and letters.
+    @Test
+    @Disabled("TeaVM's integer parsers accept only ASCII digits, not every char that Character.digit accepts")
+    public void parseUnsignedIntAcceptsNonAsciiDigits() {
+        assertEquals(12, Integer.parseUnsignedInt("\u0661\u0662"));
+        assertEquals(12, Integer.parseUnsignedInt("\uFF11\uFF12"));
+        assertEquals(-1, Integer.parseUnsignedInt("\uFF26\uFF26\uFF26\uFF26\uFF26\uFF26\uFF26\uFF26", 16));
+        assertEquals(12, Integer.parseInt("\u0661\u0662"));
     }
 }

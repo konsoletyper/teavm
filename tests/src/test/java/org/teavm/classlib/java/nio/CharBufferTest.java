@@ -667,4 +667,56 @@ public class CharBufferTest {
         dst.get(0, check);
         assertArrayEquals(new char[] { 1, 2, 3 }, check);
     }
+    // CharBuffer.toString: "Returns a string containing the characters in this buffer. The first character of the
+    // resulting string will be the character at this buffer's position, while the last character will be the
+    // character at index limit() - 1. Invoking this method does not change the buffer's position."
+    @Test
+    public void toStringReturnsRemainingCharacters() {
+        var buffer = CharBuffer.wrap("abcdefgh".toCharArray());
+        buffer.position(2).limit(6);
+        assertEquals("cdef", buffer.toString());
+        assertEquals(2, buffer.position());
+        assertEquals(6, buffer.limit());
+        assertEquals("", buffer.position(6).toString());
+        assertEquals("cdef", CharBuffer.wrap("abcdefgh", 2, 6).toString());
+        assertEquals("de", CharBuffer.wrap("abcdefgh".toCharArray(), 1, 6).position(3).limit(5).slice().toString());
+        assertEquals("ab", CharBuffer.wrap("abcdefgh".toCharArray()).asReadOnlyBuffer().limit(2).toString());
+
+        for (var direct : new boolean[] { false, true }) {
+            var bytes = direct ? ByteBuffer.allocateDirect(10) : ByteBuffer.allocate(10);
+            for (var order : new ByteOrder[] { ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN }) {
+                var chars = bytes.clear().order(order).asCharBuffer();
+                chars.put("hello");
+                chars.position(1).limit(4);
+                assertEquals("ell", chars.toString());
+                assertEquals(1, chars.position());
+            }
+        }
+    }
+
+    // CharBuffer.append(CharSequence csq): "If csq is null, then the four characters "null" are appended to this
+    // character buffer." append(CharSequence csq, int start, int end): "If csq is null, then characters will be
+    // appended as if csq contained the four characters "null"."
+    @Test
+    public void appendNullCharSequence() {
+        var buffer = CharBuffer.allocate(8);
+        buffer.append(null);
+        assertEquals(4, buffer.position());
+        assertEquals("null", buffer.flip().toString());
+
+        for (int start = -1; start <= 5; ++start) {
+            for (int end = -1; end <= 5; ++end) {
+                String expected = start >= 0 && start <= end && end <= 4 ? "null".substring(start, end) : "IOOBE";
+                var target = CharBuffer.allocate(8);
+                String actual;
+                try {
+                    target.append(null, start, end);
+                    actual = target.flip().toString();
+                } catch (IndexOutOfBoundsException e) {
+                    actual = "IOOBE";
+                }
+                assertEquals(expected, actual, "start=" + start + ", end=" + end);
+            }
+        }
+    }
 }

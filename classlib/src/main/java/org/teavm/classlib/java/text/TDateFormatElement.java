@@ -530,10 +530,12 @@ abstract class TDateFormatElement {
                 if (index >= text.length()) {
                     break;
                 }
-                int next = Arrays.binarySearch(node.chars, Character.toLowerCase(text.charAt(index++)));
+                int next = Arrays.binarySearch(node.chars, Character.toLowerCase(text.charAt(index)));
                 if (next < 0) {
-                    return null;
+                    // The longest name that matched so far wins.
+                    break;
                 }
+                ++index;
                 node = node.childNodes[next];
             }
             if (node.tz != null) {
@@ -674,6 +676,10 @@ abstract class TDateFormatElement {
         @Override
         public void parse(String text, TCalendar date, TParsePosition position) {
             int index = position.getIndex();
+            if (index >= text.length()) {
+                position.setErrorIndex(index);
+                return;
+            }
             char signChar = text.charAt(index++);
             int sign;
             if (signChar == '+') {
@@ -704,7 +710,12 @@ abstract class TDateFormatElement {
                 position.setErrorIndex(index);
                 return;
             }
-            int hours = Character.digit(text.charAt(index++), 10) * 10 + Character.digit(text.charAt(index++), 10);
+            int hours = Character.digit(text.charAt(index), 10) * 10 + Character.digit(text.charAt(index + 1), 10);
+            if (hours > 23) {
+                position.setErrorIndex(index);
+                return;
+            }
+            index += 2;
             if (size >= 3) {
                 if (text.charAt(index++) != ':') {
                     position.setErrorIndex(index);
@@ -717,7 +728,12 @@ abstract class TDateFormatElement {
                     position.setErrorIndex(index);
                     return;
                 }
-                minutes = Character.digit(text.charAt(index++), 10) * 10 + Character.digit(text.charAt(index++), 10);
+                minutes = Character.digit(text.charAt(index), 10) * 10 + Character.digit(text.charAt(index + 1), 10);
+                if (minutes > 59) {
+                    position.setErrorIndex(index);
+                    return;
+                }
+                index += 2;
             }
             position.setIndex(index);
             date.setTimeZone(getStaticTimeZone(sign, hours, minutes));
@@ -744,7 +760,7 @@ abstract class TDateFormatElement {
     static boolean tryParseFixedTimeZone(String text, TCalendar date, TParsePosition position) {
         general: if (position.getIndex() + 4 < text.length()) {
             int signIndex = position.getIndex() + 3;
-            if (!text.substring(position.getIndex(), signIndex).equals("GMT")) {
+            if (!text.regionMatches(true, position.getIndex(), "GMT", 0, 3)) {
                 break general;
             }
             char signChar = text.charAt(signIndex);
@@ -769,6 +785,10 @@ abstract class TDateFormatElement {
             int hours = 10 * Character.digit(text.charAt(index), 10) + Character.digit(text.charAt(index + 1), 10);
             int minutes = 10 * Character.digit(text.charAt(index + 2), 10)
                     + Character.digit(text.charAt(index + 3), 10);
+            if (hours > 23 || minutes > 59) {
+                position.setErrorIndex(hours > 23 ? index : index + 2);
+                return true;
+            }
             date.setTimeZone(getStaticTimeZone(sign, hours, minutes));
             position.setIndex(index + 4);
             return true;
@@ -795,6 +815,10 @@ abstract class TDateFormatElement {
             }
             hours = 10 * hours + Character.digit(text.charAt(index++), 10);
         }
+        if (hours > 23) {
+            position.setErrorIndex(index - 2);
+            return;
+        }
         if (index >= text.length() || text.charAt(index) != ':') {
             position.setErrorIndex(index);
             return;
@@ -807,6 +831,10 @@ abstract class TDateFormatElement {
             return;
         }
         int minutes = Character.digit(text.charAt(index), 10) * 10 + Character.digit(text.charAt(index + 1), 10);
+        if (minutes > 59) {
+            position.setErrorIndex(index);
+            return;
+        }
         position.setIndex(index + 2);
         TTimeZone tz = getStaticTimeZone(sign, hours, minutes);
         date.setTimeZone(tz);

@@ -19,10 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipPlatform;
@@ -380,6 +385,51 @@ public class StringTest {
         assertEquals(0, str.length());
         assertEquals("", str);
     }
+
+    // String.join(CharSequence delimiter, CharSequence... elements) and
+    // join(CharSequence delimiter, Iterable<? extends CharSequence> elements): "Note that if an element is null,
+    // then "null" is added."
+    @Test
+    public void joinNullElements() {
+        CharSequence nullSequence = null;
+        assertEquals("null", String.join("/", nullSequence));
+        assertEquals("a/null/b", String.join("/", "a", null, "b"));
+        assertEquals("null/a/null", String.join("/", null, "a", null));
+        assertEquals("null--null", String.join("--", nullSequence, nullSequence));
+        assertEquals("a/null/b", String.join("/", Arrays.asList("a", null, "b")));
+        assertEquals("null/a/null", String.join("/", Arrays.asList(null, "a", null)));
+        assertEquals("null", String.join("/", Arrays.asList(nullSequence)));
+    }
+
+    // String.substring(int beginIndex, int endIndex) throws IndexOutOfBoundsException "if the beginIndex is
+    // negative, or endIndex is larger than the length of this String object, or beginIndex is larger than
+    // endIndex". subSequence(int, int) behaves as substring. This holds for empty ranges too.
+    @Test
+    public void substringChecksBounds() {
+        String str = "null";
+        for (int begin = -1; begin <= 5; ++begin) {
+            for (int end = -1; end <= 5; ++end) {
+                String expected = begin >= 0 && begin <= end && end <= 4 ? "null".substring(begin, end) : "IOOBE";
+                String where = "begin=" + begin + ", end=" + end;
+                String actual;
+                try {
+                    actual = str.substring(begin, end);
+                } catch (IndexOutOfBoundsException e) {
+                    actual = "IOOBE";
+                }
+                assertEquals(expected, actual, where);
+                try {
+                    actual = str.subSequence(begin, end).toString();
+                } catch (IndexOutOfBoundsException e) {
+                    actual = "IOOBE";
+                }
+                assertEquals(expected, actual, where);
+            }
+        }
+        assertThrows(IndexOutOfBoundsException.class, () -> str.substring(5));
+        assertThrows(IndexOutOfBoundsException.class, () -> str.substring(-1));
+        assertEquals("", str.substring(4));
+    }
     
     @Test
     public void testIsBlank() {
@@ -422,5 +472,232 @@ public class StringTest {
         assertEquals("abc\n\ndef\n", " abc\r\n \n def\r ".stripIndent());
         assertEquals("", " ".stripIndent());
         assertEquals("\n", " \n ".stripIndent());
+    }
+
+    // Javadoc of String(byte[] ascii, int hibyte, int offset, int count): "Each char c in the resulting
+    // string is constructed from the corresponding component b in the byte array such that:
+    // c == (char)(((hibyte & 0xff) << 8) | (b & 0xff))"
+    @Test
+    @SuppressWarnings("deprecation")
+    public void hibyteConstructor() {
+        assertEquals("Hi", new String(new byte[] { 72, 105 }, 0, 0, 2));
+        assertEquals("Łł", new String(new byte[] { 65, 66 }, 1, 0, 2));
+        assertEquals("i", new String(new byte[] { 72, 105, 33 }, 0, 1, 1));
+        assertEquals("", new String(new byte[] { 72, 105 }, 0, 2, 0));
+        assertEquals("", new String(new byte[0], 5, 0, 0));
+
+        // Exhaustive over every byte value and a set of hibytes, including ones with bits above 0xff
+        // that must be masked off and negative ones.
+        var bytes = new byte[256];
+        for (int i = 0; i < bytes.length; ++i) {
+            bytes[i] = (byte) i;
+        }
+        int[] hibytes = { 0, 1, 0x7f, 0x80, 0xd8, 0xdc, 0xff, 0x100, 0x1ff, 0x12345, -1, -256, Integer.MIN_VALUE,
+                Integer.MAX_VALUE };
+        for (int hibyte : hibytes) {
+            var s = new String(bytes, hibyte, 0, bytes.length);
+            var s2 = new String(bytes, hibyte);
+            assertEquals(256, s.length());
+            assertEquals(s, s2);
+            for (int b = 0; b < 256; ++b) {
+                char expected = (char) (((hibyte & 0xff) << 8) | b);
+                assertEquals(expected, s.charAt(b), "hibyte=" + hibyte + ", b=" + b);
+            }
+            var sub = new String(bytes, hibyte, 10, 20);
+            assertEquals(s.substring(10, 30), sub);
+        }
+    }
+
+    // Javadoc of String(byte[] ascii, int hibyte, int offset, int count): "Throws:
+    // IndexOutOfBoundsException - If offset is negative, count is negative, or offset is greater than
+    // ascii.length - count". The class Javadoc: "Unless otherwise noted, passing a null argument to a
+    // constructor or method in this class will cause a NullPointerException to be thrown."
+    @Test
+    @SuppressWarnings("deprecation")
+    public void hibyteConstructorChecksBounds() {
+        var bytes = new byte[] { 1, 2, 3 };
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, -1, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 0, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 1, 3));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 4, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 0, 4));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 1, Integer.MAX_VALUE));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, Integer.MAX_VALUE, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, Integer.MIN_VALUE, 0));
+        assertEquals(3, new String(bytes, 0, 0, 3).length());
+        assertEquals(0, new String(bytes, 0, 3, 0).length());
+        assertThrows(NullPointerException.class, () -> new String(null, 0, 0, 0));
+        assertThrows(NullPointerException.class, () -> new String((byte[]) null, 0));
+    }
+
+    // Javadoc of lines(): "A line terminator is one of the following: a line feed character "\n" (U+000A), a
+    // carriage return character "\r" (U+000D), or a carriage return followed immediately by a line feed "\r\n"
+    // (U+000D U+000A)." "A line is either a sequence of zero or more characters followed by a line terminator, or
+    // it is a sequence of one or more characters followed by the end of the string. A line does not include the
+    // line terminator."
+    @Test
+    public void linesExamples() {
+        assertEquals(List.of(), "".lines().collect(Collectors.toList()));
+        assertEquals(List.of(""), "\n".lines().collect(Collectors.toList()));
+        assertEquals(List.of(""), "\r".lines().collect(Collectors.toList()));
+        assertEquals(List.of(""), "\r\n".lines().collect(Collectors.toList()));
+        assertEquals(List.of("", ""), "\n\r".lines().collect(Collectors.toList()));
+        assertEquals(List.of("", ""), "\r\r".lines().collect(Collectors.toList()));
+        assertEquals(List.of("", ""), "\n\n".lines().collect(Collectors.toList()));
+        assertEquals(List.of("a", "b", "c"), "a\nb\r\nc".lines().collect(Collectors.toList()));
+        assertEquals(List.of("a", "b", "c"), "a\rb\nc\r\n".lines().collect(Collectors.toList()));
+        assertEquals(List.of("a", "", "b"), "a\r\rb".lines().collect(Collectors.toList()));
+        assertEquals(List.of(" a ", "\t"), " a \r\n\t".lines().collect(Collectors.toList()));
+        assertEquals(3, "a\n\nb\n".lines().count());
+        assertEquals("b", "a\rb\r\nc".lines().skip(1).findFirst().get());
+    }
+
+    @Test
+    public void linesProperty() {
+        forEachLinesCase((text, lines) -> {
+            assertEquals(lines, text.lines().collect(Collectors.toList()), () -> describe(text));
+            assertEquals(lines.size(), text.lines().count(), () -> describe(text));
+            // Partial consumption: the stream stops and resumes in the middle of the string
+            var iter = text.lines().iterator();
+            for (var line : lines) {
+                assertTrue(iter.hasNext(), () -> describe(text));
+                assertEquals(line, iter.next(), () -> describe(text));
+            }
+            assertFalse(iter.hasNext(), () -> describe(text));
+            for (int k = 0; k <= lines.size(); ++k) {
+                assertEquals(lines.subList(0, k), text.lines().limit(k).collect(Collectors.toList()),
+                        () -> describe(text));
+            }
+        });
+    }
+
+    // Javadoc of indent(int): "If n > 0 then n spaces (U+0020) are inserted at the beginning of each line." "If n
+    // < 0 then up to n white space characters are removed from the beginning of each line. If a given line does
+    // not contain sufficient white space then all leading white space characters are removed. Each white space
+    // character is treated as a single character." "If n == 0 then the line remains unchanged. However, line
+    // terminators are still normalized." "Then, each line is suffixed with a line feed "\n" (U+000A)." "If this
+    // string is empty, then an empty string is returned." White space is as defined by
+    // Character.isWhitespace (via stripLeading/indexOfNonWhitespace).
+    @Test
+    public void indentExamples() {
+        assertEquals("", "".indent(0));
+        assertEquals("", "".indent(5));
+        assertEquals("", "".indent(-5));
+        assertEquals("  a\n  b\n", "a\nb".indent(2));
+        assertEquals("a\n  b\n", "  a\n    b".indent(-2));
+        assertEquals("a\nb\nc\n", "a\rb\r\nc".indent(0));
+        assertEquals("a\n", "a\n".indent(0));
+        assertEquals("  \n", "\n".indent(2));
+        assertEquals("\n\n", " \r\t\r\n".indent(-1));
+        assertEquals("x\n", "\t x".indent(-2));
+        assertEquals(" x\n", "\t\u2003 x".indent(-2));
+        assertEquals("\u00A0x\n", "\u00A0x".indent(-1));
+        assertEquals("x \n", "\u000B\f\u001Cx ".indent(Integer.MIN_VALUE));
+        assertEquals("x \n", "\u000B\f\u001Cx ".indent(-Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void indentProperty() {
+        int[] ns = { 0, 1, 2, 3, -1, -2, -3, -100, -Integer.MAX_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE };
+        forEachLinesCase((text, lines) -> {
+            for (int n : ns) {
+                var expected = new StringBuilder();
+                for (var line : lines) {
+                    int leading = 0;
+                    while (leading < line.length() && Character.isWhitespace(line.charAt(leading))) {
+                        leading++;
+                    }
+                    if (n > 0) {
+                        expected.append(" ".repeat(n)).append(line);
+                    } else {
+                        expected.append(line.substring((int) Math.min(leading, -(long) n)));
+                    }
+                    expected.append('\n');
+                }
+                int m = n;
+                assertEquals(expected.toString(), text.indent(n), () -> "n=" + m + ", " + describe(text));
+            }
+        });
+    }
+
+    // Javadoc of transform(Function): "This method allows the application of a function to this string. The
+    // function should expect a single argument of String type and produce an R result."
+    @Test
+    public void transform() {
+        assertEquals("xy", "x".transform(s -> s + "y"));
+        assertEquals(Integer.valueOf(3), "abc".transform(String::length));
+        var str = "abc";
+        assertSame(str, str.transform(s -> s));
+        assertNull("abc".transform(s -> null));
+    }
+
+    // Line contents: empty, plain, leading spaces and tabs, other Character.isWhitespace characters (EM SPACE,
+    // VT, FF, FS), NBSP (not white space), trailing white space, white space only.
+    private static final String[] LINE_CONTENTS = { "", "a", "  a", "\t a", " \t\u2003b", "\u00A0c",
+            "\u000B\f\u001Cd e ", "   " };
+    private static final String[] TERMINATORS = { "\n", "\r", "\r\n" };
+
+    // Every string of 0 to 3 lines from LINE_CONTENTS, joined by every combination of terminators, with and
+    // without each kind of trailing terminator. The consumer gets the text and the lines it was built from.
+    private static void forEachLinesCase(java.util.function.BiConsumer<String, List<String>> consumer) {
+        consumer.accept("", List.of());
+        for (int count = 1; count <= 3; ++count) {
+            int contentCombos = (int) Math.pow(LINE_CONTENTS.length, count);
+            int terminatorCombos = (int) Math.pow(TERMINATORS.length, count - 1);
+            for (int c = 0; c < contentCombos; ++c) {
+                for (int t = 0; t < terminatorCombos; ++t) {
+                    for (int trailing = -1; trailing < TERMINATORS.length; ++trailing) {
+                        var lines = new java.util.ArrayList<String>();
+                        var terminators = new java.util.ArrayList<String>();
+                        int cc = c;
+                        int tt = t;
+                        for (int i = 0; i < count; ++i) {
+                            lines.add(LINE_CONTENTS[cc % LINE_CONTENTS.length]);
+                            cc /= LINE_CONTENTS.length;
+                            if (i < count - 1) {
+                                terminators.add(TERMINATORS[tt % TERMINATORS.length]);
+                                tt /= TERMINATORS.length;
+                            }
+                        }
+                        if (trailing >= 0) {
+                            terminators.add(TERMINATORS[trailing]);
+                        } else if (lines.get(count - 1).isEmpty()) {
+                            // An empty last line with no terminator is not a line; the same text is covered
+                            // by the case with one line fewer.
+                            continue;
+                        }
+                        var sb = new StringBuilder();
+                        boolean ambiguous = false;
+                        for (int i = 0; i < count; ++i) {
+                            sb.append(lines.get(i));
+                            if (i < terminators.size()) {
+                                // "\r" + "" + "\n..." reads as "\r\n": covered by another case
+                                if (sb.length() > 0 && sb.charAt(sb.length() - 1) == '\r'
+                                        && terminators.get(i).charAt(0) == '\n') {
+                                    ambiguous = true;
+                                }
+                                sb.append(terminators.get(i));
+                            }
+                        }
+                        if (!ambiguous) {
+                            consumer.accept(sb.toString(), lines);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static String describe(String text) {
+        var sb = new StringBuilder("text=\"");
+        for (int i = 0; i < text.length(); ++i) {
+            char c = text.charAt(i);
+            if (c < 0x20 || c > 0x7e) {
+                sb.append("\\u").append(Integer.toHexString(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.append('"').toString();
     }
 }

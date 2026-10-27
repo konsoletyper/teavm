@@ -77,7 +77,7 @@ public abstract class TWriter implements TAppendable, TCloseable, TFlushable {
 
     @Override
     public TWriter append(TCharSequence csq, int start, int end) throws IOException {
-        write(csq != null ? csq.subSequence(start, end).toString() : "null");
+        write(csq != null ? csq.subSequence(start, end).toString() : "null".substring(start, end));
         return this;
     }
 }

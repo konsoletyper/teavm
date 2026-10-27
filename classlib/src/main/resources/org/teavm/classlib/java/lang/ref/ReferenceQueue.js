@@ -17,13 +17,19 @@
 function init() {
     this[teavm_javaField("java.lang.ref.ReferenceQueue", "inner")] = [];
     if (teavm_javaMethodExists("java.lang.ref.ReferenceQueue", "reportNext(Ljava/lang/ref/Reference;)Z")) {
-        this[teavm_javaField("java.lang.ref.ReferenceQueue", "registry")] =
-            new (teavm_globals.FinalizationRegistry)(ref => {
-                if (!teavm_javaMethod("java.lang.ref.ReferenceQueue",
-                        "reportNext(Ljava/lang/ref/Reference;)Z")(this, ref)) {
-                    this[teavm_javaField("java.lang.ref.ReferenceQueue", "inner")].push(ref);
-                }
-            });
+        let registry = new (teavm_globals.FinalizationRegistry)(heldValue => {
+            if (typeof heldValue.token !== 'undefined') {
+                // The reference became unreachable before its referent
+                registry.unregister(heldValue.token);
+                return;
+            }
+            let ref = heldValue.ref.deref();
+            if (typeof ref !== 'undefined' && !teavm_javaMethod("java.lang.ref.ReferenceQueue",
+                    "reportNext(Ljava/lang/ref/Reference;)Z")(this, ref)) {
+                this[teavm_javaField("java.lang.ref.ReferenceQueue", "inner")].push(ref);
+            }
+        });
+        this[teavm_javaField("java.lang.ref.ReferenceQueue", "registry")] = registry;
     }
 }
 

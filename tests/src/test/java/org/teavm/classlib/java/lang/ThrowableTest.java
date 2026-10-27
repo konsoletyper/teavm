@@ -20,7 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.TeaVMTest;
+import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 @EachTestCompiledSeparately
@@ -98,6 +100,59 @@ public class ThrowableTest {
             assertEquals(1, exception.getSuppressed().length);
             assertSame(secondary, exception.getSuppressed()[0]);
         }
+    }
+
+    @Test
+    @OnlyPlatform(TestPlatform.WEBASSEMBLY_GC)
+    public void stackTraceHasFrameOfMethodThatEndsInInlinedCode() {
+        StackTraceElement[][] stack = new StackTraceElement[1][];
+        captureStackThenRunInlinedCode(stack);
+        assertHasFrame(stack[0], "captureStackThenRunInlinedCode");
+    }
+
+    @Test
+    @OnlyPlatform(TestPlatform.WEBASSEMBLY_GC)
+    public void stackTraceHasFrameOfMethodThatEndsInNestedInlinedCode() {
+        StackTraceElement[][] stack = new StackTraceElement[1][];
+        captureStackThenRunNestedInlinedCode(stack);
+        assertHasFrame(stack[0], "captureStackThenRunNestedInlinedCode");
+    }
+
+    private static void assertHasFrame(StackTraceElement[] stack, String methodName) {
+        boolean found = false;
+        for (StackTraceElement element : stack) {
+            if (element.getMethodName().equals(methodName)
+                    && element.getClassName().equals(ThrowableTest.class.getName())) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found, "No frame of " + methodName + " in " + stack.length + " frames");
+    }
+
+    // The last statement calls a small method that the optimizer inlines, so the last location of this
+    // function is inside inlined code.
+    private static void captureStackThenRunInlinedCode(StackTraceElement[][] stack) {
+        stack[0] = new Throwable().getStackTrace();
+        incrementCounter();
+    }
+
+    // Same, but the inlined method itself ends in another inlined method, so two inlined frames are
+    // still open when the function ends.
+    private static void captureStackThenRunNestedInlinedCode(StackTraceElement[][] stack) {
+        stack[0] = new Throwable().getStackTrace();
+        incrementCounterTwice();
+    }
+
+    private static int counter;
+
+    private static void incrementCounter() {
+        counter++;
+    }
+
+    private static void incrementCounterTwice() {
+        counter++;
+        incrementCounter();
     }
 
     private Throwable[] createThrowables() {

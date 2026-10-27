@@ -46,7 +46,9 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmBreak;
 import org.teavm.backend.wasm.model.instruction.WasmCatchClause;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
 import org.teavm.backend.wasm.model.instruction.WasmUnreachable;
+import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.backend.wasm.transformation.CoroutineTransformation;
 import org.teavm.backend.wasm.types.PreciseTypeInference;
 import org.teavm.backend.wasm.types.PreciseValueType;
@@ -78,6 +80,10 @@ import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.vm.intrinsic.IntrinsicProvider;
 
 public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
+    public static final MethodReference FAILED_INITIALIZER = new MethodReference(WasmGCSupport.class,
+            "failedInitializer", void.class);
+    public static final MethodReference INITIALIZER_ERROR = new MethodReference(WasmGCSupport.class,
+            "initializerError", Throwable.class, Throwable.class);
     private WasmModule module;
     private ClassHierarchy hierarchy;
     private ListableClassHolderSource classes;
@@ -410,6 +416,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         var visitor = new WasmGCInstructionGenerationVisitor(getGenerationContext(), method.getReference(),
                 function, firstVar, isSuspend, typeInference, asyncSplitMethods);
         wrapSynchronizedMethod(method, visitor, function, ast);
+        wrapInitializerFailure(method, function);
 
         if (isSuspend) {
             if (coroutineTransformation == null) {
@@ -562,9 +569,13 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         function.setImportModule(moduleName != null ? moduleName.getString() : "teavm");
     }
 
+    private boolean isDynamicInitializer(MethodReader method) {
+        return method.hasModifier(ElementModifier.STATIC) && method.getName().equals("<clinit>")
+                && method.parameterCount() == 0 && classInitInfo.isDynamicInitializer(method.getOwnerName());
+    }
+
     private void addInitializerErase(MethodReader method, WasmFunction function) {
-        if (method.hasModifier(ElementModifier.STATIC) && method.getName().equals("<clinit>")
-                && method.parameterCount() == 0 && classInitInfo.isDynamicInitializer(method.getOwnerName())) {
+        if (isDynamicInitializer(method)) {
             var classInfoStruct = classInfoProvider.reflectionTypes().classInfo();
             var classInfo = classInfoProvider.getClassInfo(method.getOwnerName());
             var body = function.getBody().builder();
@@ -578,6 +589,39 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                         .structSet(classInfoStruct.structure(), classInfoStruct.initializerIndex());
             }
         }
+    }
+
+    // When the initializer throws, the class must not stay initialized (JLS 12.4.2): the initializer pointer
+    // is set to a function that throws NoClassDefFoundError, and the exception is rethrown, wrapped
+    // in ExceptionInInitializerError unless it is an Error.
+    private void wrapInitializerFailure(MethodReader method, WasmFunction function) {
+        if (!isDynamicInitializer(method)) {
+            return;
+        }
+        var classInfoStruct = classInfoProvider.reflectionTypes().classInfo();
+        var classInfo = classInfoProvider.getClassInfo(method.getOwnerName());
+        var throwableType = (WasmType.Reference) typeMapper.mapType(ValueType.object("java.lang.Throwable"));
+        var exceptionTag = getGenerationContext().getExceptionTag();
+
+        var originalBody = new WasmInstructionList();
+        originalBody.transferFrom(function.getBody());
+        var body = function.getBody().builder();
+        var catchBlock = body.block(throwableType);
+        var tryCatch = catchBlock.try_();
+        tryCatch.getBody().transferFrom(originalBody);
+        tryCatch.getCatches().add(new WasmCatchClause(exceptionTag, false, catchBlock.list));
+        catchBlock.return_();
+
+        var failedInitializer = forStaticMethod(FAILED_INITIALIZER);
+        failedInitializer.setReferenced(true);
+        body.funcRef(failedInitializer).setGlobal(classInfo.getInitializerPointer());
+        if (classInfoStruct.initializerIndex() >= 0) {
+            body
+                    .getGlobal(classInfo.getPointer())
+                    .funcRef(failedInitializer)
+                    .structSet(classInfoStruct.structure(), classInfoStruct.initializerIndex());
+        }
+        body.call(forStaticMethod(INITIALIZER_ERROR)).throw_(exceptionTag);
     }
 
     private Decompiler getDecompiler() {

@@ -316,8 +316,10 @@ public class TIdentityHashMap<K, V> extends TAbstractMap<K, V> implements TClone
         try {
             TIdentityHashMap<K, V> map = (TIdentityHashMap<K, V>) super.clone();
             map.elementCount = 0;
+            map.modCount = 0;
             map.elementData = newElementArray(elementData.length);
-            map.putAll(this);
+            // Not putAll, which a subclass may override: as in the JDK, clone does not call it.
+            map.putAllImpl(this);
 
             return map;
         } catch (TCloneNotSupportedException e) {

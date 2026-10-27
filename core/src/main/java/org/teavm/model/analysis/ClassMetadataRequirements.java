@@ -86,9 +86,11 @@ public class ClassMetadataRequirements {
             var types = getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes();
             addClassesRequiringName(requirements, types);
             for (var type : types) {
-                ClassInfo classInfo = requirements.computeIfAbsent(type, k -> new ClassInfo());
-                classInfo.simpleName = true;
-                classInfo.enclosingClass = true;
+                for (var t : withInnermostItem(type)) {
+                    ClassInfo classInfo = requirements.computeIfAbsent(t, k -> new ClassInfo());
+                    classInfo.simpleName = true;
+                    classInfo.enclosingClass = true;
+                }
             }
         }
 
@@ -336,8 +338,22 @@ public class ClassMetadataRequirements {
 
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, ValueType[] source) {
         for (var typeName : source) {
-            target.computeIfAbsent(typeName, k -> new ClassInfo()).name = true;
+            for (var t : withInnermostItem(typeName)) {
+                target.computeIfAbsent(t, k -> new ClassInfo()).name = true;
+            }
         }
+    }
+
+    /**
+     * An array class's name (and simple name) is derived at run time from its innermost item type's,
+     * so whatever an array type requires, its innermost item type requires too.
+     */
+    private static ValueType[] withInnermostItem(ValueType type) {
+        var item = type;
+        while (item instanceof ValueType.Array) {
+            item = ((ValueType.Array) item).getItemType();
+        }
+        return item == type ? new ValueType[] { type } : new ValueType[] { type, item };
     }
 
     static class ClassInfo implements Info {

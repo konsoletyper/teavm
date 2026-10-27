@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 import org.teavm.classlib.java.util.stream.TStream;
@@ -455,11 +456,20 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object clone() {
-        var result = new TLinkedList<>();
-        result.size = size;
+        // As in the JDK, the copy comes from super.clone(), so it has this list's class.
+        TLinkedList<E> result;
+        try {
+            result = (TLinkedList<E>) super.clone();
+        } catch (TCloneNotSupportedException e) {
+            return null;
+        }
+        result.firstEntry = null;
+        result.lastEntry = null;
+        result.modCount = 0;
         for (var entry = firstEntry; entry != null; entry = entry.next) {
-            var entryCopy = new Entry<>();
+            var entryCopy = new Entry<E>();
             entryCopy.item = entry.item;
             entryCopy.previous = result.lastEntry;
             if (result.lastEntry != null) {

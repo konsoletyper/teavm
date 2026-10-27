@@ -51,6 +51,19 @@ public class TRuntime {
     }
 
     /**
+     * Returns the maximum amount of memory that the Java virtual machine will attempt to use.
+     * If there is no inherent limit then the value {@link Long#MAX_VALUE} will be returned.
+     */
+    @DelegateTo("maxMemoryLowLevel")
+    public long maxMemory() {
+        return Long.MAX_VALUE;
+    }
+
+    private long maxMemoryLowLevel() {
+        return GC.maxAvailableBytes();
+    }
+
+    /**
      * Runs the garbage collector. Calling this method suggests that the Java
      * Virtual Machine expend effort toward recycling unused objects in order to
      * make the memory they currently occupy available for quick reuse. When
@@ -92,6 +105,14 @@ public class TRuntime {
     @SupportedOn({Platforms.JAVASCRIPT, Platforms.WEBASSEMBLY_GC})
     public int availableProcessors() {
         return Navigator.hardwareConcurrency();
+    }
+
+    public void load(String filename) {
+        TSystem.load(filename);
+    }
+
+    public void loadLibrary(String libname) {
+        TSystem.loadLibrary(libname);
     }
 
     public static Version version() {

@@ -368,4 +368,33 @@ public class ArrayDequeTest {
             // ok
         }
     }
+
+    static class CustomDeque extends ArrayDeque<String> {
+        String tag;
+    }
+
+    // ArrayDeque.clone: "Returns a copy of this deque". Object.clone: by convention, the copy comes from
+    // super.clone(), so "x.clone().getClass() == x.getClass()", and it is independent of the original.
+    @Test
+    public void cloneKeepsClassAndIsIndependent() {
+        var deque = new CustomDeque();
+        deque.tag = "t";
+        // Wrap around the end of the array.
+        deque.addLast("b");
+        deque.addLast("c");
+        deque.addFirst("a");
+        var clone = (CustomDeque) deque.clone();
+        assertEquals(CustomDeque.class, clone.getClass());
+        assertEquals("t", clone.tag);
+        assertEquals(List.of("a", "b", "c"), List.copyOf(clone));
+        for (var i = 0; i < 20; ++i) {
+            clone.addLast("x" + i);
+        }
+        clone.removeFirst();
+        deque.removeLast();
+        assertEquals(List.of("a", "b"), List.copyOf(deque));
+        assertEquals(22, clone.size());
+        assertEquals("b", clone.peekFirst());
+        assertEquals("x19", clone.peekLast());
+    }
 }

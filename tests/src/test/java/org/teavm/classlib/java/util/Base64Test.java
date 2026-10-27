@@ -15,10 +15,13 @@
  */
 package org.teavm.classlib.java.util;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Random;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
 
@@ -110,5 +113,69 @@ public class Base64Test {
 
     private String encodeNoPad(String text) {
         return Base64.getEncoder().withoutPadding().encodeToString(text.getBytes(StandardCharsets.UTF_8));
+    }
+
+    // Javadoc of Base64.Encoder.withoutPadding(): "Returns an encoder instance that encodes equivalently
+    // to this one, but without adding any padding character at the end of the encoded byte data."
+    // So every encoder returned by a factory, getUrlEncoder() included, pads.
+    @Test
+    public void urlEncoderPads() {
+        var bytes = new byte[] { (byte) 0xFB, (byte) 0xFF };
+        assertEquals("-_8=", Base64.getUrlEncoder().encodeToString(bytes));
+        assertEquals("-w==", Base64.getUrlEncoder().encodeToString(new byte[] { (byte) 0xFB }));
+        assertEquals("-_8", Base64.getUrlEncoder().withoutPadding().encodeToString(bytes));
+        assertEquals("cXdlcnQ=", Base64.getUrlEncoder().encodeToString("qwert".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    // Differential test: the encoders and decoders against a bit-by-bit reference implementation of
+    // RFC 4648 (Table 1 for getEncoder(), Table 2 for getUrlEncoder(), padding per section 3.2). On the JVM
+    // run of this test, the reference itself is checked against the JDK.
+    @Test
+    public void encodersAndDecodersMatchReference() {
+        var random = new Random(66);
+        for (var length = 0; length <= 100; ++length) {
+            for (var attempt = 0; attempt < 3; ++attempt) {
+                var data = new byte[length];
+                random.nextBytes(data);
+                checkAgainstReference(data, false, Base64.getEncoder(), Base64.getDecoder());
+                checkAgainstReference(data, true, Base64.getUrlEncoder(), Base64.getUrlDecoder());
+            }
+        }
+    }
+
+    private static void checkAgainstReference(byte[] data, boolean url, Base64.Encoder encoder,
+            Base64.Decoder decoder) {
+        var message = (url ? "url " : "basic ") + Arrays.toString(data);
+        var padded = referenceEncode(data, url, true);
+        var unpadded = referenceEncode(data, url, false);
+        assertEquals(padded, encoder.encodeToString(data), message);
+        assertArrayEquals(padded.getBytes(StandardCharsets.ISO_8859_1), encoder.encode(data), message);
+        assertEquals(unpadded, encoder.withoutPadding().encodeToString(data), message);
+        assertArrayEquals(data, decoder.decode(padded), message);
+        assertArrayEquals(data, decoder.decode(unpadded), message);
+        assertArrayEquals(data, decoder.decode(padded.getBytes(StandardCharsets.ISO_8859_1)), message);
+    }
+
+    private static String referenceEncode(byte[] data, boolean url, boolean pad) {
+        var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" + (url ? "-_" : "+/");
+        var sb = new StringBuilder();
+        var bits = 0;
+        var bitCount = 0;
+        for (var b : data) {
+            bits = (bits << 8) | (b & 0xFF);
+            bitCount += 8;
+            while (bitCount >= 6) {
+                bitCount -= 6;
+                sb.append(alphabet.charAt((bits >>> bitCount) & 63));
+            }
+            bits &= (1 << bitCount) - 1;
+        }
+        if (bitCount > 0) {
+            sb.append(alphabet.charAt((bits << (6 - bitCount)) & 63));
+        }
+        while (pad && sb.length() % 4 != 0) {
+            sb.append('=');
+        }
+        return sb.toString();
     }
 }

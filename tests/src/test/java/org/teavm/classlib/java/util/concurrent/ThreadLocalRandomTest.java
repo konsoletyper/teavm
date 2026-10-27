@@ -32,4 +32,22 @@ public class ThreadLocalRandomTest {
         }
         assertTrue(ints.size() > 1, "Different numbers generated");
     }
+
+    @Test
+    public void boundedValuesStayInRange() {
+        var rnd = ThreadLocalRandom.current();
+        var trues = 0;
+        for (var i = 0; i < 1000; ++i) {
+            var a = rnd.nextInt(5, 17);
+            assertTrue(a >= 5 && a < 17);
+            var b = rnd.nextLong(-3, 1L << 40);
+            assertTrue(b >= -3 && b < 1L << 40);
+            var c = rnd.nextInt(64);
+            assertTrue(c >= 0 && c < 64);
+            if (rnd.nextBoolean()) {
+                trues++;
+            }
+        }
+        assertTrue(trues > 400 && trues < 600, "nextBoolean gives both values: " + trues);
+    }
 }

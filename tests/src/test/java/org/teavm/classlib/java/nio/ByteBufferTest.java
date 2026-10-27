@@ -84,6 +84,19 @@ public class ByteBufferTest {
     }
 
     @Test
+    @OnlyPlatform(TestPlatform.WEBASSEMBLY_GC)
+    public void errorIfDirectBufferDoesNotFitInMemory() {
+        // Wasm GC linear memory is at most 2 GiB, which these buffers and the data already in memory exceed
+        for (var i = 0; i <= 16; ++i) {
+            var capacity = Integer.MAX_VALUE - i;
+            assertThrows(OutOfMemoryError.class, () -> ByteBuffer.allocateDirect(capacity), "capacity " + capacity);
+        }
+        var buffer = ByteBuffer.allocateDirect(16);
+        buffer.put(15, (byte) 1);
+        assertEquals(1, buffer.get(15));
+    }
+
+    @Test
     public void allocatesSimple() {
         ByteBuffer buffer = ByteBuffer.allocate(100);
         assertFalse(buffer.isDirect());
@@ -872,6 +885,58 @@ public class ByteBufferTest {
                 }
                 buffer.put(0, (byte) -1);
             }
+        }
+    }
+
+    // The Javadoc only says ByteBuffer.toString "Returns a string summarizing the state of this buffer", so the
+    // format is not pinned. These tests match OpenJDK's format (implementation class name, then
+    // [pos=... lim=... cap=...]); the JVM run of this test checks that against the real JDK.
+    @Test
+    public void toStringIsTheJdkOne() {
+        assertEquals("java.nio.HeapByteBuffer[pos=0 lim=0 cap=0]", ByteBuffer.allocate(0).toString());
+        var buffer = ByteBuffer.allocate(16);
+        buffer.position(3).limit(10);
+        assertEquals("java.nio.HeapByteBuffer[pos=3 lim=10 cap=16]", buffer.toString());
+        assertEquals("java.nio.HeapByteBufferR[pos=0 lim=4 cap=4]",
+                ByteBuffer.allocate(4).asReadOnlyBuffer().toString());
+        assertEquals("java.nio.HeapByteBuffer[pos=1 lim=3 cap=5]", ByteBuffer.wrap(new byte[5], 1, 2).toString());
+        assertEquals("java.nio.HeapByteBuffer[pos=0 lim=5 cap=5]", ByteBuffer.wrap(new byte[5]).toString());
+        assertEquals("java.nio.DirectByteBuffer[pos=0 lim=8 cap=8]", ByteBuffer.allocateDirect(8).toString());
+        assertEquals("java.nio.DirectByteBuffer[pos=0 lim=0 cap=0]", ByteBuffer.allocateDirect(0).toString());
+        assertEquals("java.nio.DirectByteBufferR[pos=0 lim=8 cap=8]",
+                ByteBuffer.allocateDirect(8).asReadOnlyBuffer().toString());
+    }
+
+    @Test
+    public void toStringOfDerivedBuffersKeepsKindAndState() {
+        for (var direct : new boolean[] { false, true }) {
+            var kind = direct ? "java.nio.DirectByteBuffer" : "java.nio.HeapByteBuffer";
+            var buffer = direct ? ByteBuffer.allocateDirect(16) : ByteBuffer.allocate(16);
+            buffer.position(3).limit(10);
+            assertEquals(kind + "[pos=3 lim=10 cap=16]", buffer.duplicate().toString());
+            assertEquals(kind + "[pos=0 lim=7 cap=7]", buffer.slice().toString());
+            assertEquals(kind + "R[pos=3 lim=10 cap=16]", buffer.asReadOnlyBuffer().toString());
+            assertEquals(kind + "R[pos=0 lim=7 cap=7]", buffer.asReadOnlyBuffer().slice().toString());
+            assertEquals(kind + "R[pos=3 lim=10 cap=16]", buffer.asReadOnlyBuffer().duplicate().toString());
+
+            // Neither the mark nor the byte order appears in the string.
+            buffer.mark();
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            assertEquals(kind + "[pos=3 lim=10 cap=16]", buffer.toString());
+
+            buffer.flip();
+            assertEquals(kind + "[pos=0 lim=3 cap=16]", buffer.toString());
+            buffer.clear().position(12);
+            buffer.compact();
+            assertEquals(kind + "[pos=4 lim=16 cap=16]", buffer.toString());
+            buffer.position(16);
+            assertEquals(kind + "[pos=16 lim=16 cap=16]", buffer.toString());
+
+            // toString doesn't move the buffer.
+            buffer.position(5).limit(9);
+            buffer.toString();
+            assertEquals(5, buffer.position());
+            assertEquals(9, buffer.limit());
         }
     }
 }

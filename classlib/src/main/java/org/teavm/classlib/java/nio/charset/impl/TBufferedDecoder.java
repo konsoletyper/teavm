@@ -99,10 +99,6 @@ public abstract class TBufferedDecoder extends TCharsetDecoder {
             return in.hasRemaining();
         }
 
-        public boolean hasMoreInput(int sz) {
-            return in.remaining() >= sz;
-        }
-
         public boolean hasMoreOutput() {
             return out.hasRemaining();
         }

@@ -28,6 +28,15 @@ public final class TTemplateCollections {
     private TTemplateCollections() {
     }
 
+    /**
+     * Maps an element's hash code to a slot in {@code [0, length)}. Takes the absolute value of the
+     * remainder rather than the remainder of the absolute value, since
+     * {@code Math.abs(Integer.MIN_VALUE)} is still negative.
+     */
+    private static int hashIndex(Object o, int length) {
+        return Math.abs(o.hashCode() % length);
+    }
+
     public static class ImmutableArrayList<T> extends AbstractImmutableList<T> implements RandomAccess {
         private final T[] list;
 
@@ -221,7 +230,7 @@ public final class TTemplateCollections {
             for (T element : data) {
                 Objects.requireNonNull(element);
 
-                int suggestedIndex = Math.abs(element.hashCode()) % data.length;
+                int suggestedIndex = hashIndex(element, data.length);
                 int index = suggestedIndex;
                 boolean found = false;
                 while (index < data.length) {
@@ -264,7 +273,7 @@ public final class TTemplateCollections {
             for (T element : (T[]) collection.toArray()) {
                 Objects.requireNonNull(element);
 
-                int indexTemp = Math.abs(element.hashCode()) % temp.length;
+                int indexTemp = hashIndex(element, temp.length);
                 while (temp[indexTemp] != null) {
                     if (temp[indexTemp].equals(element)) {
                         continue outerLoop;
@@ -322,7 +331,7 @@ public final class TTemplateCollections {
                 return false;
             }
 
-            int suggestedIndex = Math.abs(o.hashCode()) % data.length;
+            int suggestedIndex = hashIndex(o, data.length);
             for (int i = suggestedIndex; i < data.length; ++i) {
                 if (data[i].equals(o)) {
                     return true;
@@ -493,7 +502,7 @@ public final class TTemplateCollections {
                 Objects.requireNonNull(entry.getKey());
                 Objects.requireNonNull(entry.getValue());
 
-                int suggestedIndex = Math.abs(entry.getKey().hashCode()) % entries.length;
+                int suggestedIndex = hashIndex(entry.getKey(), entries.length);
                 int index = suggestedIndex;
                 boolean found = false;
                 while (index < entries.length) {
@@ -552,7 +561,7 @@ public final class TTemplateCollections {
             if (key == null || data.length == 0) {
                 return false;
             }
-            int suggestedIndex = Math.abs(key.hashCode()) % data.length;
+            int suggestedIndex = hashIndex(key, data.length);
             for (int i = suggestedIndex; i < data.length; ++i) {
                 if (data[i].getKey().equals(key)) {
                     return true;
@@ -568,10 +577,10 @@ public final class TTemplateCollections {
 
         @Override
         public V get(Object key) {
-            if (key == null) {
+            if (key == null || data.length == 0) {
                 return null;
             }
-            int suggestedIndex = Math.abs(key.hashCode()) % data.length;
+            int suggestedIndex = hashIndex(key, data.length);
             for (int i = suggestedIndex; i < data.length; ++i) {
                 Entry<K, V> entry = data[i];
                 if (entry.getKey().equals(key)) {
@@ -628,10 +637,10 @@ public final class TTemplateCollections {
                         }
 
                         Object key = e.getKey();
-                        if (key == null) {
+                        if (key == null || data.length == 0) {
                             return false;
                         }
-                        int suggestedIndex = Math.abs(key.hashCode()) % data.length;
+                        int suggestedIndex = hashIndex(key, data.length);
                         for (int i = suggestedIndex; i < data.length; ++i) {
                             Entry<K, V> entry = data[i];
                             if (entry.getKey().equals(key)) {

@@ -149,6 +149,7 @@ public interface TConcurrentMap<K, V> extends TMap<K, V> {
 
     @Override
     default V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        Objects.requireNonNull(value);
         Objects.requireNonNull(remappingFunction);
         V newValue;
         while (true) {

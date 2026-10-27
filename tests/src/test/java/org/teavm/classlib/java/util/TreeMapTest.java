@@ -59,16 +59,19 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.SequencedMap;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -617,6 +620,23 @@ public class TreeMapTest {
     }
 
     @Test
+    public void descendingComparatorReversesNaturalOrdering() {
+        // NavigableMap.descendingMap: "The returned map has an ordering equivalent to
+        // Collections.reverseOrder(comparator())."
+        var map = new TreeMap<Integer, String>();
+        Comparator<? super Integer> descending = map.descendingMap().comparator();
+        assertTrue(descending.compare(1, 2) > 0);
+        assertTrue(descending.compare(2, 1) < 0);
+        assertEquals(0, descending.compare(1, 1));
+        Comparator<? super Integer> descendingKeys = new TreeSet<Integer>().descendingSet().comparator();
+        assertTrue(descendingKeys.compare(1, 2) > 0);
+        // A comparator that returns Integer.MIN_VALUE must still reverse.
+        Comparator<Integer> extreme = (a, b) -> a < b ? Integer.MIN_VALUE : a > b ? 1 : 0;
+        var custom = new TreeMap<Integer, String>(extreme);
+        assertTrue(custom.descendingMap().comparator().compare(1, 2) > 0);
+    }
+
+    @Test
     public void submapReversed() {
         NavigableMap<Integer, String> map = createMapOfEvenNumbers();
         NavigableMap<Integer, String> reversedMap = map.subMap(100, true, 201, true).descendingMap();
@@ -848,5 +868,140 @@ public class TreeMapTest {
         } catch (NoSuchElementException e) {
             // ok
         }
+    }
+
+    // TreeMap: "A structural modification is any operation that adds or deletes one or more mappings; merely
+    // changing the value associated with an existing key is not a structural modification."
+    @Test
+    public void replacingValueDuringIterationIsNotStructural() {
+        var map = new TreeMap<String, Integer>();
+        map.put("a", 1);
+        map.put("b", 2);
+        map.put("c", 3);
+        var sum = 0;
+        for (var entry : map.entrySet()) {
+            map.put(entry.getKey(), entry.getValue() * 10);
+            sum += entry.getValue();
+        }
+        assertEquals(60, sum);
+        assertEquals(List.of(10, 20, 30), List.copyOf(map.values()));
+
+        map.putAll(map);
+        assertEquals(Map.of("a", 10, "b", 20, "c", 30), map);
+        for (var key : map.keySet()) {
+            map.replace(key, 7);
+            map.merge(key, 1, Integer::sum);
+            map.compute(key, (k, v) -> v + 1);
+        }
+        assertEquals(Map.of("a", 9, "b", 9, "c", 9), map);
+        var sub = map.subMap("a", "c");
+        for (var key : sub.keySet()) {
+            sub.put(key, 1);
+        }
+        assertEquals(Map.of("a", 1, "b", 1, "c", 9), map);
+        var set = new TreeSet<>(List.of("x", "y"));
+        for (var element : set) {
+            assertFalse(set.add(element));
+        }
+        try {
+            for (var key : map.keySet()) {
+                map.put(key + "-new", 0);
+            }
+            fail();
+        } catch (ConcurrentModificationException e) {
+            // ok
+        }
+    }
+
+    // For every size and every position of the iterator, replacing the value of any existing key, removing an absent
+    // key, or polling an empty view does not invalidate any of the map's iterators; adding a key or removing a
+    // present key does.
+    @Test
+    public void onlyStructuralChangesInvalidateIterators() {
+        var random = new Random(43);
+        for (var size = 1; size <= 24; ++size) {
+            var map = new TreeMap<Integer, Integer>();
+            for (var i = 0; i < size; ++i) {
+                map.put(i * 2, i);
+            }
+            List<Function<TreeMap<Integer, Integer>, Iterator<?>>> views = List.of(
+                    m -> m.entrySet().iterator(),
+                    m -> m.keySet().iterator(),
+                    m -> m.values().iterator(),
+                    m -> m.descendingMap().entrySet().iterator(),
+                    m -> m.headMap(Integer.MAX_VALUE).keySet().iterator(),
+                    m -> m.tailMap(Integer.MIN_VALUE, true).values().iterator());
+            for (var view : views) {
+                for (var stop = 0; stop < size; ++stop) {
+                    var it = view.apply(map);
+                    var visited = 0;
+                    while (it.hasNext()) {
+                        it.next();
+                        if (visited++ == stop) {
+                            var key = random.nextInt(size) * 2;
+                            switch (random.nextInt(7)) {
+                                case 0 -> map.put(key, random.nextInt());
+                                case 1 -> map.replace(key, random.nextInt());
+                                case 2 -> map.merge(key, 1, Integer::sum);
+                                case 3 -> map.computeIfPresent(key, (k, v) -> v + 1);
+                                case 4 -> map.putIfAbsent(key, 0);
+                                case 5 -> map.remove(key + 1);
+                                default -> map.subMap(-2, -1).pollFirstEntry();
+                            }
+                        }
+                    }
+                    assertEquals(size, visited);
+                }
+
+                for (var structural = 0; structural < 2; ++structural) {
+                    var it = view.apply(map);
+                    it.next();
+                    if (structural == 0) {
+                        map.put(-1, 0);
+                    } else {
+                        map.remove(-1);
+                    }
+                    try {
+                        it.next();
+                        if (size > 1) {
+                            fail();
+                        }
+                    } catch (ConcurrentModificationException | NoSuchElementException e) {
+                        // ok
+                    }
+                }
+            }
+            assertEquals(size, map.size());
+        }
+    }
+
+    // TreeMap.clone: "Returns a shallow copy of this TreeMap instance". The JDK fills the copy directly, so the
+    // copy of a subclass that overrides put or putAll (here, to reject changes) does not go through them.
+    static class FrozenTreeMap extends TreeMap<String, String> {
+        boolean frozen;
+
+        @Override
+        public String put(String key, String value) {
+            if (frozen) {
+                throw new UnsupportedOperationException();
+            }
+            return super.put(key, value);
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ? extends String> m) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Test
+    public void cloneDoesNotCallOverriddenPutOrPutAll() {
+        var map = new FrozenTreeMap();
+        map.put("a", "1");
+        map.put("b", "2");
+        map.frozen = true;
+        var clone = (FrozenTreeMap) map.clone();
+        assertEquals(Map.of("a", "1", "b", "2"), clone);
+        assertTrue(clone.frozen);
     }
 }

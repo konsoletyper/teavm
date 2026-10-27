@@ -159,4 +159,31 @@ public class SetTest {
 
         assertEquals(a.hashCode(), b.hashCode());
     }
+
+    // Set.contains: "Returns true if this set contains the specified element." Elements whose hashCode()
+    // is Integer.MIN_VALUE (for which Math.abs is negative) and other extreme hash codes must be storable
+    // and findable at every table size, and absent elements (including in empty sets) must miss.
+    @Test
+    public void immutableSetHandlesExtremeHashCodes() {
+        for (int n = 0; n <= HASH_POOL.length; ++n) {
+            for (int offset = 0; offset < HASH_POOL.length; ++offset) {
+                Integer[] elements = new Integer[n];
+                for (int i = 0; i < n; ++i) {
+                    elements[i] = HASH_POOL[(offset + i) % HASH_POOL.length];
+                }
+                checkHashLookup(elements, Set.of(elements));
+                checkHashLookup(elements, Set.copyOf(Arrays.asList(elements)));
+            }
+        }
+    }
+
+    private static final Integer[] HASH_POOL = { Integer.MIN_VALUE, Integer.MAX_VALUE, -1, 0, 1,
+            Integer.MIN_VALUE + 1, 7, 42, -42, 1000, 12345, -99999 };
+
+    private static void checkHashLookup(Integer[] elements, Set<Integer> set) {
+        assertEquals(elements.length, set.size());
+        for (Integer probe : HASH_POOL) {
+            assertEquals(Arrays.asList(elements).contains(probe), set.contains(probe));
+        }
+    }
 }

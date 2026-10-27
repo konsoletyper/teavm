@@ -42,22 +42,66 @@ public final class FloatSynthesizer {
         if (binExp >= 255) {
             return negative ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
         }
-        binMantissa += 1 << 5;
-        if ((binMantissa & (-1 << 30)) != 0) {
-            binMantissa >>>= 1;
-            binExp++;
-        }
         if (binExp <= 0) {
-            binMantissa >>= Math.min(-binExp + 1, 32);
-            binExp = 0;
+            // A subnormal has fewer mantissa bits, so round at its own last bit. A carry out of the top bit gives
+            // the smallest normal value. A shift of 32 or more gives zero (Java uses only the low bits of the count).
+            var shift = -binExp + 1 + 6;
+            var bits = shift >= 32 ? 0 : (binMantissa + (1 << (shift - 1))) >>> shift;
+            return Float.intBitsToFloat(negative ? bits | (1 << 31) : bits);
         }
-
-        binMantissa = (binMantissa >>> 6) & (-1 << 9 >>> 9);
-        var iee754 = binMantissa | (binExp << 23);
+        var correction = 1 << 5;
+        var error = binMantissa & ((1 << 6) - 1);
+        if (Math.abs(error - (1 << 5)) <= 2) {
+            var lowerBits = toBits(binMantissa & (-1 << 6), binExp);
+            if (isMidpoint(lowerBits, mantissa, exp)) {
+                // Round half to even, as the JDK does
+                correction = (lowerBits & 1) == 0 ? -error : (1 << 6) - error;
+            }
+        }
+        var iee754 = toBits(binMantissa + correction, binExp);
         if (negative) {
             iee754 ^= 1 << 31;
         }
         return Float.intBitsToFloat(iee754);
+    }
+
+    private static int toBits(int binMantissa, int binExp) {
+        if ((binMantissa & (-1 << 30)) != 0) {
+            binMantissa >>>= 1;
+            binExp++;
+        }
+        binMantissa = (binMantissa >>> 6) & (-1 << 9 >>> 9);
+        return binMantissa | (binExp << 23);
+    }
+
+    // Whether mantissa * 10^(exp - 8) is exactly the midpoint between the normal float with the given bits and
+    // the next float. See DoubleSynthesizer.isMidpoint.
+    private static boolean isMidpoint(int bits, int mantissa, int exp) {
+        long oddMid = ((((long) bits & ((1 << 23) - 1)) | (1 << 23)) << 1) | 1;
+        var midExp2 = (bits >>> 23) - 150 - 1;
+        var decExp = exp - 8;
+        while (mantissa % 10 == 0) {
+            mantissa /= 10;
+            decExp++;
+        }
+        var zeros = Integer.numberOfTrailingZeros(mantissa);
+        long oddDec = mantissa >>> zeros;
+        if (midExp2 != zeros + decExp) {
+            return false;
+        }
+        if (decExp >= 0) {
+            // oddMid == oddDec * 5^decExp
+            for (var i = 0; i < decExp && oddDec <= oddMid; ++i) {
+                oddDec *= 5;
+            }
+            return oddDec == oddMid;
+        } else {
+            // oddMid * 5^-decExp == oddDec
+            for (var i = 0; i < -decExp && oddMid <= oddDec; ++i) {
+                oddMid *= 5;
+            }
+            return oddMid == oddDec;
+        }
     }
 
     private static final int[] mantissa10Table = {

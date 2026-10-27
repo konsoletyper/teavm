@@ -17,7 +17,11 @@ package org.teavm.classlib.java.nio.charset;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
@@ -87,5 +91,44 @@ public class Iso8859Test {
 
     private void runDecode(int inSize, int outSize) {
         CharsetTestCommon.runDecode(hex, CharsetTestCommon.asciiText, StandardCharsets.ISO_8859_1, inSize, outSize);
+    }
+
+    @Test
+    public void encodeHighSurrogateBeforeOtherChar() {
+        ByteBuffer buffer = StandardCharsets.ISO_8859_1.encode("a\uD800b");
+        byte[] result = new byte[buffer.remaining()];
+        buffer.get(result);
+        assertArrayEquals(new byte[] { 97, 63, 98 }, result);
+    }
+
+    // CharsetEncoder: "If the input character sequence is not a legal sixteen-bit Unicode sequence then the input is
+    // considered malformed". And for a malformed result, "The malformed characters begin at the input buffer's
+    // (possibly incremented) position".
+    @Test
+    public void loneLowSurrogateIsMalformed() {
+        assertTrue(StandardCharsets.ISO_8859_1.newEncoder()
+                .encode(CharBuffer.wrap("\uDC00"), ByteBuffer.allocate(4), true).isMalformed());
+        CharsetTestCommon.checkMalformed(StandardCharsets.ISO_8859_1, "\uDC00a", 1);
+        CharsetTestCommon.checkMalformed(StandardCharsets.ISO_8859_1, "\uD800a", 1);
+        CharsetTestCommon.checkUnmappable(StandardCharsets.ISO_8859_1, "𐀀", 2);
+    }
+
+    @Test
+    public void encodeEveryShortSequenceAsJdk() {
+        CharsetEncoder encoder = CharsetTestCommon.replacingEncoder(StandardCharsets.ISO_8859_1);
+        CharsetTestCommon.forEachSequence(CharsetTestCommon.CHARS, 5, sequence -> {
+            String input = CharsetTestCommon.toChars(sequence);
+            CharsetTestCommon.checkEncode(encoder, input, CharsetTestCommon.referenceEncode(input, 0x100, false));
+        });
+    }
+
+    @Test
+    public void encodeAcrossEndOfInternalBuffer() {
+        CharsetEncoder encoder = CharsetTestCommon.replacingEncoder(StandardCharsets.ISO_8859_1);
+        CharsetTestCommon.forEachSequence(CharsetTestCommon.CHARS, 3, sequence -> {
+            String input = CharsetTestCommon.toChars(sequence);
+            CharsetTestCommon.checkEncodeAfterPrefix(encoder, input,
+                    CharsetTestCommon.referenceEncode(input, 0x100, false), 1);
+        });
     }
 }

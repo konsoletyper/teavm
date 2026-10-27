@@ -16,57 +16,57 @@
 "use strict";
 
 let $rt_createArray = (cls, sz) => {
-    let data = new teavm_globals.Array(sz);
+    let data = new teavm_globals.Array($rt_checkArrayLength(sz));
     data.fill(null);
     return new ($rt_arraycls(cls))(data);
 }
 let $rt_wrapArray = (cls, data) => new ($rt_arraycls(cls))(data);
 let $rt_createUnfilledArray = (cls, sz) => new ($rt_arraycls(cls))(new teavm_globals.Array(sz));
-let $rt_createLongArray = sz => new $rt_longArrayCls(new teavm_globals.BigInt64Array(sz));
+let $rt_createLongArray = sz => new $rt_longArrayCls(new teavm_globals.BigInt64Array($rt_checkArrayLength(sz)));
 let $rt_createLongArrayFromData = data => {
     let buffer = new teavm_globals.BigInt64Array(data.length);
     buffer.set(data);
     return new $rt_longArrayCls(buffer);
 };
 
-let $rt_createCharArray = sz => new $rt_charArrayCls(new teavm_globals.Uint16Array(sz));
+let $rt_createCharArray = sz => new $rt_charArrayCls(new teavm_globals.Uint16Array($rt_checkArrayLength(sz)));
 let $rt_createCharArrayFromData = data => {
     let buffer = new teavm_globals.Uint16Array(data.length);
     buffer.set(data);
     return new $rt_charArrayCls(buffer);
 }
-let $rt_createByteArray = sz => new $rt_byteArrayCls(new teavm_globals.Int8Array(sz));
+let $rt_createByteArray = sz => new $rt_byteArrayCls(new teavm_globals.Int8Array($rt_checkArrayLength(sz)));
 let $rt_createByteArrayFromData = data => {
     let buffer = new teavm_globals.Int8Array(data.length);
     buffer.set(data);
     return new $rt_byteArrayCls(buffer);
 }
-let $rt_createShortArray = sz => new $rt_shortArrayCls(new teavm_globals.Int16Array(sz));
+let $rt_createShortArray = sz => new $rt_shortArrayCls(new teavm_globals.Int16Array($rt_checkArrayLength(sz)));
 let $rt_createShortArrayFromData = data => {
     let buffer = new teavm_globals.Int16Array(data.length);
     buffer.set(data);
     return new $rt_shortArrayCls(buffer);
 }
-let $rt_createIntArray = sz => new $rt_intArrayCls(new teavm_globals.Int32Array(sz));
+let $rt_createIntArray = sz => new $rt_intArrayCls(new teavm_globals.Int32Array($rt_checkArrayLength(sz)));
 let $rt_createIntArrayFromData = data => {
     let buffer = new teavm_globals.Int32Array(data.length);
     buffer.set(data);
     return new $rt_intArrayCls(buffer);
 }
-let $rt_createBooleanArray = sz => new $rt_booleanArrayCls(new teavm_globals.Int8Array(sz));
+let $rt_createBooleanArray = sz => new $rt_booleanArrayCls(new teavm_globals.Int8Array($rt_checkArrayLength(sz)));
 let $rt_createBooleanArrayFromData = data => {
     let buffer = new teavm_globals.Int8Array(data.length);
     buffer.set(data);
     return new $rt_booleanArrayCls(buffer);
 }
 
-let $rt_createFloatArray = sz => new $rt_floatArrayCls(new teavm_globals.Float32Array(sz));
+let $rt_createFloatArray = sz => new $rt_floatArrayCls(new teavm_globals.Float32Array($rt_checkArrayLength(sz)));
 let $rt_createFloatArrayFromData = data => {
     let buffer = new teavm_globals.Float32Array(data.length);
     buffer.set(data);
     return new $rt_floatArrayCls(buffer);
 }
-let $rt_createDoubleArray = sz => new $rt_doubleArrayCls(new teavm_globals.Float64Array(sz));
+let $rt_createDoubleArray = sz => new $rt_doubleArrayCls(new teavm_globals.Float64Array($rt_checkArrayLength(sz)));
 let $rt_createDoubleArrayFromData = data => {
     let buffer = new teavm_globals.Float64Array(data.length);
     buffer.set(data);
@@ -120,6 +120,7 @@ let $rt_arraycls = cls => {
     return result;
 }
 let $rt_createMultiArray = (cls, dimensions) => {
+    $rt_checkArrayDimensions(dimensions);
     let first = 0;
     for (let i = dimensions.length - 1; i >= 0; i = (i - 1) | 0) {
         if (dimensions[i] === 0) {
@@ -143,6 +144,7 @@ let $rt_createMultiArray = (cls, dimensions) => {
     return $rt_createMultiArrayImpl(cls, arrays, dimensions, first, 0);
 }
 let $rt_createByteMultiArray = dimensions => {
+    $rt_checkArrayDimensions(dimensions);
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_bytecls, dimensions);
@@ -154,6 +156,7 @@ let $rt_createByteMultiArray = dimensions => {
     return $rt_createMultiArrayImpl($rt_bytecls, arrays, dimensions, 0);
 }
 let $rt_createCharMultiArray = dimensions => {
+    $rt_checkArrayDimensions(dimensions);
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_charcls, dimensions);
@@ -165,6 +168,7 @@ let $rt_createCharMultiArray = dimensions => {
     return $rt_createMultiArrayImpl($rt_charcls, arrays, dimensions, 0);
 }
 let $rt_createBooleanMultiArray = dimensions => {
+    $rt_checkArrayDimensions(dimensions);
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_booleancls, dimensions);
@@ -176,6 +180,7 @@ let $rt_createBooleanMultiArray = dimensions => {
     return $rt_createMultiArrayImpl($rt_booleancls, arrays, dimensions, 0);
 }
 let $rt_createShortMultiArray = dimensions => {
+    $rt_checkArrayDimensions(dimensions);
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_shortcls, dimensions);
@@ -187,6 +192,7 @@ let $rt_createShortMultiArray = dimensions => {
     return $rt_createMultiArrayImpl($rt_shortcls, arrays, dimensions, 0);
 }
 let $rt_createIntMultiArray = dimensions => {
+    $rt_checkArrayDimensions(dimensions);
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_intcls, dimensions);
@@ -198,6 +204,7 @@ let $rt_createIntMultiArray = dimensions => {
     return $rt_createMultiArrayImpl($rt_intcls, arrays, dimensions, 0);
 }
 let $rt_createLongMultiArray = dimensions => {
+    $rt_checkArrayDimensions(dimensions);
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_longcls, dimensions);
@@ -209,6 +216,7 @@ let $rt_createLongMultiArray = dimensions => {
     return $rt_createMultiArrayImpl($rt_longcls, arrays, dimensions, 0);
 }
 let $rt_createFloatMultiArray = dimensions => {
+    $rt_checkArrayDimensions(dimensions);
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_floatcls, dimensions);
@@ -220,6 +228,7 @@ let $rt_createFloatMultiArray = dimensions => {
     return $rt_createMultiArrayImpl($rt_floatcls, arrays, dimensions, 0);
 }
 let $rt_createDoubleMultiArray = dimensions => {
+    $rt_checkArrayDimensions(dimensions);
     let arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_doublecls, dimensions);

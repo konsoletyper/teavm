@@ -33,7 +33,6 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
-import org.teavm.model.FieldReference;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -312,8 +311,10 @@ public class AnnotationGenerationHelper {
                 if (value == null) {
                     value = methodDecl.getAnnotationDefault();
                 }
-                var field = agent.linkField(new FieldReference(implementor, "$" + methodDecl.getName()));
-                propagateAnnotationValue(agent, value, methodDecl.getResultType(), field.getValue());
+                // The implementor's accessor reads the value from native annotation data, so the value's types
+                // (e.g. the classes that Class-valued members name) must be propagated into its result.
+                var accessor = agent.linkMethod(new MethodReference(implementor, methodDecl.getDescriptor()));
+                propagateAnnotationValue(agent, value, methodDecl.getResultType(), accessor.getResult());
             }
             var initParamType = ValueType.object(annotation.getType() + ANNOTATION_DATA_SUFFIX);
             agent.linkMethod(new MethodReference(implementor, "<init>", initParamType, ValueType.VOID)).use();
