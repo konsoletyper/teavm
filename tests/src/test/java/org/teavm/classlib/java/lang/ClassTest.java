@@ -26,6 +26,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -513,5 +514,30 @@ public class ClassTest {
     }
 
     static class AnnotationDefaultTarget {
+    }
+
+    // Package's Javadoc: each of the six getters returns the value, "null is returned if it is not known".
+    // For a Package defined automatically by the class loader (as for classes in the unnamed module, or loaded
+    // without a manifest), "the specification and implementation titles, versions, and vendors are unspecified",
+    // and the built-in loaders give packages in named modules "no specification and implementation versioning
+    // information". A TeaVM program has no manifest, so none of them is ever known.
+    @Test
+    public void packageWithoutManifest() {
+        assertNoVersioningInfo(ClassTest.class.getPackage());
+        assertNoVersioningInfo(Nested.class.getPackage());
+        assertNoVersioningInfo(String.class.getPackage());
+        assertNoVersioningInfo(List.class.getPackage());
+    }
+
+    private static void assertNoVersioningInfo(Package pkg) {
+        assertNull(pkg.getSpecificationTitle());
+        assertNull(pkg.getSpecificationVersion());
+        assertNull(pkg.getSpecificationVendor());
+        assertNull(pkg.getImplementationTitle());
+        assertNull(pkg.getImplementationVersion());
+        assertNull(pkg.getImplementationVendor());
+    }
+
+    static class Nested {
     }
 }
