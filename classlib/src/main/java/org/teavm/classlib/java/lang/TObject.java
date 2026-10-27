@@ -188,7 +188,9 @@ public class TObject {
         if (monitor.enteringThreads != null && !monitor.enteringThreads.isEmpty()) {
             var enteringThreads = monitor.enteringThreads;
             PlatformRunnable r = enteringThreads.remove();
-            monitor.enteringThreads = null;
+            if (enteringThreads.isEmpty()) {
+                monitor.enteringThreads = null;
+            }
             r.run();
         }
     }
@@ -533,6 +535,10 @@ public class TObject {
                 }
                 timerId = -1;
             }
+            // A timed-out wait reaches here directly (EventQueue.offer and Platform.schedule call run(), not
+            // onTimer()), so nothing else marks the listener expired. Without this, the listener stays in the
+            // queue, and a later notify() takes it and wakes no thread.
+            expired = true;
             TThread.setCurrentThread(currentThread);
             monitorEnterWait(obj, lockCount, callback);
         }
@@ -551,11 +557,32 @@ public class TObject {
                 }
                 timerId = -1;
             }
+            // Like a timed-out wait, an interrupted wait must not stay in the queue as a listener that a later
+            // notify() could take.
+            expired = true;
+            // As in the JDK, wait() holds the monitor again when it throws InterruptedException.
             if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(() -> callback.error(new TInterruptedException()));
+                EventQueue.offer(this::reacquireThenFail);
             } else {
-                Platform.postpone(() -> callback.error(new TInterruptedException()));
+                Platform.postpone(this::reacquireThenFail);
             }
+        }
+
+        private void reacquireThenFail() {
+            TThread.setCurrentThread(currentThread);
+            monitorEnterWait(obj, lockCount, new AsyncCallback<Void>() {
+                @Override
+                public void complete(Void result) {
+                    // As in the JDK, throwing InterruptedException clears the thread's interrupt status.
+                    TThread.interrupted();
+                    callback.error(new TInterruptedException());
+                }
+
+                @Override
+                public void error(Throwable e) {
+                    callback.error(e);
+                }
+            });
         }
     }
 

@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.List;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -195,5 +196,13 @@ public class SystemTest {
         int hc = System.identityHashCode(o);
         int hc1 = System.identityHashCode(o);
         assertEquals(hc, hc1);
+    }
+
+    @Test
+    public void standardPropertiesAreSet() {
+        for (var name : List.of("java.vendor", "java.vm.vendor", "os.arch", "java.runtime.name",
+                "java.specification.version", "user.dir", "file.encoding")) {
+            assertNotNull(System.getProperty(name), name);
+        }
     }
 }

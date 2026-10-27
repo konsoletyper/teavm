@@ -730,4 +730,359 @@ public class VMTest {
         A,
         B
     }
+
+    @Test
+    public void interfaceCallDoesNotInitializeInterface() {
+        assertEquals("ok", readInterfaceConstant(new InterfaceWithConstantA()));
+        assertEquals("ok", readInterfaceConstant(new InterfaceWithConstantB()));
+    }
+
+    private static String readInterfaceConstant(InterfaceWithConstant obj) {
+        obj.foo();
+        return InterfaceWithConstant.VALUE.toString();
+    }
+
+    interface InterfaceWithConstant {
+        Object VALUE = new StringBuilder("ok");
+
+        void foo();
+    }
+
+    static class InterfaceWithConstantA implements InterfaceWithConstant {
+        @Override
+        public void foo() {
+        }
+    }
+
+    static class InterfaceWithConstantB implements InterfaceWithConstant {
+        @Override
+        public void foo() {
+        }
+    }
+
+    @Test
+    public void exceptionFromClassInitializerReachesHandler() {
+        try {
+            ThrowingInitializer.value();
+            fail("Initializer did not throw");
+        } catch (Throwable e) {
+            // The JVM wraps the exception in ExceptionInInitializerError
+            var cause = e instanceof ExceptionInInitializerError ? e.getCause() : e;
+            assertEquals("thrown by initializer", ((InitializerException) cause).describe());
+        }
+    }
+
+    static class ThrowingInitializer {
+        static final String VALUE;
+
+        static {
+            throwInitializerException();
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    private static void throwInitializerException() {
+        throw new InitializerException();
+    }
+
+    // describe() is called only in the handler, so it exists in the output only if the exception type
+    // reaches the handler
+    static class InitializerException extends RuntimeException {
+        String describe() {
+            return "thrown by initializer";
+        }
+    }
+
+    @Test
+    public void failedClassInitializerIsNotRunAgain() {
+        try {
+            FailingInitializer.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertEquals(IllegalStateException.class, e.getCause().getClass());
+        }
+        try {
+            FailingInitializer.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void errorFromClassInitializerIsNotWrapped() {
+        try {
+            FailingInitializerWithError.value();
+            fail("Initializer did not throw");
+        } catch (InitializerTestError e) {
+            // expected
+        }
+        try {
+            FailingInitializerWithError.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void failedAsyncClassInitializerIsNotRunAgain() {
+        try {
+            FailingAsyncInitializer.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertEquals(IllegalStateException.class, e.getCause().getClass());
+        }
+        try {
+            FailingAsyncInitializer.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (NoClassDefFoundError e) {
+            // expected
+        }
+    }
+
+    static class FailingInitializer {
+        static final String VALUE;
+
+        static {
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class FailingInitializerWithError {
+        static final String VALUE;
+
+        static {
+            throwInitializerTestError();
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class FailingAsyncInitializer {
+        static final String VALUE;
+
+        static {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    static class InitializerTestError extends Error {
+    }
+
+    private static void throwInitializerTestError() {
+        throw new InitializerTestError();
+    }
+
+    @Test
+    public void errorsFromFailedClassInitializerReachHandlers() {
+        try {
+            FailingInitializerForHandlers.value();
+            fail("Initializer did not throw");
+        } catch (ExceptionInInitializerError e) {
+            assertTrue(e.getException() instanceof IllegalStateException);
+        }
+        try {
+            FailingInitializerForHandlers.value();
+            fail("Class was initialized after its initializer threw");
+        } catch (Error e) {
+            assertTrue(e instanceof NoClassDefFoundError);
+            // The JDK reports the first failure as the cause; TeaVM gives no cause
+            assertTrue(e.getCause() == null || e.getCause() instanceof ExceptionInInitializerError);
+        }
+    }
+
+    // The JVM runs every test of this class in one class loader, so this test needs a failing class of its own
+    static class FailingInitializerForHandlers {
+        static final String VALUE;
+
+        static {
+            failIf(true);
+            VALUE = "initialized";
+        }
+
+        static String value() {
+            return VALUE;
+        }
+    }
+
+    @Test
+    public void exceptionHandlerSeesParameterBeforeNullCheck() {
+        var key = newKey();
+        assertEquals("attached built", attachOrCancel(new WorkingBuilder(), key));
+        assertTrue(key.valid);
+        key = newKey();
+        assertEquals("cancelled: build failed", attachOrCancel(new FailingBuilder(), key));
+        assertFalse(key.valid);
+    }
+
+    @Test
+    public void exceptionHandlerSeesLocalBeforeNullCheck() {
+        assertEquals("attached built", assignAndAttach(new WorkingBuilder()));
+        assertEquals("key assigned: build failed", assignAndAttach(new FailingBuilder()));
+    }
+
+    private static String attachOrCancel(Builder builder, Key key) {
+        try {
+            Object built = builder.build(key);
+            key.attach(built);
+            return "attached " + built;
+        } catch (IllegalStateException e) {
+            key.cancel();
+            return "cancelled: " + e.getMessage();
+        }
+    }
+
+    private static String assignAndAttach(Builder builder) {
+        Key key = null;
+        try {
+            key = newKey();
+            Object built = builder.build(key);
+            key.attach(built);
+            return "attached " + built;
+        } catch (IllegalStateException e) {
+            return (key != null ? "key assigned: " : "key not assigned: ") + e.getMessage();
+        }
+    }
+
+    // Each stage reassigns the variable, so a handler must see the version assigned before the stage that threw
+    @Test
+    public void exceptionHandlerSeesVersionOfLocalAtThrowPoint() {
+        assertEquals("caught v0", reassignLocal(0));
+        assertEquals("caught v1", reassignLocal(1));
+        assertEquals("caught v2", reassignLocal(2));
+        assertEquals("completed v3", reassignLocal(3));
+    }
+
+    @Test
+    public void exceptionHandlerSeesVersionOfParameterAtThrowPoint() {
+        assertEquals("caught p", reassignParameter(0, "p"));
+        assertEquals("caught p1", reassignParameter(1, "p"));
+        assertEquals("caught p2", reassignParameter(2, "p"));
+        assertEquals("completed p3", reassignParameter(3, "p"));
+    }
+
+    @Test
+    public void exceptionHandlerSeesParameterAtEachNullCheck() {
+        for (var failAt = 0; failAt < 3; ++failAt) {
+            var key = newKey();
+            var expected = "caught " + (failAt == 0 ? null : failAt == 1 ? "first" : "second");
+            assertEquals(expected, checkKeyBetweenThrows(failAt, key));
+            assertFalse(key.valid);
+        }
+        var key = newKey();
+        assertEquals("completed second", checkKeyBetweenThrows(3, key));
+        assertTrue(key.valid);
+    }
+
+    private static String reassignLocal(int failAt) {
+        String value = "v0";
+        try {
+            failAtStage(failAt, 0);
+            value = "v1";
+            failAtStage(failAt, 1);
+            value = "v2";
+            failAtStage(failAt, 2);
+            value = "v3";
+            return "completed " + value;
+        } catch (IllegalStateException e) {
+            return "caught " + value;
+        }
+    }
+
+    private static String reassignParameter(int failAt, String value) {
+        try {
+            failAtStage(failAt, 0);
+            value = value + "1";
+            failAtStage(failAt, 1);
+            value = value.substring(0, 1) + "2";
+            failAtStage(failAt, 2);
+            value = value.substring(0, 1) + "3";
+            return "completed " + value;
+        } catch (IllegalStateException e) {
+            return "caught " + value;
+        }
+    }
+
+    private static String checkKeyBetweenThrows(int failAt, Key key) {
+        try {
+            failAtStage(failAt, 0);
+            key.attach("first");
+            failAtStage(failAt, 1);
+            key.attach("second");
+            failAtStage(failAt, 2);
+            return "completed " + key.attachment;
+        } catch (IllegalStateException e) {
+            key.cancel();
+            return "caught " + key.attachment;
+        }
+    }
+
+    private static void failAtStage(int failAt, int stage) {
+        if (failAt == stage) {
+            throw new IllegalStateException("stage " + stage);
+        }
+    }
+
+    private static final List<Key> KEYS = new ArrayList<>();
+
+    // The compiler cannot prove that the result is not null, so each call on it gets a null check
+    private static Key newKey() {
+        KEYS.add(new Key());
+        return KEYS.get(KEYS.size() - 1);
+    }
+
+    interface Builder {
+        Object build(Key key);
+    }
+
+    static class WorkingBuilder implements Builder {
+        @Override
+        public Object build(Key key) {
+            return "built";
+        }
+    }
+
+    static class FailingBuilder implements Builder {
+        @Override
+        public Object build(Key key) {
+            throw new IllegalStateException("build failed");
+        }
+    }
+
+    static class Key {
+        boolean valid = true;
+        Object attachment;
+
+        void attach(Object attachment) {
+            this.attachment = attachment;
+        }
+
+        void cancel() {
+            valid = false;
+        }
+    }
 }

@@ -78,7 +78,11 @@ public final class TBase64 {
         public byte[] decode(String src) {
             var bytes = new byte[src.length()];
             for (var i = 0; i < bytes.length; ++i) {
-                bytes[i] = (byte) src.charAt(i);
+                var c = src.charAt(i);
+                if (c > 0xFF) {
+                    throw new IllegalArgumentException();
+                }
+                bytes[i] = (byte) c;
             }
             return decode(bytes);
         }

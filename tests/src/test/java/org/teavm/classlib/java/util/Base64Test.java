@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.junit.jupiter.api.Test;
@@ -68,6 +69,35 @@ public class Base64Test {
         assertEquals("cXdlcnR5", encodeNoPad("qwerty"));
         assertEquals("cXdlcnR5dQ", encodeNoPad("qwertyu"));
         assertEquals("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw", encodeNoPad("юзернейм:пароль"));
+    }
+
+    @Test
+    public void decoderRejectsNonAsciiInput() {
+        var bytes = new byte[][] { { 'Q', 'U', (byte) 0x80, 'A' }, { 'Q', 'U', (byte) 0xFF, 'A' } };
+        for (var text : bytes) {
+            assertThrows(IllegalArgumentException.class, () -> Base64.getDecoder().decode(text));
+            assertThrows(IllegalArgumentException.class, () -> Base64.getUrlDecoder().decode(text));
+        }
+        for (var text : new String[] { "QU\u00E9A", "QU\u0142B" }) {
+            assertThrows(IllegalArgumentException.class, () -> Base64.getDecoder().decode(text), text);
+        }
+    }
+
+    @Test
+    public void decoderRejectsIllegalCharacters() {
+        for (var text : new String[] { "QU*A", "QU A", "QU=A", "QU_A", "QU-A", "QQ==QQ==" }) {
+            assertThrows(IllegalArgumentException.class, () -> Base64.getDecoder().decode(text), text);
+        }
+        for (var text : new String[] { "QU+A", "QU/A" }) {
+            assertThrows(IllegalArgumentException.class, () -> Base64.getUrlDecoder().decode(text), text);
+        }
+    }
+
+    @Test
+    public void decoderRejectsWrongPadding() {
+        for (var text : new String[] { "QUJDR", "QUJDR===", "QQ=", "QQ===", "QUI==", "QUJD=", "QUJD====", "==" }) {
+            assertThrows(IllegalArgumentException.class, () -> Base64.getDecoder().decode(text), text);
+        }
     }
 
     private String decode(String text) {

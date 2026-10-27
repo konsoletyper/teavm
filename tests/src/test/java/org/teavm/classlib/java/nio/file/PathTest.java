@@ -166,6 +166,12 @@ public class PathTest {
     }
 
     @Test
+    public void emptyPathIsOnlyEndOfEmptyPath() {
+        var fs = FileSystems.getDefault();
+        assertFalse(fs.getPath("/").endsWith(fs.getPath("")));
+    }
+
+    @Test
     @SkipJVM
     public void normalize() {
         var fs = FileSystems.getDefault();
@@ -187,6 +193,20 @@ public class PathTest {
     }
 
     @Test
+    public void normalizeRelative() {
+        var fs = FileSystems.getDefault();
+        assertEquals("a", fs.getPath("a").normalize().toString());
+        assertEquals("a/b", fs.getPath("a/b").normalize().toString());
+        assertEquals("a/b", fs.getPath("a/./b").normalize().toString());
+        assertEquals("b", fs.getPath("a/../b").normalize().toString());
+        assertEquals("", fs.getPath("a/..").normalize().toString());
+        assertEquals("..", fs.getPath("a/../..").normalize().toString());
+        assertEquals("a", fs.getPath("./a").normalize().toString());
+        assertEquals("..", fs.getPath("../a/..").normalize().toString());
+        assertEquals("../b", fs.getPath("../a/../b").normalize().toString());
+    }
+
+    @Test
     @SkipJVM
     public void resolve() {
         var fs = FileSystems.getDefault();
@@ -194,6 +214,14 @@ public class PathTest {
         assertEquals("/a/b/c", fs.getPath("/a/b/c").resolve(fs.getPath("")).toString());
         assertEquals("/d", fs.getPath("/a/b/c").resolve(fs.getPath("/d")).toString());
         assertEquals("/a/b/c/..", fs.getPath("/a/b/c").resolve(fs.getPath("..")).toString());
+    }
+
+    @Test
+    public void resolveAgainstEmptyAndRoot() {
+        var fs = FileSystems.getDefault();
+        assertEquals("a", fs.getPath("").resolve(fs.getPath("a")).toString());
+        assertEquals("/a", fs.getPath("/").resolve(fs.getPath("a")).toString());
+        assertEquals("/b", fs.getPath("/a").resolveSibling(fs.getPath("b")).toString());
     }
 
     @Test
@@ -211,6 +239,19 @@ public class PathTest {
         assertThrows(IllegalArgumentException.class, () -> {
             fs.getPath("a/b").relativize(fs.getPath("/a/b/c")).toString();
         });
+    }
+
+    @Test
+    public void relativizeJdkCases() {
+        var fs = FileSystems.getDefault();
+        assertEquals("..", fs.getPath("a/b").relativize(fs.getPath("a")).toString());
+        assertEquals("../..", fs.getPath("/a/b").relativize(fs.getPath("/")).toString());
+        assertEquals("../..", fs.getPath("a/b").relativize(fs.getPath("")).toString());
+        assertEquals("a/b", fs.getPath("").relativize(fs.getPath("a/b")).toString());
+        assertEquals("c", fs.getPath("a/./b").relativize(fs.getPath("a/b/c")).toString());
+        assertEquals("../c", fs.getPath("a/b").relativize(fs.getPath("a/b/../c")).toString());
+        assertEquals("../../b", fs.getPath("a").relativize(fs.getPath("../b")).toString());
+        assertThrows(IllegalArgumentException.class, () -> fs.getPath("../a").relativize(fs.getPath("b")));
     }
 
     @Test

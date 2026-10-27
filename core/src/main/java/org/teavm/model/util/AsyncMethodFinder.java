@@ -63,7 +63,6 @@ public class AsyncMethodFinder {
 
     public void find(ListableClassReaderSource classSource) {
         this.classSource = classSource;
-        hasAsyncMethods = findAsyncMethods();
         for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
             for (MethodReader method : cls.getMethods()) {
@@ -76,6 +75,7 @@ public class AsyncMethodFinder {
                 }
             }
         }
+        hasAsyncMethods = findAsyncMethods();
         if (hasAsyncMethods) {
             for (String clsName : classSource.getClassNames()) {
                 ClassReader cls = classSource.get(clsName);

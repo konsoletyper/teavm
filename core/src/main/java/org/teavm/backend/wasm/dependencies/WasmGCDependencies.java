@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.dependencies;
 import java.util.Arrays;
 import java.util.List;
 import org.teavm.backend.wasm.WasmRuntime;
+import org.teavm.backend.wasm.generate.methods.WasmGCMethodGenerator;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
@@ -139,6 +140,8 @@ public class WasmGCDependencies {
 
     private void contributeInitializerUtils() {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "nextCharArray", char[].class)).use();
+        analyzer.linkMethod(WasmGCMethodGenerator.FAILED_INITIALIZER).use();
+        analyzer.linkMethod(WasmGCMethodGenerator.INITIALIZER_ERROR).propagate(1, Throwable.class).use();
     }
 
     private void contributeString() {

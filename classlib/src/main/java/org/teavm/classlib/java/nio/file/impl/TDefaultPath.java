@@ -129,6 +129,9 @@ public class TDefaultPath implements TPath {
             return false;
         }
         var otherPath = (TDefaultPath) other;
+        if (otherPath.pathString.isEmpty()) {
+            return pathString.isEmpty();
+        }
         if (fs.vfs.isWindows()) {
             if (pathString.length() < otherPath.pathString.length()
                     || !pathString.regionMatches(true, pathString.length() - otherPath.pathString.length(),
@@ -164,21 +167,26 @@ public class TDefaultPath implements TPath {
                 if (resultSegmentIndex > 0) {
                     resultIndex = resultSegments[--resultSegmentIndex];
                 } else if (!abs) {
-                    start = Math.max(0, start - 1);
+                    if (resultIndex > 0) {
+                        --start;
+                    }
                     pathString.getChars(start, end, result, resultIndex);
                     resultIndex += end - start;
                 }
             } else if (start + 1 != end || pathString.charAt(start) != '.') {
                 resultSegments[resultSegmentIndex++] = resultIndex;
-                pathString.getChars(start - 1, end, result, resultIndex);
-                resultIndex += end - start + 1;
+                if (abs || resultIndex > 0) {
+                    --start;
+                }
+                pathString.getChars(start, end, result, resultIndex);
+                resultIndex += end - start;
             }
-        }
-        if (resultIndex == pathString.length()) {
-            return this;
         }
         if (abs && initialLength == resultIndex) {
             result[resultIndex++] = fs.getSeparatorChar();
+        }
+        if (resultIndex == pathString.length()) {
+            return this;
         }
         return new TDefaultPath(fs, new String(result, 0, resultIndex));
     }
@@ -191,10 +199,14 @@ public class TDefaultPath implements TPath {
         if (other.getNameCount() == 1 && other.getFileName().toString().isEmpty()) {
             return this;
         }
-        if (other instanceof TDefaultPath) {
-            return new TDefaultPath(fs, pathString + fs.getSeparatorChar() + ((TDefaultPath) other).pathString);
+        if (pathString.isEmpty()) {
+            return other;
         }
-        var sb = new StringBuilder(pathString);
+        var base = pathString.length() == 1 && isAbsolute() ? "" : pathString;
+        if (other instanceof TDefaultPath) {
+            return new TDefaultPath(fs, base + fs.getSeparatorChar() + ((TDefaultPath) other).pathString);
+        }
+        var sb = new StringBuilder(base);
         var count = other.getNameCount();
         for (var i = 0; i < count; ++i) {
             sb.append(fs.getSeparatorChar());
@@ -212,6 +224,14 @@ public class TDefaultPath implements TPath {
             return new TDefaultPath(fs, "");
         }
         var otherPath = (TDefaultPath) other;
+        if (pathString.isEmpty()) {
+            return otherPath;
+        }
+        var normalized = normalize();
+        var otherNormalized = otherPath.normalize();
+        if (normalized != this || otherNormalized != otherPath) {
+            return normalized.relativize(otherNormalized);
+        }
         initSegments();
         otherPath.initSegments();
         var count = Math.min(otherPath.segments.length, segments.length) - 1;
@@ -226,12 +246,25 @@ public class TDefaultPath implements TPath {
                 break;
             }
         }
+        if (index < segments.length - 1 && segments[index + 1] - segments[index] == 3
+                && pathString.startsWith("..", segments[index] + 1)) {
+            throw new IllegalArgumentException();
+        }
         var sb = new StringBuilder();
         var sep = fs.getSeparatorChar();
         for (var i = index + 1; i < segments.length; ++i) {
-            sb.append("..").append(sep);
+            if (sb.length() > 0) {
+                sb.append(sep);
+            }
+            sb.append("..");
         }
-        sb.append(otherPath.pathString, otherPath.segments[index] + 1, otherPath.pathString.length());
+        var rest = otherPath.segments[index] + 1;
+        if (rest < otherPath.pathString.length()) {
+            if (sb.length() > 0) {
+                sb.append(sep);
+            }
+            sb.append(otherPath.pathString, rest, otherPath.pathString.length());
+        }
         return new TDefaultPath(fs, sb.toString());
     }
 

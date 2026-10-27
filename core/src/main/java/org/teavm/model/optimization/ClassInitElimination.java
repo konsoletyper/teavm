@@ -23,6 +23,8 @@ import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
 import org.teavm.model.instructions.InitClassInstruction;
@@ -60,7 +62,9 @@ public class ClassInitElimination implements MethodOptimization {
                     }
                     if (insn instanceof InvokeInstruction) {
                         InvokeInstruction invoke = (InvokeInstruction) insn;
-                        step.initializedClasses.add(invoke.getMethod().getClassName());
+                        if (callInitializes(context, invoke)) {
+                            step.initializedClasses.add(invoke.getMethod().getClassName());
+                        }
                     }
                 }
             }
@@ -73,6 +77,18 @@ public class ClassInitElimination implements MethodOptimization {
         }
 
         return false;
+    }
+
+    // A static call initializes the method's class. An instance call on a class means that an instance exists,
+    // so the class was initialized when the instance was created. An instance call on an interface does not
+    // initialize the interface: an object can implement an interface whose initializer never ran, for example a
+    // java.lang.reflect.Proxy, or a class whose initialization does not initialize its interfaces.
+    private static boolean callInitializes(MethodOptimizationContext context, InvokeInstruction invoke) {
+        if (invoke.getInstance() == null) {
+            return true;
+        }
+        ClassReader cls = context.getClassSource().get(invoke.getMethod().getClassName());
+        return cls != null && !cls.hasModifier(ElementModifier.INTERFACE);
     }
 
     static class Step {

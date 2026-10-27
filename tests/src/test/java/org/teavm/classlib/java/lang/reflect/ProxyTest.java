@@ -409,6 +409,23 @@ public class ProxyTest {
         }
     }
 
+    @Test
+    public void interfaceWithStaticMembers() {
+        var sb = new StringBuilder();
+        var a = (A) Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { A.class },
+                new LoggingInvocationHandler(sb));
+        a.foo();
+        assertEquals("A.foo;", sb.toString());
+
+        sb.setLength(0);
+        var i = (I) Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { I.class },
+                new LoggingInvocationHandler(sb));
+        i.foo();
+        i.bar();
+        assertEquals("I.foo;I.bar;", sb.toString());
+        assertEquals(46, I.twice(23));
+    }
+
     private static class LoggingInvocationHandler implements InvocationHandler {
         private final StringBuilder sb;
 
@@ -515,6 +532,24 @@ public class ProxyTest {
         void foo() throws IOException;
         
         void bar();
+    }
+
+    @Proxiable
+    public interface I {
+        Object NONE = new Object();
+
+        static int twice(int x) {
+            return x * 2;
+        }
+
+        void foo();
+
+        default void bar() {
+            helper();
+        }
+
+        private void helper() {
+        }
     }
 
     public static class NonInterface {
