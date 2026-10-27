@@ -162,11 +162,16 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public V put(K key, V value) {
+        // As in the JDK, only a structural change (a new key) counts as a modification. Replacing the value of an
+        // existing key leaves modCount, so an iterator that runs meanwhile (for example, putAll of a map into
+        // itself) does not throw ConcurrentModificationException.
+        int sizeBefore = root != null ? root.size : 0;
         root = getOrCreateNode(root, key);
         TreeNode<?, V> node = findExact(key);
         V old = node.setValue(value);
-        node.setValue(value);
-        modCount++;
+        if (root.size != sizeBefore) {
+            modCount++;
+        }
         return old;
     }
 
