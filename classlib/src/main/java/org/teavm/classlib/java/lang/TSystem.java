@@ -200,7 +200,7 @@ public final class TSystem extends TObject {
             defaults.put("file.separator", VirtualFileSystemProvider.getInstance().isWindows() ? "\\" : "/");
             defaults.put("path.separator", VirtualFileSystemProvider.getInstance().isWindows() ? ";" : ":");
             defaults.put("line.separator", lineSeparator());
-            defaults.put("java.io.tmpdir", getTempDir());
+            defaults.put("java.io.tmpdir", defaultTempDir());
             defaults.put("java.vm.version", "21");
             defaults.put("user.home", getHomeDir());
             // More properties that the JDK always defines. Code saves and restores them with System.setProperty,
@@ -223,13 +223,16 @@ public final class TSystem extends TObject {
         }
     }
 
+    // File.createTempFile and Files.createTempFile read java.io.tmpdir on every call. The JDK reads it once, at
+    // startup, which its Javadoc allows: "programmatic changes to this property are not guaranteed to have any
+    // effect". A TeaVM program has no command line to set the property on, so System.setProperty is the only way.
     public static String getTempDir() {
-        if (!PlatformDetector.isC()) {
-            return "/tmp";
-        }
-        Address resultPtr = Memory.malloc(Address.sizeOf());
-        int length = CFileSystem.tempDirectory(resultPtr);
-        return VirtualFileSystemProvider.getInstance().canonicalize(toJavaString(resultPtr, length));
+        String dir = getProperty("java.io.tmpdir");
+        return dir != null ? dir : defaultTempDir();
+    }
+
+    private static String defaultTempDir() {
+        return VirtualFileSystemProvider.getInstance().tempDirectory();
     }
 
     private static String getHomeDir() {
