@@ -17,6 +17,7 @@ package org.teavm.classlib.java.text;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -27,7 +28,9 @@ import java.util.Locale;
 import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
+import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 public class SimpleDateFormatTest {
@@ -228,6 +231,154 @@ public class SimpleDateFormatTest {
                 assertEquals(20, position.getErrorIndex(), text);
             }
         }
+    }
+
+    @Test
+    public void numericGeneralTimeZoneHoursOver23Rejected() {
+        assertNotParsed("yyyy-MM-dd HH:mm:ss z", "2014-06-24 09:33:49 GMT+24:00");
+    }
+
+    @Test
+    public void numericGeneralTimeZoneMinutesOver59Rejected() {
+        assertNotParsed("yyyy-MM-dd HH:mm:ss z", "2014-06-24 09:33:49 GMT+05:60");
+    }
+
+    @Test
+    public void rfc822TimeZoneHoursOver23Rejected() {
+        assertNotParsed("yyyy-MM-dd HH:mm:ss Z", "2014-06-24 09:33:49 +2400");
+    }
+
+    @Test
+    public void rfc822TimeZoneMinutesOver59Rejected() {
+        assertNotParsed("yyyy-MM-dd HH:mm:ss Z", "2014-06-24 09:33:49 +0560");
+    }
+
+    @Test
+    public void iso8601TimeZoneHoursOver23Rejected() {
+        assertNotParsed("yyyy-MM-dd HH:mm:ss XXX", "2014-06-24 09:33:49 +24:00");
+    }
+
+    @Test
+    public void iso8601TimeZoneMinutesOver59Rejected() {
+        assertNotParsed("yyyy-MM-dd HH:mm:ss XXX", "2014-06-24 09:33:49 +05:60");
+    }
+
+    @Test
+    public void largestNumericTimeZoneParsed() {
+        long expected = 1403602429000L - 23 * 3600_000L - 59 * 60_000L;
+        assertEquals(expected, parseFully(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.ENGLISH),
+                "2014-06-24 09:33:49 GMT+23:59"));
+        assertEquals(expected, parseFully(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.ENGLISH),
+                "2014-06-24 09:33:49 +2359"));
+        assertEquals(expected, parseFully(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss XXX", Locale.ENGLISH),
+                "2014-06-24 09:33:49 +23:59"));
+    }
+
+    // Exhaustive sweep over two-digit hours and minutes for every numeric zone form. The JDK's
+    // SimpleDateFormat accepts a numeric zone only when hours <= 23 and minutes <= 59, and then the
+    // offset is sign * (hours * 60 + minutes) minutes.
+    // Skipped on C: this many parses (each clones a Calendar and its TimeZone) makes the C runtime's GC
+    // hang in markFromOldGeneration or crash with SIGSEGV. That happens with or without the range checks
+    // under test, so it is a separate C GC bug; the targeted tests above still run on C.
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void numericTimeZoneRangeSweep() {
+        // One format per pattern, and messages built only on failure, to keep allocation low.
+        var sweep = new ZoneSweep();
+        for (int hours = 0; hours <= 99; ++hours) {
+            for (int minutes : new int[] { 0, 1, 59, 60, 99 }) {
+                sweep.checkAllForms(hours, minutes);
+            }
+        }
+        for (int minutes = 0; minutes <= 99; ++minutes) {
+            for (int hours : new int[] { 0, 1, 23, 24, 99 }) {
+                sweep.checkAllForms(hours, minutes);
+            }
+        }
+        assertEquals(0, sweep.failures, sweep.firstFailure);
+    }
+
+    private static class ZoneSweep {
+        private static final String PREFIX = "2014-06-24 09:33:49 ";
+        private final SimpleDateFormat general = format("z");
+        private final SimpleDateFormat rfc822 = format("Z");
+        private final SimpleDateFormat iso1 = format("X");
+        private final SimpleDateFormat iso2 = format("XX");
+        private final SimpleDateFormat iso3 = format("XXX");
+        private final ParsePosition position = new ParsePosition(0);
+        int failures;
+        String firstFailure;
+
+        private static SimpleDateFormat format(String zonePattern) {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss " + zonePattern, Locale.ENGLISH);
+        }
+
+        void checkAllForms(int hours, int minutes) {
+            String hh = twoDigits(hours);
+            String mm = twoDigits(minutes);
+            for (char sign : new char[] { '+', '-' }) {
+                check(general, "GMT" + sign + hh + ":" + mm, sign, hours, minutes);
+                if (hours <= 9) {
+                    check(general, "GMT" + sign + hours + ":" + mm, sign, hours, minutes);
+                }
+                check(rfc822, sign + hh + mm, sign, hours, minutes);
+                check(iso1, sign + hh, sign, hours, 0);
+                check(iso2, sign + hh + mm, sign, hours, minutes);
+                check(iso3, sign + hh + ":" + mm, sign, hours, minutes);
+            }
+        }
+
+        private void check(SimpleDateFormat format, String zone, char sign, int hours, int minutes) {
+            String text = PREFIX + zone;
+            position.setIndex(0);
+            position.setErrorIndex(-1);
+            Date date = format.parse(text, position);
+            boolean ok;
+            if (hours <= 23 && minutes <= 59) {
+                long offset = (sign == '-' ? -1 : 1) * (hours * 3600_000L + minutes * 60_000L);
+                ok = date != null && position.getErrorIndex() == -1 && position.getIndex() == text.length()
+                        && date.getTime() == 1403602429000L - offset;
+            } else {
+                ok = date == null && position.getErrorIndex() >= 0;
+            }
+            if (!ok && failures++ == 0) {
+                firstFailure = format.toPattern() + " / " + text + ": date=" + date
+                        + ", errorIndex=" + position.getErrorIndex() + ", index=" + position.getIndex();
+            }
+        }
+    }
+
+    // DateFormat.parse(String, ParsePosition): "If an error occurs, then ... the error index of pos is set
+    // to the index of the character where the error occurred, and null is returned." Parsing must therefore
+    // never throw, whatever prefix of a valid text it is given.
+    @Test
+    public void truncatedNumericTimeZoneNeverThrows() {
+        String[][] cases = {
+                { "z", "GMT+05:30" }, { "Z", "+0530" }, { "X", "+05" }, { "XX", "+0530" }, { "XXX", "+05:30" },
+                { "XXX", "Z" }
+        };
+        for (String[] c : cases) {
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss " + c[0], Locale.ENGLISH);
+            String full = "2014-06-24 09:33:49 " + c[1];
+            for (int length = "2014-06-24 09:33:49".length(); length <= full.length(); ++length) {
+                String text = full.substring(0, length);
+                ParsePosition position = new ParsePosition(0);
+                Date date = format.parse(text, position);
+                if (date == null) {
+                    assertTrue(position.getErrorIndex() >= 0, c[0] + " / " + text);
+                }
+            }
+        }
+    }
+
+    static String twoDigits(int value) {
+        return value < 10 ? "0" + value : String.valueOf(value);
+    }
+
+    private void assertNotParsed(String pattern, String text) {
+        ParsePosition position = new ParsePosition(0);
+        assertNull(new SimpleDateFormat(pattern, Locale.ENGLISH).parse(text, position), text);
+        assertTrue(position.getErrorIndex() >= 0, text);
     }
 
     private long parseFully(SimpleDateFormat format, String text) {
