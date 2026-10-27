@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.nio.charset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
@@ -112,6 +114,67 @@ public class UTF16Test {
         CharsetTestCommon.checkMalformed(StandardCharsets.UTF_16BE, CharsetTestCommon.hexToBytes("D800D800"), 4);
         CharsetTestCommon.checkMalformed(StandardCharsets.UTF_16BE, CharsetTestCommon.hexToBytes("D8000041"), 4);
         CharsetTestCommon.checkMalformed(StandardCharsets.UTF_16BE, CharsetTestCommon.hexToBytes("DC00D800"), 2);
+    }
+
+    @Test
+    public void decodeSurrogatePairAtEndOfInput() {
+        assertEquals("a😀", new String(CharsetTestCommon.hexToBytes("0061D83DDE00"),
+                StandardCharsets.UTF_16BE));
+        assertEquals("a😀", new String(CharsetTestCommon.hexToBytes("61003DD800DE"),
+                StandardCharsets.UTF_16LE));
+    }
+
+    // CharsetEncoder(Charset, float, float, byte[]): the replacement "must be legal", and the single byte '?' is not
+    // a legal UTF-16 sequence. The JDK's UTF-16 encoders replace with U+FFFD in their byte order.
+    @Test
+    public void encodeLoneSurrogateAsReplacementCharacter() {
+        assertEquals("0061FFFD0062", CharsetTestCommon.bytesToHex("a\uD800b".getBytes(StandardCharsets.UTF_16BE)));
+        assertEquals("6100FDFF6200", CharsetTestCommon.bytesToHex("a\uDC00b".getBytes(StandardCharsets.UTF_16LE)));
+    }
+
+    // Bytes that form ASCII units, both halves of a surrogate pair, and odd-length input.
+    private static final int[] BYTES = { 0x00, 0x41, 0xD8, 0xDB, 0xDC, 0xDF };
+
+    @Test
+    public void decodeEveryShortSequenceAsJdk() {
+        CharsetDecoder decoderBE = CharsetTestCommon.replacingDecoder(StandardCharsets.UTF_16BE);
+        CharsetDecoder decoderLE = CharsetTestCommon.replacingDecoder(StandardCharsets.UTF_16LE);
+        CharsetTestCommon.forEachSequence(BYTES, 6, sequence -> {
+            byte[] input = CharsetTestCommon.toBytes(sequence);
+            CharsetTestCommon.checkDecode(decoderBE, input, CharsetTestCommon.referenceDecodeUtf16(input, false));
+            CharsetTestCommon.checkDecode(decoderLE, input, CharsetTestCommon.referenceDecodeUtf16(input, true));
+        });
+    }
+
+    @Test
+    public void decodeAcrossEndOfInternalBuffer() {
+        CharsetDecoder decoder = CharsetTestCommon.replacingDecoder(StandardCharsets.UTF_16BE);
+        CharsetTestCommon.forEachSequence(BYTES, 5, sequence -> {
+            byte[] input = CharsetTestCommon.toBytes(sequence);
+            CharsetTestCommon.checkDecodeAfterPrefix(decoder, input,
+                    CharsetTestCommon.referenceDecodeUtf16(input, false), 2);
+        });
+    }
+
+    @Test
+    public void encodeEveryShortSequenceAsJdk() {
+        CharsetEncoder encoderBE = CharsetTestCommon.replacingEncoder(StandardCharsets.UTF_16BE);
+        CharsetEncoder encoderLE = CharsetTestCommon.replacingEncoder(StandardCharsets.UTF_16LE);
+        CharsetTestCommon.forEachSequence(CharsetTestCommon.CHARS, 5, sequence -> {
+            String input = CharsetTestCommon.toChars(sequence);
+            CharsetTestCommon.checkEncode(encoderBE, input, CharsetTestCommon.referenceEncodeUtf16(input, false));
+            CharsetTestCommon.checkEncode(encoderLE, input, CharsetTestCommon.referenceEncodeUtf16(input, true));
+        });
+    }
+
+    @Test
+    public void encodeAcrossEndOfInternalBuffer() {
+        CharsetEncoder encoder = CharsetTestCommon.replacingEncoder(StandardCharsets.UTF_16BE);
+        CharsetTestCommon.forEachSequence(CharsetTestCommon.CHARS, 3, sequence -> {
+            String input = CharsetTestCommon.toChars(sequence);
+            CharsetTestCommon.checkEncodeAfterPrefix(encoder, input,
+                    CharsetTestCommon.referenceEncodeUtf16(input, false), 2);
+        });
     }
 
     private void runEncode(int inSize, int outSize) {

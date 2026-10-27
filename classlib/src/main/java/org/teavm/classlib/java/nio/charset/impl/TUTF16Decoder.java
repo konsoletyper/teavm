@@ -66,7 +66,7 @@ public class TUTF16Decoder extends TBufferedDecoder {
         TCoderResult result = null;
         while (inPos < inSize && outPos < outSize) {
             if (inPos + 2 > inSize) {
-                if (!controller.hasMoreInput(2)) {
+                if (!controller.hasMoreInput()) {
                     result = TCoderResult.UNDERFLOW;
                 }
                 break;
@@ -75,8 +75,8 @@ public class TUTF16Decoder extends TBufferedDecoder {
             int b2 = inArray[inPos++] & 0xFF;
             char c = (char) (b1 | (b2 << 8));
             if (Character.isHighSurrogate(c)) {
-                if (inPos + 2 >= inSize) {
-                    if (!controller.hasMoreInput(4)) {
+                if (inPos + 2 > inSize) {
+                    if (!controller.hasMoreInput()) {
                         result = TCoderResult.UNDERFLOW;
                     }
                     inPos -= 2;
@@ -91,6 +91,7 @@ public class TUTF16Decoder extends TBufferedDecoder {
                     break;
                 } else {
                     if (outPos + 2 > outSize) {
+                        inPos -= 4;
                         if (!controller.hasMoreOutput(2)) {
                             result = TCoderResult.OVERFLOW;
                         }
@@ -118,7 +119,7 @@ public class TUTF16Decoder extends TBufferedDecoder {
         TCoderResult result = null;
         while (inPos < inSize && outPos < outSize) {
             if (inPos + 2 > inSize) {
-                if (!controller.hasMoreInput(2)) {
+                if (!controller.hasMoreInput()) {
                     result = TCoderResult.UNDERFLOW;
                 }
                 break;
@@ -127,8 +128,8 @@ public class TUTF16Decoder extends TBufferedDecoder {
             int b2 = inArray[inPos++] & 0xFF;
             char c = (char) (b2 | (b1 << 8));
             if (Character.isHighSurrogate(c)) {
-                if (inPos + 2 >= inSize) {
-                    if (!controller.hasMoreInput(4)) {
+                if (inPos + 2 > inSize) {
+                    if (!controller.hasMoreInput()) {
                         result = TCoderResult.UNDERFLOW;
                     }
                     inPos -= 2;
@@ -143,6 +144,7 @@ public class TUTF16Decoder extends TBufferedDecoder {
                     break;
                 } else {
                     if (outPos + 2 > outSize) {
+                        inPos -= 4;
                         if (!controller.hasMoreOutput(2)) {
                             result = TCoderResult.OVERFLOW;
                         }

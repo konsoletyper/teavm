@@ -16,13 +16,16 @@
 package org.teavm.classlib.java.nio.charset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 final class CharsetTestCommon {
     private static char[] hexDigits = "0123456789ABCDEF".toCharArray();
@@ -203,5 +206,371 @@ final class CharsetTestCommon {
         assertEquals(CoderResult.malformedForLength(length), coderResult);
         assertEquals(0, input.position());
         assertEquals(0, output.position());
+    }
+
+    // The checks below feed the same input to a coder in several ways. CharsetDecoder.decode(ByteBuffer, CharBuffer,
+    // boolean) says that "care should be taken to preserve any bytes remaining in the input buffer so that they are
+    // available to the next invocation", and CharsetEncoder.encode has the same rule for characters. So the result
+    // must not depend on how the input is split into chunks, or on how small the output buffer is. TeaVM's coders
+    // also copy their input into a 512-element array, so the checks with a prefix place the input across the end of
+    // that array, in a single call with endOfInput set.
+
+    /** Characters of each UTF-8 length and both halves of a surrogate pair, at the edges of their ranges. */
+    static final int[] CHARS = { 'a', 0xE9, 0x100, 0x20AC, 0xD800, 0xDBFF, 0xDC00, 0xDFFF };
+
+    static CharsetDecoder replacingDecoder(Charset charset) {
+        return charset.newDecoder().onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+    }
+
+    static CharsetEncoder replacingEncoder(Charset charset) {
+        return charset.newEncoder().onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+    }
+
+    static void checkDecode(CharsetDecoder decoder, byte[] input, String expected) {
+        String context = bytesToHex(input);
+        assertEquals(escape(expected), escape(decodeAtOnce(decoder, input)), "decoded at once: " + context);
+        assertEquals(escape(expected), escape(decodeByteByByte(decoder, input)), "decoded byte by byte: " + context);
+        assertEquals(escape(expected), escape(decodeToSmallBuffer(decoder, input)),
+                "decoded to a small buffer: " + context);
+    }
+
+    /** Decodes the input after 508 to 512 bytes of 0x61 (one char per bytesPerPrefixChar bytes), in one call. */
+    static void checkDecodeAfterPrefix(CharsetDecoder decoder, byte[] input, String expected,
+            int bytesPerPrefixChar) {
+        for (int length = 508; length <= 512; length += bytesPerPrefixChar) {
+            byte[] data = new byte[length + input.length];
+            Arrays.fill(data, 0, length, (byte) 'a');
+            System.arraycopy(input, 0, data, length, input.length);
+            String actual = decodeAtOnce(decoder, data);
+            int start = Math.min(length / bytesPerPrefixChar, actual.length());
+            assertEquals(escape(expected), escape(actual.substring(start)),
+                    bytesToHex(input) + " after " + length + " bytes");
+        }
+    }
+
+    private static String decodeAtOnce(CharsetDecoder decoder, byte[] input) {
+        decoder.reset();
+        ByteBuffer in = ByteBuffer.wrap(input);
+        CharBuffer out = CharBuffer.allocate(input.length + 4);
+        assertEquals(CoderResult.UNDERFLOW, decoder.decode(in, out, true));
+        assertEquals(CoderResult.UNDERFLOW, decoder.flush(out));
+        out.flip();
+        return out.toString();
+    }
+
+    private static String decodeByteByByte(CharsetDecoder decoder, byte[] input) {
+        decoder.reset();
+        ByteBuffer in = ByteBuffer.wrap(input);
+        CharBuffer out = CharBuffer.allocate(input.length + 4);
+        for (int i = 0; i <= input.length; ++i) {
+            in.limit(i);
+            assertEquals(CoderResult.UNDERFLOW, decoder.decode(in, out, false));
+        }
+        assertEquals(CoderResult.UNDERFLOW, decoder.decode(in, out, true));
+        assertEquals(CoderResult.UNDERFLOW, decoder.flush(out));
+        out.flip();
+        return out.toString();
+    }
+
+    private static String decodeToSmallBuffer(CharsetDecoder decoder, byte[] input) {
+        decoder.reset();
+        ByteBuffer in = ByteBuffer.wrap(input);
+        CharBuffer out = CharBuffer.allocate(2);
+        StringBuilder sb = new StringBuilder();
+        while (true) {
+            int start = in.position();
+            CoderResult result = decoder.decode(in, out, true);
+            boolean progress = in.position() > start || out.position() > 0;
+            out.flip();
+            sb.append(out);
+            out.clear();
+            if (result.isUnderflow()) {
+                break;
+            }
+            assertEquals(CoderResult.OVERFLOW, result);
+            assertTrue(progress, "no progress decoding " + bytesToHex(input));
+        }
+        assertEquals(CoderResult.UNDERFLOW, decoder.flush(out));
+        return sb.toString();
+    }
+
+    static void checkEncode(CharsetEncoder encoder, String input, byte[] expected) {
+        String context = escape(input);
+        assertEquals(bytesToHex(expected), bytesToHex(encodeAtOnce(encoder, input)), "encoded at once: " + context);
+        assertEquals(bytesToHex(expected), bytesToHex(encodeCharByChar(encoder, input)),
+                "encoded char by char: " + context);
+        assertEquals(bytesToHex(expected), bytesToHex(encodeToSmallBuffer(encoder, input)),
+                "encoded to a small buffer: " + context);
+    }
+
+    /** Encodes the input after 508 to 512 ASCII characters, in one call. */
+    static void checkEncodeAfterPrefix(CharsetEncoder encoder, String input, byte[] expected, int bytesPerPrefixChar) {
+        for (int length = 508; length <= 512; ++length) {
+            char[] prefix = new char[length];
+            Arrays.fill(prefix, 'a');
+            byte[] actual = encodeAtOnce(encoder, new String(prefix) + input);
+            int start = Math.min(length * bytesPerPrefixChar, actual.length);
+            assertEquals(bytesToHex(expected), bytesToHex(Arrays.copyOfRange(actual, start, actual.length)),
+                    escape(input) + " after " + length + " chars");
+        }
+    }
+
+    private static byte[] encodeAtOnce(CharsetEncoder encoder, String input) {
+        encoder.reset();
+        CharBuffer in = CharBuffer.wrap(input);
+        ByteBuffer out = ByteBuffer.allocate(input.length() * 4 + 4);
+        assertEquals(CoderResult.UNDERFLOW, encoder.encode(in, out, true));
+        assertEquals(CoderResult.UNDERFLOW, encoder.flush(out));
+        return Arrays.copyOf(out.array(), out.position());
+    }
+
+    private static byte[] encodeCharByChar(CharsetEncoder encoder, String input) {
+        encoder.reset();
+        CharBuffer in = CharBuffer.wrap(input);
+        ByteBuffer out = ByteBuffer.allocate(input.length() * 4 + 4);
+        for (int i = 0; i <= input.length(); ++i) {
+            in.limit(i);
+            assertEquals(CoderResult.UNDERFLOW, encoder.encode(in, out, false));
+        }
+        assertEquals(CoderResult.UNDERFLOW, encoder.encode(in, out, true));
+        assertEquals(CoderResult.UNDERFLOW, encoder.flush(out));
+        return Arrays.copyOf(out.array(), out.position());
+    }
+
+    private static byte[] encodeToSmallBuffer(CharsetEncoder encoder, String input) {
+        encoder.reset();
+        CharBuffer in = CharBuffer.wrap(input);
+        ByteBuffer out = ByteBuffer.allocate(4);
+        byte[] result = new byte[0];
+        while (true) {
+            int inStart = in.position();
+            CoderResult coderResult = encoder.encode(in, out, true);
+            assertTrue(coderResult.isUnderflow() || in.position() > inStart || out.position() > 0,
+                    "no progress encoding " + escape(input));
+            int start = result.length;
+            result = Arrays.copyOf(result, start + out.position());
+            System.arraycopy(out.array(), 0, result, start, out.position());
+            out.clear();
+            if (coderResult.isUnderflow()) {
+                break;
+            }
+            assertEquals(CoderResult.OVERFLOW, coderResult);
+        }
+        assertEquals(CoderResult.UNDERFLOW, encoder.flush(out));
+        return result;
+    }
+
+    /** Calls the action with every sequence of 1 to maxLength elements of the alphabet. */
+    static void forEachSequence(int[] alphabet, int maxLength, Consumer<int[]> action) {
+        for (int length = 1; length <= maxLength; ++length) {
+            int[] indexes = new int[length];
+            int[] sequence = new int[length];
+            while (true) {
+                for (int i = 0; i < length; ++i) {
+                    sequence[i] = alphabet[indexes[i]];
+                }
+                action.accept(sequence);
+                int i = length - 1;
+                while (i >= 0 && ++indexes[i] == alphabet.length) {
+                    indexes[i--] = 0;
+                }
+                if (i < 0) {
+                    break;
+                }
+            }
+        }
+    }
+
+    static byte[] toBytes(int[] values) {
+        byte[] result = new byte[values.length];
+        for (int i = 0; i < values.length; ++i) {
+            result[i] = (byte) values[i];
+        }
+        return result;
+    }
+
+    static String toChars(int[] values) {
+        char[] result = new char[values.length];
+        for (int i = 0; i < values.length; ++i) {
+            result[i] = (char) values[i];
+        }
+        return new String(result);
+    }
+
+    /**
+     * Encodes as the JDK does with the '?' replacement: a surrogate pair is one code point, any other surrogate is
+     * malformed, and a code point at or above the limit is unmappable.
+     */
+    static byte[] referenceEncode(String input, int limit, boolean utf8) {
+        byte[] result = new byte[input.length() * 4];
+        int length = 0;
+        for (int i = 0; i < input.length(); ++i) {
+            int c = input.charAt(i);
+            if (Character.isHighSurrogate((char) c) && i + 1 < input.length()
+                    && Character.isLowSurrogate(input.charAt(i + 1))) {
+                c = Character.toCodePoint((char) c, input.charAt(++i));
+            } else if (Character.isSurrogate((char) c)) {
+                result[length++] = '?';
+                continue;
+            }
+            if (c >= limit) {
+                result[length++] = '?';
+            } else if (!utf8 || c < 0x80) {
+                result[length++] = (byte) c;
+            } else if (c < 0x800) {
+                result[length++] = (byte) (0xC0 | (c >> 6));
+                result[length++] = (byte) (0x80 | (c & 0x3F));
+            } else if (c < 0x10000) {
+                result[length++] = (byte) (0xE0 | (c >> 12));
+                result[length++] = (byte) (0x80 | ((c >> 6) & 0x3F));
+                result[length++] = (byte) (0x80 | (c & 0x3F));
+            } else {
+                result[length++] = (byte) (0xF0 | (c >> 18));
+                result[length++] = (byte) (0x80 | ((c >> 12) & 0x3F));
+                result[length++] = (byte) (0x80 | ((c >> 6) & 0x3F));
+                result[length++] = (byte) (0x80 | (c & 0x3F));
+            }
+        }
+        return Arrays.copyOf(result, length);
+    }
+
+    /**
+     * Encodes UTF-16 as the JDK does (sun.nio.cs.UnicodeEncoder): a surrogate that is not part of a pair is
+     * malformed, and the replacement is U+FFFD in the byte order of the charset.
+     */
+    static byte[] referenceEncodeUtf16(String input, boolean littleEndian) {
+        byte[] result = new byte[input.length() * 2];
+        int length = 0;
+        for (int i = 0; i < input.length(); ++i) {
+            char c = input.charAt(i);
+            if (Character.isHighSurrogate(c) && i + 1 < input.length()
+                    && Character.isLowSurrogate(input.charAt(i + 1))) {
+                length = putUtf16Unit(result, length, c, littleEndian);
+                c = input.charAt(++i);
+            } else if (Character.isSurrogate(c)) {
+                c = '�';
+            }
+            length = putUtf16Unit(result, length, c, littleEndian);
+        }
+        return Arrays.copyOf(result, length);
+    }
+
+    private static int putUtf16Unit(byte[] output, int index, char c, boolean littleEndian) {
+        output[index++] = (byte) (littleEndian ? c : c >> 8);
+        output[index++] = (byte) (littleEndian ? c >> 8 : c);
+        return index;
+    }
+
+    /**
+     * Decodes UTF-8 as the JDK does (sun.nio.cs.UTF_8): each maximal subpart of an ill-formed sequence becomes one
+     * U+FFFD, as the Unicode Standard recommends (chapter 3, "U+FFFD Substitution of Maximal Subparts"). So overlong
+     * forms and code points above U+10FFFF are malformed. One difference: the JDK takes any continuation byte after
+     * ED, and rejects the encoded surrogate only after the third byte, so ED A0 80 is a single malformed sequence.
+     */
+    static String referenceDecodeUtf8(byte[] input) {
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while (i < input.length) {
+            int b = input[i] & 0xFF;
+            int trailing;
+            int secondMin = 0x80;
+            int secondMax = 0xBF;
+            if (b < 0x80) {
+                sb.append((char) b);
+                ++i;
+                continue;
+            } else if (b >= 0xC2 && b <= 0xDF) {
+                trailing = 1;
+            } else if (b >= 0xE0 && b <= 0xEF) {
+                trailing = 2;
+                if (b == 0xE0) {
+                    secondMin = 0xA0;
+                }
+            } else if (b >= 0xF0 && b <= 0xF4) {
+                trailing = 3;
+                if (b == 0xF0) {
+                    secondMin = 0x90;
+                } else if (b == 0xF4) {
+                    secondMax = 0x8F;
+                }
+            } else {
+                sb.append('�');
+                ++i;
+                continue;
+            }
+            int code = b & (0x3F >> trailing);
+            int read = 0;
+            while (read < trailing && i + 1 + read < input.length) {
+                int next = input[i + 1 + read] & 0xFF;
+                if (next < (read == 0 ? secondMin : 0x80) || next > (read == 0 ? secondMax : 0xBF)) {
+                    break;
+                }
+                code = (code << 6) | (next & 0x3F);
+                ++read;
+            }
+            if (read < trailing || (code >= 0xD800 && code <= 0xDFFF)) {
+                sb.append('�');
+            } else {
+                sb.appendCodePoint(code);
+            }
+            i += 1 + read;
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Decodes UTF-16 as the JDK does (sun.nio.cs.UnicodeDecoder): a high surrogate followed by a unit that is not
+     * a low surrogate is one malformed sequence of four bytes, a lone low surrogate is malformed, and an incomplete
+     * unit or pair at the end of the input becomes one U+FFFD.
+     */
+    static String referenceDecodeUtf16(byte[] input, boolean littleEndian) {
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while (i < input.length) {
+            if (input.length - i < 2) {
+                sb.append('�');
+                break;
+            }
+            char c = utf16Unit(input, i, littleEndian);
+            if (Character.isHighSurrogate(c)) {
+                if (input.length - i < 4) {
+                    sb.append('�');
+                    break;
+                }
+                char next = utf16Unit(input, i + 2, littleEndian);
+                if (Character.isLowSurrogate(next)) {
+                    sb.append(c).append(next);
+                } else {
+                    sb.append('�');
+                }
+                i += 4;
+            } else {
+                sb.append(Character.isLowSurrogate(c) ? '�' : c);
+                i += 2;
+            }
+        }
+        return sb.toString();
+    }
+
+    private static char utf16Unit(byte[] input, int index, boolean littleEndian) {
+        int first = input[index] & 0xFF;
+        int second = input[index + 1] & 0xFF;
+        return (char) (littleEndian ? first | (second << 8) : (first << 8) | second);
+    }
+
+    static String escape(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); ++i) {
+            char c = s.charAt(i);
+            if (c >= 0x20 && c < 0x7F) {
+                sb.append(c);
+            } else {
+                sb.append("\\u").append(hexDigits[c >> 12]).append(hexDigits[(c >> 8) & 0xF])
+                        .append(hexDigits[(c >> 4) & 0xF]).append(hexDigits[c & 0xF]);
+            }
+        }
+        return sb.toString();
     }
 }
