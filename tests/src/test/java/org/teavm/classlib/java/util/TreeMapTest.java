@@ -620,6 +620,23 @@ public class TreeMapTest {
     }
 
     @Test
+    public void descendingComparatorReversesNaturalOrdering() {
+        // NavigableMap.descendingMap: "The returned map has an ordering equivalent to
+        // Collections.reverseOrder(comparator())."
+        var map = new TreeMap<Integer, String>();
+        Comparator<? super Integer> descending = map.descendingMap().comparator();
+        assertTrue(descending.compare(1, 2) > 0);
+        assertTrue(descending.compare(2, 1) < 0);
+        assertEquals(0, descending.compare(1, 1));
+        Comparator<? super Integer> descendingKeys = new TreeSet<Integer>().descendingSet().comparator();
+        assertTrue(descendingKeys.compare(1, 2) > 0);
+        // A comparator that returns Integer.MIN_VALUE must still reverse.
+        Comparator<Integer> extreme = (a, b) -> a < b ? Integer.MIN_VALUE : a > b ? 1 : 0;
+        var custom = new TreeMap<Integer, String>(extreme);
+        assertTrue(custom.descendingMap().comparator().compare(1, 2) > 0);
+    }
+
+    @Test
     public void submapReversed() {
         NavigableMap<Integer, String> map = createMapOfEvenNumbers();
         NavigableMap<Integer, String> reversedMap = map.subMap(100, true, 201, true).descendingMap();
