@@ -713,8 +713,6 @@ public class VMTest {
     }
 
     @Test
-    @Disabled("Known gap: a handler phi misses the version a parameter had before its null or bound check "
-            + "(PhiUpdater, fixed separately by PR #8)")
     public void exceptionPathChecksParameters() {
         for (var fail : new boolean[] { false, true }) {
             try {
