@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.WasmGCFunctionSplitter;
 import org.teavm.backend.wasm.generate.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
@@ -103,7 +104,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private Queue<Runnable> queue = new ArrayDeque<>();
     private ObjectIntMap<FieldReference> fieldIndexes = new ObjectIntHashMap<>();
     private Map<FieldReference, WasmGlobal> staticFieldLocations = new HashMap<>();
-    private List<Consumer<WasmFunction>> staticFieldInitializers = new ArrayList<>();
+    private List<Consumer<WasmInstructionBuilder>> staticFieldInitializers = new ArrayList<>();
     private ClassInitializerInfo classInitializerInfo;
     private ObjectByteHashMap<String> heapStructures = new ObjectByteHashMap<>();
     private Set<MethodReference> asyncSplitMethods;
@@ -113,7 +114,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private final ReflectionTypes reflectionTypes;
     public final WasmGCTypeMapper typeMapper;
     private final WasmGCNameProvider names;
-    private WasmInstructionBuilder initializerFunctionStatements = new WasmInstructionList().builder();
+    private List<WasmInstructionList> classInitializers = new ArrayList<>();
     private WasmFunction createPrimitiveClassFunction;
     private WasmFunction getArrayClassFunction;
     private WasmFunction fillArrayClassFunction;
@@ -256,10 +257,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     @Override
     public void contributeToInitializer(WasmFunction function) {
-        var builder = function.getBody().builder();
-        builder.transferFrom(initializerFunctionStatements);
+        var splitter = new WasmGCFunctionSplitter(function, module, functionTypes, names);
+        for (var statements : classInitializers) {
+            splitter.next().transferFrom(statements);
+        }
+        classInitializers.clear();
         var classInfoType = reflectionTypes.classInfo();
         for (var classInfo : classInfoMap.values()) {
+            var builder = splitter.next();
             if (classInfo.supertypeFunction != null) {
                 builder
                         .getGlobal(classInfo.pointer)
@@ -274,7 +279,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
         }
         for (var consumer : staticFieldInitializers) {
-            consumer.accept(function);
+            consumer.accept(splitter.next());
         }
     }
 
@@ -300,7 +305,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             var finalClassInfo = classInfo;
             queue.add(() -> {
                 if (finalClassInfo.initializer != null) {
-                    finalClassInfo.initializer.accept(initializerFunctionStatements);
+                    var statements = new WasmInstructionList();
+                    finalClassInfo.initializer.accept(statements.builder());
+                    classInitializers.add(statements);
                     finalClassInfo.initializer = null;
                 }
             });
@@ -1480,15 +1487,15 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private void dynamicInitialValue(WasmGlobal global, Object value) {
         if (value instanceof String) {
             var constant = strings.getStringConstant((String) value).global;
-            staticFieldInitializers.add(function -> {
-                function.getBody().builder()
+            staticFieldInitializers.add(builder -> {
+                builder
                         .getGlobal(constant)
                         .setGlobal(global);
             });
         } else if (value instanceof ValueType) {
             var constant = getClassInfo((ValueType) value).pointer;
-            staticFieldInitializers.add(function -> {
-                function.getBody().builder()
+            staticFieldInitializers.add(builder -> {
+                builder
                         .getGlobal(constant)
                         .setGlobal(global);
             });

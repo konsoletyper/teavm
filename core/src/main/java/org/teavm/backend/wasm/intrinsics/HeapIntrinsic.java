@@ -33,8 +33,12 @@ public class HeapIntrinsic implements WasmGCInlineIntrinsic {
                 .i32Const(WasmGeneratorUtil.PAGE_SIZE).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.DIV_UNSIGNED)
                 .i32Const(1).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD)
                 .setLocal(pagesVar)
-                .getLocal(pagesVar).memoryGrow().drop()
+                // memory.grow returns -1 when the memory cannot grow (its maximum, or the engine's limit). Then the
+                // result is 0, so Heap sees the failure: (grow != -1) * pages * PAGE_SIZE.
+                .getLocal(pagesVar).memoryGrow()
+                .i32Const(-1).intBinary(WasmIntType.INT32, WasmIntBinaryOperation.NE)
                 .getLocal(pagesVar).i32Const(WasmGeneratorUtil.PAGE_SIZE)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL)
                 .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL);
 
         context.tempVars().release(pagesVar);

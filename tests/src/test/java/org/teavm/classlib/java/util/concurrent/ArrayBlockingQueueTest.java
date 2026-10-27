@@ -21,12 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.teavm.classlib.support.GCSupport;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTest;
 
@@ -242,5 +246,103 @@ public class ArrayBlockingQueueTest {
             queue.add(i);
         }
         return queue;
+    }
+
+    @Test
+    public void endedWaitsDoNotKeepThreadsAlive() throws InterruptedException {
+        // Each case waits on its own queue: a change to a queue wakes and removes all of its waiters, which would
+        // hide a dead waiter of an earlier case.
+        var queues = new ArrayList<BlockingQueue<Integer>>();
+        var names = new ArrayList<String>();
+        var refs = new ArrayList<WeakReference<Thread>>();
+        names.add("never waited");
+        refs.add(runWaiter(newQueue(queues, 0), queue -> { }, null));
+        names.add("poll(1 ms) timed out");
+        refs.add(runWaiter(newQueue(queues, 0), queue -> queue.poll(1, TimeUnit.MILLISECONDS), null));
+        names.add("offer(1 ms) timed out");
+        refs.add(runWaiter(newQueue(queues, 1), queue -> queue.offer(2, 1, TimeUnit.MILLISECONDS), null));
+        names.add("a polling loop of timed-out polls");
+        refs.add(runWaiter(newQueue(queues, 0), queue -> {
+            for (var i = 0; i < 5; ++i) {
+                queue.poll(1, TimeUnit.MILLISECONDS);
+            }
+        }, null));
+        // interruptedWaitsDoNotKeepThreadsAlive covers interrupted waits.
+        names.add("take() woken by add()");
+        var queue = newQueue(queues, 0);
+        refs.add(runWaiter(queue, BlockingQueue::take, () -> queue.add(1)));
+        assertAllCollected(refs, names);
+        // The queues must stay reachable until here: a dead waiter in a queue is what kept a thread alive.
+        assertEquals(refs.size(), queues.size());
+    }
+
+    @Test
+    @Disabled("On JS, interrupting a waiting take(), put() or poll() fails with \"Another thread is running\" "
+            + "before the waiter resumes (ethanresnick/teavm#70 fixes this)")
+    public void interruptedWaitsDoNotKeepThreadsAlive() throws InterruptedException {
+        var queues = new ArrayList<BlockingQueue<Integer>>();
+        var names = new ArrayList<String>();
+        var refs = new ArrayList<WeakReference<Thread>>();
+        names.add("take() interrupted");
+        refs.add(runWaiter(newQueue(queues, 0), BlockingQueue::take, INTERRUPT));
+        names.add("put() interrupted");
+        refs.add(runWaiter(newQueue(queues, 1), queue -> queue.put(2), INTERRUPT));
+        names.add("poll(10 s) interrupted");
+        refs.add(runWaiter(newQueue(queues, 0), queue -> queue.poll(10, TimeUnit.SECONDS), INTERRUPT));
+        assertAllCollected(refs, names);
+        assertEquals(refs.size(), queues.size());
+    }
+
+    // A queue of capacity 1 that holds the given number of elements.
+    private static BlockingQueue<Integer> newQueue(List<BlockingQueue<Integer>> queues, int size) {
+        var queue = new ArrayBlockingQueue<Integer>(1);
+        for (var i = 0; i < size; ++i) {
+            queue.add(1);
+        }
+        queues.add(queue);
+        return queue;
+    }
+
+    // A collection that clears one reference usually clears them all, and each tryToTriggerGC call is slow, so
+    // trigger one only for a reference that is still set.
+    private static void assertAllCollected(List<WeakReference<Thread>> refs, List<String> names) {
+        for (var ref : refs) {
+            if (ref.get() != null) {
+                GCSupport.tryToTriggerGC(ref);
+            }
+        }
+        for (var i = 0; i < refs.size(); ++i) {
+            assertNull(refs.get(i).get(), "a thread that ended after " + names.get(i) + " was kept alive");
+        }
+    }
+
+    interface WaitAction {
+        void run(BlockingQueue<Integer> queue) throws InterruptedException;
+    }
+
+    private static final Runnable INTERRUPT = () -> { };
+
+    private static WeakReference<Thread> runWaiter(BlockingQueue<Integer> queue, WaitAction action,
+            Runnable wake) throws InterruptedException {
+        Thread waiter = new Thread(() -> {
+            try {
+                action.run(queue);
+            } catch (InterruptedException e) {
+                // ends the thread
+            }
+        });
+        waiter.start();
+        if (wake != null) {
+            // Gives the waiter time to block.
+            Thread.sleep(50);
+            if (wake == INTERRUPT) {
+                waiter.interrupt();
+            } else {
+                wake.run();
+            }
+        }
+        waiter.join(2000);
+        assertFalse(waiter.isAlive(), "the waiter did not end");
+        return new WeakReference<>(waiter);
     }
 }

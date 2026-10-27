@@ -65,6 +65,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmFunction npeMethod;
     private WasmFunction aaiobeMethod;
     private WasmFunction cceMethod;
+    private WasmFunction naseMethod;
     private WasmTag exceptionTag;
     private Map<String, Set<String>> interfaceImplementors;
     private WasmGCNameProvider names;
@@ -204,6 +205,14 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
                     ClassCastException.class));
         }
         return cceMethod;
+    }
+
+    public WasmFunction naseMethod() {
+        if (naseMethod == null) {
+            naseMethod = functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "nase",
+                    NegativeArraySizeException.class));
+        }
+        return naseMethod;
     }
 
     public WasmModule module() {

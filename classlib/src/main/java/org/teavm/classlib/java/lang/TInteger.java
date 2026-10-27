@@ -159,6 +159,21 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return negative ? -value : value;
     }
 
+    public static int parseUnsignedInt(String s, int radix) throws TNumberFormatException {
+        if (s == null || s.isEmpty() || s.charAt(0) == '-') {
+            throw new TNumberFormatException();
+        }
+        long v = Long.parseLong(s, radix);
+        if ((v >>> 32) != 0) {
+            throw new TNumberFormatException();
+        }
+        return (int) v;
+    }
+
+    public static int parseUnsignedInt(String s) throws TNumberFormatException {
+        return parseUnsignedInt(s, 10);
+    }
+
     public static int parseInt(String s) throws TNumberFormatException {
         return parseInt(s, 10);
     }

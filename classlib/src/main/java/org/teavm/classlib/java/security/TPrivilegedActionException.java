@@ -20,11 +20,13 @@ import org.teavm.classlib.java.lang.TException;
 public class TPrivilegedActionException extends TException {
     TException exception;
 
-    TPrivilegedActionException(TException exception) {
+    // As in the JDK, the exception is also the cause.
+    public TPrivilegedActionException(TException exception) {
+        super(null, exception);
         this.exception = exception;
     }
 
-    TException getException() {
+    public TException getException() {
         return exception;
     }
 }

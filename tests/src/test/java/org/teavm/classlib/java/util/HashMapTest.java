@@ -955,6 +955,36 @@ public class HashMapTest {
         return (HashMap<K, V>) s.clone();
     }
 
+    // HashMap.clone: "Returns a shallow copy of this HashMap instance". The JDK fills the copy directly, so the
+    // copy of a subclass that overrides put or putAll (here, to reject changes) does not go through them.
+    static class FrozenMap extends HashMap<String, String> {
+        boolean frozen;
+
+        @Override
+        public String put(String key, String value) {
+            if (frozen) {
+                throw new UnsupportedOperationException();
+            }
+            return super.put(key, value);
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ? extends String> m) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Test
+    public void cloneDoesNotCallOverriddenPutOrPutAll() {
+        var map = new FrozenMap();
+        map.put("a", "1");
+        map.put("b", "2");
+        map.frozen = true;
+        var clone = (FrozenMap) map.clone();
+        assertEquals(Map.of("a", "1", "b", "2"), clone);
+        assertTrue(clone.frozen);
+    }
+
     static class ReusableKey {
         private int key;
 

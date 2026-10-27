@@ -36,12 +36,25 @@ public class WasmGCSupport {
         return new ClassCastException();
     }
 
+    /** The exception for a negative array length (WasmGCInstructionGenerationVisitor). */
+    public static NegativeArraySizeException nase() {
+        return new NegativeArraySizeException();
+    }
+
     public static void throwCloneNotSupportedException() throws CloneNotSupportedException {
         throw new CloneNotSupportedException();
     }
 
     public static Object defaultClone(Object object) throws CloneNotSupportedException {
         throw new CloneNotSupportedException();
+    }
+
+    public static void failedInitializer() {
+        throw new NoClassDefFoundError();
+    }
+
+    public static Throwable initializerError(Throwable e) {
+        return e instanceof Error ? e : new ExceptionInInitializerError(e);
     }
 
     public static int nextObjectId() {

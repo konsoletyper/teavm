@@ -86,8 +86,17 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
     }
 
     @Rename("clone")
+    @SuppressWarnings("unchecked")
     public TObject clone0() {
-        return new TArrayList<>(this);
+        // As in the JDK, the copy comes from super.clone(), so it has this list's class.
+        try {
+            var result = (TArrayList<E>) super.clone();
+            result.array = Arrays.copyOf(array, size);
+            result.modCount = 0;
+            return result;
+        } catch (TCloneNotSupportedException e) {
+            return null;
+        }
     }
 
     @Override

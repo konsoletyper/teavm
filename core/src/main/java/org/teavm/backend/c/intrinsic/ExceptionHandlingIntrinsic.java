@@ -17,7 +17,9 @@ package org.teavm.backend.c.intrinsic;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.runtime.ExceptionHandling;
+import org.teavm.runtime.RuntimeClass;
 
 public class ExceptionHandlingIntrinsic implements Intrinsic {
     @Override
@@ -32,6 +34,7 @@ public class ExceptionHandlingIntrinsic implements Intrinsic {
             case "jumpToFrame":
             case "abort":
             case "isObfuscated":
+            case "markInitializerFailed":
                 return true;
             default:
                 return false;
@@ -69,6 +72,15 @@ public class ExceptionHandlingIntrinsic implements Intrinsic {
             case "isObfuscated":
                 context.writer().print("TEAVM_OBFUSCATED");
                 break;
+
+            case "markInitializerFailed": {
+                var className = context.callingMethod().getClassName();
+                context.includes().includeClass(className);
+                var cls = "((TeaVM_Class*) &" + context.names().forClassInstance(ValueType.object(className)) + ")";
+                context.writer().print(cls + "->flags = (" + cls + "->flags & ~INT32_C(" + RuntimeClass.INITIALIZED
+                        + ")) | INT32_C(" + RuntimeClass.INITIALIZATION_FAILED + ")");
+                break;
+            }
         }
     }
 }

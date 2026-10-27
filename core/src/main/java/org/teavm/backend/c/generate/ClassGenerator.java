@@ -447,6 +447,10 @@ public class ClassGenerator {
                 new MethodReference(cls.getName(), "<clinit>", ValueType.VOID));
         codeWriter.print("TeaVM_Class* cls = (TeaVM_Class*) &").print(classInstanceName).println(";");
         codeWriter.println("if (!(cls->flags & INT32_C(" + RuntimeClass.INITIALIZED + "))) {").indent();
+        codeWriter.println("if (cls->flags & INT32_C(" + RuntimeClass.INITIALIZATION_FAILED + ")) {").indent();
+        codeWriter.println("teavm_throwNoClassDefFoundError();");
+        codeWriter.println("return;");
+        codeWriter.outdent().println("}");
         codeWriter.println("cls->flags |= INT32_C(" + RuntimeClass.INITIALIZED + ");");
         codeWriter.print(clinitName).println("();");
         codeWriter.outdent().println("}");

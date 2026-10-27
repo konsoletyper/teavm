@@ -29,8 +29,9 @@ public abstract class TClassLoader extends TObject {
     private static TSystemClassLoader systemClassLoader = new TSystemClassLoader();
     private static ResourceContainer resources;
 
+    // As in the JDK, the default parent is the system class loader.
     protected TClassLoader() {
-        this(null);
+        this(getSystemClassLoader());
     }
 
     protected TClassLoader(TClassLoader parent) {
@@ -39,6 +40,63 @@ public abstract class TClassLoader extends TObject {
 
     public TClassLoader getParent() {
         return parent;
+    }
+
+    // TeaVM has one class space, and the system loader finds every class that the compiled program kept; any other
+    // name throws ClassNotFoundException, as a JVM does for a class that is not on the class path. A subclass
+    // delegates as in the JDK: the parent (or, with no parent, the bootstrap classes) first, then findClass.
+    public TClass<?> loadClass(String name) throws TClassNotFoundException {
+        return loadClass(name, false);
+    }
+
+    protected TClass<?> loadClass(String name, boolean resolve) throws TClassNotFoundException {
+        TClass<?> c = null;
+        try {
+            c = parent != null ? parent.loadClass(name, false) : findBootstrapClassOrNull(name);
+        } catch (TClassNotFoundException e) {
+            // As in the JDK: the parent does not have it, so this loader's findClass tries next.
+        }
+        if (c == null) {
+            c = findClass(name);
+        }
+        if (resolve) {
+            resolveClass(c);
+        }
+        return c;
+    }
+
+    protected TClass<?> findClass(String name) throws TClassNotFoundException {
+        throw new TClassNotFoundException();
+    }
+
+    // A loader can not define classes in TeaVM, and the compiled program never resolves a class reference through
+    // a user loader, so no loader is ever recorded as a class's defining or initiating loader.
+    protected final TClass<?> findLoadedClass(String name) {
+        return null;
+    }
+
+    // TeaVM links every class at compile time, so there is nothing left to link.
+    protected final void resolveClass(TClass<?> c) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+    }
+
+    /**
+     * The JDK's bootstrap loader holds the platform classes. Here that is the classes in the JDK's packages, of
+     * those the program kept.
+     */
+    static TClass<?> findBootstrapClassOrNull(String name) {
+        if (!(name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("jdk.")
+                || name.startsWith("sun.") || name.startsWith("com.sun.") || name.startsWith("org.w3c.")
+                || name.startsWith("org.xml.") || name.startsWith("org.ietf."))) {
+            return null;
+        }
+        try {
+            return TClass.forName((TString) (Object) name);
+        } catch (TClassNotFoundException e) {
+            return null;
+        }
     }
 
     public static TClassLoader getSystemClassLoader() {

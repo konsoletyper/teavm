@@ -587,6 +587,395 @@ public final class TCollections extends TObject {
         };
     }
 
+    // The sorted and navigable views. Each view delegates reads and throws UnsupportedOperationException for
+    // writes, as in the JDK; a view of a part of the collection (subSet, headMap, descendingSet, ...) is
+    // unmodifiable too.
+
+    public static <T> TSortedSet<T> unmodifiableSortedSet(TSortedSet<T> s) {
+        return new UnmodifiableSortedSet<>(TObjects.requireNonNull(s));
+    }
+
+    public static <T> TNavigableSet<T> unmodifiableNavigableSet(TNavigableSet<T> s) {
+        return new UnmodifiableNavigableSet<>(TObjects.requireNonNull(s));
+    }
+
+    public static <K, V> TSortedMap<K, V> unmodifiableSortedMap(TSortedMap<K, ? extends V> m) {
+        return new UnmodifiableSortedMap<>(TObjects.requireNonNull(m));
+    }
+
+    public static <K, V> TNavigableMap<K, V> unmodifiableNavigableMap(TNavigableMap<K, ? extends V> m) {
+        return new UnmodifiableNavigableMap<>(TObjects.requireNonNull(m));
+    }
+
+    public static <E> TSortedSet<E> emptySortedSet() {
+        return emptyNavigableSet();
+    }
+
+    public static <E> TNavigableSet<E> emptyNavigableSet() {
+        return new UnmodifiableNavigableSet<>(new TTreeSet<>());
+    }
+
+    public static <K, V> TSortedMap<K, V> emptySortedMap() {
+        return emptyNavigableMap();
+    }
+
+    public static <K, V> TNavigableMap<K, V> emptyNavigableMap() {
+        return new UnmodifiableNavigableMap<>(new TTreeMap<>());
+    }
+
+    public static <T> TSortedSet<T> synchronizedSortedSet(TSortedSet<T> s) {
+        return s;
+    }
+
+    public static <T> TNavigableSet<T> synchronizedNavigableSet(TNavigableSet<T> s) {
+        return s;
+    }
+
+    public static <K, V> TSortedMap<K, V> synchronizedSortedMap(TSortedMap<K, V> m) {
+        return m;
+    }
+
+    public static <K, V> TNavigableMap<K, V> synchronizedNavigableMap(TNavigableMap<K, V> m) {
+        return m;
+    }
+
+    static class UnmodifiableSortedSet<E> extends TTemplateCollections.AbstractImmutableSet<E>
+            implements TSortedSet<E> {
+        private final TSortedSet<E> s;
+
+        UnmodifiableSortedSet(TSortedSet<E> s) {
+            this.s = s;
+        }
+
+        @Override public TIterator<E> iterator() {
+            return unmodifiableIterator(s.iterator());
+        }
+        @Override public int size() {
+            return s.size();
+        }
+        @Override public boolean isEmpty() {
+            return s.isEmpty();
+        }
+        @Override public boolean contains(Object o) {
+            return s.contains(o);
+        }
+        @Override public boolean containsAll(TCollection<?> c) {
+            return s.containsAll(c);
+        }
+        @Override public boolean add(E e) {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public boolean addAll(TCollection<? extends E> c) {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public boolean equals(Object o) {
+            return o == this || s.equals(o);
+        }
+        @Override public int hashCode() {
+            return s.hashCode();
+        }
+        @Override public TComparator<? super E> comparator() {
+            return s.comparator();
+        }
+        @Override public TSortedSet<E> subSet(E fromElement, E toElement) {
+            return new UnmodifiableSortedSet<>(s.subSet(fromElement, toElement));
+        }
+        @Override public TSortedSet<E> headSet(E toElement) {
+            return new UnmodifiableSortedSet<>(s.headSet(toElement));
+        }
+        @Override public TSortedSet<E> tailSet(E fromElement) {
+            return new UnmodifiableSortedSet<>(s.tailSet(fromElement));
+        }
+        @Override public E first() {
+            return s.first();
+        }
+        @Override public E last() {
+            return s.last();
+        }
+        @Override public E removeFirst() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public E removeLast() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public TSortedSet<E> reversed() {
+            return new UnmodifiableSortedSet<>(s.reversed());
+        }
+    }
+
+    static class UnmodifiableNavigableSet<E> extends UnmodifiableSortedSet<E> implements TNavigableSet<E> {
+        private final TNavigableSet<E> ns;
+
+        UnmodifiableNavigableSet(TNavigableSet<E> ns) {
+            super(ns);
+            this.ns = ns;
+        }
+
+        @Override public E lower(E e) {
+            return ns.lower(e);
+        }
+        @Override public E floor(E e) {
+            return ns.floor(e);
+        }
+        @Override public E ceiling(E e) {
+            return ns.ceiling(e);
+        }
+        @Override public E higher(E e) {
+            return ns.higher(e);
+        }
+        @Override public E pollFirst() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public E pollLast() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public TNavigableSet<E> descendingSet() {
+            return new UnmodifiableNavigableSet<>(ns.descendingSet());
+        }
+        @Override public TIterator<E> descendingIterator() {
+            return unmodifiableIterator(ns.descendingIterator());
+        }
+        @Override public TNavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement,
+                boolean toInclusive) {
+            return new UnmodifiableNavigableSet<>(ns.subSet(fromElement, fromInclusive, toElement, toInclusive));
+        }
+        @Override public TNavigableSet<E> headSet(E toElement, boolean inclusive) {
+            return new UnmodifiableNavigableSet<>(ns.headSet(toElement, inclusive));
+        }
+        @Override public TNavigableSet<E> tailSet(E fromElement, boolean inclusive) {
+            return new UnmodifiableNavigableSet<>(ns.tailSet(fromElement, inclusive));
+        }
+        @Override public TNavigableSet<E> reversed() {
+            return descendingSet();
+        }
+    }
+
+    static class UnmodifiableSequencedCollection<E> extends TAbstractCollection<E>
+            implements TSequencedCollection<E> {
+        final TSequencedCollection<? extends E> c;
+
+        UnmodifiableSequencedCollection(TSequencedCollection<? extends E> c) {
+            this.c = c;
+        }
+
+        @Override public TIterator<E> iterator() {
+            return unmodifiableIterator(c.iterator());
+        }
+        @Override public int size() {
+            return c.size();
+        }
+        @Override public boolean isEmpty() {
+            return c.isEmpty();
+        }
+        @Override public boolean contains(Object o) {
+            return c.contains(o);
+        }
+        @Override public boolean add(E e) {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public boolean remove(Object o) {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public void clear() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public E removeFirst() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public E removeLast() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public TSequencedCollection<E> reversed() {
+            return new UnmodifiableSequencedCollection<>(c.reversed());
+        }
+    }
+
+    static class UnmodifiableSequencedSet<E> extends UnmodifiableSequencedCollection<E> implements TSequencedSet<E> {
+        UnmodifiableSequencedSet(TSequencedSet<? extends E> s) {
+            super(s);
+        }
+
+        @Override public boolean equals(Object o) {
+            return o == this || c.equals(o);
+        }
+        @Override public int hashCode() {
+            return c.hashCode();
+        }
+        @Override public TSequencedSet<E> reversed() {
+            return new UnmodifiableSequencedSet<>((TSequencedSet<? extends E>) c.reversed());
+        }
+    }
+
+    /** The entries of an unmodifiable map: each entry's setValue throws. */
+    static class UnmodifiableSequencedEntrySet<K, V> extends UnmodifiableSequencedSet<Entry<K, V>> {
+        private final TSequencedSet<Entry<K, V>> entries;
+
+        UnmodifiableSequencedEntrySet(TSequencedSet<Entry<K, V>> entries) {
+            super(entries);
+            this.entries = entries;
+        }
+
+        @Override public TIterator<Entry<K, V>> iterator() {
+            return unmodifiableMapEntryIterator(entries.iterator());
+        }
+        @Override public TSequencedSet<Entry<K, V>> reversed() {
+            return new UnmodifiableSequencedEntrySet<>(entries.reversed());
+        }
+    }
+
+    static class UnmodifiableSortedMap<K, V> extends TTemplateCollections.AbstractImmutableMap<K, V>
+            implements TSortedMap<K, V> {
+        private final TSortedMap<K, ? extends V> m;
+        private TSet<Entry<K, V>> entrySetCache;
+
+        UnmodifiableSortedMap(TSortedMap<K, ? extends V> m) {
+            this.m = m;
+        }
+
+        @Override public TSet<Entry<K, V>> entrySet() {
+            if (entrySetCache == null) {
+                entrySetCache = unmodifiableMapEntrySet(m.entrySet());
+            }
+            return entrySetCache;
+        }
+        @Override public int size() {
+            return m.size();
+        }
+        @Override public boolean isEmpty() {
+            return m.isEmpty();
+        }
+        @Override public boolean containsKey(Object key) {
+            return m.containsKey(key);
+        }
+        @Override public boolean containsValue(Object value) {
+            return m.containsValue(value);
+        }
+        @Override public V get(Object key) {
+            return m.get(key);
+        }
+        @Override public boolean equals(Object o) {
+            return o == this || m.equals(o);
+        }
+        @Override public int hashCode() {
+            return m.hashCode();
+        }
+        @Override public TComparator<? super K> comparator() {
+            return m.comparator();
+        }
+        @Override public TSortedMap<K, V> subMap(K fromKey, K toKey) {
+            return new UnmodifiableSortedMap<>(m.subMap(fromKey, toKey));
+        }
+        @Override public TSortedMap<K, V> headMap(K toKey) {
+            return new UnmodifiableSortedMap<>(m.headMap(toKey));
+        }
+        @Override public TSortedMap<K, V> tailMap(K fromKey) {
+            return new UnmodifiableSortedMap<>(m.tailMap(fromKey));
+        }
+        @Override public K firstKey() {
+            return m.firstKey();
+        }
+        @Override public K lastKey() {
+            return m.lastKey();
+        }
+        @Override public Entry<K, V> pollFirstEntry() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public Entry<K, V> pollLastEntry() {
+            throw new TUnsupportedOperationException();
+        }
+        @Override public TSequencedSet<K> sequencedKeySet() {
+            return new UnmodifiableSequencedSet<>(m.sequencedKeySet());
+        }
+        @Override public TSequencedCollection<V> sequencedValues() {
+            return new UnmodifiableSequencedCollection<>(m.sequencedValues());
+        }
+        @Override
+        @SuppressWarnings("unchecked")
+        public TSequencedSet<Entry<K, V>> sequencedEntrySet() {
+            return new UnmodifiableSequencedEntrySet<>((TSequencedSet<Entry<K, V>>) (TSequencedSet<?>)
+                    m.sequencedEntrySet());
+        }
+        @Override
+        @SuppressWarnings("unchecked")
+        public TSequencedMap<K, V> reversed() {
+            TSequencedMap<K, ? extends V> r = m.reversed();
+            if (r instanceof TNavigableMap) {
+                return new UnmodifiableNavigableMap<>((TNavigableMap<K, ? extends V>) r);
+            }
+            if (r instanceof TSortedMap) {
+                return new UnmodifiableSortedMap<>((TSortedMap<K, ? extends V>) r);
+            }
+            // TSortedMap has no default reversed() view yet (the JDK's returns a SortedMap), so a backing map
+            // whose reversed() is not sorted cannot be viewed here.
+            throw new TUnsupportedOperationException();
+        }
+    }
+
+    static class UnmodifiableNavigableMap<K, V> extends UnmodifiableSortedMap<K, V> implements TNavigableMap<K, V> {
+        private final TNavigableMap<K, ? extends V> nm;
+
+        UnmodifiableNavigableMap(TNavigableMap<K, ? extends V> nm) {
+            super(nm);
+            this.nm = nm;
+        }
+
+        private static <K, V> Entry<K, V> entry(Entry<K, ? extends V> e) {
+            return e == null ? null : new TAbstractMap.SimpleImmutableEntry<>(e);
+        }
+
+        @Override public Entry<K, V> lowerEntry(K key) {
+            return entry(nm.lowerEntry(key));
+        }
+        @Override public K lowerKey(K key) {
+            return nm.lowerKey(key);
+        }
+        @Override public Entry<K, V> floorEntry(K key) {
+            return entry(nm.floorEntry(key));
+        }
+        @Override public K floorKey(K key) {
+            return nm.floorKey(key);
+        }
+        @Override public Entry<K, V> ceilingEntry(K key) {
+            return entry(nm.ceilingEntry(key));
+        }
+        @Override public K ceilingKey(K key) {
+            return nm.ceilingKey(key);
+        }
+        @Override public Entry<K, V> higherEntry(K key) {
+            return entry(nm.higherEntry(key));
+        }
+        @Override public K higherKey(K key) {
+            return nm.higherKey(key);
+        }
+        @Override public Entry<K, V> firstEntry() {
+            return entry(nm.firstEntry());
+        }
+        @Override public Entry<K, V> lastEntry() {
+            return entry(nm.lastEntry());
+        }
+        @Override public TNavigableMap<K, V> descendingMap() {
+            return new UnmodifiableNavigableMap<>(nm.descendingMap());
+        }
+        @Override public TNavigableSet<K> navigableKeySet() {
+            return new UnmodifiableNavigableSet<>(nm.navigableKeySet());
+        }
+        @Override public TNavigableSet<K> descendingKeySet() {
+            return new UnmodifiableNavigableSet<>(nm.descendingKeySet());
+        }
+        @Override public TNavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+            return new UnmodifiableNavigableMap<>(nm.subMap(fromKey, fromInclusive, toKey, toInclusive));
+        }
+        @Override public TNavigableMap<K, V> headMap(K toKey, boolean inclusive) {
+            return new UnmodifiableNavigableMap<>(nm.headMap(toKey, inclusive));
+        }
+        @Override public TNavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
+            return new UnmodifiableNavigableMap<>(nm.tailMap(fromKey, inclusive));
+        }
+        @Override public TNavigableMap<K, V> reversed() {
+            return descendingMap();
+        }
+    }
+
     public static <T> TCollection<T> synchronizedCollection(TCollection<T> c) {
         return c;
     }
@@ -615,7 +1004,9 @@ public final class TCollections extends TObject {
         if (cmp == null) {
             return reverseOrder();
         }
-        return (o1, o2) -> -cmp.compare(o1, o2);
+        // Swapping the arguments, rather than negating the result, also reverses a comparator that returns
+        // Integer.MIN_VALUE.
+        return (o1, o2) -> cmp.compare(o2, o1);
     }
 
     public static <T> TEnumeration<T> enumeration(TCollection<T> c) {

@@ -23,6 +23,7 @@ public class TThreadLocal<T> extends TObject {
     private Map<Object, Object> map;
     private boolean initialized;
     private T value;
+    static final Object ABSENT = new Object();
 
     public TThreadLocal() {
         super();
@@ -100,6 +101,21 @@ public class TThreadLocal<T> extends TObject {
                 return supplier.get();
             }
         };
+    }
+
+    /**
+     * The current thread's value, or {@link #ABSENT} if it has none. Unlike {@link #get}, this
+     * never calls {@link #initialValue}. A new thread inherits only the values its creator has set, as in the JDK.
+     */
+    final Object rawValue() {
+        if (isInMainThread()) {
+            return initialized ? value : ABSENT;
+        }
+        if (map == null) {
+            return ABSENT;
+        }
+        Object v = map.get(TThread.currentThread().key);
+        return v == null ? ABSENT : v == NULL ? null : v;
     }
 
     private static boolean isInMainThread() {

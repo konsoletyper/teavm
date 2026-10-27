@@ -136,7 +136,10 @@ public class TGZIPInputStream extends TInflaterInputStream {
         byte[] b = new byte[trailerSize];
         int copySize = (size > trailerSize) ? trailerSize : size;
 
-        System.arraycopy(buf, len - size, b, 0, copySize);
+        // When the deflate data ends exactly at the end of the input, len is -1 and buf holds nothing of the trailer.
+        if (copySize > 0) {
+            System.arraycopy(buf, len - size, b, 0, copySize);
+        }
         readFully(b, copySize, trailerSize - copySize);
 
         if (getLong(b, 0) != crc.getValue()) {

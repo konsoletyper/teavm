@@ -25,6 +25,8 @@ public class TSecureRandom extends TRandom {
     /** stored instance for seed generation in getSeed() */
     private static TSecureRandom seedGenerator;
 
+    private String algorithm = "NativePRNG";
+
     public TSecureRandom() {
     }
 
@@ -44,11 +46,21 @@ public class TSecureRandom extends TRandom {
         if (!Crypto.isSupported()) {
             throw new TNoSuchAlgorithmException();
         }
-        return new TSecureRandom();
+        var result = new TSecureRandom();
+        result.algorithm = algorithm;
+        return result;
+    }
+
+    // All three algorithm names read the same source, crypto.getRandomValues, a CSPRNG, so the name only
+    // affects getAlgorithm(). NativePRNGBlocking is what the JDK's default securerandom.strongAlgorithms
+    // selects on Linux and macOS; NativePRNGNonBlocking is not listed there.
+    // On C there is no entropy source, so getInstance throws NoSuchAlgorithmException.
+    public static TSecureRandom getInstanceStrong() throws TNoSuchAlgorithmException {
+        return getInstance("NativePRNGBlocking");
     }
 
     public String getAlgorithm() {
-        return "NativePRNG";
+        return algorithm;
     }
 
     public void setSeed(@SuppressWarnings("unused") byte[] seed) {

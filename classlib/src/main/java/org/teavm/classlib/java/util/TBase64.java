@@ -26,7 +26,7 @@ public final class TBase64 {
     }
 
     public static Encoder getUrlEncoder() {
-        return new Encoder(Base64Impl.urlAlphabet, false);
+        return new Encoder(Base64Impl.urlAlphabet, true);
     }
 
     public static class Encoder {
@@ -78,7 +78,11 @@ public final class TBase64 {
         public byte[] decode(String src) {
             var bytes = new byte[src.length()];
             for (var i = 0; i < bytes.length; ++i) {
-                bytes[i] = (byte) src.charAt(i);
+                var c = src.charAt(i);
+                if (c > 0xFF) {
+                    throw new IllegalArgumentException();
+                }
+                bytes[i] = (byte) c;
             }
             return decode(bytes);
         }

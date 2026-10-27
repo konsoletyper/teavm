@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
@@ -312,8 +313,10 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         try {
             THashMap<K, V> map = (THashMap<K, V>) super.clone();
             map.elementCount = 0;
+            map.modCount = 0;
             map.elementData = newElementArray(elementData.length);
-            map.putAll(this);
+            // Not putAll, which a subclass may override: as in the JDK, clone does not call it.
+            map.putAllImpl(this);
 
             return map;
         } catch (TCloneNotSupportedException e) {
@@ -489,6 +492,87 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public void putAll(TMap<? extends K, ? extends V> map) {
         if (!map.isEmpty()) {
             putAllImpl(map);
+        }
+    }
+
+    // computeIfAbsent, computeIfPresent, compute and merge are Map's default methods, plus the check that the
+    // Javadoc of HashMap requires: "throw a ConcurrentModificationException if it is detected that the
+    // (re)mapping function modifies this map during computation".
+
+    @Override
+    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        TObjects.requireNonNull(mappingFunction);
+        V v = get(key);
+        if (v != null) {
+            return v;
+        }
+        int mc = modCount;
+        V newValue = mappingFunction.apply(key);
+        checkModCount(mc);
+        if (newValue != null) {
+            put(key, newValue);
+        }
+        return newValue;
+    }
+
+    @Override
+    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        TObjects.requireNonNull(remappingFunction);
+        V v = get(key);
+        if (v == null) {
+            return null;
+        }
+        int mc = modCount;
+        V newValue = remappingFunction.apply(key, v);
+        checkModCount(mc);
+        if (newValue != null) {
+            put(key, newValue);
+        } else {
+            remove(key);
+        }
+        return newValue;
+    }
+
+    @Override
+    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        TObjects.requireNonNull(remappingFunction);
+        V oldValue = get(key);
+        int mc = modCount;
+        V newValue = remappingFunction.apply(key, oldValue);
+        checkModCount(mc);
+        if (newValue != null) {
+            put(key, newValue);
+        } else {
+            // "If the remapping function returns null, the mapping is removed", also a mapping to null.
+            remove(key);
+        }
+        return newValue;
+    }
+
+    @Override
+    public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        TObjects.requireNonNull(value);
+        TObjects.requireNonNull(remappingFunction);
+        V oldValue = get(key);
+        V newValue;
+        if (oldValue == null) {
+            newValue = value;
+        } else {
+            int mc = modCount;
+            newValue = remappingFunction.apply(oldValue, value);
+            checkModCount(mc);
+        }
+        if (newValue != null) {
+            put(key, newValue);
+        } else {
+            remove(key);
+        }
+        return newValue;
+    }
+
+    private void checkModCount(int expected) {
+        if (modCount != expected) {
+            throw new TConcurrentModificationException();
         }
     }
 

@@ -23,7 +23,10 @@ public class TUTF16Encoder extends TBufferedEncoder {
     private boolean littleEndian;
 
     public TUTF16Encoder(TCharset cs, boolean bom, boolean littleEndian) {
-        super(cs, 2, 4);
+        // The default replacement, a single '?' byte, is not a legal UTF-16 sequence. Use U+FFFD, as the JDK does.
+        super(cs, 2, 4, littleEndian
+                ? new byte[] { (byte) 0xFD, (byte) 0xFF }
+                : new byte[] { (byte) 0xFF, (byte) 0xFD });
         this.bom = bom;
         this.littleEndian = littleEndian;
     }
@@ -58,7 +61,7 @@ public class TUTF16Encoder extends TBufferedEncoder {
             if (Character.isHighSurrogate(c)) {
                 if (inPos == inSize) {
                     inPos--;
-                    if (!controller.hasMoreInput(2)) {
+                    if (!controller.hasMoreInput()) {
                         result = TCoderResult.UNDERFLOW;
                     }
                     break;
@@ -113,7 +116,7 @@ public class TUTF16Encoder extends TBufferedEncoder {
             if (Character.isHighSurrogate(c)) {
                 if (inPos == inSize) {
                     inPos--;
-                    if (!controller.hasMoreInput(2)) {
+                    if (!controller.hasMoreInput()) {
                         result = TCoderResult.UNDERFLOW;
                     }
                     break;

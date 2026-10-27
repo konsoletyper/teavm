@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
 import org.teavm.classlib.java.io.TSerializable;
+import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
 
 public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>, TCloneable, TSerializable {
@@ -389,7 +390,15 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
     }
 
     @Override
-    protected TArrayDeque<E> clone() {
-        return new TArrayDeque<>(this);
+    @SuppressWarnings("unchecked")
+    public TArrayDeque<E> clone() {
+        // As in the JDK, the copy comes from super.clone(), so it has this deque's class.
+        try {
+            var result = (TArrayDeque<E>) super.clone();
+            result.array = array.clone();
+            return result;
+        } catch (TCloneNotSupportedException e) {
+            return null;
+        }
     }
 }

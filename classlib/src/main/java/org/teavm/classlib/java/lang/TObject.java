@@ -188,7 +188,9 @@ public class TObject {
         if (monitor.enteringThreads != null && !monitor.enteringThreads.isEmpty()) {
             var enteringThreads = monitor.enteringThreads;
             PlatformRunnable r = enteringThreads.remove();
-            monitor.enteringThreads = null;
+            if (enteringThreads.isEmpty()) {
+                monitor.enteringThreads = null;
+            }
             r.run();
         }
     }
@@ -479,6 +481,21 @@ public class TObject {
         monitorExit(this, monitor.count);
     }
 
+    // Runs when the waiting thread holds the monitor again. notify() already removed the listener of a wait
+    // that it woke. A wait that timed out or was interrupted removes its own listener here, so the queue does not
+    // keep the listener, and with it the waiting thread. The monitor is read here, in Object's own method,
+    // because the Wasm backends rewrite access to the monitor field only in Object's own methods.
+    private static void removeNotifyListener(TObject o, NotifyListener listener) {
+        Monitor monitor = o.monitor;
+        Queue<NotifyListener> listeners = monitor.notifyListeners;
+        if (listeners != null) {
+            listeners.remove(listener);
+            if (listeners.isEmpty()) {
+                monitor.notifyListeners = null;
+            }
+        }
+    }
+
     static class NotifyListenerImpl implements NotifyListener, TimerHandler, PlatformRunnable,
             TThreadInterruptHandler {
         final TObject obj;
@@ -533,8 +550,23 @@ public class TObject {
                 }
                 timerId = -1;
             }
+            // A timed-out wait reaches here directly (EventQueue.offer and Platform.schedule call run(), not
+            // onTimer()), so nothing else marks the listener expired. Without this, the listener stays in the
+            // queue, and a later notify() takes it and wakes no thread.
+            expired = true;
             TThread.setCurrentThread(currentThread);
-            monitorEnterWait(obj, lockCount, callback);
+            monitorEnterWait(obj, lockCount, new AsyncCallback<Void>() {
+                @Override
+                public void complete(Void result) {
+                    removeNotifyListener(obj, NotifyListenerImpl.this);
+                    callback.complete(null);
+                }
+
+                @Override
+                public void error(Throwable e) {
+                    callback.error(e);
+                }
+            });
         }
 
         @Override
@@ -551,11 +583,33 @@ public class TObject {
                 }
                 timerId = -1;
             }
+            // Like a timed-out wait, an interrupted wait must not stay in the queue as a listener that a later
+            // notify() could take.
+            expired = true;
+            // As in the JDK, wait() holds the monitor again when it throws InterruptedException.
             if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(() -> callback.error(new TInterruptedException()));
+                EventQueue.offer(this::reacquireThenFail);
             } else {
-                Platform.postpone(() -> callback.error(new TInterruptedException()));
+                Platform.postpone(this::reacquireThenFail);
             }
+        }
+
+        private void reacquireThenFail() {
+            TThread.setCurrentThread(currentThread);
+            monitorEnterWait(obj, lockCount, new AsyncCallback<Void>() {
+                @Override
+                public void complete(Void result) {
+                    // As in the JDK, throwing InterruptedException clears the thread's interrupt status.
+                    removeNotifyListener(obj, NotifyListenerImpl.this);
+                    TThread.interrupted();
+                    callback.error(new TInterruptedException());
+                }
+
+                @Override
+                public void error(Throwable e) {
+                    callback.error(e);
+                }
+            });
         }
     }
 

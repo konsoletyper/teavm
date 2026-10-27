@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Random;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
 
@@ -203,5 +204,155 @@ public class DoubleTest {
         assertTrue(Double.isInfinite(Double.NEGATIVE_INFINITY));
         assertFalse(Double.isFinite(Double.NaN));
         assertFalse(Double.isInfinite(Double.NaN));
+    }
+
+    // Double.toString: "When p >= 2, let T be the set of all decimals in R with length p. Otherwise, let T be the
+    // set of all decimals in R with length 1 or 2." Double.valueOf(String): the exact decimal value "is then
+    // rounded to type double by the usual round-to-nearest rule of IEEE 754 floating-point arithmetic".
+    @Test
+    public void subnormalToStringAndParse() {
+        // The rounding interval of a subnormal is half of its own ulp, not of its normalized mantissa.
+        assertEquals("4.9E-324", Double.toString(Double.MIN_VALUE));
+        assertEquals("-4.9E-324", Double.toString(-Double.MIN_VALUE));
+        assertEquals("9.9E-324", Double.toString(2 * Double.MIN_VALUE));
+        assertEquals("1.5E-323", Double.toString(3 * Double.MIN_VALUE));
+        assertEquals("2.0E-323", Double.toString(4 * Double.MIN_VALUE));
+        assertEquals("1.0E-310", Double.toString(1E-310));
+        assertEquals("2.5E-320", Double.toString(2.5E-320));
+        assertEquals("1.0E-308", Double.toString(1E-308));
+        assertEquals("2.225073858507201E-308", Double.toString(Math.nextDown(Double.MIN_NORMAL)));
+        assertEquals("2.2250738585072014E-308", Double.toString(Double.MIN_NORMAL));
+        assertEquals("1.27603E-318", Double.toString(Double.longBitsToDouble(0x3f0dfL)));
+        assertEquals("6.0246141314E-314", Double.toString(Double.longBitsToDouble(0x2d6d0fbc3L)));
+
+        // Parsing rounds a subnormal at its own last bit.
+        assertEquals(Double.MIN_VALUE, Double.parseDouble("4.9E-324"), 0);
+        assertEquals(Double.MIN_VALUE, Double.parseDouble("3E-324"), 0);
+        assertEquals(0, Double.parseDouble("2E-324"), 0);
+        assertEquals(0, Double.parseDouble("1E-330"), 0);
+        assertEquals(3 * Double.MIN_VALUE, Double.parseDouble("1.5E-323"), 0);
+        assertEquals(Math.nextDown(Double.MIN_NORMAL), Double.parseDouble("2.225073858507201E-308"), 0);
+    }
+
+    // Double.toString: "Let R be the set of all decimals that round to m according to the usual round to nearest
+    // rounding policy of IEEE 754 floating-point arithmetic." The selected decimal is in R, so it parses back.
+    @Test
+    public void smallSubnormalsRoundTrip() {
+        for (long bits = 1; bits <= 100000; ++bits) {
+            double d = Double.longBitsToDouble(bits);
+            String s = Double.toString(d);
+            if (Double.doubleToRawLongBits(Double.parseDouble(s)) != bits) {
+                fail("Double with bits " + bits + " is written as " + s + ", which does not parse back");
+            }
+        }
+    }
+
+    // Double.toString: "Let R be the set of all decimals that round to m according to the usual round to nearest
+    // rounding policy of IEEE 754 floating-point arithmetic." Round to nearest breaks a tie to the even
+    // significand, so a decimal on the edge of the interval is in R exactly when m has an even significand.
+    @Test
+    public void toStringOnRoundingIntervalEdge() {
+        // A decimal exactly on the edge of the rounding interval is used only when the mantissa is even
+        assertEquals("1.0E23", Double.toString(1E23));
+        assertEquals("1.0000000000000001E23", Double.toString(Math.nextUp(1E23)));
+        assertEquals("3.849937261242046E16", Double.toString(3.849937261242046E16));
+    }
+
+    // Double.toString: "Define d_m as the decimal in T that is closest to m. Or if there are two such decimals in
+    // T, select the one with the even significand."
+    @Test
+    public void toStringHalfwayTakesEvenDigit() {
+        // 2116974939765710.25 is exactly halfway between ...102 and ...103
+        assertEquals("2.1169749397657102E15", Double.toString(2.1169749397657102E15));
+        assertEquals("2.4333958225460162E14", Double.toString(2.4333958225460162E14));
+    }
+
+    // Double.toString: R is the set of decimals that round to m, and below a power of two the neighbor is closer
+    @Test
+    public void toStringBelowPowerOfTwo() {
+        // Below a power of two the next double is closer, so the rounding interval is narrower on that side
+        assertEquals("1.7800590868057611E-307", Double.toString(Math.scalb(1.0, -1019)));
+    }
+
+    // Double.valueOf(String): the exact value "is then conceptually converted to an 'infinitely precise' binary
+    // value that is then rounded to type double by the usual round-to-nearest rule of IEEE 754 floating-point
+    // arithmetic". That rule breaks a tie to the even significand.
+    @Test
+    public void parseExactMidpointTakesEvenDouble() {
+        // Each decimal is exactly halfway between two doubles, and the JDK takes the double with the even mantissa
+        assertEquals(2.238987874235451E16, Double.parseDouble("2.238987874235451E16"), 0);
+        assertEquals(5.741072488841486E16, Double.parseDouble("5.741072488841486E16"), 0);
+        assertEquals(1.60448237089496E18, Double.parseDouble("1.60448237089496E18"), 0);
+        assertEquals(9007199254740992.0, Double.parseDouble("9007199254740993"), 0);
+        assertEquals(9007199254740996.0, Double.parseDouble("9007199254740995"), 0);
+    }
+
+    @Test
+    public void largeDoublesRoundTrip() {
+        // Double.toString writes such doubles as the decimal halfway to a neighbor when that decimal is shortest
+        var random = new Random(4);
+        for (var i = 0; i < 20000; ++i) {
+            var d = Math.scalb(1 + random.nextDouble(), 53 + random.nextInt(12));
+            assertEquals(d, Double.parseDouble(Double.toString(d)), 0);
+        }
+    }
+
+    // Known gap: DoubleAnalyzer multiplies by truncated 64-bit powers of ten, so a decimal very close to an edge
+    // of the rounding interval, or to the midpoint between two candidates, can go to the wrong side. Each value
+    // below is written differently from the JDK, and the subnormal ones and 1.6439167945475462E-67 are written as
+    // a decimal that does not parse back. Expected strings are the JDK's.
+    @Test
+    @Disabled("Known gap: precision of the power-of-ten table in DoubleAnalyzer")
+    public void toStringNearIntervalEdgeKnownGap() {
+        var failures = new StringBuilder();
+        checkToString(failures, 1E126, "1.0E126");
+        checkToString(failures, 2.9866777770622487E-68, "2.9866777770622487E-68");
+        checkToString(failures, 8.149551566440249E-118, "8.149551566440249E-118");
+        checkToString(failures, 2.9362303787435153E153, "2.9362303787435153E153");
+        checkToString(failures, 1.6439167945475462E-67, "1.6439167945475462E-67");
+        checkToString(failures, 9.539897001926882E-309, "9.539897001926882E-309");
+        checkToString(failures, 1.0436252483415902E-308, "1.0436252483415902E-308");
+        checkToString(failures, 1.5238698338848862E-308, "1.5238698338848862E-308");
+        checkToString(failures, 2.2250738584111362E-308, "2.2250738584111362E-308");
+        if (failures.length() > 0) {
+            fail(failures.toString());
+        }
+    }
+
+    private static void checkToString(StringBuilder failures, double d, String expected) {
+        var actual = Double.toString(d);
+        if (!actual.equals(expected)) {
+            failures.append("expected ").append(expected).append(" but was ").append(actual).append("; ");
+        }
+        if (Double.parseDouble(actual) != d) {
+            failures.append(actual).append(" does not parse back to ").append(expected).append("; ");
+        }
+    }
+
+    // Known gap: DoubleSynthesizer has the same table-precision limit, so these decimals, which the JDK writes,
+    // parse to a neighbor of the double the JDK gives. Double.valueOf(String): the exact value "is then
+    // conceptually converted to an 'infinitely precise' binary value that is then rounded to type double by the
+    // usual round-to-nearest rule of IEEE 754 floating-point arithmetic".
+    @Test
+    @Disabled("Known gap: precision of the power-of-ten table in DoubleSynthesizer")
+    public void parseNearMidpointKnownGap() {
+        var failures = new StringBuilder();
+        checkParse(failures, "2.807569972855083E137", 2.807569972855083E137);
+        checkParse(failures, "3.185971058067586E202", 3.185971058067586E202);
+        checkParse(failures, "3.093933428094499E-10", 3.093933428094499E-10);
+        checkParse(failures, "1.6161557140473E217", 1.6161557140473E217);
+        checkParse(failures, "1.654925151066461E-139", 1.654925151066461E-139);
+        checkParse(failures, "1.276790740084915E228", 1.276790740084915E228);
+        if (failures.length() > 0) {
+            fail(failures.toString());
+        }
+    }
+
+    private static void checkParse(StringBuilder failures, String s, double expected) {
+        var actual = Double.parseDouble(s);
+        if (actual != expected) {
+            failures.append(s).append(" parsed to bits ").append(Long.toHexString(Double.doubleToLongBits(actual)))
+                    .append(" instead of ").append(Long.toHexString(Double.doubleToLongBits(expected))).append("; ");
+        }
     }
 }

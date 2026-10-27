@@ -16,6 +16,14 @@
 package org.teavm.classlib.java.lang;
 
 class TSystemClassLoader extends TClassLoader {
+    // The root of delegation, so an explicit null parent: TClassLoader() means the system loader.
     TSystemClassLoader() {
+        super(null);
+    }
+
+    // The system loader sees every class that the compiled program kept.
+    @Override
+    protected TClass<?> loadClass(String name, boolean resolve) throws TClassNotFoundException {
+        return TClass.forName((TString) (Object) name);
     }
 }

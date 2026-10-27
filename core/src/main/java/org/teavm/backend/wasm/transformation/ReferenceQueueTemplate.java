@@ -34,6 +34,10 @@ class ReferenceQueueTemplate<T> {
     }
 
     public void supply(Reference<T> reference) {
+        // A thread that waits in remove() takes the reference first, as in the JavaScript backend
+        if (reportNext(reference)) {
+            return;
+        }
         var entry = new ReferenceQueueEntry<>(reference);
         if (start == null) {
             start = entry;
@@ -41,5 +45,11 @@ class ReferenceQueueTemplate<T> {
             end.next = entry;
         }
         end = entry;
+    }
+
+    // Stands for ReferenceQueue.reportNext. ReferenceQueueTransformation does not copy this method, and it
+    // redirects calls to it to ReferenceQueue's own method.
+    protected boolean reportNext(Reference<T> reference) {
+        return false;
     }
 }

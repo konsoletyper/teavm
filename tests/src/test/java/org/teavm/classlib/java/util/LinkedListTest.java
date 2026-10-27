@@ -339,4 +339,26 @@ public class LinkedListTest {
         assertEquals(4, clone.size());
         assertEquals(Arrays.asList("a", "b", "c", "d"), clone);
     }
+
+    static class CustomList extends LinkedList<String> {
+        String tag;
+    }
+
+    // LinkedList.clone: "Returns a shallow copy of this LinkedList". Object.clone: by convention, the copy comes
+    // from super.clone(), so "x.clone().getClass() == x.getClass()", and it is independent of the original.
+    @Test
+    public void cloneKeepsClassAndIsIndependent() {
+        var list = new CustomList();
+        list.tag = "t";
+        list.addAll(List.of("a", "b", "c"));
+        var clone = (CustomList) list.clone();
+        assertEquals(CustomList.class, clone.getClass());
+        assertEquals("t", clone.tag);
+        clone.addFirst("x");
+        clone.addLast("d");
+        list.removeLast();
+        assertEquals(List.of("a", "b"), list);
+        assertEquals(List.of("x", "a", "b", "c", "d"), clone);
+        assertEquals("d", clone.descendingIterator().next());
+    }
 }

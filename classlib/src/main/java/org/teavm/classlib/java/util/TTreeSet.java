@@ -17,8 +17,6 @@ package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
-import org.teavm.classlib.java.lang.TObject;
-import org.teavm.interop.Rename;
 
 /**
  *
@@ -78,9 +76,10 @@ public class TTreeSet<E> extends TAbstractSet<E> implements TCloneable, TNavigab
      * @return a shallow copy of this {@code TreeSet}.
      * @see java.lang.Cloneable
      */
-    @Rename("clone")
+    @Override
     @SuppressWarnings("unchecked")
-    public TObject clone0() {
+    public Object clone() {
+        // The copy has this set's class, and its map is a clone of this set's map.
         try {
             TTreeSet<E> clone = (TTreeSet<E>) super.clone();
             clone.map = (TTreeMap<E, Object>) map.clone();
@@ -190,10 +189,5 @@ public class TTreeSet<E> extends TAbstractSet<E> implements TCloneable, TNavigab
     @Override
     public TNavigableSet<E> tailSet(E fromElement, boolean inclusive) {
         return map.tailMap(fromElement, inclusive).navigableKeySet();
-    }
-
-    @Override
-    public Object clone() {
-        return new TTreeSet<>(this);
     }
 }

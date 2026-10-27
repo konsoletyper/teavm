@@ -33,6 +33,19 @@ let $rt_checkLowerBound = index => {
     }
     return index;
 }
+let $rt_checkArrayLength = length => {
+    if (length < 0) {
+        $rt_throwNASE();
+    }
+    return length;
+}
+let $rt_checkArrayDimensions = dimensions => {
+    for (let i = 0; i < dimensions.length; i = (i + 1) | 0) {
+        if (dimensions[i] < 0) {
+            $rt_throwNASE();
+        }
+    }
+}
 
 let $rt_nullCheck = val => {
     if (val === null) {

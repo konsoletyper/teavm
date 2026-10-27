@@ -87,6 +87,7 @@ import org.teavm.backend.wasm.model.instruction.WasmFloatType;
 import org.teavm.backend.wasm.model.instruction.WasmFragmentBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionList;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 import org.teavm.backend.wasm.model.instruction.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.instruction.WasmInt64Subtype;
 import org.teavm.backend.wasm.model.instruction.WasmIntBinaryOperation;
@@ -887,6 +888,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         builder.pushLocation(expr.getLocation());
         WasmGCGenerationUtil.emitClassInfoLiteral(context.classInfoProvider(), builder, expr.getType());
         accept(expr.getLength(), builder, WasmType.INT32);
+        checkArrayLength();
         builder.call(context.classInfoProvider().getArrayConstructor(expr.getType()));
         builder.popLocation();
     }
@@ -901,6 +903,7 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
                 ((ValueType.Array) expr.getType()).getItemType());
         for (var dimension : expr.getDimensions()) {
             accept(dimension, builder, WasmType.INT32);
+            checkArrayLength();
         }
         builder.call(context.classInfoProvider().getMultiArrayConstructor(expr.getDimensions().size()));
         builder.popLocation();
@@ -1782,6 +1785,27 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
         }
     }
 
+    /**
+     * Throws NegativeArraySizeException when the array length on the stack is negative, and leaves the length on
+     * the stack. array.new_default reads the length as unsigned, so without the check it traps instead.
+     */
+    private void checkArrayLength() {
+        if (builder.list.getLast() instanceof WasmInt32Constant constant && constant.getValue() >= 0) {
+            return;
+        }
+        var length = valueCache.create(WasmType.INT32, builder);
+        builder.drop();
+        var block = builder.block();
+        block
+                .append(length)
+                .i32Const(0)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.GE_SIGNED)
+                .branch(block.list);
+        generateThrowNase(block);
+        builder.append(length);
+        length.release();
+    }
+
     private void generateThrowNpe(WasmInstructionBuilder target) {
         target.call(context.npeMethod());
         target.throw_(context.getExceptionTag());
@@ -1794,6 +1818,11 @@ public class WasmGCInstructionGenerationVisitor implements StatementVisitor, Exp
 
     private void generateThrowCce(WasmInstructionBuilder target) {
         target.call(context.cceMethod());
+        target.throw_(context.getExceptionTag());
+    }
+
+    private void generateThrowNase(WasmInstructionBuilder target) {
+        target.call(context.naseMethod());
         target.throw_(context.getExceptionTag());
     }
 

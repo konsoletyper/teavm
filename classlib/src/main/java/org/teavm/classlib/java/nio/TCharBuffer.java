@@ -328,11 +328,14 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
 
     @Override
     public TCharBuffer append(CharSequence csq) {
-        return put(csq.toString());
+        return put(csq != null ? csq.toString() : "null");
     }
 
     @Override
     public TCharBuffer append(CharSequence csq, int start, int end) {
+        if (csq == null) {
+            csq = "null";
+        }
         return put(csq.subSequence(start, end).toString());
     }
 

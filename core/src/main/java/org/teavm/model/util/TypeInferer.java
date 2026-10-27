@@ -244,7 +244,34 @@ public class TypeInferer {
         @Override
         public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
                 ArrayElementType type) {
-            arrayElemBuilder.addEdge(array.getIndex(), receiver.getIndex());
+            // The array variable can have an imprecise type, for example when a coroutine restores it with
+            // Fiber.popObject(). The instruction knows the type of a primitive element.
+            switch (type) {
+                case BYTE:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.BYTE, 0);
+                    break;
+                case SHORT:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.SHORT, 0);
+                    break;
+                case CHAR:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.CHAR, 0);
+                    break;
+                case INT:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.INT, 0);
+                    break;
+                case LONG:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.LONG, 0);
+                    break;
+                case FLOAT:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.FLOAT, 0);
+                    break;
+                case DOUBLE:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.DOUBLE, 0);
+                    break;
+                case OBJECT:
+                    arrayElemBuilder.addEdge(array.getIndex(), receiver.getIndex());
+                    break;
+            }
         }
 
         @Override

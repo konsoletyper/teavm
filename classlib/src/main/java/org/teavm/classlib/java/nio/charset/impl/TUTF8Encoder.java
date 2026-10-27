@@ -54,6 +54,8 @@ public class TUTF8Encoder extends TBufferedEncoder {
                 outArray[outPos++] = (byte) (0x80 | (ch & 0x3F));
             } else if (Character.isHighSurrogate(ch)) {
                 if (inPos >= inSize) {
+                    // Leave the high surrogate unread, so that the next chunk sees the whole pair.
+                    --inPos;
                     if (!controller.hasMoreInput()) {
                         result = TCoderResult.UNDERFLOW;
                     }
@@ -78,6 +80,8 @@ public class TUTF8Encoder extends TBufferedEncoder {
                 outArray[outPos++] = (byte) (0x80 | ((codePoint >> 6) & 0x3F));
                 outArray[outPos++] = (byte) (0x80 | (codePoint & 0x3F));
             } else {
+                // A lone low surrogate. The position stays on it, because the caller skips the malformed length.
+                --inPos;
                 result = TCoderResult.malformedForLength(1);
                 break;
             }

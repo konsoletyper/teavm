@@ -161,6 +161,7 @@ public interface TMap<K, V> {
     }
 
     default V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        TObjects.requireNonNull(value);
         TObjects.requireNonNull(remappingFunction);
         V oldValue = get(key);
         V newValue = (oldValue == null) ? value : remappingFunction.apply(oldValue, value);

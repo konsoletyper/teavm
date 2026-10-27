@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.WasmGCFunctionSplitter;
 import org.teavm.backend.wasm.generate.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCClassInfoProvider;
@@ -81,16 +82,18 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
                     void.class));
             body.call(internInit);
         }
+        var splitter = new WasmGCFunctionSplitter(function, module, functionTypes, names);
         var stringIterator = stringMap.values().iterator();
         while (stringIterator.hasNext()) {
             var elementCount = 0;
+            var batch = splitter.next();
             // WasmArrayNewFixed cannot be larger than 10000 elements
 
             while (elementCount < 10000 && stringIterator.hasNext()) {
-                body.getGlobal(stringIterator.next().global);
+                batch.getGlobal(stringIterator.next().global);
                 ++elementCount;
             }
-            body
+            batch
                     .arrayNewFixed(stringsArray, elementCount)
                     .call(initStringsFunction);
         }

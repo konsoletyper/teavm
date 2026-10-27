@@ -41,6 +41,9 @@ import org.teavm.runtime.EventQueue;
 @EachTestCompiledSeparately
 @SkipJVM
 public class AsyncTest {
+    private int sum;
+    private String concatenated;
+
     @Test
     public void primitives() {
         assertEquals(23, getPrimitive());
@@ -181,11 +184,165 @@ public class AsyncTest {
     }
 
     @Test
+    public void primitiveArrayElementsAfterSuspension() throws InterruptedException {
+        // A coroutine restores these arrays with Fiber.popObject() after Thread.sleep, so their variables can
+        // lose their array types. The elements must still have their primitive types.
+        var booleans = new boolean[] { true };
+        var bytes = new byte[] { -2 };
+        var shorts = new short[] { -3 };
+        var chars = new char[] { 'x' };
+        var ints = new int[] { 4 };
+        var longs = new long[] { 3 };
+        var floats = new float[] { 2.5f };
+        var doubles = new double[] { 1.5 };
+        var intMatrix = new int[][] { { 5, 6 } };
+        var doubleMatrix = new double[][] { { 7.5 } };
+        var strings = new String[] { "s" };
+        for (var i = 0; i < 3; ++i) {
+            Thread.sleep(1);
+            assertEquals(true, booleans[0]);
+            assertEquals(-2 - i, bytes[0]);
+            assertEquals(-3 - i, shorts[0]);
+            assertEquals('x' + i, chars[0]);
+            assertEquals(4 + i, ints[0]);
+            assertEquals(3L + i, longs[0]);
+            assertEquals(2.5f + i, floats[0], 0);
+            assertEquals(1.5 + i, doubles[0], 0);
+            assertEquals(6 + i, intMatrix[0][1]);
+            assertEquals(7.5 + i, doubleMatrix[0][0], 0);
+            assertEquals("s".repeat(i + 1), strings[0]);
+            bytes[0]--;
+            shorts[0]--;
+            chars[0]++;
+            ints[0]++;
+            longs[0]++;
+            floats[0]++;
+            doubles[0]++;
+            intMatrix[0][1]++;
+            doubleMatrix[0][0]++;
+            strings[0] += "s";
+        }
+    }
+
+    @Test
     public void monitorTest() {
         dummySyncStaticMethod();
     }
 
     private static synchronized void dummySyncStaticMethod() {
+    }
+
+    @Test
+    public void asyncBodyCallsSuspendableCode() throws InterruptedException {
+        var thread = new Thread(() -> sum = sumInAsyncBody());
+        thread.setDaemon(true);
+        thread.start();
+        thread.join(5000);
+        assertEquals(3, sum);
+    }
+
+    @Async
+    private native int sumInAsyncBody();
+
+    private void sumInAsyncBody(AsyncCallback<Integer> callback) {
+        // perhapsSuspend can suspend, so this method is compiled as suspendable too. Here it does not suspend.
+        var result = perhapsSuspend(false, 1) + perhapsSuspend(false, 2);
+        // Not setTimeout(Runnable): the thread above makes Runnable.run suspendable, and on C a suspendable
+        // Runnable can not run from the event queue.
+        if (PlatformDetector.isC()) {
+            EventQueue.offer(() -> callback.complete(result));
+        } else {
+            Window.setTimeout(() -> callback.complete(result), 0);
+        }
+    }
+
+    @Test
+    public void interfaceCallToInheritedSuspendingMethod() throws InterruptedException {
+        SuspendingCall[] calls = { new InheritsSuspending(), new PlainCall(), new InheritsSuspending() };
+        var sb = new StringBuilder();
+        for (var i = 0; i < calls.length; ++i) {
+            sb.append(callThroughInterface(calls[i], i + 2, sb)).append(' ');
+        }
+        assertEquals("[614 [421 [1228 ", sb.toString());
+    }
+
+    private static int callThroughInterface(SuspendingCall call, int x, StringBuilder sb)
+            throws InterruptedException {
+        var before = x * 7;
+        sb.append('[');
+        var result = call.m(x);
+        return before + result * 100;
+    }
+
+    interface SuspendingCall {
+        int m(int x) throws InterruptedException;
+    }
+
+    static class SuspendingBase {
+        public int m(int x) throws InterruptedException {
+            Thread.sleep(5);
+            return x * 3;
+        }
+    }
+
+    static final class InheritsSuspending extends SuspendingBase implements SuspendingCall {
+    }
+
+    static final class PlainCall implements SuspendingCall {
+        @Override
+        public int m(int x) {
+            return x + 1;
+        }
+    }
+
+    @Test
+    // On C, the suspendable Throwable constructor makes Allocator.allocateArray suspendable. EventQueue's
+    // static initializer calls it before any fiber exists, and the program crashes reading the null fiber.
+    @SkipPlatform(TestPlatform.C)
+    public void suspendWithSuspendableArrayCopy() throws InterruptedException {
+        // This override makes every Throwable constructor suspendable. Arrays.copyOf can throw,
+        // so it becomes suspendable too.
+        new SuspendableStackTraceException();
+        var thread = new Thread(() -> concatenated = concatAcrossSuspension(4, "x"));
+        thread.setDaemon(true);
+        thread.start();
+        thread.join(5000);
+        assertEquals("x4,x43,x432,x4321,x43210,x43210", concatenated);
+    }
+
+    @Test
+    // Skipped on C for the same reason as suspendWithSuspendableArrayCopy
+    @SkipPlatform(TestPlatform.C)
+    public void suspendWithSuspendableArrayCopyGrowsStackRepeatedly() throws InterruptedException {
+        // Enough frames that the fiber's object stack grows several times while it unwinds and rewinds
+        new SuspendableStackTraceException();
+        var depth = 40;
+        var thread = new Thread(() -> concatenated = concatAcrossSuspension(depth, "x"));
+        thread.setDaemon(true);
+        thread.start();
+        thread.join(5000);
+        var expected = new StringBuilder();
+        var local = "x";
+        for (var i = depth; i >= 0; --i) {
+            local += i;
+            expected.append(local).append(',');
+        }
+        expected.append(local);
+        assertEquals(expected.toString(), concatenated);
+    }
+
+    private String concatAcrossSuspension(int depth, String prefix) {
+        var local = prefix + depth;
+        var rest = depth == 0 ? returnSamePrimitive(local) : concatAcrossSuspension(depth - 1, local);
+        return local + "," + rest;
+    }
+
+    private class SuspendableStackTraceException extends RuntimeException {
+        @Override
+        public Throwable fillInStackTrace() {
+            perhapsSuspend(false, 0);
+            return this;
+        }
     }
 
     @Async

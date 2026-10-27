@@ -75,6 +75,9 @@ public final class Heap {
 
     @Export(name = "teavm.malloc")
     public static Address alloc(int bytes) {
+        if (!fits(bytes)) {
+            return Address.fromInt(0);
+        }
         bytes = alignSize(bytes);
         var result = tryAlloc(bytes);
         if (result == null) {
@@ -91,6 +94,9 @@ public final class Heap {
 
     @Export(name = "teavm.realloc")
     public static Address realloc(Address address, int newSize) {
+        if (!fits(newSize)) {
+            return Address.fromInt(0);
+        }
         newSize = alignSize(newSize);
 
         var record = HeapRecord.recordOf(address);
@@ -105,6 +111,13 @@ public final class Heap {
         } else {
             return expand(record, oldSize, newSize);
         }
+    }
+
+    // A block and its record header must fit in maxSize bytes. A larger request can never succeed, and rejecting it
+    // first also keeps alignSize from overflowing: maxSize is at most Integer.MAX_VALUE, which the JS runtime
+    // passes by default.
+    private static boolean fits(int bytes) {
+        return bytes >= 0 && bytes <= maxSize - Structure.sizeOf(HeapRecord.class);
     }
 
     private static int alignSize(int bytes) {
@@ -158,6 +171,9 @@ public final class Heap {
             return HeapRecord.dataOf(record);
         } else {
             var newRegion = alloc(newSize);
+            if (newRegion == null) {
+                return null;
+            }
             var oldAddress = HeapRecord.dataOf(record);
             Address.moveMemoryBlock(oldAddress, newRegion, oldSize);
             release(oldAddress);
@@ -190,7 +206,8 @@ public final class Heap {
     }
 
     private static boolean tryExtend(int bytes, HeapRecord last) {
-        if (currentSize + bytes > maxSize) {
+        // Written as a subtraction: currentSize + bytes can overflow int.
+        if (bytes > maxSize - currentSize) {
             return false;
         }
         var grownBytes = grow(bytes);

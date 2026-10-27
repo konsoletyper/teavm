@@ -587,6 +587,11 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
     }
 
     protected TAbstractStringBuilder insert(int index, TCharSequence s, int start, int end) {
+        // As in the JDK, a null sequence is the four characters "null". This goes through the String
+        // overload: a String constant cast to TCharSequence would fail when the classlib runs on the JVM.
+        if (s == null) {
+            return insert(index, "null".substring(start, end));
+        }
         if (start > end || end > s.length() || start < 0) {
             throw new TIndexOutOfBoundsException();
         }
@@ -598,6 +603,9 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
     }
 
     protected TAbstractStringBuilder append(TCharSequence s) {
+        if (s == null) {
+            return append("null");
+        }
         return append(s, 0, s.length());
     }
 
@@ -606,6 +614,9 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
     }
 
     protected TAbstractStringBuilder insert(int index, TCharSequence s) {
+        if (s == null) {
+            return insert(index, "null");
+        }
         return insert(index, s, 0, s.length());
     }
 

@@ -435,6 +435,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         }
 
         WaitHandler handler = new WaitHandler(callback);
+        handler.queue = this;
         waitHandlers.add(handler);
         if (timeLimit > 0) {
             int timeout = Math.max(0, (int) (timeLimit - System.currentTimeMillis()));
@@ -448,7 +449,19 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         TThread.currentThread().interruptHandler = handler;
     }
 
+    // notifyChange() takes every handler out of the queue. A wait that timed out or was interrupted removes its own
+    // handler, so the queue does not keep the handler, and with it the waiting thread.
+    private void removeWaitHandler(WaitHandler handler) {
+        if (waitHandlers != null) {
+            waitHandlers.remove(handler);
+            if (waitHandlers.isEmpty()) {
+                waitHandlers = null;
+            }
+        }
+    }
+
     static class WaitHandler implements PlatformRunnable, TThreadInterruptHandler, EventQueue.Event {
+        TArrayBlockingQueue<?> queue;
         AsyncCallback<Boolean> callback;
         boolean complete;
         int timerId;
@@ -462,6 +475,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
             if (complete()) {
                 return;
             }
+            queue.removeWaitHandler(this);
             callback.complete(false);
         }
 
@@ -470,6 +484,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
             if (complete()) {
                 return;
             }
+            queue.removeWaitHandler(this);
             callback.error(new TInterruptedException());
         }
 

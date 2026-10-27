@@ -15,9 +15,13 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.backend.c.runtime.Memory;
@@ -186,24 +190,49 @@ public final class TSystem extends TObject {
         if (properties == null) {
             Properties defaults = new Properties();
             defaults.put("java.version", "21");
+            // The JDK always defines the vendor, and code reads it without a null check.
+            defaults.put("java.vendor", "TeaVM");
+            defaults.put("java.vm.vendor", "TeaVM");
             defaults.put("os.name", "TeaVM");
+            // A JDK always sets os.arch, and libraries read it without a null check. "teavm" names no real CPU, so
+            // such libraries take their portable code paths.
+            defaults.put("os.arch", "teavm");
             defaults.put("file.separator", VirtualFileSystemProvider.getInstance().isWindows() ? "\\" : "/");
             defaults.put("path.separator", VirtualFileSystemProvider.getInstance().isWindows() ? ";" : ":");
             defaults.put("line.separator", lineSeparator());
-            defaults.put("java.io.tmpdir", getTempDir());
+            defaults.put("java.io.tmpdir", defaultTempDir());
             defaults.put("java.vm.version", "21");
             defaults.put("user.home", getHomeDir());
+            // More properties that the JDK always defines. Code saves and restores them with System.setProperty,
+            // which throws for a null value.
+            defaults.put("java.runtime.name", "TeaVM Runtime Environment");
+            defaults.put("java.runtime.version", "21");
+            defaults.put("java.specification.version", "21");
+            defaults.put("java.specification.name", "Java Platform API Specification");
+            defaults.put("java.vm.name", "TeaVM");
+            defaults.put("java.vm.specification.version", "21");
+            defaults.put("java.class.version", "65.0");
+            defaults.put("java.class.path", "");
+            defaults.put("java.home", "/");
+            defaults.put("os.version", "");
+            defaults.put("user.name", "?");
+            defaults.put("user.dir", VirtualFileSystemProvider.getInstance().getUserDir());
+            defaults.put("file.encoding", "UTF-8");
+            defaults.put("native.encoding", "UTF-8");
             properties = new Properties(defaults);
         }
     }
 
+    // File.createTempFile and Files.createTempFile read java.io.tmpdir on every call. The JDK reads it once, at
+    // startup, which its Javadoc allows: "programmatic changes to this property are not guaranteed to have any
+    // effect". A TeaVM program has no command line to set the property on, so System.setProperty is the only way.
     public static String getTempDir() {
-        if (!PlatformDetector.isC()) {
-            return "/tmp";
-        }
-        Address resultPtr = Memory.malloc(Address.sizeOf());
-        int length = CFileSystem.tempDirectory(resultPtr);
-        return VirtualFileSystemProvider.getInstance().canonicalize(toJavaString(resultPtr, length));
+        String dir = getProperty("java.io.tmpdir");
+        return dir != null ? dir : defaultTempDir();
+    }
+
+    private static String defaultTempDir() {
+        return VirtualFileSystemProvider.getInstance().tempDirectory();
     }
 
     private static String getHomeDir() {
@@ -310,8 +339,68 @@ public final class TSystem extends TObject {
         return "\n";
     }
     
+    // Native libraries cannot load. Callers that try to load one fall back to Java code when the load throws
+    // UnsatisfiedLinkError, as it does on a JVM without the library.
+    public static void load(String filename) {
+        if (filename == null) {
+            throw new NullPointerException();
+        }
+        throw new UnsatisfiedLinkError();
+    }
+
+    public static void loadLibrary(String libname) {
+        if (libname == null) {
+            throw new NullPointerException();
+        }
+        throw new UnsatisfiedLinkError();
+    }
+
     public static String getenv(String name) {
+        if (name == null) {
+            throw new NullPointerException();
+        }
         return null;
+    }
+
+    // The environment is empty, as getenv(String) says.
+    public static Map<String, String> getenv() {
+        return new EmptyEnvironment();
+    }
+
+    // Unmodifiable, like Collections.emptyMap(), but queries with a null or non-String key or value throw,
+    // as the getenv() Javadoc requires.
+    private static final class EmptyEnvironment extends AbstractMap<String, String> {
+        @Override
+        public Set<Entry<String, String>> entrySet() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public String get(Object key) {
+            checkQuery(key);
+            return null;
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            checkQuery(key);
+            return false;
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            checkQuery(value);
+            return false;
+        }
+
+        private static void checkQuery(Object o) {
+            if (o == null) {
+                throw new NullPointerException();
+            }
+            if (!(o instanceof String)) {
+                throw new ClassCastException();
+            }
+        }
     }
 
     public static Logger getLogger(String name) {
