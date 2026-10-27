@@ -1000,10 +1000,14 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
         if (hashCode != 0) {
             return hashCode;
         }
-        for (int i = 0; i < digits.length; i++) {
-            hashCode = hashCode * 33 + digits[i];
+        // The JDK's hash code. Only the first numberLength words count: the digits array can be longer, so two
+        // equal values can have different arrays. The JDK hashes the magnitude words from the most significant
+        // one; digits is little-endian.
+        int h = 0;
+        for (int i = numberLength - 1; i >= 0; i--) {
+            h = 31 * h + digits[i];
         }
-        hashCode = hashCode * sign;
+        hashCode = h * sign;
         return hashCode;
     }
 
