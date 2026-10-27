@@ -74,6 +74,151 @@ public class WeakReferenceTest {
         assertSame(ref, value);
     }
 
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void queueRemoveWakesWaitingThread() throws InterruptedException {
+        var queue = new ReferenceQueue<>();
+        // The referent is created in another thread, so that no variable of this method keeps it reachable.
+        var refs = new WeakReference<?>[1];
+        var creator = new Thread(() -> refs[0] = new WeakReference<>(new Object(), queue));
+        creator.start();
+        creator.join();
+
+        var removed = new ArrayBlockingQueue<Object>(1);
+        var waiter = new Thread(() -> {
+            try {
+                removed.add(queue.remove());
+            } catch (InterruptedException e) {
+                // The test has ended.
+            }
+        });
+        waiter.setDaemon(true);
+        waiter.start();
+
+        GCSupport.tryToTriggerGC(refs[0]);
+        var result = removed.poll(5, TimeUnit.SECONDS);
+        waiter.interrupt();
+        assertSame(refs[0], result);
+        // The waiting thread took the reference, so the queue does not hold it as well.
+        assertNull(queue.poll());
+    }
+
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void queueRemoveWithTimeoutWakesBeforeTimeout() throws InterruptedException {
+        var queue = new ReferenceQueue<>();
+        var refs = new WeakReference<?>[1];
+        var creator = new Thread(() -> refs[0] = new WeakReference<>(new Object(), queue));
+        creator.start();
+        creator.join();
+
+        var removed = new ArrayBlockingQueue<Object>(1);
+        var waiter = new Thread(() -> {
+            try {
+                var ref = queue.remove(30000);
+                if (ref != null) {
+                    removed.add(ref);
+                }
+            } catch (InterruptedException e) {
+                // The test has ended.
+            }
+        });
+        waiter.setDaemon(true);
+        waiter.start();
+
+        GCSupport.tryToTriggerGC(refs[0]);
+        var result = removed.poll(5, TimeUnit.SECONDS);
+        waiter.interrupt();
+        assertSame(refs[0], result);
+    }
+
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void queueRemoveDeliversEachReferenceOnce() throws InterruptedException {
+        // More references than waiters: each waiter takes one reference, and the rest stay in the queue for
+        // poll(). No reference is lost or delivered twice.
+        var waiterCount = 3;
+        var refCount = 5;
+        var queue = new ReferenceQueue<>();
+        var refs = new WeakReference<?>[refCount];
+        var creator = new Thread(() -> {
+            for (var i = 0; i < refCount; ++i) {
+                refs[i] = new WeakReference<>(new Object(), queue);
+            }
+        });
+        creator.start();
+        creator.join();
+
+        var removed = new ArrayBlockingQueue<Object>(refCount);
+        var waiters = new Thread[waiterCount];
+        for (var i = 0; i < waiterCount; ++i) {
+            waiters[i] = new Thread(() -> {
+                try {
+                    removed.add(queue.remove());
+                } catch (InterruptedException e) {
+                    // The test has ended.
+                }
+            });
+            waiters[i].setDaemon(true);
+            waiters[i].start();
+        }
+
+        for (var ref : refs) {
+            // Each attempt waits, so skip references whose referent is already collected
+            if (ref.get() != null) {
+                GCSupport.tryToTriggerGC(ref);
+            }
+        }
+        var received = new ArrayList<Object>();
+        for (var i = 0; i < waiterCount; ++i) {
+            var ref = removed.poll(5, TimeUnit.SECONDS);
+            if (ref != null) {
+                received.add(ref);
+            }
+        }
+        for (var waiter : waiters) {
+            waiter.interrupt();
+        }
+        assertEquals(waiterCount, received.size());
+        for (var attempt = 0; attempt < 50 && received.size() < refCount; ++attempt) {
+            var ref = queue.poll();
+            if (ref != null) {
+                received.add(ref);
+            } else {
+                Thread.sleep(100);
+            }
+        }
+        assertNull(queue.poll());
+        assertNull(removed.poll());
+        assertEquals(refCount, received.size());
+        for (var ref : refs) {
+            assertEquals(1, received.stream().filter(r -> r == ref).count());
+        }
+    }
+
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void queueRemoveTimedOutWaiterLeavesReferenceInQueue() throws InterruptedException {
+        // A remove(timeout) that has timed out no longer waits, so a later reference goes to poll().
+        var queue = new ReferenceQueue<>();
+        assertNull(queue.remove(10));
+
+        var refs = new WeakReference<?>[1];
+        var creator = new Thread(() -> refs[0] = new WeakReference<>(new Object(), queue));
+        creator.start();
+        creator.join();
+
+        GCSupport.tryToTriggerGC(refs[0]);
+        Object value = null;
+        for (var attempt = 0; attempt < 50 && value == null; ++attempt) {
+            value = queue.poll();
+            if (value == null) {
+                Thread.sleep(100);
+            }
+        }
+        assertSame(refs[0], value);
+    }
+
     private static void waitInJVM() {
         if (!PlatformDetector.isTeaVM()) {
             try {
@@ -85,9 +230,8 @@ public class WeakReferenceTest {
     }
 
     @Test
-    // On Wasm GC, ReferenceQueue.supply does not call reportNext, so a thread in remove() never wakes up.
     // On C, ReferenceQueueGenerator generates an empty body for remove(), so remove() returns garbage.
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC })
+    @SkipPlatform(TestPlatform.C)
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);

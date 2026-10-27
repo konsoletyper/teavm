@@ -22,7 +22,9 @@ import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
@@ -38,7 +40,8 @@ public class ReferenceQueueTransformation implements ClassHolderTransformer {
     private void transformReferenceQueue(ClassHolder cls, ClassHolderTransformerContext context) {
         var templateClass = context.getHierarchy().getClassSource().get(ReferenceQueueTemplate.class.getName());
         for (var method : templateClass.getMethods()) {
-            if (!method.getName().equals("<init>")) {
+            // reportNext is ReferenceQueue's own method; the template's version only stands for it
+            if (!method.getName().equals("<init>") && !method.getName().equals("reportNext")) {
                 copyMethod(cls, method);
             }
         }
@@ -66,9 +69,20 @@ public class ReferenceQueueTransformation implements ClassHolderTransformer {
                 } else if (instruction instanceof PutFieldInstruction) {
                     var putField = (PutFieldInstruction) instruction;
                     putField.setField(mapField(putField.getField()));
+                } else if (instruction instanceof InvokeInstruction) {
+                    // A call to a template method is a call to the ReferenceQueue method
+                    var invoke = (InvokeInstruction) instruction;
+                    invoke.setMethod(mapMethod(invoke.getMethod()));
                 }
             }
         }
+    }
+
+    private MethodReference mapMethod(MethodReference method) {
+        if (method.getClassName().equals(ReferenceQueueTemplate.class.getName())) {
+            return new MethodReference(ReferenceQueue.class.getName(), method.getDescriptor());
+        }
+        return method;
     }
 
     private FieldReference mapField(FieldReference field) {
