@@ -36,6 +36,11 @@ public class WasmGCSupport {
         return new ClassCastException();
     }
 
+    /** The exception for a negative array length (WasmGCInstructionGenerationVisitor). */
+    public static NegativeArraySizeException nase() {
+        return new NegativeArraySizeException();
+    }
+
     public static void throwCloneNotSupportedException() throws CloneNotSupportedException {
         throw new CloneNotSupportedException();
     }

@@ -19,12 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
@@ -927,6 +930,109 @@ public class VMTest {
         static String value() {
             return VALUE;
         }
+    }
+
+    // Each array goes to a field: the optimizer removes an allocation whose result nothing uses, and with it the
+    // length check.
+    private static Object arraySink;
+
+    // JLS 15.10.2: "If the value of any DimExpr expression is less than zero, then a NegativeArraySizeException is
+    // thrown." JVMS multianewarray: "If any count value is less than zero, multianewarray throws a
+    // NegativeArraySizeException", so every dimension is checked, even one that is never allocated.
+    @Test
+    public void negativeArrayLengthThrows() {
+        int[] lengths = { -1, -2, -1000, Integer.MIN_VALUE + 1, Integer.MIN_VALUE };
+        for (var length : lengths) {
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new boolean[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new byte[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new short[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new char[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new int[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new long[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new float[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new double[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new Object[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new String[length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new int[length][]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new int[length][2]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new int[2][length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new int[0][length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new Object[2][length][]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new long[1][1][length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new String[0][0][length]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = new double[length][0][0]);
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = Array.newInstance(String.class, length));
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = Array.newInstance(int.class, length));
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = Arrays.copyOf(new byte[1], length));
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = Arrays.copyOf(new int[1], length));
+            assertThrows(NegativeArraySizeException.class, () -> arraySink = Arrays.copyOf(new String[1], length));
+        }
+        // Constant lengths, which the backends may treat specially.
+        assertThrows(NegativeArraySizeException.class, () -> arraySink = new byte[-1]);
+        assertThrows(NegativeArraySizeException.class, () -> arraySink = new Object[Integer.MIN_VALUE]);
+        assertThrows(NegativeArraySizeException.class, () -> arraySink = new int[3][-1]);
+        assertThrows(NegativeArraySizeException.class, () -> arraySink = new int[0][-1]);
+    }
+
+    @Test
+    public void nonNegativeArrayLengthDoesNotThrow() {
+        for (int length = 0; length <= 3; ++length) {
+            assertEquals(length, new byte[length].length);
+            assertEquals(length, new long[length].length);
+            assertEquals(length, new Object[length].length);
+            assertEquals(length, new int[length][length].length);
+            assertEquals(0, new int[0][length].length);
+            assertEquals(length, (new int[1][length][0][0])[0].length);
+            assertEquals(length, ((Object[]) Array.newInstance(String.class, length)).length);
+            assertEquals(length, Arrays.copyOf(new byte[1], length).length);
+        }
+        assertEquals(0, new int[zeroLength()].length);
+        assertEquals(0, (new int[2][zeroLength()][1])[1].length);
+    }
+
+    // The exception is thrown at the allocation, so a handler in the same method sees the state from before the
+    // allocation, and code after the allocation does not run.
+    @Test
+    public void negativeArrayLengthCaughtInSameMethod() {
+        int[] lengths = { 1, -1, 0, Integer.MIN_VALUE };
+        var log = new StringBuilder();
+        for (var length : lengths) {
+            int state = 0;
+            try {
+                state = 1;
+                arraySink = new int[length];
+                state = 2;
+                arraySink = new String[1][length];
+                state = 3;
+            } catch (NegativeArraySizeException e) {
+                log.append("caught:").append(state).append(";");
+                continue;
+            }
+            log.append("ok:").append(state).append(";");
+        }
+        assertEquals("ok:3;caught:1;ok:3;caught:1;", log.toString());
+    }
+
+    // Known gap: at the FULL optimization level, TeaVM removes an array allocation whose result nothing uses,
+    // and the length check with it, so nothing is thrown where the JVM throws.
+    @Test
+    @Disabled("TeaVM removes an unused array allocation together with its negative-length check")
+    public void negativeLengthOfUnusedArrayThrows() {
+        int length = minusOne();
+        try {
+            var unused = new byte[length];
+        } catch (NegativeArraySizeException e) {
+            return;
+        }
+        fail("NegativeArraySizeException expected");
+    }
+
+    private static int minusOne() {
+        return -1;
+    }
+
+    private static int zeroLength() {
+        return 0;
     }
 
     @Test

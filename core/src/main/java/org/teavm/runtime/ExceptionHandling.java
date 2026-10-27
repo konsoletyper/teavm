@@ -165,6 +165,11 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    public static void throwNegativeArraySizeException() {
+        throwException(new NegativeArraySizeException());
+    }
+
+    @Unmanaged
     @Export(name = "teavm_throwNoClassDefFoundError")
     public static void throwNoClassDefFoundError() {
         throwException(new NoClassDefFoundError());
