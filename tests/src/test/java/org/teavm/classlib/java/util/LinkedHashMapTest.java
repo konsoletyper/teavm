@@ -312,6 +312,34 @@ public class LinkedHashMapTest {
         assertEquals("key2", key2.iterator().next(), "keySet() was not cloned");
     }
 
+    // The clone and the original must not share the linked list. Iterates both maps to their ends, in insertion
+    // and in access order.
+    @Test
+    @SuppressWarnings("unchecked")
+    public void cloneIsIndependent() {
+        for (var accessOrder : new boolean[] { false, true }) {
+            var map = new LinkedHashMap<String, Integer>(16, 0.75f, accessOrder);
+            map.put("b", 1);
+            map.put("a", 2);
+            var clone = (LinkedHashMap<String, Integer>) map.clone();
+            clone.put("c", 3);
+            map.put("d", 4);
+            assertEquals(List.of("b", "a", "d"), new ArrayList<>(iterateKeys(map)));
+            assertEquals(List.of("b", "a", "c"), new ArrayList<>(iterateKeys(clone)));
+            clone.remove("b");
+            assertEquals(List.of("b", "a", "d"), iterateKeys(map));
+            assertEquals(List.of("a", "c"), iterateKeys(clone));
+        }
+    }
+
+    private static List<String> iterateKeys(Map<String, ?> map) {
+        var result = new ArrayList<String>();
+        for (var key : map.keySet()) {
+            result.add(key);
+        }
+        return result;
+    }
+
     @Test
     public void test_clone_Mock() {
         var hashMap = new MockMap();

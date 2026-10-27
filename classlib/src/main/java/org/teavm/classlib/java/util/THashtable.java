@@ -33,6 +33,8 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
@@ -618,6 +620,86 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
             return result;
         }
         throw new NullPointerException();
+    }
+
+    // computeIfAbsent, computeIfPresent, compute and merge are Map's default methods, plus the check that the
+    // Javadoc of Hashtable requires: "throw a ConcurrentModificationException if the (re)mapping function
+    // modified this map during computation".
+
+    @Override
+    public synchronized V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        TObjects.requireNonNull(mappingFunction);
+        V v = get(key);
+        if (v != null) {
+            return v;
+        }
+        int mc = modCount;
+        V newValue = mappingFunction.apply(key);
+        checkModCount(mc);
+        if (newValue != null) {
+            put(key, newValue);
+        }
+        return newValue;
+    }
+
+    @Override
+    public synchronized V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        TObjects.requireNonNull(remappingFunction);
+        V v = get(key);
+        if (v == null) {
+            return null;
+        }
+        int mc = modCount;
+        V newValue = remappingFunction.apply(key, v);
+        checkModCount(mc);
+        if (newValue != null) {
+            put(key, newValue);
+        } else {
+            remove(key);
+        }
+        return newValue;
+    }
+
+    @Override
+    public synchronized V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        TObjects.requireNonNull(remappingFunction);
+        V oldValue = get(key);
+        int mc = modCount;
+        V newValue = remappingFunction.apply(key, oldValue);
+        checkModCount(mc);
+        if (newValue != null) {
+            put(key, newValue);
+        } else if (oldValue != null) {
+            remove(key);
+        }
+        return newValue;
+    }
+
+    @Override
+    public synchronized V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        // Unlike other maps, the JDK's Hashtable accepts a null value here.
+        TObjects.requireNonNull(remappingFunction);
+        V oldValue = get(key);
+        V newValue;
+        if (oldValue == null) {
+            newValue = value;
+        } else {
+            int mc = modCount;
+            newValue = remappingFunction.apply(oldValue, value);
+            checkModCount(mc);
+        }
+        if (newValue != null) {
+            put(key, newValue);
+        } else {
+            remove(key);
+        }
+        return newValue;
+    }
+
+    private void checkModCount(int expected) {
+        if (modCount != expected) {
+            throw new TConcurrentModificationException();
+        }
     }
 
     @Override

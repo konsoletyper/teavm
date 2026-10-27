@@ -34,6 +34,7 @@
 package org.teavm.classlib.java.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -108,5 +109,35 @@ public class IdentityHashMapTest {
         public int hashCode() {
             return Objects.hash(b);
         }
+    }
+
+    // IdentityHashMap.clone: "Returns a shallow copy of this identity hash map". The JDK fills the copy directly,
+    // so the copy of a subclass that overrides put or putAll (here, to reject changes) does not go through them.
+    static class FrozenIdentityHashMap extends IdentityHashMap<String, String> {
+        boolean frozen;
+
+        @Override
+        public String put(String key, String value) {
+            if (frozen) {
+                throw new UnsupportedOperationException();
+            }
+            return super.put(key, value);
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ? extends String> m) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Test
+    public void cloneDoesNotCallOverriddenPutOrPutAll() {
+        var map = new FrozenIdentityHashMap();
+        map.put("a", "1");
+        map.put("b", "2");
+        map.frozen = true;
+        var clone = (FrozenIdentityHashMap) map.clone();
+        assertEquals(Map.of("a", "1", "b", "2"), clone);
+        assertTrue(clone.frozen);
     }
 }

@@ -384,4 +384,31 @@ public class ArrayListTest {
             // ok
         }
     }
+
+    static class CustomList extends ArrayList<String> {
+        String tag;
+    }
+
+    // ArrayList.clone: "Returns a shallow copy of this ArrayList instance". Object.clone: by convention, the copy
+    // comes from super.clone(), so "x.clone().getClass() == x.getClass()", and it is independent of the original.
+    @Test
+    @SuppressWarnings("unchecked")
+    public void cloneKeepsClassAndIsIndependent() {
+        var list = new CustomList();
+        list.tag = "t";
+        list.addAll(List.of("a", "b", "c"));
+        var clone = (CustomList) list.clone();
+        assertEquals(CustomList.class, clone.getClass());
+        assertEquals("t", clone.tag);
+        assertEquals(List.of("a", "b", "c"), clone);
+        clone.add("d");
+        clone.set(0, "x");
+        list.remove("b");
+        assertEquals(List.of("a", "c"), list);
+        assertEquals(List.of("x", "b", "c", "d"), clone);
+
+        var empty = (ArrayList<String>) new ArrayList<String>().clone();
+        empty.add("a");
+        assertEquals(List.of("a"), empty);
+    }
 }

@@ -19,8 +19,6 @@ import java.util.Iterator;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
-import org.teavm.classlib.java.lang.TObject;
-import org.teavm.interop.Rename;
 
 /**
  *
@@ -109,9 +107,10 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
      * @return a shallow copy of this {@code HashSet}.
      * @see java.lang.Cloneable
      */
-    @Rename("clone")
+    @Override
     @SuppressWarnings("unchecked")
-    public TObject clone0() {
+    public Object clone() {
+        // The copy has this set's class, and its map is a clone of this set's map.
         try {
             THashSet<E> clone = (THashSet<E>) super.clone();
             clone.backingMap = (THashMap<E, THashSet<E>>) backingMap.clone();
@@ -177,11 +176,6 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
     @Override
     public int size() {
         return backingMap.size();
-    }
-
-    @Override
-    public Object clone() {
-        return new THashSet<>(this);
     }
 
     public static <T> THashSet<T> newHashSet(int size) {

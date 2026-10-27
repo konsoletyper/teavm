@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -206,5 +207,27 @@ public class TreeSetTest {
         assertTrue(set.remove(1));
         assertFalse(set.remove(1));
         assertFalse(set.remove(3));
+    }
+
+    static class CustomTreeSet extends TreeSet<String> {
+        CustomTreeSet(Comparator<String> comparator) {
+            super(comparator);
+        }
+    }
+
+    // TreeSet.clone: "Returns a shallow copy of this TreeSet instance". Object.clone: by convention,
+    // "x.clone().getClass() == x.getClass()", and the clone is independent of the original.
+    @Test
+    @SuppressWarnings("unchecked")
+    public void cloneKeepsClassAndComparatorAndIsIndependent() {
+        var set = new CustomTreeSet(Comparator.reverseOrder());
+        set.addAll(List.of("a", "c", "b"));
+        var clone = (TreeSet<String>) set.clone();
+        assertEquals(CustomTreeSet.class, clone.getClass());
+        assertEquals(set.comparator(), clone.comparator());
+        clone.add("d");
+        set.remove("a");
+        assertEquals(List.of("c", "b"), List.copyOf(set));
+        assertEquals(List.of("d", "c", "b", "a"), List.copyOf(clone));
     }
 }

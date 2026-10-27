@@ -957,4 +957,34 @@ public class TreeMapTest {
             assertEquals(size, map.size());
         }
     }
+
+    // TreeMap.clone: "Returns a shallow copy of this TreeMap instance". The JDK fills the copy directly, so the
+    // copy of a subclass that overrides put or putAll (here, to reject changes) does not go through them.
+    static class FrozenTreeMap extends TreeMap<String, String> {
+        boolean frozen;
+
+        @Override
+        public String put(String key, String value) {
+            if (frozen) {
+                throw new UnsupportedOperationException();
+            }
+            return super.put(key, value);
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ? extends String> m) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Test
+    public void cloneDoesNotCallOverriddenPutOrPutAll() {
+        var map = new FrozenTreeMap();
+        map.put("a", "1");
+        map.put("b", "2");
+        map.frozen = true;
+        var clone = (FrozenTreeMap) map.clone();
+        assertEquals(Map.of("a", "1", "b", "2"), clone);
+        assertTrue(clone.frozen);
+    }
 }
