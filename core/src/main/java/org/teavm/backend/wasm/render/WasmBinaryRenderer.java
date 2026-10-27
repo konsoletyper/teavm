@@ -468,6 +468,7 @@ public class WasmBinaryRenderer {
         instructionRenderer.render(function.getBody());
 
         code.writeByte(0x0B);
+        instructionRenderer.endLocations();
 
         if (debugLines != null && function.getJavaMethod() != null) {
             debugLines.advance(code.getPosition() + offset + sectionOffset);
