@@ -18,8 +18,12 @@ package org.teavm.classlib.java.lang.ref;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +51,6 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
     public void deref() {
         var ref = createAndTestRef(null);
         GCSupport.tryToTriggerGC(ref);
@@ -55,7 +58,6 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
     public void refQueue() {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
@@ -83,7 +85,9 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT })
+    // On Wasm GC, ReferenceQueue.supply does not call reportNext, so a thread in remove() never wakes up.
+    // On C, ReferenceQueueGenerator generates an empty body for remove(), so remove() returns garbage.
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC })
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
@@ -103,11 +107,17 @@ public class WeakReferenceTest {
         assertSame(ref, result);
     }
 
-    private WeakReference<Object> createAndTestRef(ReferenceQueue<Object> queue) {
-        var obj = new Object();
-        var ref = new WeakReference<>(obj, queue);
-        assertSame(obj, ref.get());
-        return ref;
+    private static WeakReference<Object> createAndTestRef(ReferenceQueue<Object> queue) {
+        var refs = new ArrayList<WeakReference<Object>>();
+        var referentReturned = new boolean[1];
+        runInAnotherThread(() -> {
+            var obj = new Object();
+            var ref = new WeakReference<>(obj, queue);
+            referentReturned[0] = ref.get() == obj;
+            refs.add(ref);
+        });
+        assertTrue(referentReturned[0]);
+        return refs.get(0);
     }
 
     @Test
@@ -118,6 +128,128 @@ public class WeakReferenceTest {
 
         ref.clear();
         assertNull(ref.get());
+    }
+
+    // Reference.enqueue(): "Clears this reference object and adds it to the queue with which it is registered, if any."
+    @Test
+    public void enqueueClears() {
+        var obj = new Object();
+        var queue = new ReferenceQueue<>();
+        List<Reference<Object>> refs = List.of(new WeakReference<>(obj, queue), new WeakReference<>(obj),
+                new SoftReference<>(obj, queue), new SoftReference<>(obj));
+        for (var ref : refs) {
+            assertSame(obj, ref.get());
+            ref.enqueue();
+            assertNull(ref.get());
+        }
+    }
+
+    // Reference.enqueue(): "Clears this reference object and adds it to the queue with which it is registered, if any."
+    @Test
+    // Known gap: on JS and Wasm GC, enqueue() clears the reference and returns true, but does not add it to the queue
+    @SkipPlatform({ TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC })
+    public void enqueueAddsToQueue() {
+        var queue = new ReferenceQueue<>();
+        var ref = new WeakReference<>(new Object(), queue);
+        assertTrue(ref.enqueue());
+        assertSame(ref, queue.poll());
+        assertNull(queue.poll());
+    }
+
+    @Test
+    public void clearTwice() {
+        var obj = new Object();
+        var queue = new ReferenceQueue<>();
+        var refs = List.of(new WeakReference<>(obj), new WeakReference<>(obj, queue));
+        for (var ref : refs) {
+            ref.clear();
+            assertNull(ref.get());
+            ref.clear();
+            assertNull(ref.get());
+        }
+        assertNull(queue.poll());
+    }
+
+    @Test
+    public void nullReferent() {
+        var queue = new ReferenceQueue<>();
+        var refs = List.of(new WeakReference<>(null), new WeakReference<>(null, queue));
+        for (var ref : refs) {
+            assertNull(ref.get());
+            ref.clear();
+            assertNull(ref.get());
+        }
+        assertNull(queue.poll());
+    }
+
+    @Test
+    public void clearedRefNotEnqueued() {
+        var queue = new ReferenceQueue<>();
+        var refs = new WeakReference<?>[2];
+        runInAnotherThread(() -> {
+            var obj = new Object();
+            refs[0] = new WeakReference<>(obj, queue);
+            refs[1] = new WeakReference<>(obj, queue);
+        });
+        refs[1].clear();
+        GCSupport.tryToTriggerGC(refs[0]);
+        assertEquals(List.of(refs[0]), pollUntilEnqueued(queue, refs[0]));
+    }
+
+    @Test
+    public void unreachableRefNotEnqueued() {
+        var queue = new ReferenceQueue<>();
+        var holder = new Object[1];
+        var refs = new WeakReference<?>[2];
+        runInAnotherThread(() -> {
+            holder[0] = new Object();
+            refs[0] = new WeakReference<>(holder[0], queue);
+            refs[1] = new WeakReference<>(new WeakReference<>(holder[0], queue));
+        });
+        GCSupport.tryToTriggerGC(refs[1]);
+        assertNull(refs[1].get());
+
+        holder[0] = null;
+        GCSupport.tryToTriggerGC(refs[0]);
+        assertEquals(List.of(refs[0]), pollUntilEnqueued(queue, refs[0]));
+    }
+
+    // Objects that a test expects to be collected are created in another thread. When the optimizer inlines a helper
+    // method, its temporary variables become variables of the test method, which may keep them reachable.
+    private static void runInAnotherThread(Runnable action) {
+        var thread = new Thread(action);
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<Object> pollUntilEnqueued(ReferenceQueue<?> queue, Object expected) {
+        var result = new ArrayList<Object>();
+        for (var i = 0; i < 50 && !result.contains(expected); ++i) {
+            sleep(100);
+            drain(queue, result);
+        }
+        // Wait a little more to catch references that are enqueued but should not be
+        sleep(100);
+        drain(queue, result);
+        return result;
+    }
+
+    private static void drain(ReferenceQueue<?> queue, List<Object> result) {
+        for (var ref = queue.poll(); ref != null; ref = queue.poll()) {
+            result.add(ref);
+        }
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     interface I {

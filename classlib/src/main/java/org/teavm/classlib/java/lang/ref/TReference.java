@@ -30,6 +30,7 @@ public abstract class TReference<T> extends TObject {
     }
 
     public boolean enqueue() {
+        clear();
         return false;
     }
 }

@@ -28,6 +28,7 @@ import org.teavm.model.ValueType;
 public class WeakReferenceIntrinsic implements WasmGCBodyIntrinsic {
     private WasmGCCodeGenContext context;
     private WasmFunction createWeakReferenceFunction;
+    private WasmFunction clearWeakReferenceFunction;
 
     public WeakReferenceIntrinsic(WasmGCCodeGenContext context) {
         this.context = context;
@@ -94,6 +95,9 @@ public class WeakReferenceIntrinsic implements WasmGCBodyIntrinsic {
 
         var body = function.getBody().builder();
         body.getLocal(thisLocal);
+        body.structGet(weakRefStruct, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET);
+        body.call(getClearWeakReferenceFunction());
+        body.getLocal(thisLocal);
         body
                 .nullConst(WasmType.EXTERN)
                 .structSet(weakRefStruct, WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET);
@@ -114,6 +118,18 @@ public class WeakReferenceIntrinsic implements WasmGCBodyIntrinsic {
             createWeakReferenceFunction = function;
         }
         return createWeakReferenceFunction;
+    }
+
+    private WasmFunction getClearWeakReferenceFunction() {
+        if (clearWeakReferenceFunction == null) {
+            var function = new WasmFunction(context.functionTypes().of(null, WasmType.EXTERN));
+            function.setName(context.names().topLevel("teavm@clearWeakReference"));
+            function.setImportName("clearWeakRef");
+            function.setImportModule("teavm");
+            context.module().functions.add(function);
+            clearWeakReferenceFunction = function;
+        }
+        return clearWeakReferenceFunction;
     }
 
     private WasmFunction createDerefFunction() {
