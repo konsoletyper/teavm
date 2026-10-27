@@ -1,0 +1,18 @@
+var @this as this
+
+$start
+    @x := invokeStatic `Foo.get()LFoo;`
+    goto $try
+$try
+    invokeVirtual `Foo.bar()V` @x
+    @x_1 := nullCheck @x
+    goto $join
+    catch java.lang.RuntimeException goto $handler
+$handler
+    @y := phi @x_1 from $try, @x from $try
+    invokeStatic `Foo.handle(LFoo;)V` @y
+    goto $join
+$join
+    return
+
+// NULLABLE y
