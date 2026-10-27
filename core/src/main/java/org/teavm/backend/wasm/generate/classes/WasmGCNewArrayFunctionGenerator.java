@@ -57,7 +57,9 @@ class WasmGCNewArrayFunctionGenerator {
                     List.of(classInfoType.structure().getReference(), WasmType.INT32));
             module.types.add(functionType);
             functionType.setFinal(true);
-            functionType.getSupertypes().add(classInfoType.newArrayFunctionType());
+            if (classInfoType.newArrayFunctionType() != null) {
+                functionType.getSupertypes().add(classInfoType.newArrayFunctionType());
+            }
             var function = new WasmFunction(functionType);
             function.setName(names.topLevel("Array<" + names.suggestForType(itemType) + ">@new"));
             module.functions.add(function);
@@ -103,7 +105,9 @@ class WasmGCNewArrayFunctionGenerator {
                 List.of(classInfoType.structure().getReference(), WasmType.INT32));
         module.types.add(functionType);
         functionType.setFinal(true);
-        functionType.getSupertypes().add(classInfoType.newArrayFunctionType());
+        if (classInfoType.newArrayFunctionType() != null) {
+            functionType.getSupertypes().add(classInfoType.newArrayFunctionType());
+        }
 
         var function = new WasmFunction(functionType);
         function.setName(names.topLevel("Array<" + names.suggestForClass("java.lang.Object") + ">@new"));
