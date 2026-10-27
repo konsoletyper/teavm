@@ -21,9 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.AbstractMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
@@ -204,5 +207,121 @@ public class SystemTest {
                 "java.specification.version", "user.dir", "file.encoding")) {
             assertNotNull(System.getProperty(name), name);
         }
+    }
+
+    // System.getenv(): "Returns an unmodifiable string map view of the current system environment."
+    // System.getenv(String): "the string value of the variable, or null if the variable is not defined".
+    @Test
+    public void getenvMapAgreesWithGetenv() {
+        var env = System.getenv();
+        assertNotNull(env);
+        for (var entry : env.entrySet()) {
+            assertNotNull(entry.getKey());
+            assertNotNull(entry.getValue());
+            assertEquals(entry.getValue(), System.getenv(entry.getKey()));
+            assertTrue(env.containsKey(entry.getKey()));
+            assertTrue(env.containsValue(entry.getValue()));
+        }
+        for (var name : List.of("PATH", "HOME", "TEAVM_NO_SUCH_VARIABLE", "")) {
+            assertEquals(env.get(name), System.getenv(name), name);
+            assertEquals(env.containsKey(name), System.getenv(name) != null, name);
+        }
+    }
+
+    // TeaVM programs have no environment. getenv(): "If the system does not support environment variables,
+    // an empty map is returned."
+    @Test
+    @SkipJVM
+    public void environmentIsEmpty() {
+        assertTrue(System.getenv().isEmpty());
+        assertEquals(0, System.getenv().size());
+        assertNull(System.getenv("PATH"));
+    }
+
+    // getenv(String): "NullPointerException - if name is null"
+    @Test
+    public void getenvRejectsNullName() {
+        assertThrows(NullPointerException.class, () -> System.getenv(null));
+    }
+
+    // getenv(): "Attempting to query the presence of a null key or value will throw a NullPointerException.
+    // Attempting to query the presence of a key or value which is not of type String will throw a
+    // ClassCastException."
+    @Test
+    @SuppressWarnings({ "SuspiciousMethodCalls", "ResultOfMethodCallIgnored" })
+    public void getenvMapRejectsNullAndNonStringQueries() {
+        var env = System.getenv();
+        assertThrows(NullPointerException.class, () -> env.get(null));
+        assertThrows(NullPointerException.class, () -> env.containsKey(null));
+        assertThrows(NullPointerException.class, () -> env.containsValue(null));
+        assertThrows(ClassCastException.class, () -> env.get(1));
+        assertThrows(ClassCastException.class, () -> env.containsKey(1));
+        assertThrows(ClassCastException.class, () -> env.containsValue(1));
+    }
+
+    // getenv(): "Returns an unmodifiable string map view". Map: "unmodifiable maps ... throw
+    // UnsupportedOperationException" for mutators that would change the map. Calls that would have no
+    // effect "may, but are not required to" throw, so for them only check that the map is unchanged.
+    @Test
+    public void getenvMapIsUnmodifiable() {
+        var env = System.getenv();
+        var snapshot = new HashMap<>(env);
+        var key = "TEAVM_NO_SUCH_VARIABLE";
+        var other = new HashMap<String, String>();
+        other.put(key, "x");
+
+        List<Runnable> mutators = List.of(
+                () -> env.put(key, "x"),
+                () -> env.putAll(other),
+                () -> env.putIfAbsent(key, "x"),
+                () -> env.computeIfAbsent(key, k -> "x"),
+                () -> env.compute(key, (k, v) -> "x"),
+                () -> env.merge(key, "x", (a, b) -> a + b),
+                () -> env.keySet().add(key),
+                () -> env.values().add("x"),
+                () -> env.entrySet().add(new AbstractMap.SimpleEntry<>(key, "x"))
+        );
+        for (var i = 0; i < mutators.size(); ++i) {
+            var mutator = mutators.get(i);
+            assertThrows(UnsupportedOperationException.class, mutator::run, "mutator " + i);
+            assertEquals(snapshot, env);
+        }
+
+        List<Runnable> noEffect = List.of(
+                () -> env.remove(key),
+                () -> env.remove(key, "x"),
+                () -> env.replace(key, "x"),
+                () -> env.replace(key, "x", "y"),
+                () -> env.computeIfPresent(key, (k, v) -> "x"),
+                () -> env.putAll(new HashMap<>()),
+                () -> env.keySet().remove(key),
+                () -> env.values().remove("TEAVM_NO_SUCH_VALUE")
+        );
+        for (var mutator : noEffect) {
+            try {
+                mutator.run();
+            } catch (UnsupportedOperationException e) {
+                // allowed
+            }
+            assertEquals(snapshot, env);
+        }
+
+        if (!env.isEmpty()) {
+            assertThrows(UnsupportedOperationException.class, env::clear);
+            assertThrows(UnsupportedOperationException.class, () -> env.replaceAll((k, v) -> "x"));
+            var some = env.keySet().iterator().next();
+            assertThrows(UnsupportedOperationException.class, () -> env.remove(some));
+            assertThrows(UnsupportedOperationException.class, () -> env.put(some, "x"));
+        } else {
+            List<Runnable> noEffectWhenEmpty = List.of(env::clear, () -> env.replaceAll((k, v) -> "x"));
+            for (var mutator : noEffectWhenEmpty) {
+                try {
+                    mutator.run();
+                } catch (UnsupportedOperationException e) {
+                    // allowed: no effect on an empty map
+                }
+            }
+        }
+        assertEquals(snapshot, env);
     }
 }

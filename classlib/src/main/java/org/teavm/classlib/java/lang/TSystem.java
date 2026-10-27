@@ -15,9 +15,13 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.backend.c.runtime.Memory;
@@ -333,7 +337,51 @@ public final class TSystem extends TObject {
     }
     
     public static String getenv(String name) {
+        if (name == null) {
+            throw new NullPointerException();
+        }
         return null;
+    }
+
+    // The environment is empty, as getenv(String) says.
+    public static Map<String, String> getenv() {
+        return new EmptyEnvironment();
+    }
+
+    // Unmodifiable, like Collections.emptyMap(), but queries with a null or non-String key or value throw,
+    // as the getenv() Javadoc requires.
+    private static final class EmptyEnvironment extends AbstractMap<String, String> {
+        @Override
+        public Set<Entry<String, String>> entrySet() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public String get(Object key) {
+            checkQuery(key);
+            return null;
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            checkQuery(key);
+            return false;
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            checkQuery(value);
+            return false;
+        }
+
+        private static void checkQuery(Object o) {
+            if (o == null) {
+                throw new NullPointerException();
+            }
+            if (!(o instanceof String)) {
+                throw new ClassCastException();
+            }
+        }
     }
 
     public static Logger getLogger(String name) {
