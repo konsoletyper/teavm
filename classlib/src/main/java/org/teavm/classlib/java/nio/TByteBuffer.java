@@ -256,8 +256,10 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
 
     @Override
     public String toString() {
-        return "[ByteBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity() + ", mark "
-                + (mark >= 0 ? " at " + mark : " is not set") + "]";
+        // The JDK's format. The JDK names the implementation class: HeapByteBuffer or DirectByteBuffer, with R when
+        // the buffer is read-only.
+        return "java.nio." + (isDirect() ? "DirectByteBuffer" : "HeapByteBuffer") + (isReadOnly() ? "R" : "")
+                + "[pos=" + position + " lim=" + limit + " cap=" + capacity() + "]";
     }
 
     @Override
