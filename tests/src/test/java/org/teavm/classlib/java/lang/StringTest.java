@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
@@ -422,5 +423,61 @@ public class StringTest {
         assertEquals("abc\n\ndef\n", " abc\r\n \n def\r ".stripIndent());
         assertEquals("", " ".stripIndent());
         assertEquals("\n", " \n ".stripIndent());
+    }
+
+    // Javadoc of String(byte[] ascii, int hibyte, int offset, int count): "Each char c in the resulting
+    // string is constructed from the corresponding component b in the byte array such that:
+    // c == (char)(((hibyte & 0xff) << 8) | (b & 0xff))"
+    @Test
+    @SuppressWarnings("deprecation")
+    public void hibyteConstructor() {
+        assertEquals("Hi", new String(new byte[] { 72, 105 }, 0, 0, 2));
+        assertEquals("Łł", new String(new byte[] { 65, 66 }, 1, 0, 2));
+        assertEquals("i", new String(new byte[] { 72, 105, 33 }, 0, 1, 1));
+        assertEquals("", new String(new byte[] { 72, 105 }, 0, 2, 0));
+        assertEquals("", new String(new byte[0], 5, 0, 0));
+
+        // Exhaustive over every byte value and a set of hibytes, including ones with bits above 0xff
+        // that must be masked off and negative ones.
+        var bytes = new byte[256];
+        for (int i = 0; i < bytes.length; ++i) {
+            bytes[i] = (byte) i;
+        }
+        int[] hibytes = { 0, 1, 0x7f, 0x80, 0xd8, 0xdc, 0xff, 0x100, 0x1ff, 0x12345, -1, -256, Integer.MIN_VALUE,
+                Integer.MAX_VALUE };
+        for (int hibyte : hibytes) {
+            var s = new String(bytes, hibyte, 0, bytes.length);
+            var s2 = new String(bytes, hibyte);
+            assertEquals(256, s.length());
+            assertEquals(s, s2);
+            for (int b = 0; b < 256; ++b) {
+                char expected = (char) (((hibyte & 0xff) << 8) | b);
+                assertEquals(expected, s.charAt(b), "hibyte=" + hibyte + ", b=" + b);
+            }
+            var sub = new String(bytes, hibyte, 10, 20);
+            assertEquals(s.substring(10, 30), sub);
+        }
+    }
+
+    // Javadoc of String(byte[] ascii, int hibyte, int offset, int count): "Throws:
+    // IndexOutOfBoundsException - If offset is negative, count is negative, or offset is greater than
+    // ascii.length - count". The class Javadoc: "Unless otherwise noted, passing a null argument to a
+    // constructor or method in this class will cause a NullPointerException to be thrown."
+    @Test
+    @SuppressWarnings("deprecation")
+    public void hibyteConstructorChecksBounds() {
+        var bytes = new byte[] { 1, 2, 3 };
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, -1, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 0, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 1, 3));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 4, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 0, 4));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, 1, Integer.MAX_VALUE));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, Integer.MAX_VALUE, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> new String(bytes, 0, Integer.MIN_VALUE, 0));
+        assertEquals(3, new String(bytes, 0, 0, 3).length());
+        assertEquals(0, new String(bytes, 0, 3, 0).length());
+        assertThrows(NullPointerException.class, () -> new String(null, 0, 0, 0));
+        assertThrows(NullPointerException.class, () -> new String((byte[]) null, 0));
     }
 }
