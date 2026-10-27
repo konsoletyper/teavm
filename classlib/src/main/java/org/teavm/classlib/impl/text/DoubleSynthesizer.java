@@ -16,6 +16,8 @@
 package org.teavm.classlib.impl.text;
 
 public final class DoubleSynthesizer {
+    private static final int MANTISSA_LOWER_BITS = 5;
+
     private DoubleSynthesizer() {
     }
 
@@ -43,7 +45,14 @@ public final class DoubleSynthesizer {
             return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
 
-        var mantissaLowerBits = 5;
+        var mantissaLowerBits = MANTISSA_LOWER_BITS;
+        if (binExp <= 0) {
+            // A subnormal has fewer mantissa bits, so round at its own last bit. A carry out of the top bit gives
+            // the smallest normal value. A shift of 64 or more gives zero (Java uses only the low bits of the count).
+            var shift = -binExp + 1 + mantissaLowerBits;
+            var bits = shift >= 64 ? 0 : (binMantissa + (1L << (shift - 1))) >>> shift;
+            return Double.longBitsToDouble(negative ? bits | (1L << 63) : bits);
+        }
         var mantissaLowerPos = 1 << mantissaLowerBits;
         var error = (int) (binMantissa & (mantissaLowerPos - 1));
         var correction = mantissaLowerPos >> 1;
@@ -55,29 +64,72 @@ public final class DoubleSynthesizer {
             low = mantissa - low;
             hi = hi - mantissa;
             var cmp = Long.compareUnsigned(low, hi);
-            if (cmp < 0) {
+            var lowerBits = toBits(binMantissaWithoutError, binExp);
+            if (isMidpoint(lowerBits, mantissa, exp)) {
+                // Round half to even, as the JDK does
+                correction = (lowerBits & 1) == 0 ? -error : mantissaLowerPos - error;
+            } else if (cmp < 0) {
                 correction = -error;
             } else if (cmp > 0) {
                 correction = mantissaLowerPos - error;
             }
         }
 
-        binMantissa += correction;
-        if ((binMantissa & (-1L << 58L)) != 0) {
-            binMantissa >>>= 1;
-            binExp++;
-        }
-        if (binExp <= 0) {
-            binMantissa >>= Math.min(-binExp + 1, 64);
-            binExp = 0;
-        }
-
-        binMantissa = (binMantissa >>> mantissaLowerBits) & (-1L << 12 >>> 12);
-        var iee754 = binMantissa | ((long) binExp << 52);
+        var iee754 = toBits(binMantissa + correction, binExp);
         if (negative) {
             iee754 ^= 1L << 63;
         }
         return Double.longBitsToDouble(iee754);
+    }
+
+    private static long toBits(long binMantissa, int binExp) {
+        if ((binMantissa & (-1L << 58L)) != 0) {
+            binMantissa >>>= 1;
+            binExp++;
+        }
+        binMantissa = (binMantissa >>> MANTISSA_LOWER_BITS) & (-1L << 12 >>> 12);
+        return binMantissa | ((long) binExp << 52);
+    }
+
+    // Whether mantissa * 10^(exp - 18) is exactly the midpoint between the normal double with the given bits and
+    // the next double. The midpoint is (2m + 1) * 2^(e - 1) with m the significand and e the binary exponent of
+    // the double. The decimal is d * 2^t * 5^q * 2^q with d odd. Two numbers are equal only if their odd factors
+    // and their powers of two are equal.
+    private static boolean isMidpoint(long bits, long mantissa, int exp) {
+        var oddMid = (((bits & ((1L << 52) - 1)) | (1L << 52)) << 1) | 1;
+        var midExp2 = (int) (bits >>> 52) - 1075 - 1;
+        var decExp = exp - 18;
+        while (Long.remainderUnsigned(mantissa, 10) == 0) {
+            mantissa = Long.divideUnsigned(mantissa, 10);
+            decExp++;
+        }
+        var zeros = Long.numberOfTrailingZeros(mantissa);
+        var oddDec = mantissa >>> zeros;
+        if (decExp >= 0) {
+            // oddMid == oddDec * 5^decExp and midExp2 == zeros + decExp
+            if (midExp2 != zeros + decExp || Long.compareUnsigned(oddDec, oddMid) > 0) {
+                return false;
+            }
+            for (var i = 0; i < decExp; ++i) {
+                if (oddDec > oddMid / 5) {
+                    return false;
+                }
+                oddDec *= 5;
+            }
+            return oddDec == oddMid;
+        } else {
+            // oddMid * 5^-decExp == oddDec and midExp2 == zeros + decExp
+            if (midExp2 != zeros + decExp) {
+                return false;
+            }
+            for (var i = 0; i < -decExp; ++i) {
+                if (Long.compareUnsigned(oddMid, Long.divideUnsigned(oddDec, 5)) > 0) {
+                    return false;
+                }
+                oddMid *= 5;
+            }
+            return oddMid == oddDec;
+        }
     }
 
     private static long calcDecMantissa(long mantissa, int lowerBit, int indexInTable, int binExp) {

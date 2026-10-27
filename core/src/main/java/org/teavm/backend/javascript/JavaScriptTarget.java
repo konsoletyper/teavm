@@ -305,6 +305,18 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             includeStackTraceMethods(dependencyAnalyzer);
         }
 
+        exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
+                NoClassDefFoundError.class, "<init>", void.class));
+        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getClassType(NoClassDefFoundError.class.getName()));
+        exceptionCons.use();
+
+        exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
+                ExceptionInInitializerError.class, "<init>", Throwable.class, void.class));
+        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getClassType(
+                ExceptionInInitializerError.class.getName()));
+        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getClassType(Throwable.class.getName()));
+        exceptionCons.use();
+
         dependencyAnalyzer.linkMethod(new MethodReference(Throwable.class, "getMessage", String.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Throwable.class, "getCause", Throwable.class)).use();
 

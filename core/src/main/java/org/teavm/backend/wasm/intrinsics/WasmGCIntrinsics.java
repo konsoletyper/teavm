@@ -147,8 +147,7 @@ public class WasmGCIntrinsics {
                 ctx::isAsyncMethod);
         metadataGen.generate();
         ctx.initializerRegistry().register(fn -> fn.getBody().builder().call(metadataGen.initFunction()));
-        reg.registerIntrinsic(ClassInfo.class, new ClassInfoIntrinsic(classInfoProvider, ctx.functionTypes(),
-                metadataGen));
+        reg.registerIntrinsic(ClassInfo.class, new ClassInfoIntrinsic(classInfoProvider, ctx.functionTypes()));
         reg.registerIntrinsic(ClassReflectionInfo.class, new ClassReflectionInfoIntrinsic(classInfoProvider));
         reg.registerIntrinsic(StringInfo.class, new StringInfoIntrinsic());
         reg.registerIntrinsic(AnnotationConstructor.class, new AnnotationConstructorIntrinsic(classInfoProvider));

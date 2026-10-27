@@ -25,6 +25,7 @@ import org.teavm.interop.c.Native;
 @Name("TeaVM_Class")
 public class RuntimeClass extends Structure {
     public static final int INITIALIZED = 1;
+    public static final int INITIALIZATION_FAILED = 256;
     public static final int VM_TYPE_SHIFT = 1;
     public static final int VM_TYPE_MASK = 7;
     public static final int PRIMITIVE_TYPE_SHIFT = 4;

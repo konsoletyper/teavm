@@ -84,6 +84,19 @@ public class ByteBufferTest {
     }
 
     @Test
+    @OnlyPlatform(TestPlatform.WEBASSEMBLY_GC)
+    public void errorIfDirectBufferDoesNotFitInMemory() {
+        // Wasm GC linear memory is at most 2 GiB, which these buffers and the data already in memory exceed
+        for (var i = 0; i <= 16; ++i) {
+            var capacity = Integer.MAX_VALUE - i;
+            assertThrows(OutOfMemoryError.class, () -> ByteBuffer.allocateDirect(capacity), "capacity " + capacity);
+        }
+        var buffer = ByteBuffer.allocateDirect(16);
+        buffer.put(15, (byte) 1);
+        assertEquals(1, buffer.get(15));
+    }
+
+    @Test
     public void allocatesSimple() {
         ByteBuffer buffer = ByteBuffer.allocate(100);
         assertFalse(buffer.isDirect());

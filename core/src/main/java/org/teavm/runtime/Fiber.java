@@ -92,7 +92,13 @@ public final class Fiber {
         if (objectValues == null) {
             objectValues = new Object[4];
         } else if (objectTop + 1 == objectValues.length) {
-            objectValues = Arrays.copyOf(objectValues, objectValues.length * 3 / 2);
+            // Arrays.copyOf(Object[]) calls Array.newInstance, which can be suspendable.
+            // This method runs while the fiber suspends, so it must not call suspendable code.
+            var newObjectValues = new Object[objectValues.length * 3 / 2];
+            for (var i = 0; i < objectTop; ++i) {
+                newObjectValues[i] = objectValues[i];
+            }
+            objectValues = newObjectValues;
         }
         objectValues[objectTop++] = value;
     }
@@ -263,9 +269,11 @@ public final class Fiber {
         }
         lastPendingCall = pendingCall;
 
-        fiber.state = STATE_SUSPENDING;
         pendingCall.callback = new AsyncCallbackImpl(pendingCall, javaThread, fiber);
+        // The call can run suspendable code that does not suspend. That code must see a running fiber,
+        // otherwise it unwinds as if it suspended.
         call.run(pendingCall.callback);
+        fiber.state = STATE_SUSPENDING;
         return null;
     }
 

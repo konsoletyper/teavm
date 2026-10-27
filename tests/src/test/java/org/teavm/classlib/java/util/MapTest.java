@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -161,5 +162,63 @@ public class MapTest {
         treeMap.replaceAll((k, v) -> v * 10);
         assertEquals(Map.of("a", 10, "b", 20), hashMap);
         assertEquals(Map.of("a", 10, "b", 20), treeMap);
+    }
+
+    // Map.get: "Returns the value to which the specified key is mapped, or null if this map contains
+    // no mapping for the key." Lookups in an empty immutable map must therefore simply miss.
+    @Test
+    public void emptyImmutableMapLookup() {
+        checkEmptyLookup(Map.ofEntries());
+        checkEmptyLookup(Map.copyOf(new HashMap<>()));
+    }
+
+    private static void checkEmptyLookup(Map<String, Integer> empty) {
+        assertNull(empty.get("a"));
+        assertEquals((Object) 5, empty.getOrDefault("a", 5));
+        assertFalse(empty.containsKey("a"));
+        assertFalse(empty.containsValue(1));
+        assertFalse(empty.entrySet().contains(Map.entry("a", 1)));
+        assertFalse(empty.keySet().contains("a"));
+        assertFalse(empty.values().contains(1));
+    }
+
+    // Keys whose hashCode() is Integer.MIN_VALUE (for which Math.abs is negative) and other extreme
+    // hash codes must be storable and findable at every table size, and absent keys must miss.
+    @Test
+    public void immutableMapHandlesExtremeHashCodes() {
+        for (int n = 0; n <= HASH_POOL.length; ++n) {
+            for (int offset = 0; offset < HASH_POOL.length; ++offset) {
+                Integer[] keys = new Integer[n];
+                @SuppressWarnings("unchecked")
+                Map.Entry<Integer, Integer>[] entries = new Map.Entry[n];
+                Map<Integer, Integer> source = new HashMap<>();
+                for (int i = 0; i < n; ++i) {
+                    keys[i] = HASH_POOL[(offset + i) % HASH_POOL.length];
+                    entries[i] = Map.entry(keys[i], i);
+                    source.put(keys[i], i);
+                }
+                checkHashLookup(keys, Map.ofEntries(entries));
+                checkHashLookup(keys, Map.copyOf(source));
+            }
+        }
+    }
+
+    private static final Integer[] HASH_POOL = { Integer.MIN_VALUE, Integer.MAX_VALUE, -1, 0, 1,
+            Integer.MIN_VALUE + 1, 7, 42, -42, 1000, 12345, -99999 };
+
+    private static void checkHashLookup(Integer[] keys, Map<Integer, Integer> map) {
+        assertEquals(keys.length, map.size());
+        for (int i = 0; i < keys.length; ++i) {
+            assertEquals((Object) i, map.get(keys[i]));
+            assertTrue(map.containsKey(keys[i]));
+            assertTrue(map.entrySet().contains(Map.entry(keys[i], i)));
+            assertFalse(map.entrySet().contains(Map.entry(keys[i], -1)));
+        }
+        for (Integer probe : HASH_POOL) {
+            boolean member = Arrays.asList(keys).contains(probe);
+            assertEquals(member, map.containsKey(probe));
+            assertEquals(member, map.get(probe) != null);
+            assertEquals(member, map.keySet().contains(probe));
+        }
     }
 }
