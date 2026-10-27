@@ -490,4 +490,28 @@ public class ClassTest {
     static void failInitializer() {
         throw new IllegalStateException();
     }
+
+    @Test
+    public void classValuedAnnotationKeepsClassNames() {
+        var annotation = AnnotatedWithClassValue.class.getAnnotation(ClassValued.class);
+        assertEquals(ClassTest.class.getName() + "$AnnotationValueTarget", annotation.value().getName());
+        assertEquals(ClassTest.class.getName() + "$AnnotationDefaultTarget", annotation.other().getName());
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface ClassValued {
+        Class<?> value();
+
+        Class<?> other() default AnnotationDefaultTarget.class;
+    }
+
+    @ClassValued(AnnotationValueTarget.class)
+    static class AnnotatedWithClassValue {
+    }
+
+    static class AnnotationValueTarget {
+    }
+
+    static class AnnotationDefaultTarget {
+    }
 }
