@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.text;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -188,6 +189,45 @@ public class SimpleDateFormatTest {
     public void iso8601TimeZoneKeepsSignOfZeroHours() {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss XXX", Locale.ENGLISH);
         assertEquals(1403602429000L - 1800_000L, parseFully(format, "2014-06-24 09:33:49 +00:30"));
+    }
+
+    // The SimpleDateFormat Javadoc gives the general time zone grammar as "GMTOffsetTimeZone: GMT Sign
+    // Hours : Minutes" and says that pattern letter Z also accepts general time zones when parsing.
+    // It doesn't say whether "GMT" is matched with regard to case. OpenJDK ignores case, and so does
+    // TeaVM's zone name lookup, so "gmt+05:30" must not stop at "gmt" and lose the offset.
+    @Test
+    public void gmtOffsetParsedInAnyCase() {
+        String[] offsets = { "05:30", "1:00", "12:00", "00:30", "0:00" };
+        long[] offsetMillis = { 5 * 3600_000L + 1800_000L, 3600_000L, 12 * 3600_000L, 1800_000L, 0 };
+        for (String pattern : new String[] { "yyyy-MM-dd HH:mm:ss z", "yyyy-MM-dd HH:mm:ss Z" }) {
+            SimpleDateFormat format = new SimpleDateFormat(pattern, Locale.ENGLISH);
+            for (int mask = 0; mask < 8; ++mask) {
+                StringBuilder gmt = new StringBuilder();
+                for (int i = 0; i < 3; ++i) {
+                    char c = "GMT".charAt(i);
+                    gmt.append((mask & (1 << i)) != 0 ? Character.toLowerCase(c) : c);
+                }
+                for (int i = 0; i < offsets.length; ++i) {
+                    assertEquals(1403602429000L - offsetMillis[i],
+                            parseFully(format, "2014-06-24 09:33:49 " + gmt + "+" + offsets[i]));
+                    assertEquals(1403602429000L + offsetMillis[i],
+                            parseFully(format, "2014-06-24 09:33:49 " + gmt + "-" + offsets[i]));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void numericZoneWithoutGmtPrefixRejected() {
+        for (String pattern : new String[] { "yyyy-MM-dd HH:mm:ss z", "yyyy-MM-dd HH:mm:ss Z" }) {
+            SimpleDateFormat format = new SimpleDateFormat(pattern, Locale.ENGLISH);
+            for (String zone : new String[] { "GMX+05:30", "gmx+05:30", "GNT+05:30", "gm+05:30", "hmt+05:30" }) {
+                ParsePosition position = new ParsePosition(0);
+                String text = "2014-06-24 09:33:49 " + zone;
+                assertNull(format.parse(text, position), text);
+                assertEquals(20, position.getErrorIndex(), text);
+            }
+        }
     }
 
     private long parseFully(SimpleDateFormat format, String text) {

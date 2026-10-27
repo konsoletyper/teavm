@@ -744,7 +744,7 @@ abstract class TDateFormatElement {
     static boolean tryParseFixedTimeZone(String text, TCalendar date, TParsePosition position) {
         general: if (position.getIndex() + 4 < text.length()) {
             int signIndex = position.getIndex() + 3;
-            if (!text.substring(position.getIndex(), signIndex).equals("GMT")) {
+            if (!text.regionMatches(true, position.getIndex(), "GMT", 0, 3)) {
                 break general;
             }
             char signChar = text.charAt(signIndex);
