@@ -75,6 +75,7 @@ public class NullnessInformation {
                 }
             }
             variableMapper.applyToPhis(block);
+            removeDuplicateIncomings(block);
             if (block.getExceptionVariable() != null) {
                 block.setExceptionVariable(variableMapper.map(block.getExceptionVariable()));
             }
@@ -87,6 +88,26 @@ public class NullnessInformation {
             }
         }
         program.pack();
+    }
+
+    /**
+     * PhiUpdater gives an exception handler's phi every version of a variable that the protected block assigned.
+     * Mapping the synthesized versions back to their source variable can leave two equal incomings from one block;
+     * keep one.
+     */
+    private static void removeDuplicateIncomings(BasicBlock block) {
+        for (Phi phi : block.getPhis()) {
+            var incomings = phi.getIncomings();
+            for (int i = 0; i < incomings.size(); ++i) {
+                var incoming = incomings.get(i);
+                for (int j = incomings.size() - 1; j > i; --j) {
+                    var other = incomings.get(j);
+                    if (other.getSource() == incoming.getSource() && other.getValue() == incoming.getValue()) {
+                        incomings.remove(j);
+                    }
+                }
+            }
+        }
     }
 
     public static NullnessInformation build(Program program, MethodDescriptor methodDescriptor) {
