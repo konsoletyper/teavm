@@ -53,7 +53,7 @@ class TMapEntry<K, V> implements TMap.Entry<K, V>, Cloneable {
         }
         if (object instanceof TMap.Entry) {
             TMap.Entry<?, ?> entry = (TMap.Entry<?, ?>) object;
-            return Objects.equals(key, entry.getKey());
+            return Objects.equals(key, entry.getKey()) && Objects.equals(getValue(), entry.getValue());
         }
         return false;
     }
@@ -70,7 +70,7 @@ class TMapEntry<K, V> implements TMap.Entry<K, V>, Cloneable {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(key) ^ Objects.hashCode(value);
+        return Objects.hashCode(key) ^ Objects.hashCode(getValue());
     }
 
     @Override
@@ -82,6 +82,6 @@ class TMapEntry<K, V> implements TMap.Entry<K, V>, Cloneable {
 
     @Override
     public String toString() {
-        return key + "=" + value;
+        return key + "=" + getValue();
     }
 }
