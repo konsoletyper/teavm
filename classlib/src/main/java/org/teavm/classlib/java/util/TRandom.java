@@ -58,6 +58,42 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
         return ((long) nextInt() << 32) + nextInt();
     }
 
+    // Random's Javadoc pins nextInt(bound), nextBoolean and nextBytes to the algorithms below ("as if by"). The
+    // RandomGenerator defaults differ: they take other bits of nextInt() or nextLong().
+
+    @Override
+    public int nextInt(int bound) {
+        RandomUtils.checkBound(bound);
+        int r = next(31);
+        int m = bound - 1;
+        if ((bound & m) == 0) {
+            // the JDK's (int) ((bound * (long) r) >> 31), without long arithmetic
+            return r >> Integer.numberOfLeadingZeros(bound);
+        }
+        int u = r;
+        r = u % bound;
+        while (u - r + m < 0) {
+            // u was in the incomplete last block of bound values
+            u = next(31);
+            r = u % bound;
+        }
+        return r;
+    }
+
+    @Override
+    public boolean nextBoolean() {
+        return next(1) != 0;
+    }
+
+    @Override
+    public void nextBytes(byte[] bytes) {
+        for (int i = 0, len = bytes.length; i < len;) {
+            for (int rnd = nextInt(), n = Math.min(len - i, Integer.BYTES); n-- > 0; rnd >>>= Byte.SIZE) {
+                bytes[i++] = (byte) rnd;
+            }
+        }
+    }
+
     @Override
     public float nextFloat() {
         return next(24) * 0x1p-24f;

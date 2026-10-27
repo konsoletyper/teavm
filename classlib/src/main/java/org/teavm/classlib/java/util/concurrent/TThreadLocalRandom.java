@@ -46,6 +46,12 @@ public class TThreadLocalRandom extends TRandom {
     }
 
     @Override
+    protected int next(int bits) {
+        // as the JDK's ThreadLocalRandom, so that Random's methods built on next(bits) use this generator
+        return nextInt() >>> (32 - bits);
+    }
+
+    @Override
     public float nextFloat() {
         return (float) nextDouble();
     }

@@ -93,17 +93,11 @@ public interface TRandomGenerator {
     }
 
     default void nextBytes(byte[] bytes) {
-        if (bytes.length == 0) {
-            return;
-        }
-        int len = (bytes.length - 1) / Integer.BYTES + 1;
-        for (int i = 0; i < len; i++) {
-            int rnd = nextInt();
-            for (int j = 0; j < Integer.BYTES; j++) {
-                int idx = Integer.BYTES * i + j;
-                if (idx < bytes.length) {
-                    bytes[idx] = (byte) (0xFF & (rnd >> (j * Byte.SIZE)));
-                }
+        // The JDK's algorithm: the bytes of each nextLong(), low byte first
+        for (int i = 0, len = bytes.length; i < len;) {
+            long rnd = nextLong();
+            for (int n = Math.min(len - i, Long.BYTES); n-- > 0; rnd >>>= Byte.SIZE) {
+                bytes[i++] = (byte) rnd;
             }
         }
     }
@@ -158,56 +152,24 @@ public interface TRandomGenerator {
 
     default int nextInt(int bound) {
         RandomUtils.checkBound(bound);
-        int mask = (Integer.highestOneBit(bound) << 1) - 1;
-        while (true) {
-            int res = nextInt() & mask;
-            if (res < bound) {
-                return res;
-            }
-        }
+        return boundedNextInt(this, 0, bound);
     }
 
     default int nextInt(int origin, int bound) {
         RandomUtils.checkRange(origin, bound);
-        int range = bound - origin;
-        if (range > 0) {
-            return nextInt(range) + origin;
-        } else {
-            while (true) {
-                int res = nextInt();
-                if (res >= origin && res < bound) {
-                    return res;
-                }
-            }
-        }
+        return boundedNextInt(this, origin, bound);
     }
 
     long nextLong();
 
     default long nextLong(long bound) {
         RandomUtils.checkBound(bound);
-        long mask = (Long.highestOneBit(bound) << 1) - 1;
-        while (true) {
-            long res = nextLong() & mask;
-            if (res < bound) {
-                return res;
-            }
-        }
+        return boundedNextLong(this, 0, bound);
     }
 
     default long nextLong(long origin, long bound) {
         RandomUtils.checkRange(origin, bound);
-        long range = bound - origin;
-        if (range > 0) {
-            return nextLong(range) + origin;
-        } else {
-            while (true) {
-                long res = nextLong();
-                if (res >= origin && res < bound) {
-                    return res;
-                }
-            }
-        }
+        return boundedNextLong(this, origin, bound);
     }
 
     default double nextGaussian() {
@@ -219,5 +181,57 @@ public interface TRandomGenerator {
             throw new IllegalArgumentException();
         }
         return mean + stddev * nextGaussian();
+    }
+
+    /**
+     * The JDK's RandomSupport.boundedNextInt, which its nextInt(bound) and nextInt(origin, bound) use.
+     * Requires {@code origin < bound}.
+     */
+    private static int boundedNextInt(TRandomGenerator rng, int origin, int bound) {
+        int r = rng.nextInt();
+        int n = bound - origin;
+        int m = n - 1;
+        if ((n & m) == 0) {
+            // the range is a power of two
+            return (r & m) + origin;
+        }
+        if (n > 0) {
+            // reject the candidates from the incomplete last block of n values
+            int u = r >>> 1;
+            r = u % n;
+            while (u + m - r < 0) {
+                u = rng.nextInt() >>> 1;
+                r = u % n;
+            }
+            return r + origin;
+        }
+        // the range does not fit in an int
+        while (r < origin || r >= bound) {
+            r = rng.nextInt();
+        }
+        return r;
+    }
+
+    /** {@link #boundedNextInt} for longs, as the JDK's RandomSupport.boundedNextLong. */
+    private static long boundedNextLong(TRandomGenerator rng, long origin, long bound) {
+        long r = rng.nextLong();
+        long n = bound - origin;
+        long m = n - 1;
+        if ((n & m) == 0) {
+            return (r & m) + origin;
+        }
+        if (n > 0) {
+            long u = r >>> 1;
+            r = u % n;
+            while (u + m - r < 0) {
+                u = rng.nextLong() >>> 1;
+                r = u % n;
+            }
+            return r + origin;
+        }
+        while (r < origin || r >= bound) {
+            r = rng.nextLong();
+        }
+        return r;
     }
 }
