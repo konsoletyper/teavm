@@ -170,6 +170,7 @@ public class DefaultStringTransformer implements ClassHolderTransformer {
                 Object.class, int.class, int.class, void.class));
         arrayCopy.setArguments(invoke.getArguments().get(0), invoke.getArguments().get(1),
                 createArray.getReceiver(), zero.getReceiver(), invoke.getArguments().get(2));
+        arrayCopy.setLocation(invoke.getLocation());
         zero.insertNext(arrayCopy);
 
         var putField = new PutFieldInstruction();
@@ -263,6 +264,7 @@ public class DefaultStringTransformer implements ClassHolderTransformer {
                 Object.class, int.class, int.class, void.class));
         arrayCopy.setArguments(getField.getReceiver(), invoke.getArguments().get(0), invoke.getArguments().get(1),
                 invoke.getArguments().get(2), invoke.getArguments().get(3));
+        arrayCopy.setLocation(invoke.getLocation());
         getField.insertNext(arrayCopy);
 
         invoke.delete();

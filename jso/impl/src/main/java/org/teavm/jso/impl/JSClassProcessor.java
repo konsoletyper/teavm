@@ -728,6 +728,7 @@ class JSClassProcessor {
                 invoke.setMethod(JSMethods.THROW_CCE_IF_FALSE);
                 invoke.setArguments(instanceOfResult, cast.getValue());
                 invoke.setReceiver(cast.getReceiver());
+                invoke.setLocation(cast.getLocation());
                 replacement.add(invoke);
             }
             return true;
