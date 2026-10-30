@@ -203,7 +203,7 @@ public class CoroutineTransformation {
             while (insn != null) {
                 var next = insn.getNext();
                 if (collector.isSuspending(insn)) {
-                    if (insn instanceof WasmBlock block && !block.isLoop() && block.getType() == null) {
+                    if (insn instanceof WasmBlock block && isOptimizableBlock(block)) {
                         processOptimizedBlock(block);
                         insn = next;
                         continue;
@@ -249,19 +249,28 @@ public class CoroutineTransformation {
             }
         }
 
+        private boolean isOptimizableBlock(WasmBlock block) {
+            return !block.isLoop() && block.getType() == null
+                    && (typeInference.typeStack.isEmpty() || !usedBreakTargets.contains(block));
+        }
+
         private void processOptimizedBlock(WasmBlock block) {
             var start = block.getBody().getFirst();
+            var outputTypes = List.copyOf(typeInference.typeStack);
             moveAllPreviousTo(block, block.getBody());
             process(start);
-            if (!typeInference.typeStack.isEmpty() || inputTypes.isEmpty()) {
-                block.setType(functionTypes.get(new WasmSignature(List.copyOf(typeInference.typeStack),
-                        List.copyOf(inputTypes))).asBlock());
+            if (!outputTypes.isEmpty() || inputTypes.isEmpty()) {
+                block.setType(functionTypes.get(new WasmSignature(outputTypes, List.copyOf(inputTypes))).asBlock());
             }
+            typeInference.typeStack.clear();
+            typeInference.typeStack.addAll(outputTypes);
         }
 
         private boolean isOptimizableConditional(WasmConditional conditional) {
-            return conditional.getType() == null
-                    || (conditional.getType().getInputTypes().isEmpty() && !usedBreakTargets.contains(conditional));
+            if (conditional.getType() == null) {
+                return typeInference.typeStack.size() == 1 || !usedBreakTargets.contains(conditional);
+            }
+            return conditional.getType().getInputTypes().isEmpty() && !usedBreakTargets.contains(conditional);
         }
 
         private void processOptimizedConditional(WasmConditional conditional) {
