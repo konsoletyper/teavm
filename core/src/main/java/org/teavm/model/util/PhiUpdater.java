@@ -172,7 +172,7 @@ public class PhiUpdater {
         }
 
         estimateSigmas();
-        estimatePhis();
+        estimatePhis(parameters.length);
         renameVariables();
         propagatePhiUsageInformation();
         addSynthesizedPhis();
@@ -216,11 +216,16 @@ public class PhiUpdater {
         }
     }
 
-    private void estimatePhis() {
+    private void estimatePhis(int parameterCount) {
         calculateDefinitions();
 
         DefinitionExtractor definitionExtractor = new DefinitionExtractor();
         variableDefined = new boolean[program.variableCount()];
+        // Parameters are defined on entry, so their first redefinition inside a protected block
+        // must also introduce phi in exception handler, which receives the original value
+        for (int i = 0; i < parameterCount; ++i) {
+            variableDefined[i] = true;
+        }
 
         IntDeque stack = new IntArrayDeque();
         stack.addLast(0);

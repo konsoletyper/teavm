@@ -1,0 +1,11 @@
+$start
+    invokeStatic `Foo.bar()V`
+    @p := nullCheck @p
+    invokeVirtual `Foo.baz()V` @p
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+$catch
+    invokeVirtual `Foo.baz()V` @p
+    goto $end
+$end
+    return
