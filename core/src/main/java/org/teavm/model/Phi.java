@@ -18,6 +18,7 @@ package org.teavm.model;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class Phi implements PhiReader {
@@ -88,6 +89,32 @@ public class Phi implements PhiReader {
         @Override
         public int size() {
             return incomings.size();
+        }
+
+        @Override
+        public Iterator<Incoming> iterator() {
+            return new Iterator<>() {
+                Iterator<Incoming> underlying = incomings.iterator();
+                Incoming current;
+
+                @Override
+                public boolean hasNext() {
+                    return underlying.hasNext();
+                }
+
+                @Override
+                public Incoming next() {
+                    current = underlying.next();
+                    return current;
+                }
+
+                @Override
+                public void remove() {
+                    underlying.remove();
+                    current.setPhi(null);
+                    current = null;
+                }
+            };
         }
     };
 
