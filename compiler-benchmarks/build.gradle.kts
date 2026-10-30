@@ -35,9 +35,12 @@ dependencies {
  *
  * - benchmark.args: JMH arguments, e.g. "-wi 5 -i 10 -f 1 -prof gc WasmGC"
  * - benchmark.jvmArgs: additional arguments for forked JVM, e.g. "-Xmx4g"
+ * - benchmark.profile: when true, records JFR profile of measurement iterations into
+ *   build/reports/jmh/profile/<benchmark>-<params>/profile.jfr (readable by IDEA and VisualVM)
  *
  * Example:
  * ./gradlew :compiler-benchmarks:jmh -Pbenchmark.args="-wi 5 -i 10 -f 2"
+ * ./gradlew :compiler-benchmarks:jmh -Pbenchmark.profile=true -Pbenchmark.args="-f 1 bufferedInputStream"
  */
 fun splitArgs(text: String?) = text?.trim()?.split(Regex("\\s+"))?.filter { it.isNotEmpty() } ?: emptyList()
 
@@ -53,6 +56,10 @@ tasks.register<JavaExec>("jmh") {
     val jvmArgs = providers.gradleProperty("benchmark.jvmArgs").orNull
     if (jvmArgs != null) {
         args("-jvmArgsAppend", jvmArgs)
+    }
+    if (providers.gradleProperty("benchmark.profile").orNull == "true") {
+        val profileDir = layout.buildDirectory.dir("reports/jmh/profile").get().asFile
+        args("-prof", "jfr:dir=${profileDir.absolutePath};configName=profile;stackDepth=256")
     }
     args(splitArgs(providers.gradleProperty("benchmark.args").orNull))
     args("-rf", "json", "-rff", resultFile.absolutePath)
