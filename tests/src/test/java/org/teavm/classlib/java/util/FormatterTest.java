@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import java.math.BigDecimal;
 import java.util.DuplicateFormatFlagsException;
 import java.util.FormatFlagsConversionMismatchException;
 import java.util.Formattable;
@@ -283,6 +284,28 @@ public class FormatterTest {
         assertEquals("12.050", new Formatter(Locale.US).format("%4.3f", 12.05).toString());
     }
     
+    @Test
+    public void roundsFloatHalfUp() {
+        assertEquals("0.3", new Formatter(Locale.US).format("%.1f", 0.25).toString());
+        assertEquals("1", new Formatter(Locale.US).format("%.0f", 0.5).toString());
+        assertEquals("-0.13", new Formatter(Locale.US).format("%.2f", -0.125).toString());
+        assertEquals("10.0", new Formatter(Locale.US).format("%.1f", 9.95).toString());
+        assertEquals("2.3", new Formatter(Locale.US).format("%.1f", 2.25f).toString());
+        // Formatter rounds the digits of Double.toString, not the exact binary value
+        assertEquals("1.01", new Formatter(Locale.US).format("%.2f", 1.005).toString());
+    }
+
+    @Test
+    public void roundsBigDecimalHalfUp() {
+        assertEquals("1", new Formatter(Locale.US).format("%.0f", new BigDecimal("0.5")).toString());
+        assertEquals("-1", new Formatter(Locale.US).format("%.0f", new BigDecimal("-0.5")).toString());
+        assertEquals("0.1", new Formatter(Locale.US).format("%.1f", new BigDecimal("0.05")).toString());
+        assertEquals("-0.1", new Formatter(Locale.US).format("%.1f", new BigDecimal("-0.05")).toString());
+        assertEquals("100000000000.00000000", new Formatter(Locale.US)
+                .format("%.8f", new BigDecimal("99999999999.999999995000")).toString());
+        assertEquals("0.13", new Formatter(Locale.US).format("%.2f", new BigDecimal("0.125")).toString());
+    }
+
     @Test
     public void formatsEscapePercent() {
         assertEquals("%", new Formatter().format("%%", "%").toString());
