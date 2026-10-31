@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMTest;
@@ -126,6 +127,24 @@ public class CharacterTest {
         assertEquals('a', Character.forDigit(10, 11));
         assertEquals('\0', Character.forDigit(10, 10));
         assertEquals('5', Character.forDigit(5, 6));
+    }
+
+    @Test
+    public void toStringCodePoint() {
+        assertEquals("\0", Character.toString(0));
+        assertEquals("a", Character.toString(0x61));
+        assertEquals("\u00E9", Character.toString(0xE9));
+        assertEquals("\uFFFF", Character.toString(0xFFFF));
+
+        assertEquals("\uD800\uDC00", Character.toString(0x10000));
+        assertEquals("\uD83D\uDE00", Character.toString(0x1F600));
+        assertEquals("\uDBFF\uDFFF", Character.toString(0x10FFFF));
+
+        assertEquals("\uD800", Character.toString(0xD800));
+        assertEquals("\uDFFF", Character.toString(0xDFFF));
+
+        assertThrows(IllegalArgumentException.class, () -> Character.toString(-1));
+        assertThrows(IllegalArgumentException.class, () -> Character.toString(0x110000));
     }
 
     @Test
