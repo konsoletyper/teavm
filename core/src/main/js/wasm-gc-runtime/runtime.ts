@@ -404,11 +404,16 @@ function extractDylinkInfo(module: WebAssembly.Module): DylinkInfo {
 }
 
 function coreImports(imports: Record<string, unknown>, context: Context): void {
-    const finalizationRegistry = new FinalizationRegistry<{ queue: unknown; ref: unknown }>(heldValue => {
+    const finalizationRegistry = new FinalizationRegistry<{ queue: unknown; ref: WeakRef<object> }>(heldValue => {
+        const ref = heldValue.ref.deref();
         const report = context.exports["teavm.reportGarbageCollectedValue"];
-        if (typeof report !== "undefined") {
-            (report as Function)(heldValue.queue, heldValue.ref);
+        if (ref !== void 0 && typeof report !== "undefined") {
+            (report as Function)(heldValue.queue, ref);
         }
+    });
+    // Releases the cell of a reference that becomes unreachable before its referent
+    const referenceRegistry = new FinalizationRegistry<WeakRef<object>>(token => {
+        finalizationRegistry.unregister(token);
     });
     const stringFinalizationRegistry = new FinalizationRegistry<unknown>(heldValue => {
         const report = context.exports?.["teavm.reportGarbageCollectedString"];
@@ -417,11 +422,19 @@ function coreImports(imports: Record<string, unknown>, context: Context): void {
         }
     });
     imports.teavm = {
-        createWeakRef(value: object, ref: unknown, queue: unknown) {
+        createWeakRef(value: object, ref: object, queue: unknown) {
+            const weakRef = new WeakRef(value);
             if (queue !== null) {
-                finalizationRegistry.register(value, { ref, queue });
+                finalizationRegistry.register(value, { ref: new WeakRef(ref), queue }, weakRef);
+                referenceRegistry.register(ref, weakRef, weakRef);
             }
-            return new WeakRef(value);
+            return weakRef;
+        },
+        clearWeakRef(weakRef: WeakRef<object> | null) {
+            if (weakRef !== null) {
+                finalizationRegistry.unregister(weakRef);
+                referenceRegistry.unregister(weakRef);
+            }
         },
         deref: (weakRef: WeakRef<object>) => {
             const result = weakRef.deref();
