@@ -143,7 +143,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
     private boolean async;
     private Instruction[] definitions;
     private int[] usageCounts;
-    private boolean[] branchConditions;
+    private int[] branchConditionCounts;
     private Comparison[] comparisons;
     // For each variable defined by a constant: emitter of this constant. Such instructions are not emitted
     // at the place of definition, instead, constant is materialized at each usage
@@ -197,7 +197,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         labels = new WasmInstructionList[program.basicBlockCount()];
         exceptionHandlers = new boolean[program.basicBlockCount()];
         usageCounts = new int[program.variableCount()];
-        branchConditions = new boolean[program.variableCount()];
+        branchConditionCounts = new int[program.variableCount()];
         comparisons = new Comparison[program.variableCount()];
         constants = new ConstantEmitter[program.variableCount()];
         for (var block : program.getBasicBlocks()) {
@@ -214,7 +214,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
                 if (insn instanceof BranchingInstruction branch) {
                     switch (branch.getCondition()) {
                         case NULL, NOT_NULL -> { }
-                        default -> branchConditions[branch.getOperand().getIndex()] = true;
+                        default -> branchConditionCounts[branch.getOperand().getIndex()]++;
                     }
                 }
             }
@@ -246,7 +246,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         typeInference = null;
         definitions = null;
         usageCounts = null;
-        branchConditions = null;
+        branchConditionCounts = null;
         comparisons = null;
         constants = null;
         targetPhis.clear();
@@ -564,8 +564,11 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
     public void visit(BinaryInstruction insn) {
         switch (insn.getOperation()) {
             case COMPARE_GREATER, COMPARE_LESS -> {
-                if (branchConditions[insn.getReceiver().getIndex()]
-                        && usageCounts[insn.getReceiver().getIndex()] == 1) {
+                // When every usage of comparison result is a branch condition, don't materialize the result,
+                // but rather emit comparison of operands at each branch
+                var receiverIndex = insn.getReceiver().getIndex();
+                if (branchConditionCounts[receiverIndex] > 0
+                        && branchConditionCounts[receiverIndex] == usageCounts[receiverIndex]) {
                     var comparisonType = switch (insn.getOperandType()) {
                         case INT -> ComparisonType.COMPARE_INT32;
                         case LONG -> ComparisonType.COMPARE_INT64;
