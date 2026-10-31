@@ -377,6 +377,20 @@ public class FileInputStreamTest {
             fis.close();
         }
     }
+    
+    @Test
+    public void readByteWithHighBitSet() throws IOException {
+        try (var fos = new FileOutputStream(fileName)) {
+            fos.write(new byte[] { -2, -1 });
+            fos.close();
+        }
+        
+        try (var input = new FileInputStream(fileName)) {
+            assertEquals(254, input.read());
+            assertEquals(255, input.read());
+            assertEquals(-1, input.read());
+        }
+    }
 
     @AfterEach
     public void tearDown() {

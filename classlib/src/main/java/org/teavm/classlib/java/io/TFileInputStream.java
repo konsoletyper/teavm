@@ -95,7 +95,7 @@ public class TFileInputStream extends InputStream {
         ensureOpened();
         byte[] buffer = ONE_BYTE_BUFFER;
         int read = accessor.read(buffer, 0, 1);
-        return read != 0 ? buffer[0] : -1;
+        return read != 0 ? buffer[0] & 0xFF : -1;
     }
 
     private void ensureOpened() throws IOException {
