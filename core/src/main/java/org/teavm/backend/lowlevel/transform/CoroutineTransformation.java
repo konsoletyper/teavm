@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import org.teavm.common.Graph;
 import org.teavm.common.GraphSplittingBackend;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Incoming;
@@ -41,8 +43,10 @@ import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.analysis.BaseTypeInference;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
@@ -75,6 +79,8 @@ public class CoroutineTransformation {
     private ClassReaderSource classSource;
     private LivenessAnalyzer livenessAnalysis = new LivenessAnalyzer();
     private TypeInferer variableTypes = new TypeInferer();
+    private PreciseTypeInference preciseTypes;
+    private int preciseVariableCount;
     private Set<MethodReference> asyncMethods;
     private Program program;
     private Variable fiberVar;
@@ -118,6 +124,9 @@ public class CoroutineTransformation {
         returnType = methodReference.getReturnType();
         variableTypes.inferTypes(program, methodReference);
         livenessAnalysis.analyze(program, methodReference.getDescriptor());
+        preciseTypes = new PreciseTypeInference(program, methodReference, new ClassHierarchy(classSource));
+        preciseTypes.ensure();
+        preciseVariableCount = program.variableCount();
         splitter = new BasicBlockSplitter(program);
         int basicBlockCount = program.basicBlockCount();
         createSplitPrologue();
@@ -296,7 +305,9 @@ public class CoroutineTransformation {
     private List<Instruction> saveState(BitSet vars) {
         List<Instruction> instructions = new ArrayList<>();
         for (int var = vars.nextSetBit(0); var >= 0; var = vars.nextSetBit(var + 1)) {
-            saveVariable(var, instructions);
+            if (!isNullOnly(var)) {
+                saveVariable(var, instructions);
+            }
         }
 
         return instructions;
@@ -325,10 +336,39 @@ public class CoroutineTransformation {
         }
 
         for (int i = varArray.length - 1; i >= 0; --i) {
-            restoreVariable(varArray[i], instructions);
+            if (isNullOnly(varArray[i])) {
+                NullConstantInstruction nullConstant = new NullConstantInstruction();
+                nullConstant.setReceiver(program.variableAt(varArray[i]));
+                instructions.add(nullConstant);
+            } else {
+                restoreVariable(varArray[i], instructions);
+            }
         }
 
         return instructions;
+    }
+
+    // Only null can reach a reference without a precise type: unseeded values come from null constants via
+    // assign, null check and phi, from unwrapping a null array, or from reading its element, which never completes
+    private boolean isNullOnly(int var) {
+        return isReference(variableTypes.typeOf(var)) && preciseType(var) == null;
+    }
+
+    private static boolean isReference(VariableType type) {
+        switch (type) {
+            case INT:
+            case LONG:
+            case FLOAT:
+            case DOUBLE:
+                return false;
+            default:
+                return true;
+        }
+    }
+
+    private ValueType preciseType(int var) {
+        assert var < preciseVariableCount;
+        return preciseTypes.typeOf(var);
     }
 
     private void saveVariable(int var, List<Instruction> instructions) {
@@ -365,6 +405,7 @@ public class CoroutineTransformation {
         invoke.setType(InvocationType.SPECIAL);
         invoke.setInstance(fiberVar);
         invoke.setReceiver(program.variableAt(var));
+        CastInstruction cast = null;
 
         switch (type) {
             case INT:
@@ -381,10 +422,23 @@ public class CoroutineTransformation {
                 break;
             default:
                 invoke.setMethod(new MethodReference(Fiber.class, "popObject", Object.class));
+                ValueType preciseType = preciseType(var);
+                if (preciseType instanceof ValueType.Array || preciseType instanceof ValueType.Object
+                        && !preciseType.isObject("java.lang.Object")) {
+                    cast = new CastInstruction();
+                    cast.setValue(program.createVariable());
+                    cast.setReceiver(invoke.getReceiver());
+                    cast.setTargetType(preciseType);
+                    cast.setWeak(true);
+                    invoke.setReceiver(cast.getValue());
+                }
                 break;
         }
 
         instructions.add(invoke);
+        if (cast != null) {
+            instructions.add(cast);
+        }
     }
 
     private boolean isSplittingClassInitializer(String className) {
@@ -574,6 +628,103 @@ public class CoroutineTransformation {
             }
 
             return copies;
+        }
+    }
+
+    // A type only changes to a strictly more general one (ancestor, wider array, java.lang.Object), and every such
+    // chain is finite, so propagation terminates even though merge is not associative for interfaces
+    private static class PreciseTypeInference extends BaseTypeInference<ValueType> {
+        private static final ValueType OBJECT = ValueType.object("java.lang.Object");
+        private final ClassHierarchy hierarchy;
+
+        PreciseTypeInference(Program program, MethodReference reference, ClassHierarchy hierarchy) {
+            super(program, reference);
+            this.hierarchy = hierarchy;
+        }
+
+        @Override
+        protected ValueType mapType(ValueType type) {
+            return type;
+        }
+
+        @Override
+        protected ValueType nullType() {
+            return null;
+        }
+
+        @Override
+        protected ValueType merge(ValueType a, ValueType b) {
+            if (a.equals(b)) {
+                return a;
+            }
+            if (a instanceof ValueType.Primitive && b instanceof ValueType.Primitive) {
+                return isInteger(a) && isInteger(b) ? ValueType.INTEGER : OBJECT;
+            }
+            if (a instanceof ValueType.Array && b instanceof ValueType.Array) {
+                ValueType p = ((ValueType.Array) a).getItemType();
+                ValueType q = ((ValueType.Array) b).getItemType();
+                if (p instanceof ValueType.Primitive || q instanceof ValueType.Primitive) {
+                    return OBJECT;
+                }
+                return ValueType.arrayOf(merge(p, q));
+            }
+            if (a instanceof ValueType.Object && b instanceof ValueType.Object) {
+                return ValueType.object(commonSuperclass(((ValueType.Object) a).getClassName(),
+                        ((ValueType.Object) b).getClassName()));
+            }
+            return OBJECT;
+        }
+
+        private static boolean isInteger(ValueType type) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                case SHORT:
+                case CHARACTER:
+                case INTEGER:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private String commonSuperclass(String a, String b) {
+            if (hierarchy.isSuperType(a, b, false)) {
+                return a;
+            }
+            if (hierarchy.isSuperType(b, a, false)) {
+                return b;
+            }
+            Set<String> ancestors = new HashSet<>();
+            String cls = a;
+            while (cls != null && ancestors.add(cls)) {
+                cls = parent(cls);
+            }
+            Set<String> visited = new HashSet<>();
+            cls = b;
+            while (cls != null && visited.add(cls)) {
+                if (ancestors.contains(cls)) {
+                    return cls;
+                }
+                cls = parent(cls);
+            }
+            return "java.lang.Object";
+        }
+
+        private String parent(String className) {
+            if (className.equals("java.lang.Object")) {
+                return null;
+            }
+            ClassReader cls = hierarchy.getClassSource().get(className);
+            if (cls == null || className.equals(cls.getParent())) {
+                return null;
+            }
+            return cls.getParent();
+        }
+
+        @Override
+        protected ValueType elementType(ValueType type) {
+            return type instanceof ValueType.Array ? ((ValueType.Array) type).getItemType() : OBJECT;
         }
     }
 }

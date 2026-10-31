@@ -1,0 +1,80 @@
+var @this as this
+$0
+    @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
+    @21 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    if @21 != 0 then goto $9 else goto $8
+$1
+    @s := 'str'
+    goto $3
+$2
+    goto $3
+$3
+    @nullOrString := phi @null from $2, @s from $1
+    @nullLoop := @null
+    @nullThenBase := @null
+    goto $10
+$4
+    @c3 := invokeStatic `Foo.cond()Z`
+    if @c3 != 0 then goto $5 else goto $6
+$5
+    @t := 'str'
+    @floats := newArray F[@one_2]
+    goto $7
+$6
+    goto $7
+$7
+    @loopString := phi @t from $5, @nullLoop_2 from $6
+    @loopFloats := phi @floats from $5, @nullLoop_2 from $6
+    @nullString := phi @t from $5, @null_2 from $6
+    @nullFloats := phi @floats from $5, @null_2 from $6
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @nullOrString_2
+    invokeStatic `Foo.useBase(LBase;)V` @nullThenBase_2
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @loopString
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @nullString
+    invokeStatic `Foo.useFloats([F)V` @nullFloats
+    @data := data @loopFloats as float
+    @index := 0
+    @result := @data[@index] as float
+    return @result
+$8
+    @null := null
+    @one := 1
+    @c1 := invokeStatic `Foo.cond()Z`
+    if @c1 != 0 then goto $1 else goto $2
+$9
+    @22 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    switch @22 case 0 goto $12 else goto $8
+$10
+    @nullLoop_2 := phi @nullLoop from $3, @nullLoop_1 from $12, @nullLoop_3 from $14
+    @nullThenBase_2 := phi @nullThenBase from $3, @nullThenBase_1 from $12, @nullThenBase_3 from $14
+    @nullOrString_2 := phi @nullOrString from $3, @nullOrString_1 from $12, @nullOrString_2 from $14
+    @one_2 := phi @one from $3, @one_1 from $12, @one_2 from $14
+    @null_2 := phi @null from $3, @null_1 from $12, @null_2 from $14
+    invokeStatic `Foo.suspend()V`
+    @23 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @23 != 0 then goto $13 else goto $11
+$11
+    @base := new Base
+    @c2 := invokeStatic `Foo.cond()Z`
+    if @c2 != 0 then goto $14 else goto $4
+$12
+    @24 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @nullThenBase_1 := weak cast @24 to `LBase;`
+    @nullLoop_1 := null
+    @25 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @nullOrString_1 := weak cast @25 to `Ljava/lang/String;`
+    @one_1 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    @null_1 := null
+    goto $10
+$13
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @one_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @nullOrString_2
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @nullThenBase_2
+    @26 := 0
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @26
+    @27 := 0.0F
+    return @27
+$14
+    @nullLoop_3 := phi @nullLoop_2 from $11
+    @nullThenBase_3 := phi @base from $11
+    goto $10

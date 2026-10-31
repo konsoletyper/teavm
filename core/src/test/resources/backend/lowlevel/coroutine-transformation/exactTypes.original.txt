@@ -1,0 +1,14 @@
+var @this as this
+var @size as size
+
+$start
+    @s := 'str'
+    @strings := newArray `Ljava/lang/String;`[@size]
+    @flags := newArray Z[@size]
+    @matrix := newArray `[I`[@size]
+    invokeStatic `Foo.suspend()V`
+    invokeStatic `Foo.useString(Ljava/lang/String;)V` @s
+    invokeStatic `Foo.useStrings([Ljava/lang/String;)V` @strings
+    invokeStatic `Foo.useFlags([Z)V` @flags
+    invokeStatic `Foo.useMatrix([[I)V` @matrix
+    return

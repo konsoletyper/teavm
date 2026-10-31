@@ -1,0 +1,56 @@
+var @this as this
+$0
+    @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
+    @4 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    if @4 != 0 then goto $5 else goto $4
+    catch java.lang.IllegalStateException goto $2
+$1
+    invokeStatic `Foo.mayThrow()V`
+    return
+    catch  goto $3
+$2
+    @typedException := exception
+    goto $6
+$3
+    @anyException := exception
+    goto $10
+$4
+    invokeStatic `Foo.mayThrow()V`
+    goto $1
+    catch java.lang.IllegalStateException goto $2
+$5
+    @5 := invoke `org.teavm.runtime.Fiber.popInt()I` @fiber
+    switch @5 case 0 goto $8 case 1 goto $12 else goto $4
+$6
+    @typedException_2 := phi @typedException from $2, @typedException_1 from $8
+    invokeStatic `Foo.suspend()V`
+    @6 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @6 != 0 then goto $9 else goto $7
+$7
+    invokeStatic `Foo.useIllegalState(Ljava/lang/IllegalStateException;)V` @typedException_2
+    return
+$8
+    @7 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @typedException_1 := weak cast @7 to `Ljava/lang/IllegalStateException;`
+    goto $6
+$9
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @typedException_2
+    @8 := 0
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @8
+    return
+$10
+    @anyException_2 := phi @anyException from $3, @anyException_1 from $12
+    invokeStatic `Foo.suspend()V`
+    @9 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    if @9 != 0 then goto $13 else goto $11
+$11
+    throw @anyException_2
+$12
+    @10 := invoke `org.teavm.runtime.Fiber.popObject()Ljava/lang/Object;` @fiber
+    @anyException_1 := weak cast @10 to `Ljava/lang/Throwable;`
+    goto $10
+$13
+    invoke `org.teavm.runtime.Fiber.push(Ljava/lang/Object;)V` @fiber, @anyException_2
+    @11 := 1
+    invoke `org.teavm.runtime.Fiber.push(I)V` @fiber, @11
+    return
