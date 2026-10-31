@@ -23,6 +23,7 @@ import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.wasm.TeaVMWasmGCHost;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.ClassReader;
@@ -74,6 +75,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
             metadataGeneratorConsumers.add((method, constructor, generator) -> jsHost.add(method,
                     new MetadataProviderNativeGenerator(generator, constructor)));
             host.add(new StringAmplifierTransformer());
+            TeaVMPluginUtil.handleDependencies(host, StringAmplifier.class);
         }
 
         if (!isBootstrap()) {
@@ -92,6 +94,9 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
         host.add(new AsyncMethodProcessor(!isJs));
         if (!isBootstrap()) {
             TeaVMPluginUtil.handleNatives(host, Platform.class);
+        }
+        if (!PlatformDetector.isWebAssemblyGC()) {
+            TeaVMPluginUtil.handleDependencies(host, Platform.class);
         }
 
         host.registerService(MetadataRegistration.class, this);

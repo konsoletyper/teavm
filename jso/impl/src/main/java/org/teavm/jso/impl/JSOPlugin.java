@@ -76,6 +76,7 @@ public class JSOPlugin implements TeaVMPlugin {
         if (!isBootstrap()) {
             TeaVMPluginUtil.handleNatives(host, JS.class);
         }
+        TeaVMPluginUtil.handleDependencies(host, JS.class);
 
         if (jsHost != null) {
             installForJS(jsHost);

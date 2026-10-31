@@ -178,6 +178,12 @@ public class JCLPlugin implements TeaVMPlugin {
             TeaVMPluginUtil.handleNatives(host, Math.class);
         }
 
+        TeaVMPluginUtil.handleDependencies(host, Object.class);
+        TeaVMPluginUtil.handleDependencies(host, Class.class);
+        TeaVMPluginUtil.handleDependencies(host, String.class);
+        TeaVMPluginUtil.handleDependencies(host, System.class);
+        TeaVMPluginUtil.handleDependencies(host, Array.class);
+
         installMetadata(host.getService(MetadataRegistration.class));
         host.add(new DeclaringClassDependencyListener());
         applyTimeZoneDetection(host);

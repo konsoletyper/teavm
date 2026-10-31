@@ -41,6 +41,21 @@ public final class TeaVMPluginUtil {
     private TeaVMPluginUtil() {
     }
 
+    public static void handleDependencies(TeaVMHost host, Class<?> cls) {
+        if (isBootstrap()) {
+            handleDependenciesImpl(host, cls);
+        }
+    }
+
+    @Meta
+    private static native void handleDependenciesImpl(TeaVMHost host, Class<?> cls);
+
+    private static void handleDependenciesImpl(Value<TeaVMHost> host, ReflectClass<?> cls) {
+        for (ReflectMethod method : cls.getDeclaredMethods()) {
+            handleDependency(host, method);
+        }
+    }
+
     public static void handleNatives(TeaVMHost host, Class<?> cls) {
         if (!isBootstrap()) {
             return;
@@ -82,14 +97,18 @@ public final class TeaVMPluginUtil {
                 emit(() -> jsHost.get().add(methodRef.get(), (Injector) generatorConstructor.construct()));
             }
 
-            PluggableDependency dependency = method.getAnnotation(PluggableDependency.class);
-            if (dependency != null) {
-                ReflectClass<?> generatorClass = findClass(dependency.value().getName());
-                ReflectMethod generatorConstructor = generatorClass.getMethod("<init>");
+            handleDependency(host, method);
+        }
+    }
 
-                Value<MethodReference> methodRef = methodToReference(method);
-                emit(() -> host.get().add(methodRef.get(), (DependencyPlugin) generatorConstructor.construct()));
-            }
+    private static void handleDependency(Value<TeaVMHost> host, ReflectMethod method) {
+        PluggableDependency dependency = method.getAnnotation(PluggableDependency.class);
+        if (dependency != null) {
+            ReflectClass<?> dependencyClass = findClass(dependency.value().getName());
+            ReflectMethod constructor = dependencyClass.getMethod("<init>");
+
+            Value<MethodReference> methodRef = methodToReference(method);
+            emit(() -> host.get().add(methodRef.get(), (DependencyPlugin) constructor.construct()));
         }
     }
 
