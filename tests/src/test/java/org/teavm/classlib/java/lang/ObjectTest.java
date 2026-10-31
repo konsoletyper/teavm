@@ -82,4 +82,29 @@ public class ObjectTest {
         long end = System.currentTimeMillis();
         assertTrue(end - start > 100);
     }
+
+    @Test
+    public void allQueuedThreadsEnterMonitor() throws InterruptedException {
+        var lock = new Object();
+        var entered = new int[1];
+        var threads = new Thread[3];
+        synchronized (lock) {
+            for (var i = 0; i < threads.length; ++i) {
+                threads[i] = new Thread(() -> {
+                    synchronized (lock) {
+                        entered[0]++;
+                        // Makes this method async, so the synchronized block can wait for the monitor.
+                        Thread.yield();
+                    }
+                });
+                threads[i].start();
+            }
+            // Let every thread block on the monitor while this thread holds it.
+            Thread.sleep(100);
+        }
+        for (var thread : threads) {
+            thread.join(2000);
+        }
+        assertEquals(threads.length, entered[0]);
+    }
 }
