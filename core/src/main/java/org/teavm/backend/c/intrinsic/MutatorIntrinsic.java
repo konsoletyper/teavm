@@ -28,6 +28,8 @@ public class MutatorIntrinsic implements Intrinsic {
 
         switch (method.getName()) {
             case "getStaticGCRoots":
+            case "getMonitor":
+            case "setMonitor":
                 return true;
             default:
                 return false;
@@ -39,6 +41,18 @@ public class MutatorIntrinsic implements Intrinsic {
         switch (invocation.getMethod().getName()) {
             case "getStaticGCRoots":
                 context.writer().print("teavm_gc_staticRoots");
+                break;
+            case "getMonitor":
+                context.writer().print("TEAVM_UNPACK_MONITOR(((TeaVM_Object*) ");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(")->hash)");
+                break;
+            case "setMonitor":
+                context.writer().print("((TeaVM_Object*) ");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(")->hash = TEAVM_PACK_MONITOR(");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print(")");
                 break;
         }
     }

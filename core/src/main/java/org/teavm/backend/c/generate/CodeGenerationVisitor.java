@@ -1164,13 +1164,18 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 QualificationExpr qualification = (QualificationExpr) statement.getLeftValue();
                 FieldReference field = qualification.getField();
                 if (isMonitorField(field)) {
-                    writer.print("TEAVM_FIELD(");
+                    String instance = allocTemporaryVariable(CVariableType.PTR);
+                    writer.print(instance + " = ");
                     qualification.getQualified().acceptVisitor(this);
+                    writer.println(";");
                     field = new FieldReference(RuntimeObject.class.getName(), "hashCode");
-                    writer.print(", ").print(names.forClass(field.getClassName()) + ", "
+                    writer.print("TEAVM_FIELD(" + instance + ", ").print(names.forClass(field.getClassName()) + ", "
                             + names.forMemberField(field) + ") = TEAVM_PACK_MONITOR(");
                     statement.getRightValue().acceptVisitor(this);
                     writer.println(");");
+                    // Barrier goes after the store: evaluating the value may trigger GC, which resets cards
+                    writer.println("teavm_gc_writeBarrierChecked(" + instance + ");");
+                    freeTemporaryVariable(CVariableType.PTR);
                     popLocation(statement.getLocation());
                     return;
                 }

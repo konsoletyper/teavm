@@ -20,6 +20,7 @@ import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
@@ -133,7 +134,10 @@ public class WriteBarrierInsertion {
 
         @Override
         public void visit(PutFieldInstruction insn) {
-            if (insn.getInstance() != null && isManagedReferenceType(insn.getFieldType())) {
+            // Stores to Object.monitor get a dedicated barrier from the code generator, since the object
+            // may reside outside of the heap (e.g. string literals)
+            if (insn.getInstance() != null && isManagedReferenceType(insn.getFieldType())
+                    && !isMonitorField(insn.getField())) {
                 installBarrier(insn, insn.getInstance(), insn.getValue());
             }
         }
@@ -177,6 +181,10 @@ public class WriteBarrierInsertion {
         @Override
         public void visit(MonitorExitInstruction insn) {
             invalidateBarriers();
+        }
+
+        private boolean isMonitorField(FieldReference field) {
+            return field.getClassName().equals("java.lang.Object") && field.getFieldName().equals("monitor");
         }
 
         private boolean isManagedReferenceType(ValueType type) {

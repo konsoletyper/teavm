@@ -29,6 +29,10 @@ public final class Mutator {
 
     public static native Address getStaticGCRoots();
 
+    public static native RuntimeObject getMonitor(RuntimeObject object);
+
+    public static native void setMonitor(RuntimeObject object, RuntimeObject monitor);
+
     @RuntimeInclude("stringhash.h")
     @Import(name = "teavm_stringHashtableRewind")
     public static native void stringHashtableRewind();

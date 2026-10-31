@@ -277,6 +277,7 @@ public final class GC {
         if (!isFullGC) {
             markFromOldGeneration();
         }
+        markMonitorsInStringLiterals();
 
         MemoryTrace.markCompleted();
     }
@@ -317,6 +318,24 @@ public final class GC {
                 stackRootsPtr = stackRootsPtr.add(Address.sizeOf());
             }
         }
+    }
+
+    private static void markMonitorsInStringLiterals() {
+        Mutator.stringHashtableRewind();
+        while (Mutator.stringHashtableCurrent() != null) {
+            var str = Mutator.stringHashtableCurrent();
+            if (!isInHeap(str.toAddress())) {
+                var monitor = Mutator.getMonitor(str);
+                if (monitor != null) {
+                    mark(monitor);
+                }
+            }
+            Mutator.stringHashtableNext();
+        }
+    }
+
+    private static boolean isInHeap(Address address) {
+        return !address.isLessThan(heapAddress()) && address.isLessThan(heapAddress().add(availableBytes()));
     }
 
     private static void markFromOldGeneration() {
@@ -419,12 +438,18 @@ public final class GC {
     }
 
     private static boolean markObjectData(RuntimeObject object) {
+        var monitor = Mutator.getMonitor(object);
+        var hasObjectsFromYoungGen = false;
+        if (monitor != null) {
+            hasObjectsFromYoungGen |= enqueueMark(monitor);
+        }
         RuntimeClass cls = RuntimeClass.getClass(object);
         if (cls.itemType == null) {
-            return markObject(cls, object);
+            hasObjectsFromYoungGen |= markObject(cls, object);
         } else {
-            return markArray(cls, (RuntimeArray) object);
+            hasObjectsFromYoungGen |= markArray(cls, (RuntimeArray) object);
         }
+        return hasObjectsFromYoungGen;
     }
 
     private static boolean markObject(RuntimeClass cls, RuntimeObject object) {
@@ -1109,6 +1134,19 @@ public final class GC {
     }
 
     private static void updatePointers(RuntimeClass cls, RuntimeObject object) {
+        var relocation = getRelocation(object.toAddress());
+        if (relocation != null) {
+            var monitor = Mutator.getMonitor(relocation.toAddress().toStructure());
+            if (monitor != null) {
+                Mutator.setMonitor(relocation.toAddress().toStructure(),
+                        updatePointer(monitor.toAddress()).toStructure());
+            }
+        } else {
+            var monitor = Mutator.getMonitor(object);
+            if (monitor != null) {
+                Mutator.setMonitor(object, updatePointer(monitor.toAddress()).toStructure());
+            }
+        }
         if (cls.itemType == null) {
             updatePointersInObject(cls, object);
         } else {
@@ -1190,7 +1228,14 @@ public final class GC {
     private static void updatePointersFromStringPool() {
         Mutator.stringHashtableRewind();
         while (Mutator.stringHashtableCurrent() != null) {
-            Mutator.stringHashtableUpdateRef(updatePointer(Mutator.stringHashtableCurrent().toAddress()).toStructure());
+            var str = Mutator.stringHashtableCurrent();
+            Mutator.stringHashtableUpdateRef(updatePointer(str.toAddress()).toStructure());
+            if (!isInHeap(str.toAddress())) {
+                var monitor = Mutator.getMonitor(str);
+                if (monitor != null) {
+                    Mutator.setMonitor(str, updatePointer(monitor.toAddress()).toStructure());
+                }
+            }
             Mutator.stringHashtableNext();
         }
     }

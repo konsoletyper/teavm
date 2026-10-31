@@ -295,6 +295,15 @@ inline static void teavm_gc_writeBarrier(void* object) {
     ((char*) teavm_gc_cardTable)[offset] = 0;
 }
 
+// For objects that may reside outside of the heap (e.g. string literals). Such objects don't need a barrier,
+// since GC traverses them explicitly.
+inline static void teavm_gc_writeBarrierChecked(void* object) {
+    if ((char*) object >= (char*) teavm_gc_heapAddress
+            && (char*) object < (char*) teavm_gc_heapAddress + teavm_gc_availableBytes) {
+        teavm_gc_writeBarrier(object);
+    }
+}
+
 extern void* teavm_fillArray(void* array, ...);
 extern void* teavm_fillBooleanArray(void* array, ...);
 extern void* teavm_fillByteArray(void* array, ...);

@@ -45,8 +45,6 @@ public class TObject {
     Monitor monitor;
 
     static class Monitor {
-        static final int MASK = 0x80000000;
-
         Queue<PlatformRunnable> enteringThreads;
         Queue<NotifyListener> notifyListeners;
         TThread owner;
@@ -329,12 +327,9 @@ public class TObject {
 
     @Unmanaged
     private static int identityLowLevel() {
-        int result = RuntimeObject.nextId++;
+        int result = RuntimeObject.nextId++ & 0x7fffffff;
         if (result == 0) {
-            result = RuntimeObject.nextId++;
-            if (result == Monitor.MASK) {
-                result = 1;
-            }
+            result = RuntimeObject.nextId++ & 0x7fffffff;
         }
         return result;
     }
