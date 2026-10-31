@@ -30,6 +30,8 @@ import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
+import org.gradle.api.attributes.Category;
+import org.gradle.api.attributes.VerificationType;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.SourceDirectorySet;
@@ -429,6 +431,17 @@ public class TeaVMPlugin implements Plugin<Project> {
             addSourceDirs(project, result);
             return result;
         }));
+        sources.from(project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
+                .getIncoming().artifactView(view -> {
+                    view.withVariantReselection();
+                    view.componentFilter(id -> id instanceof ProjectComponentIdentifier);
+                    view.attributes(attributes -> {
+                        attributes.attribute(Category.CATEGORY_ATTRIBUTE,
+                                project.getObjects().named(Category.class, Category.VERIFICATION));
+                        attributes.attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE,
+                                project.getObjects().named(VerificationType.class, VerificationType.MAIN_SOURCES));
+                    });
+                }).getFiles());
         sources.from(project.provider(() -> {
             var dependencies = project.getConfigurations()
                     .getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
@@ -442,13 +455,7 @@ public class TeaVMPlugin implements Plugin<Project> {
                     continue;
                 }
                 var id = ((ResolvedDependencyResult) dependencyResult).getSelected().getId();
-                if (id instanceof ProjectComponentIdentifier) {
-                    var path = ((ProjectComponentIdentifier) id).getProjectPath();
-                    var refProject = project.getRootProject().findProject(path);
-                    if (refProject != null) {
-                        addSourceDirs(refProject, result);
-                    }
-                } else if (id instanceof ModuleComponentIdentifier moduleId) {
+                if (id instanceof ModuleComponentIdentifier moduleId) {
                     var sourcesDep = project.getDependencies().create(Map.of(
                             "group", moduleId.getGroup(),
                             "name", moduleId.getModuleIdentifier().getName(),
