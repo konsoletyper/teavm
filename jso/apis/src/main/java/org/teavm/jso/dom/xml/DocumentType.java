@@ -16,8 +16,9 @@
 package org.teavm.jso.dom.xml;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.xml.mixin.ChildNode;
 
-public interface DocumentType extends Node {
+public interface DocumentType extends Node, ChildNode {
     @JSProperty
     String getName();
 
