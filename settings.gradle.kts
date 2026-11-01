@@ -59,6 +59,9 @@ include("tests")
 include("benchmarks")
 include("compiler-benchmarks")
 include("extras-slf4j")
+include("bootstrap-compiler:core")
+include("bootstrap-compiler:junit-compiler")
+include("bootstrap-compiler:junit")
 
 val teavmVersion = providers.gradleProperty("teavm.project.version").get()
 

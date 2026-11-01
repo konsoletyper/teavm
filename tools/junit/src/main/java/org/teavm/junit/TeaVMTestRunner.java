@@ -44,13 +44,9 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 
 public class TeaVMTestRunner extends Runner implements Filterable {
     static final String JUNIT3_BASE_CLASS = "junit.framework.TestCase";
-    static final MethodReference JUNIT3_BEFORE = new MethodReference(JUNIT3_BASE_CLASS, "setUp", ValueType.VOID);
-    static final MethodReference JUNIT3_AFTER = new MethodReference(JUNIT3_BASE_CLASS, "tearDown", ValueType.VOID);
     static final String JUNIT4_TEST = "org.junit.Test";
     static final String JUNIT4_IGNORE = "org.junit.Ignore";
     static final String TESTNG_TEST = "org.testng.annotations.Test";
@@ -69,7 +65,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private Description suiteDescription;
     private static final File outputDir = TeaVMTestInfrastructure.outputDir;
     private Map<Method, Description> descriptions = new HashMap<>();
-    private static final Map<TestPlatform, TestRunStrategy> runners = TeaVMTestInfrastructure.runners;
+    private static final Map<TestPlatformSupport<?>, TestRunStrategy> runners = TeaVMTestInfrastructure.runners;
     private List<Method> filteredChildren;
     private List<TestRun> runsInCurrentClass = new ArrayList<>();
     private static final List<TestPlatformSupport<?>> platforms = TeaVMTestInfrastructure.platforms;
@@ -107,7 +103,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private void runWithWholeClassCompilation(List<Method> children, RunNotifier notifier) {
-        Map<TestPlatform, Map<Method, List<TestRun>>> tests;
+        Map<TestPlatformSupport<?>, Map<Method, List<TestRun>>> tests;
         try {
             tests = TeaVMTestExecutionSupport.compileWholeClass(children, testClass, this::isIgnored,
                     Map.of());
@@ -135,7 +131,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
                 if (success) {
                     for (var platform : platforms) {
-                        var methodRuns = tests.get(platform.getPlatform());
+                        var methodRuns = tests.get(platform);
                         var runs = methodRuns != null ? methodRuns.get(child) : null;
                         if (runs != null) {
                             for (var run : runs) {
@@ -251,7 +247,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 }
 
                 for (var run : runs) {
-                    var strategy = runners.get(run.getGroup().getKind());
+                    var strategy = runners.get(run.getGroup().getPlatform());
                     strategy.cleanup();
                 }
             } finally {
@@ -269,7 +265,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         try {
             var compiled = TeaVMTestExecutionSupport.compileSingleMethod(child, testClass, null);
             for (var platform : platforms) {
-                var platformRuns = compiled.get(platform.getPlatform());
+                var platformRuns = compiled.get(platform);
                 if (platformRuns != null) {
                     runs.addAll(platformRuns);
                 }
@@ -582,7 +578,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private void submitRun(TestRun run) throws IOException {
         runsInCurrentClass.add(run);
-        var strategy = runners.get(run.getGroup().getKind());
+        var strategy = runners.get(run.getGroup().getPlatform());
         if (strategy == null) {
             return;
         }

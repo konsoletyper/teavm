@@ -30,7 +30,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * separate {@code AfterAllCallback}.
  */
 final class TeaVMWholeClassCompilation implements ExtensionContext.Store.CloseableResource {
-    private final Map<TestPlatform, Map<Method, List<TestRun>>> runsByPlatform;
+    private final Map<TestPlatformSupport<?>, Map<Method, List<TestRun>>> runsByPlatform;
     private final Map<Method, Throwable> errors;
     private final Map<Method, InvocationResults> invocationResults = new HashMap<>();
 
@@ -39,7 +39,7 @@ final class TeaVMWholeClassCompilation implements ExtensionContext.Store.Closeab
      *               (e.g. unsupported argument source of a parameterized test); the error is reported when the
      *               method runs, so that it doesn't break other methods of the class.
      */
-    TeaVMWholeClassCompilation(Map<TestPlatform, Map<Method, List<TestRun>>> runsByPlatform,
+    TeaVMWholeClassCompilation(Map<TestPlatformSupport<?>, Map<Method, List<TestRun>>> runsByPlatform,
             Map<Method, Throwable> errors) {
         this.runsByPlatform = runsByPlatform;
         this.errors = errors;
@@ -62,7 +62,7 @@ final class TeaVMWholeClassCompilation implements ExtensionContext.Store.Closeab
             if (results == null) {
                 var runs = new ArrayList<TestRun>();
                 for (var platform : TeaVMTestInfrastructure.platforms) {
-                    var methodRuns = runsByPlatform.get(platform.getPlatform());
+                    var methodRuns = runsByPlatform.get(platform);
                     if (methodRuns != null && methodRuns.containsKey(method)) {
                         runs.addAll(methodRuns.get(method));
                     }

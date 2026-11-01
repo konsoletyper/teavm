@@ -32,7 +32,7 @@ final class InvocationResults {
     static InvocationResults collect(List<TestRun> runs, boolean cleanup) {
         var results = new InvocationResults();
         for (var run : runs) {
-            var strategy = TeaVMTestInfrastructure.runners.get(run.getGroup().getKind());
+            var strategy = TeaVMTestInfrastructure.runners.get(run.getGroup().getPlatform());
             if (strategy == null) {
                 continue;
             }

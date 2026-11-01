@@ -29,10 +29,12 @@ import static org.teavm.metaprogramming.Metaprogramming.lazy;
 import static org.teavm.metaprogramming.Metaprogramming.unsupportedCase;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.extension.introspect.IntrospectAnnotation;
 import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
@@ -42,6 +44,7 @@ import org.teavm.metaprogramming.test.subpackage.MetaprogrammingGenerator;
 @CompileTime
 @TeaVMTest
 @SkipJVM
+@SkipPlatform(BootstrapWasmGCTestPlatform.ID)
 @EachTestCompiledSeparately
 public class MetaprogrammingTest {
     @Test

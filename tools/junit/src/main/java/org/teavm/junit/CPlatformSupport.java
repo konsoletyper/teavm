@@ -33,14 +33,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.c.generate.ShorteningFileNameProvider;
 import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ReferenceCache;
-import org.teavm.vm.TeaVM;
 
 class CPlatformSupport extends TestPlatformSupport<CTarget> {
     CPlatformSupport(ClassHolderSource classSource, ReferenceCache referenceCache) {
@@ -57,7 +55,7 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
     }
 
     @Override
-    TestPlatform getPlatform() {
+    String getPlatform() {
         return TestPlatform.C;
     }
 
@@ -87,7 +85,7 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
     }
 
     @Override
-    CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
+    CompileResult compile(TestEntryPointSpec entryPoint, String baseName,
             TeaVMTestConfiguration<CTarget> configuration, File path, AnnotatedElement element) {
         CompilePostProcessor postBuild = (vm, file) -> {
             try {
@@ -98,7 +96,7 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
             }
         };
         var result = compile(configuration, this::createCTarget, TestNativeEntryPoint.class.getName(), path, "",
-                postBuild, additionalProcessing, baseName);
+                postBuild, entryPoint::install, baseName);
         if (result.success) {
             includeAndAttachAdditionalFiles(element, result.file);
         }

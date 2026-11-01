@@ -64,6 +64,29 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.kotlin.serialization.json)
     testAnnotationProcessor(project(":extension:processor"))
+    testImplementation(project(":bootstrap-compiler:junit"))
+}
+
+/*
+ * Bootstrap Wasm GC platform compiles tests with TeaVM compiled to Wasm GC (see :bootstrap-compiler:junit-compiler).
+ * Building such compiler is expensive and it depends on almost every module (core, classlib, etc),
+ * so to avoid rebuilding it on every change, test tasks depend on it only when this platform is explicitly
+ * enabled with `teavm.tests.bootstrap-wasm-gc=true`. Additionally, `teavm.tests.bootstrap-wasm-gc.compiler`
+ * can point to pre-built compiler directory (relative to root project; output of :bootstrap-compiler:junit-compiler:assembleCompiler),
+ * in which case compiler is not built at all; note that it's your responsibility to keep it in sync
+ * with the rest of the code in this case.
+ */
+val bootstrapWasmGCEnabled = providers.gradleProperty("teavm.tests.bootstrap-wasm-gc").orElse("false").get()
+        .toBoolean()
+val bootstrapWasmGCPrebuiltCompiler = providers.gradleProperty("teavm.tests.bootstrap-wasm-gc.compiler").orNull
+val bootstrapCompiler = configurations.create("bootstrapCompiler") {
+    isCanBeConsumed = false
+    isTransitive = false
+}
+if (bootstrapWasmGCEnabled && bootstrapWasmGCPrebuiltCompiler == null) {
+    dependencies {
+        bootstrapCompiler(project(path = ":bootstrap-compiler:junit-compiler", configuration = "bootstrapCompiler"))
+    }
 }
 
 val isWindowsOs = System.getProperty("os.name").lowercase().contains("win")
@@ -89,6 +112,21 @@ tasks.withType<Test>().configureEach {
     systemProperty("teavm.junit.wasm-gc.runner", browser)
     systemProperty("teavm.junit.wasm-gc.disasm", providers.gradleProperty("teavm.tests.wasm-gc.disasm")
         .orElse("false").get())
+
+    systemProperty("teavm.junit.bootstrap-wasm-gc", bootstrapWasmGCEnabled.toString())
+    systemProperty("teavm.junit.bootstrap-wasm-gc.runner", browser)
+    if (bootstrapWasmGCEnabled) {
+        if (bootstrapWasmGCPrebuiltCompiler != null) {
+            systemProperty("teavm.junit.bootstrap-wasm-gc.compiler",
+                    rootProject.file(bootstrapWasmGCPrebuiltCompiler).absolutePath)
+        } else {
+            inputs.files(bootstrapCompiler)
+            val compilerFiles = bootstrapCompiler.incoming.files
+            jvmArgumentProviders.add(CommandLineArgumentProvider {
+                listOf("-Dteavm.junit.bootstrap-wasm-gc.compiler=" + compilerFiles.singleFile.absolutePath)
+            })
+        }
+    }
 
     systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("true").get())
     systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")

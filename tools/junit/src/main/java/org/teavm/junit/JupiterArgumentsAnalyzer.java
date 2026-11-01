@@ -59,6 +59,7 @@ import org.junit.jupiter.params.provider.ValueSources;
 import org.teavm.junit.JupiterArgumentsPlan.StaticValue;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
+import org.teavm.model.PrimitiveType;
 import org.teavm.model.ValueType;
 
 /**
@@ -330,7 +331,7 @@ final class JupiterArgumentsAnalyzer {
             throw error("@NullSource can't provide null for parameter of primitive type "
                     + parameterTypes[0].getName());
         }
-        addSingleValueRow((pe, type) -> pe.constantNull(type));
+        addSingleValueRow(JupiterArgumentsPlan.NullValue.INSTANCE);
     }
 
     private void emptySource() {
@@ -338,24 +339,28 @@ final class JupiterArgumentsAnalyzer {
         var type = parameterTypes[0];
         StaticValue value;
         if (type == String.class) {
-            value = (pe, target) -> pe.constant("").cast(target);
+            value = new JupiterArgumentsPlan.StringValue("");
         } else if (type == List.class || type == Collection.class) {
-            value = (pe, target) -> pe.invoke(Collections.class, "emptyList", List.class).cast(target);
+            value = emptyCollection("emptyList", List.class);
         } else if (type == Set.class) {
-            value = (pe, target) -> pe.invoke(Collections.class, "emptySet", Set.class).cast(target);
+            value = emptyCollection("emptySet", Set.class);
         } else if (type == Map.class) {
-            value = (pe, target) -> pe.invoke(Collections.class, "emptyMap", Map.class).cast(target);
+            value = emptyCollection("emptyMap", Map.class);
         } else if (type == SortedSet.class || type == NavigableSet.class) {
-            value = (pe, target) -> pe.construct(TreeSet.class).cast(target);
+            value = new JupiterArgumentsPlan.ConstructorValue(TreeSet.class.getName(), null);
         } else if (type == SortedMap.class || type == NavigableMap.class) {
-            value = (pe, target) -> pe.construct(TreeMap.class).cast(target);
+            value = new JupiterArgumentsPlan.ConstructorValue(TreeMap.class.getName(), null);
         } else if (type.isArray()) {
-            var componentType = ValueType.parse(type.getComponentType());
-            value = (pe, target) -> pe.constructArray(componentType, 0).cast(target);
+            value = new JupiterArgumentsPlan.EmptyArrayValue(ValueType.parse(type.getComponentType()));
         } else {
             throw error("@EmptySource can't provide empty value for parameter of type " + type.getName());
         }
         addSingleValueRow(value);
+    }
+
+    private static StaticValue emptyCollection(String methodName, Class<?> resultType) {
+        return new JupiterArgumentsPlan.StaticCallValue(new MethodReference(Collections.class, methodName,
+                resultType), null);
     }
 
     private void requireFirstParameter(String sourceName) {
@@ -481,7 +486,7 @@ final class JupiterArgumentsAnalyzer {
             if (type.isPrimitive()) {
                 throw new IllegalArgumentException("null can't be assigned to primitive type");
             }
-            return (pe, target) -> pe.constantNull(target);
+            return JupiterArgumentsPlan.NullValue.INSTANCE;
         }
 
         var primitiveType = type.isPrimitive() ? type : unbox(type);
@@ -518,41 +523,39 @@ final class JupiterArgumentsAnalyzer {
             return primitiveConstant(value);
         }
         if (value instanceof String string) {
-            return (pe, target) -> pe.constant(string).cast(target);
+            return new JupiterArgumentsPlan.StringValue(string);
         }
         if (value instanceof Class<?>) {
-            var cls = ValueType.parse((Class<?>) value);
-            return (pe, target) -> pe.constant(cls).cast(target);
+            return new JupiterArgumentsPlan.ClassValue(ValueType.parse((Class<?>) value));
         }
         if (value instanceof Enum<?> constant) {
-            var enumType = constant.getDeclaringClass().getName();
-            var field = new FieldReference(enumType, constant.name());
-            return (pe, target) -> pe.getField(field, ValueType.object(enumType)).cast(target);
+            return new JupiterArgumentsPlan.EnumValue(new FieldReference(constant.getDeclaringClass().getName(),
+                    constant.name()));
         }
         throw new IllegalArgumentException("value of type " + value.getClass().getName()
                 + " can't be embedded into compiled code");
     }
 
     private static StaticValue primitiveConstant(Object value) {
-        return (pe, target) -> {
-            if (value instanceof Boolean) {
-                return pe.constant((Boolean) value ? 1 : 0).cast(boolean.class).cast(target);
-            } else if (value instanceof Character) {
-                return pe.constant((int) (Character) value).cast(char.class).cast(target);
-            } else if (value instanceof Byte) {
-                return pe.constant((int) (Byte) value).cast(byte.class).cast(target);
-            } else if (value instanceof Short) {
-                return pe.constant((int) (Short) value).cast(short.class).cast(target);
-            } else if (value instanceof Integer) {
-                return pe.constant((Integer) value).cast(target);
-            } else if (value instanceof Long) {
-                return pe.constant((Long) value).cast(target);
-            } else if (value instanceof Float) {
-                return pe.constant((Float) value).cast(target);
-            } else {
-                return pe.constant((Double) value).cast(target);
-            }
-        };
+        if (value instanceof Boolean) {
+            return new JupiterArgumentsPlan.PrimitiveValue(PrimitiveType.BOOLEAN, (Boolean) value ? 1 : 0);
+        } else if (value instanceof Character) {
+            return new JupiterArgumentsPlan.PrimitiveValue(PrimitiveType.CHARACTER, (Character) value);
+        } else if (value instanceof Byte) {
+            return new JupiterArgumentsPlan.PrimitiveValue(PrimitiveType.BYTE, (Byte) value);
+        } else if (value instanceof Short) {
+            return new JupiterArgumentsPlan.PrimitiveValue(PrimitiveType.SHORT, (Short) value);
+        } else if (value instanceof Integer) {
+            return new JupiterArgumentsPlan.PrimitiveValue(PrimitiveType.INTEGER, (Integer) value);
+        } else if (value instanceof Long) {
+            return new JupiterArgumentsPlan.PrimitiveValue(PrimitiveType.LONG, (Long) value);
+        } else if (value instanceof Float) {
+            return new JupiterArgumentsPlan.PrimitiveValue(PrimitiveType.FLOAT,
+                    Float.floatToRawIntBits((Float) value));
+        } else {
+            return new JupiterArgumentsPlan.PrimitiveValue(PrimitiveType.DOUBLE,
+                    Double.doubleToRawLongBits((Double) value));
+        }
     }
 
     private static StaticValue stringFactory(String value, Class<?> type) {
@@ -569,8 +572,7 @@ final class JupiterArgumentsAnalyzer {
         }
         if (factoryCount == 1) {
             var reference = new MethodReference(type.getName(), TeaVMTestExecutionSupport.getDescriptor(factory));
-            var parameterType = factory.getParameterTypes()[0];
-            return (pe, target) -> pe.invoke(reference, pe.constant(value).cast(parameterType)).cast(target);
+            return new JupiterArgumentsPlan.StaticCallValue(reference, value);
         }
 
         Constructor<?> constructor;
@@ -581,7 +583,7 @@ final class JupiterArgumentsAnalyzer {
         }
         if (constructor != null && !Modifier.isPrivate(constructor.getModifiers())
                 && !Modifier.isAbstract(type.getModifiers())) {
-            return (pe, target) -> pe.construct(type.getName(), pe.constant(value)).cast(target);
+            return new JupiterArgumentsPlan.ConstructorValue(type.getName(), value);
         }
 
         throw new IllegalArgumentException("no implicit conversion from String");

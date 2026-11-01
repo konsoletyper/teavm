@@ -40,7 +40,6 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
-import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMTarget;
 
 /**
@@ -62,8 +61,8 @@ final class TeaVMTestExecutionSupport {
         }
         for (var platform : TeaVMTestInfrastructure.platforms) {
             if (platform.isEnabled() && !platform.getConfigurations().isEmpty()
-                    && isPlatformPresent(testClass, platform.getPlatform())
-                    && isPlatformPresent(method, platform.getPlatform())) {
+                    && isPlatformPresent(testClass, platform)
+                    && isPlatformPresent(method, platform)) {
                 return true;
             }
         }
@@ -87,11 +86,11 @@ final class TeaVMTestExecutionSupport {
     static void runOnAllPlatforms(Method method, Class<?> testClass, Consumer<TestRun> onCompiled) throws Throwable {
         var compiled = compileSingleMethod(method, testClass, null);
         for (var platform : TeaVMTestInfrastructure.platforms) {
-            var runs = compiled.get(platform.getPlatform());
+            var runs = compiled.get(platform);
             if (runs == null) {
                 continue;
             }
-            var strategy = TeaVMTestInfrastructure.runners.get(platform.getPlatform());
+            var strategy = TeaVMTestInfrastructure.runners.get(platform);
             if (strategy == null) {
                 continue;
             }
@@ -112,9 +111,9 @@ final class TeaVMTestExecutionSupport {
      * <p>{@code plan}, if not null, describes the arguments of a Jupiter parameterized test.
      */
     @SuppressWarnings("unchecked")
-    static Map<TestPlatform, List<TestRun>> compileSingleMethod(Method method, Class<?> testClass,
+    static Map<TestPlatformSupport<?>, List<TestRun>> compileSingleMethod(Method method, Class<?> testClass,
             JupiterArgumentsPlan plan) throws Throwable {
-        var result = new LinkedHashMap<TestPlatform, List<TestRun>>();
+        var result = new LinkedHashMap<TestPlatformSupport<?>, List<TestRun>>();
         if (TeaVMTestInfrastructure.outputDir == null) {
             return result;
         }
@@ -122,8 +121,8 @@ final class TeaVMTestExecutionSupport {
         var reference = new MethodReference(method.getDeclaringClass().getName(), getDescriptor(method));
 
         for (var platform : TeaVMTestInfrastructure.platforms) {
-            if (!platform.isEnabled() || !isPlatformPresent(testClass, platform.getPlatform())
-                    || !isPlatformPresent(method, platform.getPlatform())) {
+            if (!platform.isEnabled() || !isPlatformPresent(testClass, platform)
+                    || !isPlatformPresent(method, platform)) {
                 continue;
             }
 
@@ -136,21 +135,19 @@ final class TeaVMTestExecutionSupport {
                 var compileResult = castPlatform.compile(singleTestEntryPoint(method, testClass, plan), "test",
                         castConfig, outputPath, method);
                 if (!compileResult.success) {
-                    platform.additionalSingleTestOutput(outputPath, configuration, reference);
-                    throw compileResult.throwable != null
-                            ? compileResult.throwable
-                            : new AssertionError(compileResult.errorMessage);
+                    throw compilationFailure(compileResult,
+                            () -> platform.additionalSingleTestOutput(outputPath, configuration, reference));
                 }
 
                 var run = new TestRun(generateName(method.getName(), configuration), method, null);
                 run.group = new TestRunGroup(compileResult.file.getParentFile(), compileResult.file.getName(),
-                        platform.getPlatform(), isModule(method));
+                        platform, isModule(method));
                 runs.add(run);
 
                 platform.additionalSingleTestOutput(outputPath, configuration, reference);
             }
             platform.additionalOutputForAllConfigurations(outputPath, method);
-            result.put(platform.getPlatform(), runs);
+            result.put(platform, runs);
         }
 
         return result;
@@ -173,16 +170,16 @@ final class TeaVMTestExecutionSupport {
      * <p>{@code plans} describes arguments of Jupiter parameterized tests among {@code methods}.
      */
     @SuppressWarnings("unchecked")
-    static Map<TestPlatform, Map<Method, List<TestRun>>> compileWholeClass(List<Method> methods, Class<?> testClass,
-            Predicate<Method> ignored, Map<Method, JupiterArgumentsPlan> plans) throws Throwable {
-        var result = new LinkedHashMap<TestPlatform, Map<Method, List<TestRun>>>();
+    static Map<TestPlatformSupport<?>, Map<Method, List<TestRun>>> compileWholeClass(List<Method> methods,
+            Class<?> testClass, Predicate<Method> ignored, Map<Method, JupiterArgumentsPlan> plans) throws Throwable {
+        var result = new LinkedHashMap<TestPlatformSupport<?>, Map<Method, List<TestRun>>>();
         if (TeaVMTestInfrastructure.outputDir == null) {
             return result;
         }
 
         var isModule = testClass.isAnnotationPresent(JsModuleTest.class);
         for (var platform : TeaVMTestInfrastructure.platforms) {
-            if (!platform.isEnabled() || !hasParticipatingMethod(methods, testClass, platform.getPlatform())) {
+            if (!platform.isEnabled() || !hasParticipatingMethod(methods, testClass, platform)) {
                 continue;
             }
 
@@ -193,16 +190,13 @@ final class TeaVMTestExecutionSupport {
                 var castConfig = (TeaVMTestConfiguration<TeaVMTarget>) configuration;
                 var runs = new ArrayList<TestRun>();
 
-                var compileResult = castPlatform.compile(wholeClassEntryPoint(methods, platform.getPlatform(),
+                var compileResult = castPlatform.compile(wholeClassEntryPoint(methods, platform,
                         configuration, testClass, runs, ignored, plans), "classTest", castConfig, path, testClass);
                 if (!compileResult.success) {
-                    platform.additionalOutput(path, configuration);
-                    throw compileResult.throwable != null
-                            ? compileResult.throwable
-                            : new AssertionError(compileResult.errorMessage);
+                    throw compilationFailure(compileResult, () -> platform.additionalOutput(path, configuration));
                 }
 
-                var group = new TestRunGroup(path, compileResult.file.getName(), platform.getPlatform(), isModule);
+                var group = new TestRunGroup(path, compileResult.file.getName(), platform, isModule);
                 for (var run : runs) {
                     run.group = group;
                     methodRuns.computeIfAbsent(run.getMethod(), m -> new ArrayList<>()).add(run);
@@ -214,22 +208,39 @@ final class TeaVMTestExecutionSupport {
             for (var method : methodRuns.keySet()) {
                 platform.additionalOutputForAllConfigurations(path, method);
             }
-            result.put(platform.getPlatform(), methodRuns);
+            result.put(platform, methodRuns);
         }
 
         return result;
     }
 
+    /**
+     * Produces error that reports failed compilation. Before that, writes additional output (which helps to
+     * investigate the failure), but since compiler produced no or broken binary, writing this output may fail
+     * as well. Such secondary failure must not hide the original one, so it's only attached as suppressed.
+     */
+    private static Throwable compilationFailure(CompileResult compileResult, Runnable additionalOutput) {
+        var error = compileResult.throwable != null
+                ? compileResult.throwable
+                : new AssertionError(compileResult.errorMessage);
+        try {
+            additionalOutput.run();
+        } catch (Throwable e) {
+            error.addSuppressed(e);
+        }
+        return error;
+    }
+
     /** Submits the pre-compiled runs (from {@link #compileWholeClass}) for one method. */
-    static void runWholeClassMethod(Map<TestPlatform, Map<Method, List<TestRun>>> compilation, Method method)
+    static void runWholeClassMethod(Map<TestPlatformSupport<?>, Map<Method, List<TestRun>>> compilation, Method method)
             throws Throwable {
         for (var platform : TeaVMTestInfrastructure.platforms) {
-            var methodRuns = compilation.get(platform.getPlatform());
+            var methodRuns = compilation.get(platform);
             var runs = methodRuns != null ? methodRuns.get(method) : null;
             if (runs == null) {
                 continue;
             }
-            var strategy = TeaVMTestInfrastructure.runners.get(platform.getPlatform());
+            var strategy = TeaVMTestInfrastructure.runners.get(platform);
             if (strategy == null) {
                 continue;
             }
@@ -240,7 +251,7 @@ final class TeaVMTestExecutionSupport {
     }
 
     /** Called once, when the whole class is done, to release resources (e.g. close the browser tab). */
-    static void cleanupWholeClass(Map<TestPlatform, Map<Method, List<TestRun>>> compilation) {
+    static void cleanupWholeClass(Map<TestPlatformSupport<?>, Map<Method, List<TestRun>>> compilation) {
         for (var platformKind : compilation.keySet()) {
             var strategy = TeaVMTestInfrastructure.runners.get(platformKind);
             if (strategy != null) {
@@ -260,13 +271,13 @@ final class TeaVMTestExecutionSupport {
             return;
         }
 
-        var runsByPlatform = new LinkedHashMap<TestPlatform, List<TestRun>>();
+        var runsByPlatform = new LinkedHashMap<TestPlatformSupport<?>, List<TestRun>>();
         for (var run : runs) {
-            runsByPlatform.computeIfAbsent(run.getGroup().getKind(), k -> new ArrayList<>()).add(run);
+            runsByPlatform.computeIfAbsent(run.getGroup().getPlatform(), k -> new ArrayList<>()).add(run);
         }
 
         for (var platform : TeaVMTestInfrastructure.platforms) {
-            var platformRuns = runsByPlatform.get(platform.getPlatform());
+            var platformRuns = runsByPlatform.get(platform);
             if (platformRuns != null) {
                 writeRunsDescriptor(testClass, platform, platformRuns);
             }
@@ -295,7 +306,7 @@ final class TeaVMTestExecutionSupport {
                 writer.write("    \"fileName\": ");
                 writeJsonString(writer, run.getGroup().getFileName());
                 writer.write(",\n");
-                writer.write("    \"kind\": \"" + run.getGroup().getKind().name() + "\"");
+                writer.write("    \"kind\": \"" + run.getGroup().getKind() + "\"");
                 if (run.getArgument() != null) {
                     writer.write(",\n");
                     writer.write("    \"argument\": ");
@@ -312,7 +323,7 @@ final class TeaVMTestExecutionSupport {
         }
 
         var classListFilePath = System.getProperty(PropertyNames.C_CLASS_LIST_FILE);
-        if (classListFilePath != null && platform.getPlatform() == TestPlatform.C) {
+        if (classListFilePath != null && platform.getPlatform().equals(TestPlatform.C)) {
             try (var appender = new FileWriter(classListFilePath, StandardCharsets.UTF_8, true)) {
                 appender.write(outputDir.getAbsolutePath() + "\n");
             } catch (IOException e) {
@@ -365,38 +376,35 @@ final class TeaVMTestExecutionSupport {
         return (char) (digit < 10 ? '0' + digit : 'A' + digit - 10);
     }
 
-    private static boolean hasParticipatingMethod(List<Method> methods, Class<?> testClass, TestPlatform platform) {
+    private static boolean hasParticipatingMethod(List<Method> methods, Class<?> testClass,
+            TestPlatformSupport<?> platform) {
         return isPlatformPresent(testClass, platform) && methods.stream().anyMatch(m -> isPlatformPresent(m, platform));
     }
 
-    private static Consumer<TeaVM> wholeClassEntryPoint(List<Method> methods, TestPlatform platform,
+    private static TestEntryPointSpec wholeClassEntryPoint(List<Method> methods, TestPlatformSupport<?> platform,
             TeaVMTestConfiguration<?> configuration, Class<?> testClass, List<TestRun> runs,
             Predicate<Method> ignored, Map<Method, JupiterArgumentsPlan> plans) {
-        return vm -> {
-            var properties = new Properties();
-            applyProperties(testClass, properties);
-            vm.setProperties(properties);
+        var properties = new Properties();
+        applyProperties(testClass, properties);
 
-            var methodReferences = new ArrayList<MethodReference>();
-            var referencePlans = new HashMap<MethodReference, JupiterArgumentsPlan>();
-            for (var method : methods) {
-                if (!isPlatformPresent(method, platform) || ignored.test(method)) {
-                    continue;
-                }
-                var classHolder = TeaVMTestInfrastructure.classSource.get(method.getDeclaringClass().getName());
-                var methodHolder = classHolder.getMethod(getDescriptor(method));
-                methodReferences.add(methodHolder.getReference());
-                var plan = plans.get(method);
-                if (plan != null) {
-                    referencePlans.put(methodHolder.getReference(), plan);
-                }
-                var run = new TestRun(generateName(method.getName(), configuration), method,
-                        methodHolder.getReference().toString());
-                runs.add(run);
+        var methodReferences = new ArrayList<MethodReference>();
+        var referencePlans = new HashMap<MethodReference, JupiterArgumentsPlan>();
+        for (var method : methods) {
+            if (!isPlatformPresent(method, platform) || ignored.test(method)) {
+                continue;
             }
-            new TestEntryPointTransformerForWholeClass(methodReferences, testClass.getName(), referencePlans)
-                    .install(vm);
-        };
+            var classHolder = TeaVMTestInfrastructure.classSource.get(method.getDeclaringClass().getName());
+            var methodHolder = classHolder.getMethod(getDescriptor(method));
+            methodReferences.add(methodHolder.getReference());
+            var plan = plans.get(method);
+            if (plan != null) {
+                referencePlans.put(methodHolder.getReference(), plan);
+            }
+            var run = new TestRun(generateName(method.getName(), configuration), method,
+                    methodHolder.getReference().toString());
+            runs.add(run);
+        }
+        return new TestEntryPointSpec(testClass.getName(), methodReferences, true, referencePlans, properties);
     }
 
     static File getOutputPathForClass(Class<?> testClass, TestPlatformSupport<?> platform) {
@@ -406,21 +414,17 @@ final class TeaVMTestExecutionSupport {
         return path;
     }
 
-    private static Consumer<TeaVM> singleTestEntryPoint(Method method, Class<?> testClass,
+    private static TestEntryPointSpec singleTestEntryPoint(Method method, Class<?> testClass,
             JupiterArgumentsPlan plan) {
         ClassHolder classHolder = TeaVMTestInfrastructure.classSource.get(method.getDeclaringClass().getName());
         MethodHolder methodHolder = classHolder.getMethod(getDescriptor(method));
         var plans = plan != null
                 ? Map.of(methodHolder.getReference(), plan)
                 : Map.<MethodReference, JupiterArgumentsPlan>of();
-
-        return vm -> {
-            var properties = new Properties();
-            applyProperties(method.getDeclaringClass(), properties);
-            vm.setProperties(properties);
-            new TestEntryPointTransformerForSingleMethod(methodHolder.getReference(), testClass.getName(), plans)
-                    .install(vm);
-        };
+        var properties = new Properties();
+        applyProperties(method.getDeclaringClass(), properties);
+        return new TestEntryPointSpec(testClass.getName(), List.of(methodHolder.getReference()), false, plans,
+                properties);
     }
 
     static void applyProperties(Class<?> cls, Properties result) {
@@ -460,11 +464,11 @@ final class TeaVMTestExecutionSupport {
         return new MethodDescriptor(method.getName(), signature);
     }
 
-    static boolean isPlatformPresent(AnnotatedElement declaration, TestPlatform platform) {
+    static boolean isPlatformPresent(AnnotatedElement declaration, TestPlatformSupport<?> platform) {
         var skipPlatform = declaration.getAnnotation(SkipPlatform.class);
         if (skipPlatform != null) {
             for (var toSkip : skipPlatform.value()) {
-                if (toSkip == platform) {
+                if (platform.matches(toSkip)) {
                     return false;
                 }
             }
@@ -473,7 +477,7 @@ final class TeaVMTestExecutionSupport {
         var onlyPlatform = declaration.getAnnotation(OnlyPlatform.class);
         if (onlyPlatform != null) {
             for (var allowedPlatform : onlyPlatform.value()) {
-                if (allowedPlatform == platform) {
+                if (platform.matches(allowedPlatform)) {
                     return true;
                 }
             }

@@ -15,9 +15,7 @@
  */
 package org.teavm.junit;
 
-import static org.teavm.junit.TeaVMTestRunner.JUNIT3_AFTER;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT3_BASE_CLASS;
-import static org.teavm.junit.TeaVMTestRunner.JUNIT3_BEFORE;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT4_AFTER;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT4_BEFORE;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT4_TEST;
@@ -58,6 +56,12 @@ import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
+    // Don't put these constants to TeaVMTestRunner, since this class should not depend on JVM-specific
+    // test infrastructure, as it can be compiled by TeaVM (see TestCompilationPlugins)
+    private static final MethodReference JUNIT3_BEFORE = new MethodReference(JUNIT3_BASE_CLASS, "setUp",
+            ValueType.VOID);
+    private static final MethodReference JUNIT3_AFTER = new MethodReference(JUNIT3_BASE_CLASS, "tearDown",
+            ValueType.VOID);
     private String testClassName;
     private Map<MethodReference, JupiterArgumentsPlan> parameterizedPlans;
     private int suffixGenerator;
