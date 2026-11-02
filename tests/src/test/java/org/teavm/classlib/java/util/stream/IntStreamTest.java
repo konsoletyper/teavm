@@ -191,6 +191,16 @@ public class IntStreamTest {
     }
 
     @Test
+    public void distinctAcrossConcat() {
+        testIntStream(() -> IntStream.concat(IntStream.of(2, 3), IntStream.of(2, 3, 1)).distinct(), 2, 3, 1);
+    }
+
+    @Test
+    public void distinctAcrossIteratorAdvances() {
+        testIntStream(() -> IntStream.of(2, 2, 3, 2, 1, 1).distinct(), 2, 3, 1);
+    }
+
+    @Test
     public void findFirstWorks() {
         assertEquals(2, IntStream.of(2, 3).findFirst().getAsInt());
         assertEquals(3, IntStream.of(2, 3).skip(1).findFirst().getAsInt());

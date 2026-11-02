@@ -164,6 +164,19 @@ public class DoubleStreamTest {
     }
 
     @Test
+    public void distinctAcrossConcat() {
+        assertArrayEquals(new long[] { 0, Long.MIN_VALUE, 0x7ff8000000000000L },
+                DoubleStream.concat(DoubleStream.of(0.0, -0.0, Double.NaN),
+                        DoubleStream.of(-0.0, 0.0, Double.longBitsToDouble(0x7ff8000000000001L)))
+                        .distinct().mapToLong(Double::doubleToLongBits).toArray());
+    }
+
+    @Test
+    public void distinctAcrossIteratorAdvances() {
+        testDoubleStream(() -> DoubleStream.of(2, 2, 3, 2, 1, 1).distinct(), 2, 3, 1);
+    }
+
+    @Test
     public void findFirstWorks() {
         assertEquals(2, DoubleStream.of(2, 3).findFirst().getAsDouble(), 0.001);
         assertEquals(3, DoubleStream.of(2, 3).skip(1).findFirst().getAsDouble(), 0.001);

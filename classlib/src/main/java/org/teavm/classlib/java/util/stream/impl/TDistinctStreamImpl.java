@@ -20,13 +20,14 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 public class TDistinctStreamImpl<T> extends TWrappingStreamImpl<T, T> {
+    private final Set<T> visited = new HashSet<>();
+
     public TDistinctStreamImpl(TSimpleStreamImpl<T> innerStream) {
         super(innerStream);
     }
 
     @Override
     protected Predicate<T> wrap(Predicate<? super T> consumer) {
-        Set<T> visited = new HashSet<>();
         return e -> {
             if (!visited.add(e)) {
                 return true;
