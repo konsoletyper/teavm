@@ -166,6 +166,7 @@ public class JCLPlugin implements TeaVMPlugin {
             }
         }
 
+        TeaVMPluginUtil.handleNatives(host, Object.class);
         TeaVMPluginUtil.handleNatives(host, Class.class);
         TeaVMPluginUtil.handleNatives(host, ClassLoader.class);
         TeaVMPluginUtil.handleNatives(host, System.class);

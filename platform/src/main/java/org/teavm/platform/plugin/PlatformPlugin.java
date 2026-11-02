@@ -94,6 +94,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
         if (isJs()) {
             TeaVMPluginUtil.handleNatives(host, Platform.class);
         }
+        TeaVMPluginUtil.handleNatives(host, StringAmplifier.class);
 
         host.registerService(MetadataRegistration.class, this);
     }
