@@ -30,6 +30,7 @@ import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.jso.impl.JSOPlugin;
 import org.teavm.metaprogramming.impl.MetaprogrammingPlugin;
 import org.teavm.model.ClassHolderSource;
+import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.CompositeClassHolderSource;
@@ -132,10 +133,12 @@ public class TeaVMBootstrapCompiler {
                 new ClasslibSubstitutionPolicy()));
         if (classlibSource == null) {
             resourceProvider = new CompositeResourceProvider(classlibResourceProvider, classesResourceProvider);
-            classlibSource = new ClasspathClassHolderSource(classlibResourceProvider, refCache, substitute);
+            classlibSource = new PreOptimizingClassHolderSource(
+                    new ClasspathClassHolderSource(classlibResourceProvider, refCache, substitute));
         }
         var currentClassSource = new CompositeClassHolderSource(List.of(classlibSource,
-                new ClasspathClassHolderSource(classesResourceProvider, refCache, substitute)));
+                new PreOptimizingClassHolderSource(
+                        new ClasspathClassHolderSource(classesResourceProvider, refCache, substitute))));
         var teavm = new TeaVMBuilder(target)
                 .setClassSource(currentClassSource)
                 .setResourceProvider(resourceProvider)
