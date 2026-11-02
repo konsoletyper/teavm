@@ -70,14 +70,14 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(new ObfuscationHacks());
         host.add(new BuffersTransformer());
 
-        if (!isBootstrap()) {
-            ServiceLoaderSupport serviceLoaderSupport = new ServiceLoaderSupport(host.getClassLoader(),
-                    host.getResourceProvider());
-            host.add(serviceLoaderSupport);
-            host.registerService(ServiceLoaderInformation.class, serviceLoaderSupport);
-            MethodReference loadServicesMethod = new MethodReference(ServiceLoader.class, "loadServices",
-                    ClassInfo.class, Object[].class);
+        ServiceLoaderSupport serviceLoaderSupport = new ServiceLoaderSupport(host.getClassLoader(),
+                host.getResourceProvider());
+        host.add(serviceLoaderSupport);
+        host.registerService(ServiceLoaderInformation.class, serviceLoaderSupport);
+        MethodReference loadServicesMethod = new MethodReference(ServiceLoader.class, "loadServices",
+                ClassInfo.class, Object[].class);
 
+        if (!isBootstrap()) {
             TeaVMJavaScriptHost jsExtension = host.getExtension(TeaVMJavaScriptHost.class);
             if (jsExtension != null) {
                 jsExtension.add(loadServicesMethod, new ServiceLoaderJSSupport());
@@ -88,23 +88,21 @@ public class JCLPlugin implements TeaVMPlugin {
             if (cHost != null) {
                 cHost.addGenerator(new ServiceLoaderCSupport());
             }
+        }
 
-            var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
-            if (wasmGCHost != null) {
-                wasmGCHost.contributeToCodeGen((ctx, reg) -> {
-                    reg.bodyIntrinsics().registerIntrinsic(ServiceLoader.class, new ServiceLoaderWasmGCSupport(
-                            serviceLoaderSupport, ctx.classInfoProvider(), ctx.functions(), ctx.functionTypes(),
-                            ctx.names(), ctx.typeMapper(), ctx.module()));
-                });
-            }
+        var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
+        if (wasmGCHost != null) {
+            wasmGCHost.contributeToCodeGen((ctx, reg) -> {
+                reg.bodyIntrinsics().registerIntrinsic(ServiceLoader.class, new ServiceLoaderWasmGCSupport(
+                        serviceLoaderSupport, ctx.classInfoProvider(), ctx.functions(), ctx.functionTypes(),
+                        ctx.names(), ctx.typeMapper(), ctx.module()));
+            });
         }
 
         host.registerService(CLDRReader.class, CLDRReader.getInstance(host.getProperties(),
                 host.getResourceProvider()));
-        if (!isBootstrap()) {
-            host.add(new ReflectionTransformer());
-            host.add(new PatternCompileTransformer());
-        }
+        host.add(new ReflectionTransformer());
+        host.add(new PatternCompileTransformer());
 
         LambdaMetafactorySubstitutor lms = new LambdaMetafactorySubstitutor();
         host.add(new MethodReference("java.lang.invoke.LambdaMetafactory", "metafactory",
@@ -153,10 +151,8 @@ public class JCLPlugin implements TeaVMPlugin {
                         ValueType.object("java.lang.invoke.CallSite")),
                 switchBootstrapSubstitutor);
 
-        if (!isBootstrap()) {
-            host.add(new ScalaHacks());
-            host.add(new KotlinHacks());
-        }
+        host.add(new ScalaHacks());
+        host.add(new KotlinHacks());
 
         host.add(new NumericClassTransformer());
         host.add(new SystemClassTransformer());
