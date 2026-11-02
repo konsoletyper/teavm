@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -98,11 +99,15 @@ public class ResourceBundleImpl {
 
                         return proxy(ListResourceBundle.class, (instance, methodName, args) -> {
                             Value<List<Object[]>> contentsBuilder = emit(() -> new ArrayList<>());
+                            // Properties is a hash table, sort keys to emit them in deterministic order
+                            var keys = new ArrayList<String>();
                             for (Object propertyName : properties.keySet()) {
-                                if (!(propertyName instanceof String)) {
-                                    continue;
+                                if (propertyName instanceof String) {
+                                    keys.add((String) propertyName);
                                 }
-                                String key = (String) propertyName;
+                            }
+                            Collections.sort(keys);
+                            for (String key : keys) {
                                 String value = properties.getProperty(key);
                                 if (value == null) {
                                     continue;

@@ -17,7 +17,6 @@ package org.teavm.dependency;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
-import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -712,10 +711,12 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                 DependencyType type = types.get(pendingTypes.iterator().next().value);
                 transition.consume(type);
             } else {
-                DependencyType[] typesToPropagate = new DependencyType[pendingTypes.size()];
-                int index = 0;
-                for (IntCursor cursor : pendingTypes) {
-                    typesToPropagate[index++] = types.get(cursor.value);
+                // IntHashSet's iteration order is unspecified, sort to keep analysis deterministic
+                int[] typeIndexes = pendingTypes.toArray();
+                Arrays.sort(typeIndexes);
+                DependencyType[] typesToPropagate = new DependencyType[typeIndexes.length];
+                for (int i = 0; i < typeIndexes.length; ++i) {
+                    typesToPropagate[i] = types.get(typeIndexes[i]);
                 }
                 transition.consume(typesToPropagate);
             }

@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -574,7 +575,7 @@ public class VirtualTableBuilder {
 
     public static Set<MethodReference> getMethodsUsedOnCallSites(ListableClassHolderSource classes,
             boolean withCloneArray) {
-        var virtualMethods = new HashSet<MethodReference>();
+        var virtualMethods = new LinkedHashSet<MethodReference>();
 
         for (var className : classes.getClassNames()) {
             var cls = classes.get(className);

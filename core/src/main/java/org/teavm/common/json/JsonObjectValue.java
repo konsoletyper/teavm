@@ -15,12 +15,12 @@
  */
 package org.teavm.common.json;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class JsonObjectValue extends JsonValue {
-    private Map<String, JsonValue> properties = new HashMap<>();
+    private Map<String, JsonValue> properties = new LinkedHashMap<>();
 
     public void put(String name, JsonValue value) {
         properties.put(name, value);

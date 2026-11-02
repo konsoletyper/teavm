@@ -20,6 +20,7 @@ import com.carrotsearch.hppc.IntDeque;
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
@@ -97,7 +98,12 @@ class NullnessInformationBuilder {
         variablePairs = new int[pairsBuilder.size()][];
         for (int i = 0; i < variablePairs.length; ++i) {
             IntSet itemBuilder = pairsBuilder.get(i);
-            variablePairs[i] = itemBuilder != null ? itemBuilder.toArray() : null;
+            if (itemBuilder != null) {
+                // IntSet's iteration order is unspecified, sort to keep propagation order deterministic
+                int[] pairs = itemBuilder.toArray();
+                Arrays.sort(pairs);
+                variablePairs[i] = pairs;
+            }
         }
     }
 

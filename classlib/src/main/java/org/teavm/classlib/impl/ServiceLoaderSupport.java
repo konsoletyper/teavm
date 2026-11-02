@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +45,7 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
     private static final MethodReference LOAD_METHOD = new MethodReference(ServiceLoader.class, "load", Class.class,
             ServiceLoader.class);
     private static final MethodDescriptor INIT_METHOD = new MethodDescriptor("<init>", void.class);
-    private Map<String, List<String>> serviceMap = new HashMap<>();
+    private Map<String, List<String>> serviceMap = new LinkedHashMap<>();
     private ClassLoader classLoader;
     private ResourceProvider resourceProvider;
 

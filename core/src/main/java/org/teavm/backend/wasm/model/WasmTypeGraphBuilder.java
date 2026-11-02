@@ -16,7 +16,7 @@
 package org.teavm.backend.wasm.model;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
@@ -40,7 +40,7 @@ final class WasmTypeGraphBuilder {
 
     private static void addNominalStructures(WasmModule module, Iterable<WasmCompositeType> types,
             GraphBuilder graphBuilder) {
-        var subStructures = new HashMap<WasmStructure, List<WasmStructure>>();
+        var subStructures = new LinkedHashMap<WasmStructure, List<WasmStructure>>();
         var topLevelStructures = new ArrayList<WasmStructure>();
         for (var type : types) {
             if (type instanceof WasmStructure) {

@@ -36,7 +36,7 @@ public class TimeZoneCache {
     }
 
     public Map<String, StorableDateTimeZone> read(InputStream input) throws IOException {
-        Map<String, StorableDateTimeZone> result = new HashMap<>();
+        Map<String, StorableDateTimeZone> result = new LinkedHashMap<>();
         BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
         List<String> aliasLines = new ArrayList<>();
         while (true) {
