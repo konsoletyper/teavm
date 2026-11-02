@@ -16,12 +16,15 @@
 package org.teavm.compiler.bootstrap;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
+import org.teavm.backend.wasm.debug.sourcemap.SourceMapBuilder;
 import org.teavm.classlib.impl.JCLPlugin;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.jso.impl.JSOPlugin;
@@ -47,6 +50,7 @@ public class TeaVMBootstrapCompiler {
     private boolean strictMode;
     private boolean obfuscated;
     private boolean debugInfo;
+    private boolean sourceMap;
     private ResourceProvider classlibResourceProvider;
     private ResourceProvider classesResourceProvider;
     private BuildTarget buildTarget;
@@ -88,6 +92,10 @@ public class TeaVMBootstrapCompiler {
 
     public void setDebugInfo(boolean debugInfo) {
         this.debugInfo = debugInfo;
+    }
+
+    public void setSourceMap(boolean sourceMap) {
+        this.sourceMap = sourceMap;
     }
 
     public void setClasslibResourceProvider(ResourceProvider classlibResourceProvider) {
@@ -153,8 +161,22 @@ public class TeaVMBootstrapCompiler {
         if (debugInfoLevel != null) {
             target.setDebugInfoLevel(debugInfoLevel);
         }
+        var wasmSourceMapWriter = new SourceMapBuilder();
+        if (sourceMap) {
+            target.setSourceMapBuilder(wasmSourceMapWriter);
+            target.setSourceMapLocation(outputName + ".map");
+        }
         target.setStrict(strictMode);
         teavm.build(buildTarget, outputName);
+        if (sourceMap) {
+            try (var out = buildTarget.createResource(outputName + ".map");
+                    var writer = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
+                wasmSourceMapWriter.writeSourceMap(writer);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
         problemProvider = teavm.getProblemProvider();
     }
 

@@ -72,7 +72,9 @@ public final class TestCompiler {
             compiler.setClassesResourceProvider(new NodeClasspathResourceProvider());
             compiler.setStrictMode(true);
             compiler.setObfuscated(false);
+            compiler.setDebugInfo(true);
             compiler.setDebugInfoLevel(WasmDebugInfoLevel.DEOBFUSCATION);
+            compiler.setSourceMap(true);
         }
 
         compiler.setOptimizationLevel(TeaVMOptimizationLevel.valueOf(request.getOptimizationLevel()));
