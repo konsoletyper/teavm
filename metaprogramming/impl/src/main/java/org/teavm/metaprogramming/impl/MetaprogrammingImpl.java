@@ -18,6 +18,7 @@ package org.teavm.metaprogramming.impl;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.extension.introspect.IntrospectClass;
@@ -608,14 +609,14 @@ public final class MetaprogrammingImpl {
     }
 
     public static MethodCaller caller(IntrospectMethod method) {
-        return new MethodCallerImpl((IntrospectMethodImpl) method);
+        return new MethodCallerImpl((IntrospectMethodImpl) Objects.requireNonNull(method));
     }
 
     public static FieldAccessor accessor(IntrospectField field) {
-        return new FieldAccessorImpl((IntrospectFieldImpl) field);
+        return new FieldAccessorImpl((IntrospectFieldImpl) Objects.requireNonNull(field));
     }
 
     public static <T> ClassHandle<T> handle(IntrospectClass<T> cls) {
-        return new ClassHandleImpl<>((IntrospectClassImpl<T>) cls);
+        return new ClassHandleImpl<>((IntrospectClassImpl<T>) Objects.requireNonNull(cls));
     }
 }

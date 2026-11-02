@@ -25,6 +25,7 @@ import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.wasm.TeaVMWasmGCHost;
 import org.teavm.interop.Async;
 import org.teavm.interop.PlatformMarker;
+import org.teavm.interop.Platforms;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -90,7 +91,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
         var isJs = host.getExtension(TeaVMJavaScriptHost.class) != null;
         host.add(new AsyncMethodProcessor(!isJs));
-        if (!isBootstrap()) {
+        if (isJs()) {
             TeaVMPluginUtil.handleNatives(host, Platform.class);
         }
 
@@ -174,6 +175,11 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
     @PlatformMarker
     private static boolean isBootstrap() {
+        return false;
+    }
+
+    @PlatformMarker(Platforms.JAVASCRIPT)
+    private static boolean isJs() {
         return false;
     }
 }

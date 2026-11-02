@@ -25,6 +25,7 @@ import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.classlib.impl.JCLPlugin;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.jso.impl.JSOPlugin;
+import org.teavm.metaprogramming.impl.MetaprogrammingPlugin;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
@@ -137,6 +138,7 @@ public class TeaVMBootstrapCompiler {
         teavm.setOptimizationLevel(optimizationLevel);
         teavm.setProperties(properties);
 
+        new MetaprogrammingPlugin().install(teavm);
         new PlatformPlugin().install(teavm);
         new JCLPlugin().install(teavm);
         new JSOPlugin().install(teavm);

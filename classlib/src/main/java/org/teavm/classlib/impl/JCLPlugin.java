@@ -170,13 +170,12 @@ public class JCLPlugin implements TeaVMPlugin {
             }
         }
 
-        if (!isBootstrap()) {
-            TeaVMPluginUtil.handleNatives(host, Class.class);
-            TeaVMPluginUtil.handleNatives(host, ClassLoader.class);
-            TeaVMPluginUtil.handleNatives(host, System.class);
-            TeaVMPluginUtil.handleNatives(host, Array.class);
-            TeaVMPluginUtil.handleNatives(host, Math.class);
-        }
+        TeaVMPluginUtil.handleNatives(host, Class.class);
+        TeaVMPluginUtil.handleNatives(host, ClassLoader.class);
+        TeaVMPluginUtil.handleNatives(host, System.class);
+        TeaVMPluginUtil.handleNatives(host, Array.class);
+        TeaVMPluginUtil.handleNatives(host, Math.class);
+        TeaVMPluginUtil.handleNatives(host, String.class);
 
         installMetadata(host.getService(MetadataRegistration.class));
         host.add(new DeclaringClassDependencyListener());

@@ -15,8 +15,8 @@
  */
 package org.teavm.metaprogramming.impl;
 
+import java.util.ArrayList;
 import java.util.ServiceLoader;
-import java.util.stream.Collectors;
 import org.teavm.metaprogramming.MetaprogrammingProvider;
 import org.teavm.metaprogramming.MethodGenerator;
 import org.teavm.model.ClassHolder;
@@ -33,10 +33,10 @@ public class MetaprogrammingClassTransformer implements ClassHolderTransformer {
             return;
         }
 
-        var providers = ServiceLoader.load(MetaprogrammingProvider.class, MetaprogrammingImpl.classLoader)
-                .stream()
-                .map(ServiceLoader.Provider::get)
-                .collect(Collectors.toList());
+        var providers = new ArrayList<MetaprogrammingProvider>();
+        for (var service : ServiceLoader.load(MetaprogrammingProvider.class, MetaprogrammingImpl.classLoader)) {
+            providers.add(service);
+        }
         if (providers.isEmpty()) {
             return;
         }
