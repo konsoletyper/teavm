@@ -22,9 +22,11 @@ import static org.teavm.metaprogramming.Metaprogramming.exit;
 import static org.teavm.metaprogramming.Metaprogramming.proxy;
 import static org.teavm.metaprogramming.Metaprogramming.unsupportedCase;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
@@ -34,6 +36,7 @@ import org.teavm.metaprogramming.Value;
 @TeaVMTest
 @SkipJVM
 @EachTestCompiledSeparately
+@SkipPlatform(BootstrapWasmGCTestPlatform.ID)
 public class ProxyTest {
     @Test
     public void createsProxy() {
