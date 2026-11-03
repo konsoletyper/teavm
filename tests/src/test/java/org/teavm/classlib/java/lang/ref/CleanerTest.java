@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.ref.Cleaner;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.GCSupport;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
@@ -51,7 +52,7 @@ public class CleanerTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID, TestPlatform.JAVASCRIPT})
     public void gcTriggersClean() {
         var cleaner = Cleaner.create();
         var counter = new int[1];

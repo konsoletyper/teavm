@@ -468,7 +468,7 @@ final class TeaVMTestExecutionSupport {
         var skipPlatform = declaration.getAnnotation(SkipPlatform.class);
         if (skipPlatform != null) {
             for (var toSkip : skipPlatform.value()) {
-                if (platform.matches(toSkip)) {
+                if (platform.getId().equals(toSkip)) {
                     return false;
                 }
             }
@@ -477,7 +477,7 @@ final class TeaVMTestExecutionSupport {
         var onlyPlatform = declaration.getAnnotation(OnlyPlatform.class);
         if (onlyPlatform != null) {
             for (var allowedPlatform : onlyPlatform.value()) {
-                if (platform.matches(allowedPlatform)) {
+                if (platform.getId().equals(allowedPlatform)) {
                     return true;
                 }
             }

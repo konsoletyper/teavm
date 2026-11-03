@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
@@ -35,7 +36,7 @@ import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 @SkipJVM
-@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
 @EachTestCompiledSeparately
 public class InstanceOfTest {
     @Test

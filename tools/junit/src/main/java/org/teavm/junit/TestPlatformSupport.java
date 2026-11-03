@@ -64,10 +64,6 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
         return getPlatform();
     }
 
-    boolean matches(String platformId) {
-        return platformId.equals(getId()) || platformId.equals(getPlatform());
-    }
-
     abstract String getPath();
 
     abstract String getExtension();

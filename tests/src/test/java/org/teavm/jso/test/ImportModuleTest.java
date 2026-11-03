@@ -17,6 +17,7 @@ package org.teavm.jso.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSBodyImport;
 import org.teavm.junit.AttachJavaScript;
@@ -31,7 +32,7 @@ import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 @SkipJVM
-@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
 @EachTestCompiledSeparately
 public class ImportModuleTest {
     @Test
@@ -39,14 +40,14 @@ public class ImportModuleTest {
             "org/teavm/jso/test/amd.js",
             "org/teavm/jso/test/amdModule.js"
     })
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
     public void amd() {
         assertEquals(23, runTestFunction());
     }
 
     @Test
     @AttachJavaScript("org/teavm/jso/test/commonjs.js")
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
     public void commonjs() {
         assertEquals(23, runTestFunction());
     }

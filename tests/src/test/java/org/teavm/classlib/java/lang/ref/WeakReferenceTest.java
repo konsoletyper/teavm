@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.support.GCSupport;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
@@ -47,7 +48,7 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID, TestPlatform.JAVASCRIPT})
     public void deref() {
         var ref = createAndTestRef(null);
         GCSupport.tryToTriggerGC(ref);
@@ -55,7 +56,7 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID, TestPlatform.JAVASCRIPT})
     public void refQueue() {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
@@ -83,7 +84,8 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT })
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID,
+            TestPlatform.JAVASCRIPT })
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);

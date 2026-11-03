@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSBuffer;
 import org.teavm.jso.JSBufferType;
@@ -44,7 +45,7 @@ import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 @SkipJVM
-@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
 @EachTestCompiledSeparately
 public class ConversionTest {
     @Test

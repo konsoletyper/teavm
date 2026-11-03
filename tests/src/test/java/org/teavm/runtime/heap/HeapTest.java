@@ -24,6 +24,7 @@ import java.util.TreeSet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 import org.teavm.junit.OnlyPlatform;
@@ -32,7 +33,7 @@ import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
-@OnlyPlatform(TestPlatform.WEBASSEMBLY_GC)
+@OnlyPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
 @SkipJVM
 public class HeapTest {
     private Address startBackup;

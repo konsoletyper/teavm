@@ -24,6 +24,7 @@ import java.util.function.IntSupplier;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
@@ -174,7 +175,7 @@ public class AsyncTest {
     }
 
     @Test
-    @OnlyPlatform({ TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC })
+    @OnlyPlatform({ TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID })
     public void suspendFunctionFromJs() {
         assertEquals(23, wrapWithJsCall(() -> perhapsSuspend(false, 23)));
         assertThrows(RuntimeException.class, () -> wrapWithJsCall(() -> perhapsSuspend(true, 42)));

@@ -45,12 +45,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.GCSupport;
 import org.teavm.classlib.support.MapTest2Support;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
-@SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
+@SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
 public class WeakHashMapTest {
     static class MockMap<K, V> extends AbstractMap<K, V> {
         @Override

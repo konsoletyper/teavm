@@ -18,12 +18,12 @@ package org.teavm.classlib.java.util;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.security.SecureRandom;
 import org.junit.jupiter.api.Test;
-import org.teavm.junit.OnlyPlatform;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
-@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
+@SkipPlatform(TestPlatform.C)
 public class SecureRandomTest {
     @Test
     public void nextInt() {

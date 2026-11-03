@@ -32,13 +32,10 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.TeaVMTest;
-import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 @EachTestCompiledSeparately
-@OnlyPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT, TestPlatform.C})
 public class TypeTest {
     @Test
     public void classTypeParameters() {
