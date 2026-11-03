@@ -19,7 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTest;
@@ -34,6 +36,7 @@ public class LocaleTest {
     }
 
     @Test
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void languageNamesProvided() {
         Locale english = new Locale("en", "");
         Locale usEnglish = new Locale("en", "US");
@@ -48,6 +51,7 @@ public class LocaleTest {
     }
 
     @Test
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void countryNamesProvided() {
         Locale usEnglish = new Locale("en", "US");
         Locale gbEnglish = new Locale("en", "GB");

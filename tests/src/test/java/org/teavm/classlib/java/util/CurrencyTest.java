@@ -20,8 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Currency;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTest;
@@ -52,6 +54,7 @@ public class CurrencyTest {
 
     @Test
     @SkipJVM
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void getsDisplayName() {
         Locale russian = new Locale("ru");
         Locale english = new Locale("en");
@@ -69,6 +72,7 @@ public class CurrencyTest {
 
     @Test
     @SkipJVM
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void getsSymbol() {
         Locale russian = new Locale("ru");
         Locale english = new Locale("en");

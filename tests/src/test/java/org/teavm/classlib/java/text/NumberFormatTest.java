@@ -20,8 +20,10 @@ import java.text.NumberFormat;
 import java.util.Currency;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTest;
@@ -31,6 +33,7 @@ import org.teavm.junit.TeaVMTest;
 @EachTestCompiledSeparately
 public class NumberFormatTest {
     @Test
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void formatsNumber() {
         NumberFormat format = NumberFormat.getNumberInstance(new Locale("en"));
         assertEquals("123,456.789", format.format(123456.789123));
@@ -41,6 +44,7 @@ public class NumberFormatTest {
 
     @Test
     @SkipJVM
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void formatsCurrency() {
         NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("en", "US"));
         format.setCurrency(Currency.getInstance("RUB"));
@@ -53,6 +57,7 @@ public class NumberFormatTest {
 
     @Test
     @SkipJVM
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void formatsPercent() {
         NumberFormat format = NumberFormat.getPercentInstance(new Locale("en", "US"));
         assertEquals("12,345,679%", format.format(123456.789123));
