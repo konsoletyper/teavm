@@ -92,6 +92,7 @@ val repackCldr = tasks.register<Zip>("repackCldr") {
     from(unpackCldr)
     destinationDirectory = project.layout.buildDirectory.dir("tmp")
     archiveFileName = "cldr-json.zip"
+    include("root/**")
     include("en/**")
     include("supplemental/**")
 }
