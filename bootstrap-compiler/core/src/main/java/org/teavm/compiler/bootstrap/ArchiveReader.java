@@ -23,7 +23,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 
-class ArchiveReader implements Closeable {
+public class ArchiveReader implements Closeable {
     private final DataInputStream input;
 
     public ArchiveReader(InputStream input) throws IOException {
