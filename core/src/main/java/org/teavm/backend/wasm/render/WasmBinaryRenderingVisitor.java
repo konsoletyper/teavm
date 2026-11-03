@@ -120,6 +120,16 @@ class WasmBinaryRenderingVisitor implements WasmInstructionVisitor {
         }
     }
 
+    void finish() {
+        if (debugLines != null) {
+            debugLines.advance(writer.getPosition() + addressOffset);
+            while (!methodStack.isEmpty()) {
+                debugLines.end();
+                methodStack.remove(methodStack.size() - 1);
+            }
+        }
+    }
+
     @Override
     public void visit(WasmUnreachable instruction) {
         emitLocation(instruction);
