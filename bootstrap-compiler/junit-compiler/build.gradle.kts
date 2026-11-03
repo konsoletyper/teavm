@@ -20,7 +20,13 @@ plugins {
 
 description = "TeaVM compiler for JUnit tests, compiled into Wasm GC and running in Node.js"
 
-val teavmCli = configurations.create("teavmCli")
+val teavmCompile = configurations.create("teavmCompile")
+configurations.compileClasspath {
+    extendsFrom(teavmCompile)
+}
+val deobfuscator = configurations.create("deobfuscator") {
+    isTransitive = false
+}
 val wasmGCRuntime = configurations.create("wasmGCRuntime") {
     isTransitive = false
 }
@@ -32,7 +38,9 @@ dependencies {
     compileOnly(project(":extension:spi"))
     annotationProcessor(project(":extension:processor"))
 
-    teavmCli(project(":tools:cli"))
+    teavmCompile(project(":tools:core"))
+    teavmCompile(project(":classlib"))
+    deobfuscator(project(":tools:deobfuscator-wasm-gc"))
     wasmGCRuntime(project(":core"))
 }
 
@@ -43,18 +51,15 @@ val buildWasmGC = tasks.register<JavaExec>("buildWasmGC") {
     group = "build"
     description = "Compiles test compiler into Wasm GC module"
     val outputDir = wasmDir
-    inputs.files(sourceSets.main.map { it.runtimeClasspath })
     outputs.dir(outputDir)
-    classpath(teavmCli, sourceSets.main.map { it.runtimeClasspath })
-    mainClass = "org.teavm.cli.TeaVMRunner"
+    classpath(teavmCompile, sourceSets.main.map { it.runtimeClasspath })
+    mainClass = "org.teavm.compiler.bootstrap.junit.tools.Compiler"
     maxHeapSize = "2g"
     argumentProviders.add {
         listOf(
-            "-t", "wasm-gc",
-            "-O", "1",
-            "-d", outputDir.get().asFile.absolutePath,
-            "-f", "junit-compiler.wasm",
-            "org.teavm.compiler.bootstrap.junit.TestCompiler"
+            "org.teavm.compiler.bootstrap.junit.TestCompiler",
+            outputDir.get().asFile.absolutePath,
+            "junit-compiler.wasm"
         )
     }
 }
@@ -68,6 +73,10 @@ val assembleCompiler = tasks.register<Sync>("assembleCompiler") {
     from(provider { wasmGCRuntime.map { zipTree(it) } }) {
         include("org/teavm/backend/wasm/wasm-gc-runtime.js")
         eachFile { path = name }
+    }
+    from(provider { deobfuscator.map { zipTree(it) } }) {
+        include("org/teavm/backend/wasm/deobfuscator.wasm")
+        eachFile { path = "junit-compiler.wasm-deobfuscator.wasm" }
     }
     from("src/main/js")
     includeEmptyDirs = false

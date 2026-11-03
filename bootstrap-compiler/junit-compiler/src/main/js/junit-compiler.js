@@ -36,6 +36,9 @@ require(path.join(__dirname, "wasm-gc-runtime.js"));
 
 const RESPONSE_PREFIX = "@@teavm-bootstrap-response@@";
 
+// Java stack traces are taken from JS stack traces, which V8 truncates to 10 frames by default
+Error.stackTraceLimit = Infinity;
+
 let classpath = [];
 
 class DirectoryEntry {
@@ -154,7 +157,12 @@ function respond(error) {
 }
 
 async function run() {
-    const teavm = await TeaVM.wasmGC.load(path.resolve(process.argv[2]));
+    const teavm = await TeaVM.wasmGC.load(path.resolve(process.argv[2]), {
+        stackDeobfuscator: {
+            enabled: true,
+            infoLocation: "embedded"
+        }
+    });
     const lines = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
     for await (const line of lines) {
         if (line.trim() === "") {
