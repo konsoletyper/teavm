@@ -23,6 +23,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.extension.ExtensionEnvironment;
+import org.teavm.extension.ExtensionPolicySource;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
@@ -66,4 +67,6 @@ public interface TeaVMTargetController {
     ClassInitializerInfo getClassInitializerInfo();
     
     ExtensionEnvironment extensionEnvironment();
+
+    ExtensionPolicySource extensionPolicies();
 }

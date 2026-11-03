@@ -147,6 +147,17 @@ globalThis.teavmBootstrapReadResource = name => {
     return null;
 };
 
+globalThis.teavmBootstrapReadResources = name => {
+    const result = [];
+    for (const entry of classpath) {
+        const data = entry.read(name);
+        if (data !== null) {
+            result.push(new Int8Array(data.buffer, data.byteOffset, data.length));
+        }
+    }
+    return result;
+};
+
 globalThis.teavmBootstrapWriteFile = (file, data) => {
     fs.writeFileSync(file, data);
 };
@@ -177,7 +188,7 @@ async function run() {
                     error = "";
                     break;
                 case "compile":
-                    error = teavm.exports.compile(request);
+                    error = await teavm.exports.compile(request);
                     break;
                 default:
                     error = "Unknown request type: " + request.type;

@@ -15,8 +15,11 @@
  */
 package org.teavm.extension;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.function.Supplier;
 import org.teavm.extension.diagnostics.Diagnostics;
 import org.teavm.extension.diagnostics.SourceLocation;
@@ -32,7 +35,7 @@ import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.parsing.resource.ResourceProvider;
 
-public class ExtensionEnvironmentImpl implements ExtensionEnvironment {
+public class ExtensionEnvironmentImpl implements ExtensionEnvironment, ExtensionPolicySource {
     private ResourceProvider resourceProvider;
     private Introspection introspection;
     private ClassLoader classLoader;
@@ -40,6 +43,7 @@ public class ExtensionEnvironmentImpl implements ExtensionEnvironment {
     private Supplier<Properties> propertiesSupplier;
     private Properties properties;
     private boolean error;
+    private List<ExtensionPolicyProvider> policyProviders = new ArrayList<>();
 
     public ExtensionEnvironmentImpl(ResourceProvider resourceProvider, ClassHierarchy hierarchy,
             ClassLoader classLoader, org.teavm.diagnostics.Diagnostics underlyingDiagnostics,
@@ -53,6 +57,26 @@ public class ExtensionEnvironmentImpl implements ExtensionEnvironment {
 
     public Introspection introspection() {
         return introspection;
+    }
+
+    public void addPolicyProvider(ExtensionPolicyProvider provider) {
+        policyProviders.add(provider);
+    }
+
+    /**
+     * Creates instances of all available policies of given type, i.e. ones registered as services
+     * and ones supplied by {@link ExtensionPolicyProvider}s.
+     */
+    @Override
+    public <T> List<T> createPolicies(Class<T> policyType) {
+        var result = new ArrayList<T>();
+        for (var policy : ServiceLoader.load(policyType, classLoader)) {
+            result.add(policy);
+        }
+        for (var provider : policyProviders) {
+            result.addAll(provider.createPolicies(this, policyType));
+        }
+        return result;
     }
 
     public boolean hasError() {

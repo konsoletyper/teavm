@@ -24,10 +24,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
+import org.teavm.compiler.bootstrap.CompileCallback;
+import org.teavm.compiler.bootstrap.ExtensionModuleLoader;
 import org.teavm.compiler.bootstrap.TeaVMBootstrapCompiler;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
+import org.teavm.extension.bridge.BridgeGuestModule;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSExport;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.core.JSPromise;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.junit.TestCompilationPlugins;
 import org.teavm.model.MethodReference;
@@ -40,6 +47,8 @@ import org.teavm.vm.TeaVMOptimizationLevel;
  * Compilation is performed by {@link TeaVMBootstrapCompiler}, which takes class library from resources,
  * embedded into this module (see {@link ClasslibResourcesPolicy}), and the rest of classes from the class path
  * of tests. Single instance of compiler is reused for all requests, so class library is parsed only once.
+ * Extensions found in class path of tests (like reflection policies) are compiled into a separate module
+ * on first request, see {@link TeaVMBootstrapCompiler#compile(CompileCallback)}.
  */
 public final class TestCompiler {
     private static TeaVMBootstrapCompiler compiler;
@@ -50,26 +59,51 @@ public final class TestCompiler {
     /**
      * Compiles test module.
      *
-     * @return empty string in case of success, error message otherwise.
+     * @return promise that resolves to empty string in case of success, error message otherwise.
      */
     @JSExport
-    public static String compile(CompileRequest request) {
-        try {
-            return doCompile(request);
-        } catch (Throwable e) {
-            var sb = new StringBuilder("Compiler crashed: ").append(e);
-            for (var element : e.getStackTrace()) {
-                sb.append("\n    at ").append(element);
+    public static JSPromise<JSString> compile(CompileRequest request) {
+        return new JSPromise<>((resolve, reject) -> {
+            try {
+                startCompilation(request, new CompileCallback() {
+                    @Override
+                    public void complete() {
+                        String result;
+                        try {
+                            result = completeCompilation(request);
+                        } catch (Throwable e) {
+                            result = crashMessage(e);
+                        }
+                        resolve.accept(JSString.valueOf(result));
+                    }
+
+                    @Override
+                    public void error(Throwable e) {
+                        resolve.accept(JSString.valueOf(crashMessage(e)));
+                    }
+                });
+            } catch (Throwable e) {
+                resolve.accept(JSString.valueOf(crashMessage(e)));
             }
-            return sb.toString();
-        }
+        });
     }
 
-    private static String doCompile(CompileRequest request) throws IOException {
+    private static String crashMessage(Throwable e) {
+        var sb = new StringBuilder("Compiler crashed: ").append(e);
+        for (var element : e.getStackTrace()) {
+            sb.append("\n    at ").append(element);
+        }
+        return sb.toString();
+    }
+
+    private static Map<String, ByteArrayOutputStream> outputFiles;
+
+    private static void startCompilation(CompileRequest request, CompileCallback callback) throws IOException {
         if (compiler == null) {
             compiler = new TeaVMBootstrapCompiler();
             compiler.setClasslibResourceProvider(TeaVMBootstrapCompiler.loadClasslib());
             compiler.setClassesResourceProvider(new NodeClasspathResourceProvider());
+            compiler.setExtensionModuleLoader(TestCompiler::loadExtensionModule);
             compiler.setStrictMode(true);
             compiler.setObfuscated(false);
             compiler.setDebugInfo(true);
@@ -98,10 +132,12 @@ public final class TestCompiler {
 
         compiler.setMainClass(request.getEntryPoint());
         compiler.setOutputName(request.getOutputFileName());
-        var outputFiles = new LinkedHashMap<String, ByteArrayOutputStream>();
+        outputFiles = new LinkedHashMap<>();
         compiler.setBuildTarget(new MemoryBuildTarget(outputFiles));
-        compiler.compile();
+        compiler.compile(callback);
+    }
 
+    private static String completeCompilation(CompileRequest request) {
         var problems = compiler.getProblemProvider().getProblems();
         if (!problems.isEmpty()) {
             var sb = new StringBuilder();
@@ -123,6 +159,26 @@ public final class TestCompiler {
                     Int8Array.copyFromJavaArray(entry.getValue().toByteArray()));
         }
         return "";
+    }
+
+    private static void loadExtensionModule(byte[] module, ExtensionModuleLoader.Callback callback) {
+        loadModule(Int8Array.copyFromJavaArray(module), callback::loaded, callback::failed);
+    }
+
+    @JSBody(params = { "data", "onLoaded", "onFailed" }, script = ""
+            + "TeaVM.wasmGC.load(data).then("
+            + "teavm => onLoaded(teavm.exports), "
+            + "e => onFailed(String(e && e.stack ? e.stack : e)));")
+    private static native void loadModule(Int8Array data, ModuleConsumer onLoaded, ErrorConsumer onFailed);
+
+    @JSFunctor
+    interface ModuleConsumer extends JSObject {
+        void accept(BridgeGuestModule module);
+    }
+
+    @JSFunctor
+    interface ErrorConsumer extends JSObject {
+        void accept(String message);
     }
 
     @JSBody(params = { "path", "data" }, script = "teavmBootstrapWriteFile(path, data);")

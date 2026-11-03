@@ -37,6 +37,7 @@ import org.teavm.backend.wasm.runtime.WasmGCResources;
 import org.teavm.classlib.ResourceSupplier;
 import org.teavm.classlib.ResourceSupplierContext;
 import org.teavm.extension.ExtensionEnvironment;
+import org.teavm.extension.ExtensionPolicySource;
 import org.teavm.extension.spi.resources.ResourcesPolicy;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ListableClassReaderSource;
@@ -50,12 +51,14 @@ public class WasmGCResourcesIntrinsic implements WasmGCInlineIntrinsic {
     private WasmGlobal baseGlobal;
     private WasmGCCodeGenContext genContext;
     private ExtensionEnvironment extensionEnv;
+    private ExtensionPolicySource extensionPolicies;
 
     public WasmGCResourcesIntrinsic(Properties properties, WasmGCCodeGenContext genContext,
-            ExtensionEnvironment extensionEnv) {
+            ExtensionEnvironment extensionEnv, ExtensionPolicySource extensionPolicies) {
         this.properties = properties;
         this.genContext = genContext;
         this.extensionEnv = extensionEnv;
+        this.extensionPolicies = extensionPolicies;
     }
 
     public void writeModule(WasmModule module) {
@@ -100,7 +103,7 @@ public class WasmGCResourcesIntrinsic implements WasmGCInlineIntrinsic {
                 resourceSet.addAll(Arrays.asList(resources));
             }
         }
-        for (var policy : ServiceLoader.load(ResourcesPolicy.class, genContext.classLoader())) {
+        for (var policy : extensionPolicies.createPolicies(ResourcesPolicy.class)) {
             policy.initialize(extensionEnv);
             var resources = policy.supplyResources(genContext.classes().getClassNames());
             if (resources != null) {

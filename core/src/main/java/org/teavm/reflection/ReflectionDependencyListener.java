@@ -198,7 +198,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         typesInReflectableSignaturesNode = agent.createNode();
         typesInThrownNode = agent.createNode();
         typesInGenericReflectableSignaturesNode = agent.createNode();
-        reflectionSuppliers.add(new DefaultReflectionSupplier(agent.extensionEnvironment()));
+        reflectionSuppliers.add(new DefaultReflectionSupplier(agent.extensionEnvironment(),
+                agent.extensionPolicies()));
 
         agent.linkMethod(new MethodReference(ClassInfo.class, "classObject", Class.class))
                 .getResult().propagate(agent.getType(ValueType.parse(Class.class)));

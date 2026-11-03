@@ -326,7 +326,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             contributor.contribute(codeGenContext, codeGenRegistry);
         }
         var resourceGenerator = new WasmGCResourcesIntrinsic(controller.getProperties(), codeGenContext,
-                controller.extensionEnvironment());
+                controller.extensionEnvironment(), controller.extensionPolicies());
         inlineIntrinsics.registerIntrinsic(WasmGCResources.class, resourceGenerator);
 
         var internMethod = controller.getDependencyInfo().getMethod(new MethodReference(String.class,

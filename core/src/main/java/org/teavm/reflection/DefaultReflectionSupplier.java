@@ -21,14 +21,14 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.classlib.ProxyInterfaceConsumer;
 import org.teavm.classlib.ProxyListener;
 import org.teavm.classlib.ReflectionContext;
 import org.teavm.classlib.ReflectionSupplier;
-import org.teavm.extension.ExtensionEnvironmentImpl;
+import org.teavm.extension.ExtensionEnvironment;
+import org.teavm.extension.ExtensionPolicySource;
 import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.extension.introspect.IntrospectFieldImpl;
 import org.teavm.extension.introspect.IntrospectMethodImpl;
@@ -36,14 +36,14 @@ import org.teavm.extension.spi.reflection.ReflectionPolicy;
 import org.teavm.model.MethodDescriptor;
 
 public class DefaultReflectionSupplier implements ReflectionSupplier {
-    private ExtensionEnvironmentImpl env;
+    private ExtensionEnvironment env;
     private List<ReflectionPolicy> policies = new ArrayList<>();
     private Map<String, Set<String>> pendingAccessibleFields = new HashMap<>();
     private Map<String, Set<MethodDescriptor>> pendingAccessibleMethods = new HashMap<>();
 
-    public DefaultReflectionSupplier(ExtensionEnvironmentImpl env) {
+    public DefaultReflectionSupplier(ExtensionEnvironment env, ExtensionPolicySource policySource) {
         this.env = env;
-        for (var policy : ServiceLoader.load(ReflectionPolicy.class, env.classLoader())) {
+        for (var policy : policySource.createPolicies(ReflectionPolicy.class)) {
             policy.initialize(env);
             policies.add(policy);
         }

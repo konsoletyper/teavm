@@ -15,7 +15,7 @@
  */
 package org.teavm.compiler.bootstrap.junit;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -45,10 +45,12 @@ class NodeClasspathResourceProvider implements ResourceProvider {
 
     @Override
     public Iterator<Resource> getResources(String name) {
-        var resource = getResource(name);
-        return resource != null
-                ? Collections.singletonList(resource).iterator()
-                : Collections.emptyIterator();
+        var data = readResources(name);
+        var result = new ArrayList<Resource>(data.length);
+        for (var item : data) {
+            result.add(new ByteArrayResource(item.copyToJavaArray()));
+        }
+        return result.iterator();
     }
 
     @Override
@@ -57,4 +59,7 @@ class NodeClasspathResourceProvider implements ResourceProvider {
 
     @JSBody(params = "name", script = "return teavmBootstrapReadResource(name);")
     private static native Int8Array readResource(String name);
+
+    @JSBody(params = "name", script = "return teavmBootstrapReadResources(name);")
+    private static native Int8Array[] readResources(String name);
 }

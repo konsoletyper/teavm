@@ -28,11 +28,17 @@ val classlibInput = configurations.create("classlibInput") {
 val classlibAuxInput = configurations.create("classlibAuxInput") {
     isTransitive = false
 }
+// Extension SPI and guest side of extension bridge, required to compile extensions found in class path
+// into a separate module, see org.teavm.extension.bridge
+val classlibExtensionInput = configurations.create("classlibExtensionInput") {
+    isTransitive = false
+}
 val classlibEmu = sourceSets.create("classlibEmu")
 
 dependencies {
     api(project(":core"))
     implementation(project(":extension:spi"))
+    api(project(":extension:bridge"))
     implementation(project(":jso:impl"))
     implementation(project(":platform"))
     implementation(project(":classlib"))
@@ -47,6 +53,10 @@ dependencies {
     classlibAuxInput(project(":platform"))
     classlibAuxInput(project(":platform"))
     classlibAuxInput(libs.jzlib)
+    classlibExtensionInput(project(":extension:apis"))
+    classlibExtensionInput(project(":extension:spi"))
+    classlibExtensionInput(project(":extension:spi-util"))
+    classlibExtensionInput(project(":extension:bridge"))
 }
 
 val classLibTmpDir = project.layout.buildDirectory.dir("tmp/teavm-classlib")
@@ -76,7 +86,7 @@ val repackCldr = tasks.register<Zip>("repackCldr") {
 }
 
 val prepareTeaVMClassLib = tasks.register<Copy>("prepareTeaVMClassLib") {
-    dependsOn(unpackTeaVMClasslib, repackCldr, classlibAuxInput)
+    dependsOn(unpackTeaVMClasslib, repackCldr, classlibAuxInput, classlibExtensionInput)
     from(unpackTeaVMClasslib) {
         exclude("org/teavm/classlib/impl/unicode/cldr-json.zip")
     }
@@ -94,6 +104,13 @@ val prepareTeaVMClassLib = tasks.register<Copy>("prepareTeaVMClassLib") {
         include("org/teavm/backend/wasm/WasmRuntime*.class")
         include("org/teavm/backend/wasm/WasmHeap*.class")
         include("com/jcraft/jzlib/**")
+    }
+    from(provider {
+        classlibExtensionInput.map {
+            zipTree(it)
+        }
+    }) {
+        include("org/teavm/extension/**")
     }
     from(repackCldr) {
         eachFile {

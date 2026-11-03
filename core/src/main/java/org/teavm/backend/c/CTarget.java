@@ -487,7 +487,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generators.add(new WeakReferenceGenerator());
         generators.add(new ReferenceQueueGenerator());
         generators.add(new CResourcesGenerator(controller.getProperties(), controller.getResourceProvider(),
-                controller.getClassLoader(), controller.extensionEnvironment()));
+                controller.getClassLoader(), controller.extensionEnvironment(),
+                controller.extensionPolicies()));
 
         var reflectionGenerators = new ArrayList<ReflectionGenerator>();
 

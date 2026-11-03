@@ -21,6 +21,7 @@ import org.teavm.callgraph.CallGraph;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.extension.ExtensionEnvironmentImpl;
+import org.teavm.extension.ExtensionPolicySource;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReaderSource;
@@ -168,6 +169,10 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
     }
 
     public ExtensionEnvironmentImpl extensionEnvironment() {
+        return analyzer.extensionEnvironment();
+    }
+
+    public ExtensionPolicySource extensionPolicies() {
         return analyzer.extensionEnvironment();
     }
 
