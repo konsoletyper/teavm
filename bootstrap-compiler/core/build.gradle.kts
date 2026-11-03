@@ -49,28 +49,6 @@ dependencies {
     classlibAuxInput(libs.jzlib)
 }
 
-val classlibOutDir = project.layout.buildDirectory.dir("classlib")
-
-tasks.register<JavaExec>("generateClassLib") {
-    val output = classlibOutDir.map { it.file("compile-classlib-teavm.bin") }
-    dependsOn(classlibInput)
-    dependsOn(classlibEmu.output)
-    inputs.files(classlibInput)
-    inputs.files(provider {
-        classlibEmu.output.classesDirs.map { fileTree(it) }
-    })
-    outputs.file(output)
-    argumentProviders.add {
-        listOf(
-            output.get().asFile.absolutePath,
-            *classlibInput.files.map { it.absolutePath }.toTypedArray(),
-            *classlibEmu.output.classesDirs.files.map { it.absolutePath }.toTypedArray()
-        )
-    }
-    classpath(sourceSets.main.map { it.output }, sourceSets.main.map { it.runtimeClasspath })
-    mainClass = "org.teavm.compiler.bootstrap.tools.StdlibConverter"
-}
-
 val classLibTmpDir = project.layout.buildDirectory.dir("tmp/teavm-classlib")
 
 val unpackTeaVMClasslib = tasks.register<Copy>("unpackTeaVMClassLib") {
