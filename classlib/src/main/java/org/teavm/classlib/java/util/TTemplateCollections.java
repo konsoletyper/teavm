@@ -568,7 +568,7 @@ public final class TTemplateCollections {
 
         @Override
         public V get(Object key) {
-            if (key == null) {
+            if (key == null || data.length == 0) {
                 return null;
             }
             int suggestedIndex = Math.abs(key.hashCode()) % data.length;
@@ -628,7 +628,7 @@ public final class TTemplateCollections {
                         }
 
                         Object key = e.getKey();
-                        if (key == null) {
+                        if (key == null || data.length == 0) {
                             return false;
                         }
                         int suggestedIndex = Math.abs(key.hashCode()) % data.length;

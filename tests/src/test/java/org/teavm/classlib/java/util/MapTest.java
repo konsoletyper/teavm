@@ -74,6 +74,39 @@ public class MapTest {
     }
     
     @Test
+    public void copyOfEmptyMapGet() {
+        Map<String, String> copied = Map.copyOf(Map.of());
+        assertNull(copied.get("missing"));
+    }
+
+    @Test
+    public void copyOfEmptyMutableMapGet() {
+        Map<String, String> copied = Map.copyOf(new HashMap<>());
+        assertNull(copied.get("missing"));
+    }
+
+    @Test
+    public void copyOfEmptyMapEntrySetContains() {
+        Map<String, String> copied = Map.copyOf(Map.of());
+        assertFalse(copied.entrySet().contains(Map.entry("missing", "value")));
+
+        Map<String, String> mutableCopied = Map.copyOf(new HashMap<>());
+        assertFalse(mutableCopied.entrySet().contains(Map.entry("missing", "value")));
+    }
+
+    @Test
+    public void copyOfMutableMapGet() {
+        Map<String, String> original = new HashMap<>();
+        original.put("first", "one");
+        original.put("second", "two");
+
+        Map<String, String> copied = Map.copyOf(original);
+        assertEquals("one", copied.get("first"));
+        assertEquals("two", copied.get("second"));
+        assertNull(copied.get("missing"));
+    }
+
+    @Test
     public void copyOfOptimized() {
         Map<String, Integer> mapCopy1 = Map.copyOf(Map.of("q", 0, "w", 1, "e", 2));
         Map<String, Integer> mapCopy2 = Map.copyOf(mapCopy1);
