@@ -16,6 +16,8 @@
 package org.teavm.jso.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.jso.JSBody;
@@ -52,6 +54,45 @@ public class ExportClassTest {
         assertEquals("(OK)", callNativeJSMethod(new SimpleClass()));
         assertEquals("[OK]", callNativeJSMethod(new DerivedSimpleClass()));
     }
+
+    @Test
+    public void exportedObjectReturnedFromJsIsOriginalJavaObject() {
+        var original = new SimpleClass();
+        var other = new DerivedSimpleClass();
+        var returned = passThrough(original);
+
+        assertTrue(returned instanceof SimpleClass);
+        assertFalse(returned instanceof DerivedSimpleClass);
+        var cast = (SimpleClass) returned;
+        assertTrue(cast == original);
+
+        assertTrue(returned == original);
+        assertTrue(original == returned);
+        assertFalse(returned == other);
+        assertFalse(other == returned);
+        assertTrue(returned == passThrough(original));
+        assertFalse(returned == passThrough(other));
+    }
+
+    @Test
+    public void exportedObjectsInArrayReturnedFromJsAreOriginalJavaObjects() {
+        var first = new SimpleClass();
+        var second = new DerivedSimpleClass();
+        var returned = passThroughArray(new I[] { first, second });
+
+        assertTrue(returned[0] instanceof SimpleClass);
+        assertTrue(returned[1] instanceof DerivedSimpleClass);
+        assertTrue((SimpleClass) returned[0] == first);
+        assertTrue((DerivedSimpleClass) returned[1] == second);
+        assertTrue(returned[0] == first);
+        assertFalse(returned[0] == second);
+    }
+
+    @JSBody(params = "a", script = "return a;")
+    private static native I passThrough(I a);
+
+    @JSBody(params = "a", script = "return a.slice();")
+    private static native I[] passThroughArray(I[] a);
 
     private static String callNativeJSMethod(I a) {
         return callIFromJs(a);

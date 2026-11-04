@@ -604,10 +604,10 @@ class JSClassProcessor {
                 var firstOperand = instruction.getFirstOperand();
                 var secondOperand = instruction.getSecondOperand();
                 if (first != JSType.JS) {
-                    firstOperand = convertToJs(firstOperand, instruction);
+                    firstOperand = unwrapJavaToJs(instruction, firstOperand);
                 }
                 if (second != JSType.JS) {
-                    secondOperand = convertToJs(secondOperand, instruction);
+                    secondOperand = unwrapJavaToJs(instruction, secondOperand);
                 }
                 call.setMethod(new MethodReference(JS_CLASS, "sameRef", JS_OBJECT, JS_OBJECT, ValueType.BOOLEAN));
                 call.setArguments(firstOperand, secondOperand);
@@ -657,17 +657,6 @@ class JSClassProcessor {
         }
     }
 
-    private Variable convertToJs(Variable value, Instruction instruction) {
-        var call = new InvokeInstruction();
-        call.setType(InvocationType.SPECIAL);
-        call.setMethod(new MethodReference(JS_CLASS, "directJavaToJs", OBJECT, JS_OBJECT));
-        call.setArguments(value);
-        call.setReceiver(program.createVariable());
-        call.setLocation(instruction.getLocation());
-        instruction.insertPrevious(call);
-        return call.getReceiver();
-    }
-
     private ValueType processType(ValueType type) {
         return processType(typeHelper, type);
     }
@@ -706,6 +695,7 @@ class JSClassProcessor {
 
         String targetClassName = ((ValueType.Object) cast.getTargetType()).getClassName();
         if (!typeHelper.isJavaScriptClass(targetClassName)) {
+            cast.setValue(convertJsValueToJava(cast, cast.getValue()));
             return false;
         }
 
@@ -752,6 +742,7 @@ class JSClassProcessor {
 
         String targetClassName = ((ValueType.Object) isInstance.getType()).getClassName();
         if (!typeHelper.isJavaScriptClass(targetClassName)) {
+            isInstance.setValue(convertJsValueToJava(isInstance, isInstance.getValue()));
             return;
         }
 
@@ -880,7 +871,9 @@ class JSClassProcessor {
         }
         var wrap = new InvokeInstruction();
         wrap.setType(InvocationType.SPECIAL);
-        wrap.setMethod(varType == JSType.JS ? JSMethods.WRAP : JSMethods.MAYBE_WRAP);
+        // In JS backend JS value may be an exported Java object, which should be returned as is rather than wrapped.
+        // In Wasm GC wrapping already takes care of this
+        wrap.setMethod(varType == JSType.JS && wasmGC ? JSMethods.WRAP : JSMethods.MAYBE_WRAP);
         wrap.setArguments(var);
         wrap.setReceiver(program.createVariable());
         wrap.setLocation(instruction.getLocation());
