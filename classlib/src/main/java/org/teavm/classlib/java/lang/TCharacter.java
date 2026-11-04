@@ -149,6 +149,10 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return new String(new char[] { c });
     }
 
+    public static String toString(int codePoint) {
+        return new String(toChars(codePoint));
+    }
+
     public static boolean isValidCodePoint(int codePoint) {
         return codePoint >= 0 && codePoint <= MAX_CODE_POINT;
     }
