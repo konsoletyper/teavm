@@ -254,6 +254,15 @@ public class StringTest {
     }
 
     @Test
+    public void isBlankWorks() {
+        assertTrue("".isBlank());
+        assertTrue("  ".isBlank());
+        assertTrue("\t\n \u2008\r\f".isBlank());
+        assertFalse(" a ".isBlank());
+        assertFalse("\u00A0".isBlank());
+    }
+
+    @Test
     public void convertedToCharArray() {
         char[] array = "123".toCharArray();
         assertEquals(3, array.length);
