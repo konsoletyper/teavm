@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
+import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 @EachTestCompiledSeparately
@@ -182,6 +184,8 @@ public class ObjectTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
+    // Does not pass in C due to bug in coroutine transformation
     public void allQueuedThreadsEnterMonitor() throws InterruptedException {
         var lock = new Object();
         var entered = new int[1];
