@@ -207,6 +207,37 @@ public class StreamTest {
     }
 
     @Test
+    public void distinctAcrossConcat() {
+        assertArrayEquals(new String[] { "first", "second", "third" },
+                Stream.concat(Stream.of("first", "second"),
+                        Stream.of("first", "second", "third"))
+                        .distinct().toArray(String[]::new));
+    }
+
+    @Test
+    public void distinctAcrossFlatMap() {
+        assertArrayEquals(new String[] { "first", "second" },
+                Stream.of(Stream.of("first"), Stream.of("first", "second"))
+                        .flatMap(stream -> stream).distinct().toArray(String[]::new));
+    }
+
+    @Test
+    public void distinctAcrossIteratorAdvances() {
+        Iterator<String> iterator = Stream.of("first", "first", "second").distinct().iterator();
+        assertEquals("first", iterator.next());
+        assertEquals("second", iterator.next());
+    }
+
+    @Test
+    public void distinctIsLazyAndShortCircuits() {
+        StringBuilder sb = new StringBuilder();
+        Stream<Integer> stream = Stream.of(1, 1, 2, 3).peek(appendNumbersTo(sb)).distinct();
+        assertEquals("", sb.toString());
+        assertArrayEquals(new Integer[] { 1, 2 }, stream.limit(2).toArray(Integer[]::new));
+        assertEquals("1;1;2;", sb.toString());
+    }
+
+    @Test
     public void findFirstWorks() {
         assertEquals(2, Stream.of(2, 3).findFirst().get().intValue());
         assertEquals(3, Stream.of(2, 3).skip(1).findFirst().get().intValue());

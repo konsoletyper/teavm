@@ -150,6 +150,16 @@ public class LongStreamTest {
     }
 
     @Test
+    public void distinctAcrossFlatMap() {
+        testLongStream(() -> LongStream.of(1, 2).flatMap(n -> LongStream.of(n, n + 1)).distinct(), 1, 2, 3);
+    }
+
+    @Test
+    public void distinctAcrossIteratorAdvances() {
+        testLongStream(() -> LongStream.of(2, 2, 3, 2, 1, 1).distinct(), 2, 3, 1);
+    }
+
+    @Test
     public void findFirstWorks() {
         assertEquals(2, LongStream.of(2, 3).findFirst().getAsLong());
         assertEquals(3, LongStream.of(2, 3).skip(1).findFirst().getAsLong());

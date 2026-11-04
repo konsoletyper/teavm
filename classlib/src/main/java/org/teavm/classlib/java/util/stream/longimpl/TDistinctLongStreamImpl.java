@@ -20,13 +20,14 @@ import java.util.Set;
 import java.util.function.LongPredicate;
 
 public class TDistinctLongStreamImpl extends TWrappingLongStreamImpl {
+    private final Set<Long> visited = new HashSet<>();
+
     public TDistinctLongStreamImpl(TSimpleLongStreamImpl innerStream) {
         super(innerStream);
     }
 
     @Override
     protected LongPredicate wrap(LongPredicate consumer) {
-        Set<Long> visited = new HashSet<>();
         return e -> {
             if (!visited.add(e)) {
                 return true;
