@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Queue;
-import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TInterruptedException;
 import org.teavm.classlib.java.lang.TThread;
 import org.teavm.classlib.java.lang.TThreadInterruptHandler;
@@ -31,8 +30,6 @@ import org.teavm.classlib.java.util.TCollection;
 import org.teavm.classlib.java.util.TIterator;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
-import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformRunnable;
 import org.teavm.runtime.EventQueue;
 
 public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlockingQueue<E> {
@@ -417,11 +414,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         }
         while (!waitHandlers.isEmpty()) {
             WaitHandler handler = waitHandlers.remove();
-            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(handler::changed);
-            } else {
-                Platform.postpone(handler::changed);
-            }
+            EventQueue.offer(handler::changed);
         }
         waitHandlers = null;
     }
@@ -437,10 +430,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         WaitHandler handler = new WaitHandler(callback);
         waitHandlers.add(handler);
         if (timeLimit > 0) {
-            int timeout = Math.max(0, (int) (timeLimit - System.currentTimeMillis()));
-            handler.timerId = PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()
-                    ? EventQueue.offer(handler, timeLimit)
-                    : Platform.schedule(handler, timeout);
+            handler.timerId = EventQueue.offer(handler, timeLimit);
         } else {
             handler.timerId = -1;
         }
@@ -448,7 +438,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         TThread.currentThread().interruptHandler = handler;
     }
 
-    static class WaitHandler implements PlatformRunnable, TThreadInterruptHandler, EventQueue.Event {
+    static class WaitHandler implements TThreadInterruptHandler, EventQueue.Event {
         AsyncCallback<Boolean> callback;
         boolean complete;
         int timerId;
@@ -479,11 +469,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
             }
             complete = true;
             if (timerId >= 0) {
-                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                    EventQueue.kill(timerId);
-                } else {
-                    Platform.killSchedule(timerId);
-                }
+                EventQueue.kill(timerId);
                 timerId = -1;
             }
             TThread.currentThread().interruptHandler = null;

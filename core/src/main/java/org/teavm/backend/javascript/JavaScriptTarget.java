@@ -47,6 +47,8 @@ import org.teavm.backend.javascript.codegen.OutputSourceWriterBuilder;
 import org.teavm.backend.javascript.codegen.RememberedSource;
 import org.teavm.backend.javascript.codegen.RememberingSourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.intrinsics.eventqueue.EventQueueDependencyListener;
+import org.teavm.backend.javascript.intrinsics.eventqueue.EventQueueGenerator;
 import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueGenerator;
 import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueTransformer;
 import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceDependencyListener;
@@ -173,6 +175,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         var refQueueGenerator = new ReferenceQueueGenerator();
         methodGenerators.put(new MethodReference(ReferenceQueue.class, "<init>", void.class), refQueueGenerator);
         methodGenerators.put(new MethodReference(ReferenceQueue.class, "poll", Reference.class), refQueueGenerator);
+
+        var eventQueueGenerator = new EventQueueGenerator(templateFactory);
+        methodGenerators.put(EventQueueGenerator.OFFER, eventQueueGenerator);
+        methodGenerators.put(EventQueueGenerator.KILL, eventQueueGenerator);
     }
 
     @Override
@@ -316,6 +322,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         });
 
         dependencyAnalyzer.addDependencyListener(new WeakReferenceDependencyListener());
+        dependencyAnalyzer.addDependencyListener(new EventQueueDependencyListener());
         dependencyAnalyzer.addDependencyListener(reflection);
     }
 

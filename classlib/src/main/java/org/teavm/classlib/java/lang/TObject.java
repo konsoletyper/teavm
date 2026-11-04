@@ -164,11 +164,7 @@ public class TObject {
 
         monitor.owner = null;
         if (monitor.enteringThreads != null && !monitor.enteringThreads.isEmpty()) {
-            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(() -> waitForOtherThreads(o));
-            } else {
-                Platform.postpone(() -> waitForOtherThreads(o));
-            }
+            EventQueue.offer(() -> waitForOtherThreads(o));
         } else {
             o.isEmptyMonitor();
         }
@@ -394,7 +390,7 @@ public class TObject {
         var listener = monitor.firstNotifyListener;
         if (listener != null) {
             removeNotifyListener(this, listener);
-            listener.schedule();
+            EventQueue.offer(listener);
         }
     }
 
@@ -411,7 +407,7 @@ public class TObject {
             listener.prev = null;
             listener.next = null;
             listener.queued = false;
-            listener.schedule();
+            EventQueue.offer(listener);
             listener = next;
         }
     }
@@ -443,9 +439,7 @@ public class TObject {
         TThread.currentThread().interruptHandler = listener;
         if (timeout > 0 || nanos > 0) {
             int timeoutToSchedule = timeout >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) timeout;
-            listener.timerId = PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()
-                    ? EventQueue.offer(listener, timeoutToSchedule + System.currentTimeMillis())
-                    : Platform.schedule(listener, timeoutToSchedule);
+            listener.timerId = EventQueue.offer(listener, timeoutToSchedule + System.currentTimeMillis());
         }
         monitorExit(this, monitor.count);
     }
@@ -487,7 +481,7 @@ public class TObject {
     // A waiting thread's entry in its monitor's wait queue. A wait that ends (by notify, by timeout or by interrupt)
     // leaves the queue right away. Only a wait woken by notify ends later, when the event that notify scheduled runs,
     // so the timeout or an interrupt can still come first; performed makes only the first of them resume the thread.
-    static class NotifyListener implements PlatformRunnable, EventQueue.Event, TThreadInterruptHandler {
+    static class NotifyListener implements EventQueue.Event, TThreadInterruptHandler {
         final TObject obj;
         final AsyncCallback<Void> callback;
         final TThread currentThread = TThread.currentThread();
@@ -504,14 +498,6 @@ public class TObject {
             this.lockCount = lockCount;
         }
 
-        void schedule() {
-            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(this);
-            } else {
-                Platform.postpone(this);
-            }
-        }
-
         @Override
         public void run() {
             if (performed) {
@@ -519,11 +505,7 @@ public class TObject {
             }
             performed = true;
             if (timerId >= 0) {
-                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                    EventQueue.kill(timerId);
-                } else {
-                    Platform.killSchedule(timerId);
-                }
+                EventQueue.kill(timerId);
                 timerId = -1;
             }
             removeNotifyListener(obj, this);
@@ -538,20 +520,12 @@ public class TObject {
             }
             performed = true;
             if (timerId >= 0) {
-                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                    EventQueue.kill(timerId);
-                } else {
-                    Platform.killSchedule(timerId);
-                }
+                EventQueue.kill(timerId);
                 timerId = -1;
             }
             removeNotifyListener(obj, this);
             // As in the JDK, wait() holds the monitor again when it throws InterruptedException.
-            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(this::reacquireThenFail);
-            } else {
-                Platform.postpone(this::reacquireThenFail);
-            }
+            EventQueue.offer(this::reacquireThenFail);
         }
 
         private void reacquireThenFail() {

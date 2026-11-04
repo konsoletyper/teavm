@@ -23,7 +23,6 @@ import org.teavm.interop.Platforms;
 import org.teavm.interop.Unmanaged;
 import org.teavm.interop.UnsupportedOn;
 import org.teavm.jso.JSBody;
-import org.teavm.jso.browser.Window;
 import org.teavm.platform.plugin.PlatformGenerator;
 
 @UnsupportedOn(Platforms.WEBASSEMBLY_GC)
@@ -51,17 +50,5 @@ public final class Platform {
 
     private static void launchThread(PlatformRunnable runnable) {
         runnable.run();
-    }
-
-    public static void postpone(PlatformRunnable runnable) {
-        schedule(runnable, 0);
-    }
-
-    @GeneratedBy(PlatformGenerator.class)
-    @PluggableDependency(PlatformGenerator.class)
-    public static native int schedule(PlatformRunnable runnable, int timeout);
-
-    public static void killSchedule(int id) {
-        Window.clearTimeout(id);
     }
 }
