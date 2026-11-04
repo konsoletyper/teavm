@@ -31,7 +31,6 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.compilerbenchmarks.programs.BufferedInputStreamProgram;
-import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
@@ -41,9 +40,6 @@ import org.teavm.vm.MemoryBuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
 import org.teavm.vm.TeaVMOptimizationLevel;
-import org.teavm.vm.TeaVMPhase;
-import org.teavm.vm.TeaVMProgressFeedback;
-import org.teavm.vm.TeaVMProgressListener;
 
 /**
  * Measures time of full compilation of a small program by TeaVM with Wasm GC backend.
@@ -65,10 +61,7 @@ public class WasmGCCompilerBenchmark {
     private ClasspathResourceProvider resourceProvider;
     private ClassHolderSource classSource;
 
-    private long builds;
-    private long dependencyTime;
-    private long optimizationTime;
-    private long emitTime;
+    private final PhaseTimes phaseTimes = new PhaseTimes();
 
     @Setup(Level.Trial)
     public void setup() {
@@ -78,24 +71,17 @@ public class WasmGCCompilerBenchmark {
         classSource = new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(resourceProvider,
                 referenceCache, classLoader));
         var vm = compile();
-        reportProblems(vm);
+        PhaseTimes.reportProblems(vm);
     }
 
     @Setup(Level.Iteration)
     public void resetPhaseTimes() {
-        builds = 0;
-        dependencyTime = 0;
-        optimizationTime = 0;
-        emitTime = 0;
+        phaseTimes.reset();
     }
 
     @TearDown(Level.Iteration)
     public void reportPhaseTimes() {
-        if (builds == 0) {
-            return;
-        }
-        System.out.printf(" [avg ms: dependencies %.2f, optimizations %.2f, emit %.2f]",
-                dependencyTime / 1e6 / builds, optimizationTime / 1e6 / builds, emitTime / 1e6 / builds);
+        phaseTimes.report();
     }
 
     @Benchmark
@@ -114,51 +100,9 @@ public class WasmGCCompilerBenchmark {
                 .setReferenceCache(referenceCache)
                 .build();
         vm.setOptimizationLevel(optimization);
-        var phaseListener = new PhaseListener();
-        vm.setProgressListener(phaseListener);
         vm.installPlugins();
         vm.setEntryPoint(BufferedInputStreamProgram.class.getName());
-        var start = System.nanoTime();
-        vm.build(new MemoryBuildTarget(), "classes.wasm");
-
-        if (phaseListener.compilingStart != 0 && timingTarget.emitEnd != 0) {
-            ++builds;
-            dependencyTime += phaseListener.compilingStart - start;
-            optimizationTime += timingTarget.emitStart - phaseListener.compilingStart;
-            emitTime += timingTarget.emitEnd - timingTarget.emitStart;
-        }
+        phaseTimes.build(vm, timingTarget, new MemoryBuildTarget(), "classes.wasm");
         return vm;
-    }
-
-    private static void reportProblems(TeaVM vm) {
-        var problems = vm.getProblemProvider().getProblems();
-        if (problems.isEmpty()) {
-            return;
-        }
-        var consumer = new DefaultProblemTextConsumer();
-        System.err.println("WARNING: compiler reported " + problems.size() + " problem(s), "
-                + vm.getProblemProvider().getSevereProblems().size() + " of them severe:");
-        for (var problem : problems) {
-            consumer.clear();
-            problem.render(consumer);
-            System.err.println("  " + problem.getSeverity() + ": " + consumer.getText());
-        }
-    }
-
-    private static class PhaseListener implements TeaVMProgressListener {
-        long compilingStart;
-
-        @Override
-        public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
-            if (phase == TeaVMPhase.COMPILING) {
-                compilingStart = System.nanoTime();
-            }
-            return TeaVMProgressFeedback.CONTINUE;
-        }
-
-        @Override
-        public TeaVMProgressFeedback progressReached(int progress) {
-            return TeaVMProgressFeedback.CONTINUE;
-        }
     }
 }
