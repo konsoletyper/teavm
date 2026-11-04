@@ -54,7 +54,7 @@ public class ArchiveBuilder implements Closeable {
                 var output = new ArchiveBuilder(Files.newOutputStream(outPath))) {
             input.forEach(file -> {
                 if (Files.isRegularFile(file)) {
-                    var relName = root.relativize(file).toString();
+                    var relName = root.relativize(file).toString().replace('\\', '/');
                     try {
                         output.append(relName, Files.readAllBytes(file));
                     } catch (IOException e) {
