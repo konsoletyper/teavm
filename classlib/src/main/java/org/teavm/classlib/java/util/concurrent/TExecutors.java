@@ -37,6 +37,22 @@ public final class TExecutors {
         return new CachedThreadPool(threadFactory);
     }
 
+    public static TScheduledExecutorService newScheduledThreadPool(int corePoolSize) {
+        return new TScheduledThreadPoolExecutor(corePoolSize);
+    }
+
+    public static TScheduledExecutorService newScheduledThreadPool(int corePoolSize, TThreadFactory threadFactory) {
+        return new TScheduledThreadPoolExecutor(corePoolSize, threadFactory);
+    }
+
+    public static TScheduledExecutorService newSingleThreadScheduledExecutor() {
+        return new TScheduledThreadPoolExecutor(1);
+    }
+
+    public static TScheduledExecutorService newSingleThreadScheduledExecutor(TThreadFactory threadFactory) {
+        return new TScheduledThreadPoolExecutor(1, threadFactory);
+    }
+
     private static final class CachedThreadPool implements TExecutorService {
         private static final long KEEP_ALIVE_MILLIS = 60_000;
         private final TThreadFactory threadFactory;
