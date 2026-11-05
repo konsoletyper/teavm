@@ -13,11 +13,11 @@ console.info = (...args) => {
 
 const app = require("./build/generated/teavm/js/teavm-unciv-executor-repro.js");
 
-app.main([], () => {
+app.main([], error => {
     setTimeout(() => {
         clearTimeout(timeout);
-        if (!passed) {
-            console.error("reproducer ended without reaching its success marker");
+        if (error || !passed) {
+            console.error(error || "reproducer ended without reaching its success marker");
             process.exit(1);
         }
         process.exit(0);

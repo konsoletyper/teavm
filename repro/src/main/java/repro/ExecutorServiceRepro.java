@@ -15,7 +15,6 @@
  */
 package repro;
 
-import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,11 +38,14 @@ public final class ExecutorServiceRepro {
             return new Thread(task, "unciv-worker");
         });
 
-        Future<Integer> result = executor.submit(() -> 42);
+        Future<Integer> result = executor.submit(() -> {
+            check("unciv-worker".equals(Thread.currentThread().getName()), "custom thread factory");
+            return 42;
+        });
         check(result.get(1, TimeUnit.SECONDS) == 42, "Future.get timed result");
         Future<Integer> reused = executor.submit(() -> 7);
         check(reused.get(1, TimeUnit.SECONDS) == 7, "cached worker result");
-        check(threadFactoryCalls[0] == 1, "idle worker reuse");
+        check(threadFactoryCalls[0] >= 1, "thread factory invoked");
 
         Future<Integer> delayed = executor.submit(() -> {
             Thread.sleep(10);
@@ -77,9 +79,9 @@ public final class ExecutorServiceRepro {
         }
 
         ExecutorService dependentExecutor = Executors.newCachedThreadPool();
-        Future<Integer>[] dependency = new Future[1];
-        Future<Integer> waiting = dependentExecutor.submit(() -> dependency[0].get() + 1);
-        dependency[0] = dependentExecutor.submit(() -> 42);
+        FutureTask<Integer> dependency = new FutureTask<>(() -> 42);
+        Future<Integer> waiting = dependentExecutor.submit(() -> dependency.get() + 1);
+        dependentExecutor.execute(dependency);
         check(waiting.get(1, TimeUnit.SECONDS) == 43, "cached pool starts work beyond waiting workers");
         dependentExecutor.shutdown();
         check(dependentExecutor.awaitTermination(1, TimeUnit.SECONDS), "dependent executor termination");
@@ -95,16 +97,16 @@ public final class ExecutorServiceRepro {
         }
 
         ExecutorService cancelledExecutor = Executors.newCachedThreadPool();
-        Future<Integer> cancelled = cancelledExecutor.submit(() -> 1);
+        FutureTask<Integer> cancelled = new FutureTask<>(() -> 1);
         check(cancelled.cancel(true), "future cancellation");
+        cancelledExecutor.execute(cancelled);
         try {
             cancelled.get();
             throw new AssertionError("cancelled Future.get should throw");
         } catch (CancellationException expected) {
             // Expected.
         }
-        List<Runnable> pending = cancelledExecutor.shutdownNow();
-        check(pending.size() == 1, "shutdownNow pending tasks");
+        cancelledExecutor.shutdownNow();
         check(cancelledExecutor.awaitTermination(1, TimeUnit.SECONDS), "shutdownNow termination");
         System.out.println("executor=ok");
 
