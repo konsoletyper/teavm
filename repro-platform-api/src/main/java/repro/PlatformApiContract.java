@@ -16,6 +16,9 @@
 package repro;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -27,6 +30,12 @@ public final class PlatformApiContract {
     }
 
     public static void main(String[] args) {
+        ConnectException connection = new ConnectException("refused");
+        check(connection instanceof SocketException && connection instanceof IOException, "connection hierarchy");
+        check("refused".equals(connection.getMessage()), "connection message");
+        check(new ConnectException().getMessage() == null, "default connection message");
+        check(new SocketException().getMessage() == null, "default socket message");
+        check("socket".equals(new SocketException("socket").getMessage()), "socket message");
         Path empty = new File("").toPath();
         check(empty.toString().isEmpty() && !empty.isAbsolute(), "empty relative path");
         File relative = new File("alpha/beta");
