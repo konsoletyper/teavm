@@ -74,6 +74,15 @@ public abstract class TCharset implements Comparable<TCharset> {
         return charset;
     }
 
+    public static boolean isSupported(String charsetName) {
+        try {
+            forName(charsetName);
+            return true;
+        } catch (TUnsupportedCharsetException e) {
+            return false;
+        }
+    }
+
     public static TCharset defaultCharset() {
         return Charsets.value.get("UTF-8");
     }

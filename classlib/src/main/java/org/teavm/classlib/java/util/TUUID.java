@@ -21,6 +21,13 @@ import org.teavm.jso.crypto.Crypto;
 public class TUUID {
     private String value;
 
+    public TUUID(long mostSigBits, long leastSigBits) {
+        String most = pad(Long.toHexString(mostSigBits), 16);
+        String least = pad(Long.toHexString(leastSigBits), 16);
+        value = most.substring(0, 8) + "-" + most.substring(8, 12) + "-" + most.substring(12)
+                + "-" + least.substring(0, 4) + "-" + least.substring(4);
+    }
+
     private TUUID(String value) {
         this.value = value;
     }
@@ -56,6 +63,14 @@ public class TUUID {
 
     private static String s4() {
         return Integer.toString((int) Math.floor((1 + Math.random()) * 65536), 16).substring(1);
+    }
+
+    private static String pad(String value, int length) {
+        StringBuilder result = new StringBuilder(length);
+        for (int i = value.length(); i < length; ++i) {
+            result.append('0');
+        }
+        return result.append(value).toString();
     }
 
     public static TUUID fromString(String value) {
