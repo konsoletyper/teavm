@@ -1,7 +1,7 @@
 plugins {
     java
     checkstyle
-    id("org.teavm") version "0.15.0"
+    id("org.teavm") version "0.16.0"
 }
 
 repositories { mavenCentral() }

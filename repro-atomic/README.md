@@ -1,7 +1,7 @@
 # AtomicReferenceArray compatibility contract
 
 This isolated test build compiles `TAtomicReferenceArray` from the sibling
-classlib source tree against published TeaVM 0.15.0. It avoids provisioning
+classlib source tree against published TeaVM 0.16.0. It avoids provisioning
 the JDK 25 required to configure the full TeaVM test suite. No local Maven
 artifact or prebuilt compatibility JAR is used.
 

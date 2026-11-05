@@ -15,8 +15,8 @@
  */
 package repro;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.teavm.classlib.java.util.concurrent.TTimeUnit;
 

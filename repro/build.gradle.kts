@@ -1,6 +1,7 @@
 plugins {
     java
-    id("org.teavm") version "0.15.0"
+    checkstyle
+    id("org.teavm") version "0.16.0"
 }
 
 repositories {
@@ -8,10 +9,10 @@ repositories {
 }
 
 dependencies {
-    implementation("org.teavm:teavm-classlib:0.15.0")
-    implementation("org.teavm:teavm-core:0.15.0")
-    implementation("org.teavm:teavm-platform:0.15.0")
-    implementation("org.teavm:teavm-interop:0.15.0")
+    implementation("org.teavm:teavm-classlib:0.16.0")
+    implementation("org.teavm:teavm-core:0.16.0")
+    implementation("org.teavm:teavm-platform:0.16.0")
+    implementation("org.teavm:teavm-interop:0.16.0")
     teavm(teavm.libs.jsoApis)
 }
 
@@ -36,13 +37,18 @@ java {
     }
 }
 
+checkstyle {
+    toolVersion = "10.21.0"
+    configDirectory.set(layout.projectDirectory.dir("../config/checkstyle"))
+}
+
 teavm.js {
     mainClass = "repro.ExecutorServiceRepro"
 }
 
 tasks.register<Jar>("teavmCompatibilityJar") {
     dependsOn(tasks.classes)
-    archiveFileName.set("teavm-compatibility-0.15.0.jar")
+    archiveFileName.set("teavm-compatibility-0.16.0.jar")
     destinationDirectory.set(layout.buildDirectory.dir("compat"))
     from(sourceSets.named("main").get().output) {
         include("org/teavm/classlib/**")
