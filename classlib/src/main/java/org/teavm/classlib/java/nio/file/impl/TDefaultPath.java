@@ -164,14 +164,15 @@ public class TDefaultPath implements TPath {
                 if (resultSegmentIndex > 0) {
                     resultIndex = resultSegments[--resultSegmentIndex];
                 } else if (!abs) {
-                    start = Math.max(0, start - 1);
+                    start = resultIndex == 0 ? start : start - 1;
                     pathString.getChars(start, end, result, resultIndex);
                     resultIndex += end - start;
                 }
             } else if (start + 1 != end || pathString.charAt(start) != '.') {
                 resultSegments[resultSegmentIndex++] = resultIndex;
-                pathString.getChars(start - 1, end, result, resultIndex);
-                resultIndex += end - start + 1;
+                var copyStart = abs || resultIndex > 0 ? start - 1 : start;
+                pathString.getChars(copyStart, end, result, resultIndex);
+                resultIndex += end - copyStart;
             }
         }
         if (resultIndex == pathString.length()) {

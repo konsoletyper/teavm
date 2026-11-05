@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import org.teavm.classlib.java.nio.file.TFileSystem;
+import org.teavm.classlib.java.nio.file.TInvalidPathException;
 import org.teavm.classlib.java.nio.file.TPath;
 import org.teavm.classlib.java.nio.file.spi.TFileSystemProvider;
 import org.teavm.runtime.fs.VirtualFileSystem;
@@ -42,7 +43,12 @@ public class TDefaultFileSystem extends TFileSystem {
                 appendSegment(sb, separator, part);
             }
         }
-        return new TDefaultPath(this, sb.toString());
+        var path = sb.toString();
+        var nulIndex = path.indexOf('\0');
+        if (nulIndex >= 0) {
+            throw new TInvalidPathException(path, "Nul character not allowed", nulIndex);
+        }
+        return new TDefaultPath(this, path);
     }
 
     private void appendSegment(StringBuilder sb, char separator, String part) {
