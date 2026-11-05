@@ -118,7 +118,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             Annotation[].class);
     private MethodReference getClassAnnotations = new MethodReference(Class.class, "getDeclaredAnnotations",
             Annotation[].class);
-    private MethodReference forName = new MethodReference(Class.class, "forName", String.class, Boolean.class,
+    private MethodReference forName = new MethodReference(Class.class, "forName", String.class, boolean.class,
             ClassLoader.class, Class.class);
     private MethodReference classNewInstance = new MethodReference(Class.class, "newInstance", Object.class);
     private MethodReference forNameShort = new MethodReference(Class.class, "forName", String.class, Class.class);
@@ -133,6 +133,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private Set<String> classesWithReflectableMethods = new LinkedHashSet<>();
     private DependencyAgent agent;
     private DependencyNode allClasses;
+    private DependencyNode classesFoundByNameNode;
     private DependencyNode typesInReflectableSignaturesNode;
     private DependencyNode typesInThrownNode;
     private DependencyNode typesInGenericReflectableSignaturesNode;
@@ -195,6 +196,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     @Override
     public void started(DependencyAgent agent) {
         allClasses = agent.createNode();
+        classesFoundByNameNode = agent.createNode();
         typesInReflectableSignaturesNode = agent.createNode();
         typesInThrownNode = agent.createNode();
         typesInGenericReflectableSignaturesNode = agent.createNode();
@@ -215,18 +217,16 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 if (reflectionSuppliers.stream().anyMatch(s -> s.isClassFoundByName(reflectionContext, className))) {
                     if (classesFoundByName.add(className)) {
                         agent.linkClass(className);
+                        var classType = agent.getType(ValueType.object(className));
+                        classesFoundByNameNode.propagate(classType);
+                        var getName = agent.linkMethod(new MethodReference(Class.class, "getName", String.class));
+                        getName.getVariable(0).propagate(agent.getType(ValueType.object("java.lang.Class")));
+                        getName.getVariable(0).getClassValueNode().propagate(classType);
                     }
                 }
             }
         });
 
-        if (!classesFoundByName.isEmpty()) {
-            var getName = agent.linkMethod(new MethodReference(Class.class, "getName", String.class));
-            getName.getVariable(0).propagate(agent.getType(ValueType.object("java.lang.Class")));
-            for (var className : classesFoundByName) {
-                getName.getVariable(0).getClassValueNode().propagate(agent.getType(ValueType.object(className)));
-            }
-        }
     }
 
     public boolean isGetReached() {
@@ -401,9 +401,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             });
         } else if (method.getReference().equals(forName) || method.getReference().equals(forNameShort)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));
-            for (var className : classesFoundByName) {
-                method.getResult().getClassValueNode().propagate(agent.getType(ValueType.object(className)));
-            }
+            classesFoundByNameNode.connect(method.getResult().getClassValueNode());
         } else if (method.getReference().equals(fieldGetType)
                 || method.getReference().equals(METHOD_GET_RETURN_TYPE)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));

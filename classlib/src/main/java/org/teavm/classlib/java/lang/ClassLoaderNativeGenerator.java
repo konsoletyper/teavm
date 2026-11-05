@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
@@ -39,12 +40,15 @@ public class ClassLoaderNativeGenerator implements Injector {
     public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "supplyResources":
-                generateSupplyResources(context);
+                generateSupplyResources(context, false);
+                break;
+            case "supplyResourceLists":
+                generateSupplyResources(context, true);
                 break;
         }
     }
 
-    private void generateSupplyResources(InjectorContext context) {
+    private void generateSupplyResources(InjectorContext context, boolean multiple) {
         SourceWriter writer = context.getWriter();
         writer.append("{").indent();
 
@@ -68,29 +72,46 @@ public class ClassLoaderNativeGenerator implements Injector {
 
         boolean first = true;
         for (String resourceName : resourceSet) {
-            var resource = context.getResources().getResource(resourceName);
-            if (resource == null) {
-                continue;
-            }
-            try (var input = resource.open()) {
-                if (input == null) {
-                    continue;
+            var contents = new ArrayList<String>();
+            var candidates = context.getResources().getResources(resourceName);
+            while (candidates.hasNext()) {
+                try (var input = candidates.next().open()) {
+                    if (input == null) {
+                        continue;
+                    }
+                    byte[] dataBytes = Base64Impl.encode(new BufferedInputStream(input).readAllBytes(), true);
+                    char[] dataChars = new char[dataBytes.length];
+                    for (int i = 0; i < dataBytes.length; ++i) {
+                        dataChars[i] = (char) dataBytes[i];
+                    }
+                    contents.add(new String(dataChars));
+                    if (!multiple) {
+                        break;
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
+            }
+            if (!contents.isEmpty()) {
                 if (!first) {
                     writer.append(',');
                 }
                 first = false;
                 writer.newLine();
-                byte[] dataBytes = Base64Impl.encode(new BufferedInputStream(input).readAllBytes(), true);
-                char[] dataChars = new char[dataBytes.length];
-                for (int i = 0; i < dataBytes.length; ++i) {
-                    dataChars[i] = (char) dataBytes[i];
-                }
                 RenderingUtil.writeString(writer, resourceName);
                 writer.append(':').ws();
-                RenderingUtil.writeString(writer, new String(dataChars));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                if (multiple) {
+                    writer.append('[');
+                }
+                for (int i = 0; i < contents.size(); ++i) {
+                    if (i > 0) {
+                        writer.append(',');
+                    }
+                    RenderingUtil.writeString(writer, contents.get(i));
+                }
+                if (multiple) {
+                    writer.append(']');
+                }
             }
         }
 

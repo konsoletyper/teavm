@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
@@ -24,10 +27,10 @@ import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.Fiber;
 
 public class TThread extends TObject implements TRunnable {
+    private static final List<TThread> activeThreads = new ArrayList<>();
     private static TThread mainThread = new TThread("main");
     private static TThread currentThread = mainThread;
     private static int nextId = 1;
-    private static int activeCount = 1;
     private static UncaughtExceptionHandler defaultUncaughtExceptionHandler = new TDefaultUncaughtExceptionHandler();
     private UncaughtExceptionHandler uncaughtExceptionHandler;
     private long id;
@@ -41,8 +44,17 @@ public class TThread extends TObject implements TRunnable {
     public Object key;
 
     private String name;
-    private boolean alive = true;
+    private boolean alive;
+    private boolean started;
+    private TClassLoader contextClassLoader;
+    private boolean contextClassLoaderSet;
     TRunnable target;
+
+    static {
+        mainThread.alive = true;
+        mainThread.started = true;
+        activeThreads.add(mainThread);
+    }
 
     public TThread() {
         this(null, null);
@@ -60,9 +72,23 @@ public class TThread extends TObject implements TRunnable {
         this.name = name;
         this.target = target;
         id = nextId++;
+        if (currentThread != null) {
+            contextClassLoader = currentThread.getContextClassLoader();
+            contextClassLoaderSet = true;
+        }
     }
 
     public void start() {
+        synchronized (this) {
+            if (started) {
+                throw new TIllegalThreadStateException();
+            }
+            started = true;
+            alive = true;
+            synchronized (activeThreads) {
+                activeThreads.add(this);
+            }
+        }
         if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
             boolean daemon = this.daemon;
             if (!daemon) {
@@ -76,7 +102,6 @@ public class TThread extends TObject implements TRunnable {
 
     private void runThread() {
         try {
-            activeCount++;
             setCurrentThread(TThread.this);
             key = new Object();
             TThread.this.run();
@@ -84,10 +109,12 @@ public class TThread extends TObject implements TRunnable {
             getUncaughtExceptionHandler().uncaughtException(this, t);
         } finally {
             synchronized (finishedLock) {
+                alive = false;
+                synchronized (activeThreads) {
+                    activeThreads.remove(this);
+                }
                 finishedLock.notifyAll();
             }
-            alive = false;
-            activeCount--;
             key = null;
             setCurrentThread(mainThread);
         }
@@ -200,7 +227,25 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public static int activeCount() {
-        return activeCount;
+        synchronized (activeThreads) {
+            return activeThreads.size();
+        }
+    }
+
+    public static int enumerate(TThread[] threads) {
+        Objects.requireNonNull(threads);
+        synchronized (activeThreads) {
+            int count = 0;
+            for (TThread thread : activeThreads) {
+                if (count == threads.length) {
+                    break;
+                }
+                if (thread.alive) {
+                    threads[count++] = thread;
+                }
+            }
+            return count;
+        }
     }
 
     public long getId() {
@@ -278,7 +323,12 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public TClassLoader getContextClassLoader() {
-        return TClassLoader.getSystemClassLoader();
+        return contextClassLoaderSet ? contextClassLoader : TClassLoader.getSystemClassLoader();
+    }
+
+    public void setContextClassLoader(TClassLoader loader) {
+        contextClassLoader = loader;
+        contextClassLoaderSet = true;
     }
     
     public UncaughtExceptionHandler getUncaughtExceptionHandler() {
