@@ -453,8 +453,14 @@ public class TObject {
 
     @Rename("wait")
     private void wait0(long timeout, int nanos) throws TInterruptedException {
+        if (timeout < 0 || nanos < 0 || nanos > 999999) {
+            throw new IllegalArgumentException();
+        }
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
+        }
+        if (TThread.interrupted()) {
+            throw new TInterruptedException();
         }
         waitImpl(timeout, nanos);
     }
@@ -551,10 +557,28 @@ public class TObject {
                 }
                 timerId = -1;
             }
+            TThread caller = TThread.currentThread();
+            TThread.setCurrentThread(currentThread);
+            TThread.interrupted();
+            TThread.setCurrentThread(caller);
+            Runnable reacquire = () -> {
+                TThread.setCurrentThread(currentThread);
+                monitorEnterWait(obj, lockCount, new AsyncCallback<Void>() {
+                    @Override
+                    public void complete(Void result) {
+                        callback.error(new TInterruptedException());
+                    }
+
+                    @Override
+                    public void error(Throwable error) {
+                        callback.error(error);
+                    }
+                });
+            };
             if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(() -> callback.error(new TInterruptedException()));
+                EventQueue.offer(reacquire::run);
             } else {
-                Platform.postpone(() -> callback.error(new TInterruptedException()));
+                Platform.postpone(reacquire::run);
             }
         }
     }
