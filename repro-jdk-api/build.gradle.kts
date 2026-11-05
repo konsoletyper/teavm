@@ -41,5 +41,5 @@ tasks.register<JavaExec>("jvmContract") {
 tasks.register<Exec>("runJavaScriptContract") {
     dependsOn("generateJavaScript")
     workingDir = projectDir
-    commandLine("node", "-e", "const m=require('./build/generated/teavm/js/teavm-jdk-api-repro.js');m.main([])")
+    commandLine("node", "run.cjs")
 }
