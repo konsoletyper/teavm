@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.util.concurrent;
 
+import java.util.Objects;
+
 public enum TTimeUnit {
     NANOSECONDS(1),
     MICROSECONDS(1_000),
@@ -31,17 +33,28 @@ public enum TTimeUnit {
     }
 
     public long convert(long sourceDuration, TTimeUnit sourceUnit) {
-        long sourceNanos = sourceUnit.nanoseconds;
+        long sourceNanos = Objects.requireNonNull(sourceUnit).nanoseconds;
         long targetNanos = nanoseconds;
         if (sourceNanos < targetNanos) {
             return sourceDuration / (targetNanos / sourceNanos);
         } else {
-            return sourceDuration * (sourceNanos / targetNanos);
+            return multiplySaturated(sourceDuration, sourceNanos / targetNanos);
         }
     }
 
     public long toNanos(long duration) {
-        return duration * nanoseconds;
+        return multiplySaturated(duration, nanoseconds);
+    }
+
+    private static long multiplySaturated(long duration, long multiplier) {
+        long limit = Long.MAX_VALUE / multiplier;
+        if (duration > limit) {
+            return Long.MAX_VALUE;
+        }
+        if (duration < -limit) {
+            return Long.MIN_VALUE;
+        }
+        return duration * multiplier;
     }
 
     public long toMicros(long duration) {

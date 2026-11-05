@@ -110,17 +110,11 @@ public class TFutureTask<V extends TObject> implements TFuture<V>, TRunnable {
         if (unit == null) {
             throw new NullPointerException("unit");
         }
-        if (timeout < 0) {
-            throw new IllegalArgumentException("timeout must be non-negative");
-        }
         long timeoutNanos = unit.toNanos(timeout);
-        if (timeout > 0 && timeoutNanos <= 0) {
-            timeoutNanos = Long.MAX_VALUE;
-        }
         long start = System.nanoTime();
         synchronized (this) {
             while (!isDone()) {
-                if (timeoutNanos == 0) {
+                if (timeoutNanos <= 0) {
                     throw new TTimeoutException();
                 }
                 long remaining = timeoutNanos - (System.nanoTime() - start);

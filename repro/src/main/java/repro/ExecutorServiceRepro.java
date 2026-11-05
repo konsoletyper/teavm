@@ -5,6 +5,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -40,6 +41,17 @@ public final class ExecutorServiceRepro {
             // Expected: zero timeout does not block even if the worker has not started yet.
         }
         check(delayed.get(1, TimeUnit.SECONDS) == 5, "Future completion after timeout");
+
+        FutureTask<Integer> completed = new FutureTask<>(() -> 9);
+        completed.run();
+        check(completed.get(-1, TimeUnit.SECONDS) == 9, "completed Future accepts negative timeout");
+        FutureTask<Integer> incomplete = new FutureTask<>(() -> 10);
+        try {
+            incomplete.get(-1, TimeUnit.SECONDS);
+            throw new AssertionError("incomplete Future with negative timeout should time out");
+        } catch (TimeoutException expected) {
+            // Expected: a nonpositive timeout does not wait.
+        }
         executor.shutdown();
         check(executor.awaitTermination(1, TimeUnit.SECONDS), "executor termination");
         try {

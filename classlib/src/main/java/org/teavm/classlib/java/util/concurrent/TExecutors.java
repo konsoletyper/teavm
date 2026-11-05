@@ -125,9 +125,6 @@ public final class TExecutors {
                 throw new NullPointerException("unit");
             }
             long timeoutNanos = unit.toNanos(timeout);
-            if (timeout > 0 && timeoutNanos <= 0) {
-                timeoutNanos = Long.MAX_VALUE;
-            }
             long start = System.nanoTime();
             synchronized (this) {
                 while (!isTerminated()) {

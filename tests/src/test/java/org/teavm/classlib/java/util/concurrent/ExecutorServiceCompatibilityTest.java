@@ -16,9 +16,13 @@
 package org.teavm.classlib.java.util.concurrent;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -35,6 +39,21 @@ public class ExecutorServiceCompatibilityTest {
             assertEquals(Integer.valueOf(42), result.get());
         } finally {
             executor.shutdown();
+        }
+    }
+
+    @Test
+    public void timedGetUsesJdkNonpositiveTimeoutSemantics() throws Exception {
+        FutureTask<Integer> completed = new FutureTask<>(() -> 42);
+        completed.run();
+        assertEquals(Integer.valueOf(42), completed.get(-1, TimeUnit.SECONDS));
+
+        FutureTask<Integer> incomplete = new FutureTask<>(() -> 7);
+        try {
+            incomplete.get(-1, TimeUnit.SECONDS);
+            fail("Expected timeout for incomplete future with negative timeout");
+        } catch (TimeoutException expected) {
+            // Expected.
         }
     }
 }
