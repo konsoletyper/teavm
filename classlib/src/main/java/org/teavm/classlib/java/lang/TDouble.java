@@ -37,7 +37,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     public static final double NEGATIVE_INFINITY = -POSITIVE_INFINITY;
     public static final double NaN = 0 / 0.0;
     public static final double MAX_VALUE = 0x1.FFFFFFFFFFFFFP+1023;
-    public static final double MIN_NORMAL = -0x1.0P+1022;
+    public static final double MIN_NORMAL = 0x1.0P+1022;
     public static final double MIN_VALUE = 0x0.0000000000001P-1022;
     public static final int MAX_EXPONENT = 1023;
     public static final int MIN_EXPONENT = -1022;
