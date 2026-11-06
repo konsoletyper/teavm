@@ -137,6 +137,12 @@ public class LoopInvariantMotion implements MethodOptimization {
                     }
                 }
 
+                if (hasExceptionalEntry(defLoop.getHead())) {
+                    // insertPreheader redirects normal branches only. An exception edge still
+                    // enters the loop header without passing through the invariant definition.
+                    continue insnLoop;
+                }
+
                 insn.delete();
                 BasicBlock preheader = program.basicBlockAt(getPreheader(defLoop.getHead()));
                 List<Instruction> newInstructions = new ArrayList<>();
@@ -171,6 +177,17 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         nullness.dispose();
         return affected;
+    }
+
+    private boolean hasExceptionalEntry(int header) {
+        for (int predecessor : getLoopEntries(header)) {
+            for (var tryCatchBlock : program.basicBlockAt(predecessor).getTryCatchBlocks()) {
+                if (tryCatchBlock.getHandler().getIndex() == header) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private int getPreheader(int header) {
