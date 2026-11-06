@@ -808,6 +808,16 @@ public class VMTest {
         assertEquals(7, readHolderValueAfterException());
     }
 
+    @Test
+    public void negatingZeroFlipsSign() {
+        double[] doubles = { 0.0, -0.0 };
+        float[] floats = { 0f, -0f };
+        assertEquals(Double.NEGATIVE_INFINITY, 1 / -doubles[0], 0);
+        assertEquals(Double.POSITIVE_INFINITY, 1 / -doubles[1], 0);
+        assertEquals(Float.NEGATIVE_INFINITY, 1 / -floats[0], 0);
+        assertEquals(Float.POSITIVE_INFINITY, 1 / -floats[1], 0);
+    }
+
     private static int readHolderValueAfterException() {
         try {
             Integer.parseInt("invalid");
