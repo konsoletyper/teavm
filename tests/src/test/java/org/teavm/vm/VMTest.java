@@ -801,6 +801,26 @@ public class VMTest {
         assertEquals("attached built", assignAndAttach(new WorkingBuilder()));
         assertEquals("key assigned: build failed", assignAndAttach(new FailingBuilder()));
     }
+    
+    @Test
+    public void repeatedFieldReadEliminationWithCatch() {
+        assertEquals(1, Holder.WARMUP);
+        assertEquals(7, readHolderValueAfterException());
+    }
+
+    private static int readHolderValueAfterException() {
+        try {
+            Integer.parseInt("invalid");
+            return Holder.VALUE;
+        } catch (NumberFormatException e) {
+            return Holder.VALUE;
+        }
+    }
+
+    static class Holder {
+        static final int WARMUP = Integer.parseInt("1");
+        static final int VALUE = Integer.parseInt("7");
+    }
 
     private static String attachOrCancel(Builder builder, Key key) {
         try {
