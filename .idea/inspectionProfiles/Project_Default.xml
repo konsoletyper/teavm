@@ -25,10 +25,26 @@
       <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
       <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
     </inspection_tool>
+    <inspection_tool class="ConstantValue" enabled="false" level="WARNING" enabled_by_default="false">
+      <scope name="classlib" level="WEAK WARNING" enabled="false">
+        <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
+        <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
+      </scope>
+      <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
+      <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
+    </inspection_tool>
     <inspection_tool class="ControlFlowStatementWithoutBraces" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="Convert2Lambda" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="Convert2MethodRef" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="CssUnusedSymbol" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="DataFlowIssue" enabled="false" level="WARNING" enabled_by_default="false">
+      <scope name="classlib" level="WEAK WARNING" enabled="false">
+        <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
+        <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
+      </scope>
+      <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
+      <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
+    </inspection_tool>
     <inspection_tool class="EmptyCatchBlock" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="m_includeComments" value="true" />
       <option name="m_ignoreTestCases" value="true" />
@@ -102,6 +118,12 @@
       <option name="REPORT_ANNOTATION_NOT_PROPAGATED_TO_OVERRIDERS" value="true" />
       <option name="REPORT_NULLS_PASSED_TO_NON_ANNOTATED_METHOD" value="true" />
     </inspection_tool>
+    <inspection_tool class="OptionalOfNullableMisuse" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="classlib" level="WEAK WARNING" enabled="false">
+        <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
+        <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
+      </scope>
+    </inspection_tool>
     <inspection_tool class="PackageAccessibility" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="RedundantFieldInitialization" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RedundantThrows" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
@@ -137,7 +159,7 @@
     <inspection_tool class="XmlUnboundNsPrefix" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <scope name="ecipse" level="WARNING" enabled="false" />
     </inspection_tool>
-    <inspection_tool class="unused" enabled="true" level="WARNING" enabled_by_default="true">
+    <inspection_tool class="unused" enabled="true" level="WARNING" enabled_by_default="true" checkParameterExcludingHierarchy="false">
       <scope name="classlib-emu" level="WARNING" enabled="false">
         <option name="LOCAL_VARIABLE" value="true" />
         <option name="FIELD" value="true" />
@@ -172,6 +194,7 @@
       <option name="ADD_APPLET_TO_ENTRIES" value="true" />
       <option name="ADD_SERVLET_TO_ENTRIES" value="true" />
       <option name="ADD_NONJAVA_TO_ENTRIES" value="true" />
+      <option name="selected" value="true" />
     </inspection_tool>
   </profile>
 </component>
