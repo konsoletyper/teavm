@@ -32,7 +32,10 @@
 
 package org.teavm.classlib.java.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
@@ -75,7 +78,9 @@ public final class TLocale implements TCloneable, TSerializable {
 
     private transient String countryCode;
     private transient String languageCode;
+    private transient String scriptCode;
     private transient String variantCode;
+    private transient String extensionsCode;
 
     public TLocale(String language) {
         this(language, "", "");
@@ -86,18 +91,121 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     public TLocale(String language, String country, String variant) {
-        if (language == null || country == null || variant == null) {
-            throw new NullPointerException();
-        }
-        if (language.isEmpty() && country.isEmpty()) {
-            languageCode = "";
-            countryCode = "";
-            variantCode = variant;
-            return;
-        }
-        languageCode = language;
-        countryCode = country;
+        this(language, "", country, variant, "");
+    }
+
+    private TLocale(String language, String script, String country, String variant, String extensions) {
+        Objects.requireNonNull(language);
+        Objects.requireNonNull(script);
+        Objects.requireNonNull(country);
+        Objects.requireNonNull(variant);
+        Objects.requireNonNull(extensions);
+        languageCode = legacyLanguage(lowerAscii(language));
+        scriptCode = titleAscii(script);
+        countryCode = upperAscii(country);
         variantCode = variant;
+        extensionsCode = extensions;
+    }
+
+    public static TLocale forLanguageTag(String languageTag) {
+        Objects.requireNonNull(languageTag);
+        List<String> tokens = splitTag(languageTag);
+        if (tokens.isEmpty() || tokens.get(0).isEmpty()) {
+            return ROOT;
+        }
+
+        String grandfathered = grandfatheredLanguage(languageTag);
+        if (grandfathered != null) {
+            return forLanguageTag(grandfathered);
+        }
+
+        String first = tokens.get(0);
+        if ("x".equalsIgnoreCase(first)) {
+            String privateUse = parsePrivateUse(tokens, 1);
+            return privateUse.isEmpty() ? ROOT : new TLocale("", "", "", "", "x-" + privateUse);
+        }
+        if (!isAlpha(first) || first.length() < 2 || first.length() > 8) {
+            return ROOT;
+        }
+
+        int index = 1;
+        String language = "und".equalsIgnoreCase(first) ? "" : legacyLanguage(lowerAscii(first));
+        if (first.length() <= 3) {
+            int extlangCount = 0;
+            while (index < tokens.size() && extlangCount < 3 && tokens.get(index).length() == 3
+                    && isAlpha(tokens.get(index))) {
+                if (extlangCount == 0) {
+                    language = lowerAscii(tokens.get(index));
+                }
+                ++index;
+                ++extlangCount;
+            }
+        }
+
+        String script = "";
+        if (index < tokens.size() && tokens.get(index).length() == 4 && isAlpha(tokens.get(index))) {
+            script = tokens.get(index++);
+        }
+
+        String country = "";
+        if (index < tokens.size() && isRegion(tokens.get(index))) {
+            country = tokens.get(index++);
+        }
+
+        List<String> variants = new ArrayList<>();
+        while (index < tokens.size() && isVariant(tokens.get(index))) {
+            variants.add(tokens.get(index++));
+        }
+        String variant = join(variants, "_");
+
+        String[] extensionParts = new String[36];
+        boolean[] seen = new boolean[36];
+        while (index < tokens.size() && isSingleton(tokens.get(index))) {
+            String singleton = lowerAscii(tokens.get(index));
+            int key = singletonIndex(singleton.charAt(0));
+            if (seen[key]) {
+                break;
+            }
+            int start = index++;
+            List<String> values = new ArrayList<>();
+            int minimumLength = "x".equals(singleton) ? 1 : 2;
+            while (index < tokens.size() && tokens.get(index).length() >= minimumLength
+                    && tokens.get(index).length() <= 8 && isAlphaNumeric(tokens.get(index))) {
+                values.add(lowerAscii(tokens.get(index++)));
+            }
+            if (values.isEmpty()) {
+                index = start;
+                break;
+            }
+            extensionParts[key] = "u".equals(singleton)
+                    ? canonicalizeUnicodeExtension(values)
+                    : join(values, "-");
+            seen[key] = true;
+            if ("x".equals(singleton)) {
+                break;
+            }
+        }
+
+        int privateUseKey = singletonIndex('x');
+        if (extensionParts[privateUseKey] != null) {
+            List<String> privateParts = splitTag(extensionParts[privateUseKey]);
+            if (!privateParts.isEmpty() && "lvariant".equals(privateParts.get(0))) {
+                variants.addAll(privateParts.subList(1, privateParts.size()));
+                variant = join(variants, "_");
+                extensionParts[privateUseKey] = null;
+            }
+        }
+
+        StringBuilder extensions = new StringBuilder();
+        for (int key = 0; key < extensionParts.length; ++key) {
+            if (extensionParts[key] != null) {
+                if (extensions.length() > 0) {
+                    extensions.append('-');
+                }
+                extensions.append(indexSingleton(key)).append('-').append(extensionParts[key]);
+            }
+        }
+        return new TLocale(language, script, country, variant, extensions.toString());
     }
 
     @Override
@@ -116,8 +224,9 @@ public final class TLocale implements TCloneable, TSerializable {
         }
         if (object instanceof TLocale) {
             TLocale o = (TLocale) object;
-            return languageCode.equals(o.languageCode) && countryCode.equals(o.countryCode)
-                    && variantCode.equals(o.variantCode);
+            return languageCode.equals(o.languageCode) && scriptCode.equals(o.scriptCode)
+                    && countryCode.equals(o.countryCode) && variantCode.equals(o.variantCode)
+                    && extensionsCode.equals(o.extensionsCode);
         }
         return false;
     }
@@ -240,13 +349,37 @@ public final class TLocale implements TCloneable, TSerializable {
         return languageCode;
     }
 
+    public String getScript() {
+        return scriptCode;
+    }
+
     public String getVariant() {
         return variantCode;
     }
 
+    public String getExtension(char key) {
+        int index = singletonIndex(Character.toLowerCase(key));
+        if (index < 0) {
+            throw new IllegalArgumentException("Invalid extension key: " + key);
+        }
+        List<String> tokens = splitTag(extensionsCode);
+        for (int i = 0; i < tokens.size(); ++i) {
+            String token = tokens.get(i);
+            if (token.length() == 1 && singletonIndex(token.charAt(0)) == index) {
+                List<String> values = new ArrayList<>();
+                for (++i; i < tokens.size() && (index == singletonIndex('x') || tokens.get(i).length() != 1); ++i) {
+                    values.add(tokens.get(i));
+                }
+                return join(values, "-");
+            }
+        }
+        return null;
+    }
+
     @Override
     public int hashCode() {
-        return countryCode.hashCode() + languageCode.hashCode() + variantCode.hashCode();
+        return countryCode.hashCode() + languageCode.hashCode() + scriptCode.hashCode()
+                + variantCode.hashCode() + extensionsCode.hashCode();
     }
 
     public static void setDefault(TLocale locale) {
@@ -273,32 +406,307 @@ public final class TLocale implements TCloneable, TSerializable {
             }
             result.append(variantCode);
         }
+        if (!scriptCode.isEmpty() || !extensionsCode.isEmpty()) {
+            if (result.length() > 0) {
+                result.append("_#");
+            } else {
+                result.append('#');
+            }
+            result.append(scriptCode);
+            if (!scriptCode.isEmpty() && !extensionsCode.isEmpty()) {
+                result.append('_');
+            }
+            result.append(extensionsCode);
+        }
         return result.toString();
     }
 
     public TString toLanguageTag() {
         StringBuilder result = new StringBuilder();
-        result.append(languageCode.isEmpty() ? "und" : languageCode);
+        List<String> privateVariants = new ArrayList<>();
+        boolean privateUseOnly = languageCode.isEmpty() && scriptCode.isEmpty() && countryCode.isEmpty()
+                && variantCode.isEmpty() && extensionsCode.startsWith("x-");
+        if (!privateUseOnly) {
+            result.append(languageCode.isEmpty() ? "und" : languageCode);
+        }
+        if (!scriptCode.isEmpty()) {
+            result.append('-').append(scriptCode);
+        }
         if (!countryCode.isEmpty()) {
             result.append('-');
             result.append(countryCode);
         }
-        if (!variantCode.isEmpty() && result.length() > 0) {
-            result.append('-');
-            result.append(variantCode);
+        if (!variantCode.isEmpty()) {
+            String[] variants = variantCode.split("_");
+            boolean validVariants = true;
+            for (String variant : variants) {
+                if (validVariants && isVariant(variant)) {
+                    result.append('-').append(variant);
+                } else {
+                    validVariants = false;
+                    privateVariants.add(variant);
+                }
+            }
+        }
+        String extensions = extensionsCode;
+        if (!privateVariants.isEmpty()) {
+            int privateUseStart = extensions.indexOf("x-");
+            String variantExtension = "lvariant-" + join(privateVariants, "-");
+            if (privateUseStart >= 0) {
+                extensions += "-" + variantExtension;
+            } else {
+                extensions += (extensions.isEmpty() ? "" : "-") + "x-" + variantExtension;
+            }
+        }
+        if (!extensions.isEmpty()) {
+            if (result.length() > 0) {
+                result.append('-');
+            }
+            result.append(extensions);
         }
         return new TString(result.toString().toCharArray());
     }
 
-    public static TLocale of(String language, String country, String variant) {
-        return new TLocale(language.toLowerCase(), country.toUpperCase(), variant);
+    private static List<String> splitTag(String tag) {
+        List<String> result = new ArrayList<>();
+        int start = 0;
+        for (int i = 0; i <= tag.length(); ++i) {
+            if (i == tag.length() || tag.charAt(i) == '-') {
+                result.add(tag.substring(start, i));
+                start = i + 1;
+            }
+        }
+        return result;
     }
-    
+
+    private static String parsePrivateUse(List<String> tokens, int index) {
+        List<String> values = new ArrayList<>();
+        while (index < tokens.size() && tokens.get(index).length() >= 1 && tokens.get(index).length() <= 8
+                && isAlphaNumeric(tokens.get(index))) {
+            values.add(lowerAscii(tokens.get(index++)));
+        }
+        return join(values, "-");
+    }
+
+    private static boolean isAlpha(String text) {
+        if (text.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); ++i) {
+            char c = text.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isAlphaNumeric(String text) {
+        if (text.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); ++i) {
+            char c = text.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isRegion(String text) {
+        if (text.length() == 2) {
+            return isAlpha(text);
+        }
+        if (text.length() != 3) {
+            return false;
+        }
+        for (int i = 0; i < 3; ++i) {
+            char c = text.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isVariant(String text) {
+        if (text.length() >= 5 && text.length() <= 8) {
+            return isAlphaNumeric(text);
+        }
+        return text.length() == 4 && text.charAt(0) >= '0' && text.charAt(0) <= '9'
+                && isAlphaNumeric(text);
+    }
+
+    private static boolean isSingleton(String text) {
+        return text.length() == 1 && isAlphaNumeric(text);
+    }
+
+    private static int singletonIndex(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        c = Character.toLowerCase(c);
+        if (c >= 'a' && c <= 'z') {
+            return c - 'a' + 10;
+        }
+        return -1;
+    }
+
+    private static char indexSingleton(int index) {
+        return index < 10 ? (char) ('0' + index) : (char) ('a' + index - 10);
+    }
+
+    private static String join(List<String> values, String delimiter) {
+        StringBuilder result = new StringBuilder();
+        for (String value : values) {
+            if (result.length() > 0) {
+                result.append(delimiter);
+            }
+            result.append(value);
+        }
+        return result.toString();
+    }
+
+    private static String canonicalizeUnicodeExtension(List<String> values) {
+        List<String> attributes = new ArrayList<>();
+        String[] types = new String[36 * 36];
+        int index = 0;
+        while (index < values.size() && values.get(index).length() != 2) {
+            attributes.add(values.get(index++));
+        }
+        attributes.sort(String::compareTo);
+        while (index < values.size()) {
+            String key = values.get(index++);
+            int keyIndex = singletonIndex(key.charAt(0)) * 36 + singletonIndex(key.charAt(1));
+            List<String> typeParts = new ArrayList<>();
+            while (index < values.size() && values.get(index).length() != 2) {
+                typeParts.add(values.get(index++));
+            }
+            if (types[keyIndex] == null) {
+                types[keyIndex] = join(typeParts, "-");
+            }
+        }
+
+        List<String> canonical = new ArrayList<>(attributes);
+        for (int keyIndex = 0; keyIndex < types.length; ++keyIndex) {
+            if (types[keyIndex] != null) {
+                int first = keyIndex / 36;
+                int second = keyIndex % 36;
+                canonical.add(String.valueOf(indexSingleton(first)) + indexSingleton(second));
+                if (!types[keyIndex].isEmpty()) {
+                    canonical.addAll(splitTag(types[keyIndex]));
+                }
+            }
+        }
+        return join(canonical, "-");
+    }
+
+    private static String lowerAscii(String value) {
+        StringBuilder result = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); ++i) {
+            char c = value.charAt(i);
+            result.append(c >= 'A' && c <= 'Z' ? (char) (c + ('a' - 'A')) : c);
+        }
+        return result.toString();
+    }
+
+    private static String upperAscii(String value) {
+        StringBuilder result = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); ++i) {
+            char c = value.charAt(i);
+            result.append(c >= 'a' && c <= 'z' ? (char) (c - ('a' - 'A')) : c);
+        }
+        return result.toString();
+    }
+
+    private static String titleAscii(String value) {
+        String lower = lowerAscii(value);
+        return lower.isEmpty() ? lower : upperAscii(lower.substring(0, 1)) + lower.substring(1);
+    }
+
+    private static String legacyLanguage(String language) {
+        switch (language) {
+            case "iw":
+                return "he";
+            case "ji":
+                return "yi";
+            case "in":
+                return "id";
+            default:
+                return language;
+        }
+    }
+
+    private static String grandfatheredLanguage(String tag) {
+        String lower = lowerAscii(tag);
+        switch (lower) {
+            case "art-lojban":
+                return "jbo";
+            case "cel-gaulish":
+                return "xtg-x-cel-gaulish";
+            case "en-gb-oed":
+                return "en-GB-oxendict";
+            case "i-ami":
+                return "ami";
+            case "i-default":
+                return "en-x-i-default";
+            case "i-enochian":
+                return "x-i-enochian";
+            case "i-klingon":
+                return "tlh";
+            case "i-bnn":
+                return "bnn";
+            case "i-hak":
+                return "hak";
+            case "i-lux":
+                return "lb";
+            case "i-mingo":
+                return "see-x-i-mingo";
+            case "i-navajo":
+                return "nv";
+            case "i-pwn":
+                return "pwn";
+            case "i-tao":
+                return "tao";
+            case "i-tay":
+                return "tay";
+            case "i-tsu":
+                return "tsu";
+            case "sgn-be-fr":
+                return "sfb";
+            case "sgn-be-nl":
+                return "vgt";
+            case "sgn-ch-de":
+                return "sgg";
+            case "no-bok":
+                return "nb";
+            case "no-nyn":
+                return "nn";
+            case "zh-guoyu":
+                return "cmn";
+            case "zh-hakka":
+                return "hak";
+            case "zh-min":
+                return "nan-x-zh-min";
+            case "zh-min-nan":
+                return "nan";
+            case "zh-xiang":
+                return "hsn";
+            default:
+                return null;
+        }
+    }
+
+    public static TLocale of(String language, String country, String variant) {
+        return new TLocale(lowerAscii(language), upperAscii(country), variant);
+    }
+
     public static TLocale of(String language, String country) {
-        return new TLocale(language.toLowerCase(), country.toUpperCase(), "");
+        return new TLocale(lowerAscii(language), upperAscii(country), "");
     }
 
     public static TLocale of(String language) {
-        return new TLocale(language.toLowerCase(), "", "");
+        return new TLocale(lowerAscii(language), "", "");
     }
 }
