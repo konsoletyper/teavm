@@ -44,6 +44,26 @@ public class MathTest {
     }
 
     @Test
+    public void log10OfPowersOfTen() {
+        double power = 1;
+        for (int n = 0; n <= 22; ++n) {
+            sameDouble(n, Math.log10(power));
+            sameDouble(n, StrictMath.log10(power));
+            power *= 10;
+        }
+    }
+
+    @Test
+    public void log10SpecialCases() {
+        assertTrue(Double.isNaN(Math.log10(Double.NaN)));
+        assertTrue(Double.isNaN(Math.log10(-1)));
+        sameDouble(Double.POSITIVE_INFINITY, Math.log10(Double.POSITIVE_INFINITY));
+        sameDouble(Double.NEGATIVE_INFINITY, Math.log10(0));
+        sameDouble(Double.NEGATIVE_INFINITY, Math.log10(-0.0));
+        assertEquals(0.3010299956639812, Math.log10(2), 1E-15);
+    }
+
+    @Test
     public void cbrtComputed() {
         assertEquals(3.0, Math.cbrt(27.0), 1E-14);
         assertEquals(-3.0, Math.cbrt(-27.0), 1E-14);

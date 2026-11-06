@@ -79,9 +79,10 @@ public final class TMath extends TObject {
     @Unmanaged
     public static native double log(double a);
 
-    public static double log10(double a) {
-        return log(a) / 2.302585092994046 /* log_e 10 */;
-    }
+    @GeneratedBy(MathNativeGenerator.class)
+    @Import(module = "teavmMath", name = "log10")
+    @Unmanaged
+    public static native double log10(double a);
 
     @InjectedBy(MathNativeGenerator.class)
     @Import(name = "sqrt")
