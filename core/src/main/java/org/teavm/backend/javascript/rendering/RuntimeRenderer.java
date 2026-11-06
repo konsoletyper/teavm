@@ -107,7 +107,7 @@ public class RuntimeRenderer {
         ClassLoader loader = RuntimeRenderer.class.getClassLoader();
         try (InputStream input = loader.getResourceAsStream("org/teavm/backend/javascript/" + name);
                 Reader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
-            return factory.parse(reader, null, 0);
+            return factory.parse(reader, name, 0);
         } catch (IOException e) {
             throw new RenderingException(e);
         }

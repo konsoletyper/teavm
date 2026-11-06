@@ -19,6 +19,8 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -315,6 +317,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                     method.use();
                     agent.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class))
                             .use();
+                } else if (usesStackTrace(method.getReference())) {
+                    includeStackTraceMethods(agent);
                 }
             }
         });
@@ -343,6 +347,37 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dep.getVariable(1).propagate(dependencyAnalyzer.getType(ValueType.parse(StackTraceElement[].class)));
         dep.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getClassType(StackTraceElement.class.getName()));
         dep.use();
+    }
+
+    private static void includeStackTraceMethods(DependencyAgent agent) {
+        MethodDependency dep;
+        var stringType = agent.getType(ValueType.object("java.lang.String"));
+        var stackElementType = agent.getType(ValueType.object(StackTraceElement.class.getName()));
+
+        dep = agent.linkMethod(new MethodReference(
+                StackTraceElement.class, "<init>", String.class, String.class, String.class,
+                int.class, void.class));
+        dep.getVariable(0).propagate(stackElementType);
+        dep.getVariable(1).propagate(stringType);
+        dep.getVariable(2).propagate(stringType);
+        dep.getVariable(3).propagate(stringType);
+        dep.use();
+
+        dep = agent.linkMethod(new MethodReference(
+                Throwable.class, "setStackTrace", StackTraceElement[].class, void.class));
+        dep.getVariable(0).propagate(agent.getType(ValueType.object(Throwable.class.getName())));
+        dep.getVariable(1).propagate(agent.getType(ValueType.parse(StackTraceElement[].class)));
+        dep.getVariable(1).getArrayItem().propagate(stackElementType);
+        dep.use();
+    }
+
+    private static boolean usesStackTrace(MethodReference method) {
+        return method.equals(new MethodReference(Throwable.class, "getStackTrace", StackTraceElement[].class))
+                || method.equals(new MethodReference(Throwable.class, "printStackTrace", void.class))
+                || method.equals(new MethodReference(Throwable.class, "printStackTrace", PrintStream.class,
+                        void.class))
+                || method.equals(new MethodReference(Throwable.class, "printStackTrace", PrintWriter.class,
+                        void.class));
     }
 
     @Override

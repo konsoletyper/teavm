@@ -35,15 +35,20 @@ let $rt_fillNativeException = ex => {
     }
     err[$rt_javaExceptionProp] = ex;
     ex.$jsException = err;
-    $rt_fillStack(err, ex);
 }
 let $rt_fillStack = (err, ex) => {
-    if (typeof $rt_decodeStack === "function" && err.stack) {
-        let stack = $rt_decodeStack(err.stack);
+    if (err.stack) {
+        let stack;
+        if (typeof $rt_decodeStack === "function") {
+            stack = $rt_decodeStack(err.stack);
+        } else {
+            stack = $rt_parseNativeStack(err.stack);
+        }
         let javaStack = $rt_createArray($rt_stecls(), stack.length);
         let elem;
         let noStack = false;
-        for (let i = 0; i < stack.length; ++i) {
+        let i = 0;
+        while (i < stack.length) {
             let element = stack[i];
             elem = $rt_createStackElement($rt_str(element.className),
                 $rt_str(element.methodName), $rt_str(element.fileName), element.lineNumber);
@@ -52,10 +57,94 @@ let $rt_fillStack = (err, ex) => {
                 break;
             }
             javaStack.data[i] = elem;
+            ++i;
         }
         if (!noStack) {
             $rt_setStack(ex, javaStack);
         }
+    }
+}
+let $rt_parseNativeStack = stackText => {
+    let result = [];
+    let lines = stackText.split(/\r?\n/);
+    let i = 0;
+    while (i < lines.length) {
+        let line = lines[i].trim();
+        let functionName = null;
+        let fileName = null;
+        let lineNumber = -1;
+        let recognized = false;
+        if (line.indexOf("at ") === 0) {
+            recognized = true;
+            line = line.substring(3);
+            let openParen = line.lastIndexOf("(");
+            if (openParen >= 0 && line.charAt(line.length - 1) === ")") {
+                functionName = line.substring(0, openParen).trim() || null;
+                line = line.substring(openParen + 1, line.length - 1);
+            }
+        } else {
+            let at = line.lastIndexOf("@");
+            if (at >= 0) {
+                recognized = true;
+                functionName = line.substring(0, at) || null;
+                line = line.substring(at + 1);
+            }
+        }
+        let lastColon = line.lastIndexOf(":");
+        if (recognized && lastColon >= 0) {
+            let lastPartText = line.substring(lastColon + 1);
+            if ($rt_isDigits(lastPartText)) {
+                let lastPart = Number(lastPartText);
+                let previousColon = line.lastIndexOf(":", lastColon - 1);
+                if (previousColon >= 0) {
+                    let previousPartText = line.substring(previousColon + 1, lastColon);
+                    if ($rt_isDigits(previousPartText)) {
+                        lineNumber = Number(previousPartText);
+                        line = line.substring(0, previousColon);
+                    } else {
+                        lineNumber = lastPart;
+                        line = line.substring(0, lastColon);
+                    }
+                } else {
+                    lineNumber = lastPart;
+                    line = line.substring(0, lastColon);
+                }
+                if (lineNumber > 0) {
+                    fileName = line || null;
+                }
+            }
+        }
+        if (fileName !== null) {
+            result.push({ className: "<JS>", methodName: functionName || "<unknown function>",
+                fileName: fileName, lineNumber: lineNumber });
+        }
+        ++i;
+    }
+    return result;
+}
+let $rt_isDigits = text => {
+    if (text.length === 0) {
+        return false;
+    }
+    let i = 0;
+    while (i < text.length) {
+        let code = text.charCodeAt(i);
+        if (code < 48 || code > 57) {
+            return false;
+        }
+        ++i;
+    }
+    return true;
+}
+let $rt_refreshNativeStack = ex => {
+    let err = ex.$jsException;
+    if (err && typeof teavm_globals.Error.captureStackTrace === "function") {
+        teavm_globals.Error.captureStackTrace(err);
+    } else if (err) {
+        err.stack = (new teavm_globals.Error()).stack;
+    }
+    if (err) {
+        $rt_fillStack(err, ex);
     }
 }
 

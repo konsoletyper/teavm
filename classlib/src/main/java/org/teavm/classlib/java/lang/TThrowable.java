@@ -50,14 +50,17 @@ public class TThrowable extends RuntimeException {
     @Rename("<init>")
     public void init(String message, TThrowable cause, boolean enableSuppression, boolean writableStackTrace) {
         suppressed = new TThrowable[0];
-        initNativeException();
-        if (writableStackTrace) {
-            fillInStackTrace();
-        }
         this.suppressionEnabled = enableSuppression;
         this.writableStackTrace = writableStackTrace;
         this.message = message;
         this.cause = cause;
+        if (!writableStackTrace) {
+            stackTrace = new TStackTraceElement[0];
+        }
+        initNativeException();
+        if (writableStackTrace) {
+            fillInStackTrace();
+        }
     }
 
     @Rename("fakeInit")
@@ -67,9 +70,9 @@ public class TThrowable extends RuntimeException {
     @Rename("<init>")
     private void init() {
         suppressed = new TThrowable[0];
-        initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
+        initNativeException();
         fillInStackTrace();
     }
 
@@ -80,11 +83,11 @@ public class TThrowable extends RuntimeException {
     @Rename("<init>")
     private void init(String message) {
         suppressed = new TThrowable[0];
-        initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
-        fillInStackTrace();
         this.message = message;
+        initNativeException();
+        fillInStackTrace();
     }
 
     @SuppressWarnings("unused")
@@ -95,12 +98,12 @@ public class TThrowable extends RuntimeException {
     @Rename("<init>")
     private void init(String message, TThrowable cause) {
         suppressed = new TThrowable[0];
-        initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
-        fillInStackTrace();
         this.message = message;
         this.cause = cause;
+        initNativeException();
+        fillInStackTrace();
     }
 
     @SuppressWarnings("unused")
@@ -111,17 +114,21 @@ public class TThrowable extends RuntimeException {
     @Rename("<init>")
     private void init(TThrowable cause) {
         suppressed = new TThrowable[0];
-        initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
-        fillInStackTrace();
         this.message = cause != null ? cause.toString() : null;
         this.cause = cause;
+        initNativeException();
+        fillInStackTrace();
     }
 
     @Override
     public Throwable fillInStackTrace() {
-        if (PlatformDetector.isLowLevel()) {
+        if (!writableStackTrace) {
+            return this;
+        } else if (PlatformDetector.isJavaScript()) {
+            refreshNativeStackJS(JSWrapper.directJavaToJs(this));
+        } else if (PlatformDetector.isLowLevel()) {
             stackTrace = (TStackTraceElement[]) (Object) ExceptionHandling.fillStackTrace();
         } else if (PlatformDetector.isWebAssemblyGC()) {
             lazyStackTrace = takeWasmGCStack(JSString.valueOf(getClass().getName()));
@@ -139,11 +146,16 @@ public class TThrowable extends RuntimeException {
     @JSBody(params = "o", script = "$rt_fillNativeException(o);")
     private static native void initNativeExceptionJS(JSObject o);
 
+    @JSBody(params = "o", script = "$rt_refreshNativeStack(o);")
+    private static native void refreshNativeStackJS(JSObject o);
+
     @Import(name = "decorateException")
     private static native void decorateException(Object obj);
 
     private void ensureStackTrace() {
-        if (PlatformDetector.isWebAssemblyGC()) {
+        if (PlatformDetector.isJavaScript() && stackTrace == null && writableStackTrace) {
+            refreshNativeStackJS(JSWrapper.directJavaToJs(this));
+        } else if (PlatformDetector.isWebAssemblyGC()) {
             if (lazyStackTrace != null) {
                 var supplier = lazyStackTrace;
                 lazyStackTrace = null;
@@ -255,6 +267,17 @@ public class TThrowable extends RuntimeException {
     }
 
     public void setStackTrace(@SuppressWarnings("unused") TStackTraceElement[] stackTrace) {
+        if (stackTrace == null) {
+            throw new NullPointerException();
+        }
+        for (var element : stackTrace) {
+            if (element == null) {
+                throw new NullPointerException();
+            }
+        }
+        if (!writableStackTrace) {
+            return;
+        }
         if (PlatformDetector.isWebAssemblyGC()) {
             lazyStackTrace = null;
         }
