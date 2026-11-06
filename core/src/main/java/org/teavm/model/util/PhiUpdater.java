@@ -466,6 +466,11 @@ public class PhiUpdater {
                     }
                 }
             }
+            // Several existing incomings can expand to the same version. Keep every distinct
+            // version the handler can observe, without multiplying identical exception edges.
+            var incomingValues = new IntHashSet();
+            incomings.removeIf(incoming -> incoming.getSource() == currentBlock
+                    && !incomingValues.add(incoming.getValue().getIndex()));
         }
     }
 
