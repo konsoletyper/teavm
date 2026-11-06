@@ -144,10 +144,10 @@ public final class TMatcher implements TMatchResult {
 
                                 @Override
                                 public String toString() {
-                                    return group(grN);
+                                    return replacementGroup(grN);
                                 }
                             });
-                            String group = group(gr);
+                            String group = replacementGroup(gr);
                             replacementPos += group.length();
                             res.append(group);
 
@@ -167,6 +167,11 @@ public final class TMatcher implements TMatchResult {
             }
             return res.toString();
         }
+    }
+
+    private String replacementGroup(int group) {
+        String value = group(group);
+        return value != null ? value : "";
     }
 
     /**
