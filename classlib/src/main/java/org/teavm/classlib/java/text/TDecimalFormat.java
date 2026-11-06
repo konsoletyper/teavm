@@ -93,7 +93,7 @@ public class TDecimalFormat extends TNumberFormat {
     }
 
     private FormatField[] textToFields(String text) {
-        return new FormatField[] { new TextField(text) };
+        return text != null ? new FormatField[] { new TextField(text) } : null;
     }
 
     public String getPositivePrefix() {

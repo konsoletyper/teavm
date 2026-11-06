@@ -49,6 +49,9 @@ class TDecimalFormatParser {
             throw new IllegalArgumentException("Positive number pattern not found in " + string);
         }
         parseNumber(true);
+        // An omitted suffix is an empty suffix. Leaving this null makes the public
+        // DecimalFormat getters return null, unlike the JDK implementation.
+        positiveSuffix = new FormatField[0];
         negativePrefix = null;
         negativeSuffix = null;
         if (index < string.length() && string.charAt(index) != ';') {
