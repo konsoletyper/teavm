@@ -27,7 +27,8 @@ import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 public abstract class Crypto implements JSObject {
-    @JSBody(script = "return crypto != null;")
+    @JSBody(script = "return typeof crypto !== 'undefined' && crypto !== null"
+            + " && typeof crypto.getRandomValues === 'function';")
     public static native boolean isSupported();
 
     @JSProperty("crypto")

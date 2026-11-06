@@ -47,6 +47,10 @@ public class TSecureRandom extends TRandom {
         return new TSecureRandom();
     }
 
+    public static TSecureRandom getInstanceStrong() throws TNoSuchAlgorithmException {
+        return getInstance("NativePRNG");
+    }
+
     public String getAlgorithm() {
         return "NativePRNG";
     }
@@ -73,10 +77,15 @@ public class TSecureRandom extends TRandom {
 
     @Override
     public void nextBytes(byte[] bytes) {
-        var buffer = new Uint8Array(bytes.length);
-        Crypto.current().getRandomValues(buffer);
-        for (int i = 0; i < bytes.length; ++i) {
-            bytes[i] = (byte) buffer.get(i);
+        // Web Crypto limits each getRandomValues call to 65536 bytes.
+        for (int offset = 0; offset < bytes.length;) {
+            int length = Math.min(65536, bytes.length - offset);
+            var buffer = new Uint8Array(length);
+            Crypto.current().getRandomValues(buffer);
+            for (int i = 0; i < length; ++i) {
+                bytes[offset + i] = (byte) buffer.get(i);
+            }
+            offset += length;
         }
     }
 
