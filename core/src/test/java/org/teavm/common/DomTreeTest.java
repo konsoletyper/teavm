@@ -76,6 +76,20 @@ public class DomTreeTest {
         assertEquals(11, dom.immediateDominatorOf(9));
     }
 
+    @Test
+    public void unreachablePredecessorDoesNotAffectReachableTree() {
+        var builder = new GraphBuilder(5);
+        addEdges(builder, 0, 1);
+        addEdges(builder, 1, 0, 4);
+        addEdges(builder, 2, 3);
+        addEdges(builder, 3, 4);
+
+        var dom = GraphUtils.buildDominatorTree(builder.build(), 2);
+        assertEquals(3, dom.immediateDominatorOf(4));
+        assertEquals(-1, dom.immediateDominatorOf(0));
+        assertEquals(-1, dom.immediateDominatorOf(1));
+    }
+
     private static void addEdges(GraphBuilder builder, int from, int... to) {
         for (int target : to) {
             builder.addEdge(from, target);

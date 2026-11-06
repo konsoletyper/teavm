@@ -55,6 +55,11 @@ class DominatorTreeBuilder {
         for (int i = effectiveSize - 1; i > 0; --i) {
             int w = vertices[i];
             for (int v : graph.incomingEdges(w)) {
+                // The dominator tree is defined only for nodes reachable from start. Ignore
+                // edges from unreachable nodes into the reachable subgraph.
+                if (semidominators[v] < 0) {
+                    continue;
+                }
                 int u = eval(v);
                 semidominators[w] = Math.min(semidominators[w], semidominators[u]);
             }
