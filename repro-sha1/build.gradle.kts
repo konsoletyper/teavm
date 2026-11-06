@@ -40,13 +40,17 @@ teavm.js {
 tasks.named<org.teavm.gradle.tasks.GenerateJavaScriptTask>("generateJavaScript") {
     val forkJar = file(providers.gradleProperty("classlibJar").getOrElse(
         "../classlib/build/libs/classlib-0.16.0-SNAPSHOT.jar"))
+    val forkCore = file(providers.gradleProperty("coreJar").getOrElse(
+        "../core/build/libs/core-0.16.0-SNAPSHOT.jar"))
     require(forkJar.isFile) { "Build the fork :classlib:jar first, or pass -PclasslibJar=<jar>" }
+    require(forkCore.isFile) { "Build the fork :core:jar first, or pass -PcoreJar=<jar>" }
     val originalTarget = objects.fileCollection().from(classpath.from.toList())
     val target = originalTarget.filter {
         it.name != "teavm-classlib-0.16.0.jar" && it != forkJar
     }
     classpath.setFrom(target, forkJar)
-    daemonClasspath.from(target.filter { it.name == "teavm-platform-0.16.0.jar" })
+    val originalDaemon = objects.fileCollection().from(daemonClasspath.from.toList())
+    daemonClasspath.setFrom(originalDaemon.filter { it.name != "teavm-core-0.16.0.jar" }, forkCore)
     outOfProcess.set(true)
 }
 

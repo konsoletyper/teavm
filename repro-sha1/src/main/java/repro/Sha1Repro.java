@@ -62,6 +62,12 @@ public final class Sha1Repro {
 
     private static void testOutputAndBounds() throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        try {
+            digest.digest(new byte[20], 1, 20);
+            throw new AssertionError("invalid output range should throw IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+            // Expected.
+        }
         byte[] output = new byte[22];
         output[0] = 0x55;
         output[21] = 0x55;

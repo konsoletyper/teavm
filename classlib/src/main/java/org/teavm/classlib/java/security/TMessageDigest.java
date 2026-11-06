@@ -80,7 +80,7 @@ public abstract class TMessageDigest implements TCloneable {
     public final int digest(byte[] output, int offset, int length) throws TDigestException {
         Objects.requireNonNull(output);
         if (offset < 0 || length < 0 || offset > output.length - length) {
-            throw new IndexOutOfBoundsException();
+            throw new IllegalArgumentException();
         }
         int digestLength = getDigestLength();
         if (length < digestLength) {
