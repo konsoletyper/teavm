@@ -14,4 +14,4 @@
  *  limitations under the License.
  */
 
-export { load, defaults, wrapImport } from "./runtime";
+export { load, defaults, wrapImport, ExitError } from "./runtime";

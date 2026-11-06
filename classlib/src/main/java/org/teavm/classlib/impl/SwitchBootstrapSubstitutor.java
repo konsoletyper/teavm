@@ -43,10 +43,14 @@ public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
         ValueEmitter restartIdx = callSite.getArguments().get(1);
         BasicBlock joint = pe.prepareBlock();
         PhiEmitter result = pe.phi(ValueType.INTEGER, joint);
-        pe.when(() -> target.isNull()).thenDo(() -> {
-            pe.constant(-1).propagateTo(result);
-            pe.jump(joint);
-        });
+        // Though not documented, javac passes primitive targets to typeSwitch (e.g. for record patterns
+        // with primitive components), and the JDK implementation accepts them
+        if (!(callSite.getCalledMethod().parameterType(0) instanceof ValueType.Primitive)) {
+            pe.when(() -> target.isNull()).thenDo(() -> {
+                pe.constant(-1).propagateTo(result);
+                pe.jump(joint);
+            });
+        }
 
         var switchInsn = new SwitchInstruction();
         switchInsn.setCondition(restartIdx.getVariable());

@@ -101,4 +101,9 @@ class TMultiLineEOLSet extends TAbstractSet {
     protected String getName() {
         return "<MultiLine $>"; //$NON-NLS-1$
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TMultiLineEOLSet.class, "multiLineEOLSet", consCounter);
+    }
 }

@@ -20,13 +20,14 @@ import java.util.Set;
 import java.util.function.IntPredicate;
 
 public class TDistinctIntStreamImpl extends TWrappingIntStreamImpl {
+    private final Set<Integer> visited = new HashSet<>();
+
     public TDistinctIntStreamImpl(TSimpleIntStreamImpl innerStream) {
         super(innerStream);
     }
 
     @Override
     protected IntPredicate wrap(IntPredicate consumer) {
-        Set<Integer> visited = new HashSet<>();
         return e -> {
             if (!visited.add(e)) {
                 return true;

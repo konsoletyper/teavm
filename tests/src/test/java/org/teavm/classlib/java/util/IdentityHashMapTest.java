@@ -33,15 +33,14 @@
 
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class IdentityHashMapTest {
 
     @Test

@@ -84,4 +84,14 @@ abstract class TAbstractLineTerminator {
             return unicodeLT;
         }
     }
+
+    void describe(TPatternWriter writer) {
+        if (this == unixLT) {
+            writer.create(this, getClass(), "lineTerminator", true);
+        } else if (this == unicodeLT) {
+            writer.create(this, getClass(), "lineTerminator", false);
+        } else {
+            throw TPatternWriter.unsupported();
+        }
+    }
 }

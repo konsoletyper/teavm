@@ -23,9 +23,9 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
@@ -60,7 +60,7 @@ public class ExportTest {
             false
     );
 
-    @BeforeClass
+    @BeforeAll
     public static void start() {
         if (jsNeeded) {
             jsRunner.start();
@@ -70,7 +70,7 @@ public class ExportTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void stop() {
         if (jsNeeded) {
             jsRunner.stop();
@@ -129,6 +129,16 @@ public class ExportTest {
     public void exportedClassInheritance() {
         testExport("exportClassInheritance", ModuleWithClassInheritance.class);
     }
+
+    @Test
+    public void exitFromJsCall() {
+        testExport("exitFromJsCall", ModuleWithExit.class);
+    }
+
+    @Test
+    public void exitFromThread() {
+        testExport("exitFromThread", ModuleWithExit.class);
+    }
     
     private void testExport(String name, Class<?> moduleClass) {
         if (jsNeeded) {
@@ -167,6 +177,10 @@ public class ExportTest {
             var testProviderFile = new File(outputDir, "provider.js");
             try (var writer = new OutputStreamWriter(new FileOutputStream(testProviderFile), StandardCharsets.UTF_8)) {
                 writer.write("import * as obj from '/tests/" + name + "/test.js';\n");
+                writer.write("export const exitCodes = [];\n");
+                writer.write("export const ExitError = obj.teavmRuntime?.ExitError;\n");
+                writer.write("export const killedWithCode = () => obj.teavmRuntime.killedWithCode;\n");
+                writer.write("obj.teavmRuntime?.setExitHandler(code => exitCodes.push(code));\n");
                 writer.write("export default Promise.resolve(obj);");
             }
 
@@ -214,8 +228,14 @@ public class ExportTest {
             }
             var testProviderFile = new File(outputDir, "provider.js");
             try (var writer = new OutputStreamWriter(new FileOutputStream(testProviderFile), StandardCharsets.UTF_8)) {
-                writer.write("import { load } from '/resources/org/teavm/backend/wasm/wasm-gc-module-runtime.js';\n");
-                writer.write("let teavm = await load('/tests/" + name + "/test.wasm');\n");
+                var runtimePath = "/resources/org/teavm/backend/wasm/wasm-gc-module-runtime.js";
+                writer.write("import { load } from '" + runtimePath + "';\n");
+                writer.write("export { ExitError } from '" + runtimePath + "';\n");
+                writer.write("export const exitCodes = [];\n");
+                writer.write("let teavm = await load('/tests/" + name + "/test.wasm', {\n");
+                writer.write("  onExit: code => exitCodes.push(code)\n");
+                writer.write("});\n");
+                writer.write("export const killedWithCode = () => teavm.killedWithCode;\n");
                 writer.write("export default teavm.exports;\n");
             }
 

@@ -16,17 +16,16 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.CharArrayReader;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.StringWriter;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class CharArrayWriterTest {
     char[] hw = { 'H', 'e', 'l', 'l', 'o', 'W', 'o', 'r', 'l', 'd' };
     CharArrayWriter cw = new CharArrayWriter();
@@ -35,13 +34,13 @@ public class CharArrayWriterTest {
     @Test
     public void constructor() {
         cw = new CharArrayWriter(90);
-        assertEquals("Created incorrect writer", 0, cw.size());
+        assertEquals(0, cw.size(), "Created incorrect writer");
     }
 
     @Test
     public void constructorI() {
         cw = new CharArrayWriter();
-        assertEquals("Created incorrect writer", 0, cw.size());
+        assertEquals(0, cw.size(), "Created incorrect writer");
     }
 
     @Test
@@ -62,14 +61,14 @@ public class CharArrayWriterTest {
         cr = new CharArrayReader(cw.toCharArray());
         char[] c = new char[100];
         cr.read(c, 0, 5);
-        assertEquals("Reset failed to reset buffer", "Hello", new String(c, 0, 5));
+        assertEquals("Hello", new String(c, 0, 5), "Reset failed to reset buffer");
     }
 
     @Test
     public void size() {
-        assertEquals("Returned incorrect size", 0, cw.size());
+        assertEquals(0, cw.size(), "Returned incorrect size");
         cw.write(hw, 5, 5);
-        assertEquals("Returned incorrect size", 5, cw.size());
+        assertEquals(5, cw.size(), "Returned incorrect size");
     }
 
     @Test
@@ -78,14 +77,14 @@ public class CharArrayWriterTest {
         cr = new CharArrayReader(cw.toCharArray());
         char[] c = new char[100];
         cr.read(c, 0, 10);
-        assertEquals("toCharArray failed to return correct array", "HelloWorld", new String(c, 0, 10));
+        assertEquals("HelloWorld", new String(c, 0, 10), "toCharArray failed to return correct array");
     }
 
     @Test
     public void test_toString() {
         cw.write("HelloWorld", 5, 5);
         cr = new CharArrayReader(cw.toCharArray());
-        assertEquals("Returned incorrect string", "World", cw.toString());
+        assertEquals("World", cw.toString(), "Returned incorrect string");
     }
 
     @Test
@@ -94,7 +93,7 @@ public class CharArrayWriterTest {
         cr = new CharArrayReader(cw.toCharArray());
         char[] c = new char[100];
         cr.read(c, 0, 5);
-        assertEquals("Writer failed to write correct chars", "World", new String(c, 0, 5));
+        assertEquals("World", new String(c, 0, 5), "Writer failed to write correct chars");
     }
 
     @Test
@@ -105,9 +104,8 @@ public class CharArrayWriterTest {
             obj.write(new char[] { '0' }, 0, -1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException t) {
-            assertEquals(
-                    "IndexOutOfBoundsException rather than a subclass expected",
-                    IndexOutOfBoundsException.class, t.getClass());
+            assertEquals(IndexOutOfBoundsException.class, t.getClass(),
+                    "IndexOutOfBoundsException rather than a subclass expected");
         }
     }
 
@@ -115,7 +113,7 @@ public class CharArrayWriterTest {
     public void writeI() throws IOException {
         cw.write('T');
         cr = new CharArrayReader(cw.toCharArray());
-        assertEquals("Writer failed to write char", 'T', cr.read());
+        assertEquals('T', cr.read(), "Writer failed to write char");
     }
 
     @Test
@@ -124,7 +122,7 @@ public class CharArrayWriterTest {
         cr = new CharArrayReader(cw.toCharArray());
         char[] c = new char[100];
         cr.read(c, 0, 5);
-        assertEquals("Writer failed to write correct chars", "World", new String(c, 0, 5));
+        assertEquals("World", new String(c, 0, 5), "Writer failed to write correct chars");
     }
 
     @Test
@@ -144,7 +142,7 @@ public class CharArrayWriterTest {
         cw.write("HelloWorld", 0, 10);
         StringWriter sw = new StringWriter();
         cw.writeTo(sw);
-        assertEquals("Writer failed to write correct chars", "HelloWorld", sw.toString());
+        assertEquals("HelloWorld", sw.toString(), "Writer failed to write correct chars");
     }
 
     @Test

@@ -15,14 +15,13 @@
  */
 package org.teavm.classlib.java.util.concurrent;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashSet;
 import java.util.concurrent.ThreadLocalRandom;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class ThreadLocalRandomTest {
     // A smoke test that ensures that ThreadLocalRandom produces *some* numbers and does not crash
     @Test
@@ -31,6 +30,6 @@ public class ThreadLocalRandomTest {
         for (var i = 0; i < 5; ++i) {
             ints.add(ThreadLocalRandom.current().nextInt());
         }
-        assertTrue("Different numbers generated", ints.size() > 1);
+        assertTrue(ints.size() > 1, "Different numbers generated");
     }
 }

@@ -27,6 +27,7 @@ import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
 import org.teavm.model.instructions.AbstractInstructionReader;
+import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.InvocationType;
 
 abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
@@ -270,7 +271,27 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
     }
 
     @Override
+    public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+            ArrayElementType type) {
+        if (getAnalyzer().arrayBoundsChecked) {
+            linkArrayIndexOutOfBounds();
+        }
+    }
+
+    @Override
+    public void putElement(VariableReader array, VariableReader index, VariableReader value,
+            ArrayElementType type) {
+        if (getAnalyzer().arrayBoundsChecked) {
+            linkArrayIndexOutOfBounds();
+        }
+    }
+
+    @Override
     public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
+        linkArrayIndexOutOfBounds();
+    }
+
+    private void linkArrayIndexOutOfBounds() {
         MethodDependency methodDep = getAnalyzer().linkMethod(AIOOB_INIT_METHOD);
         methodDep.addLocation(getCallLocation());
         methodDep.getVariable(0).propagate(getAnalyzer().getClassType(ArrayIndexOutOfBoundsException.class.getName()));

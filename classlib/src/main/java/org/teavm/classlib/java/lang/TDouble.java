@@ -25,6 +25,14 @@ import org.teavm.jso.JSBody;
 
 @NoSideEffects
 public class TDouble extends TNumber implements TComparable<TDouble> {
+    static class Constants {
+        static final long[] longPowersOfTen = {
+            1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000L,
+            100000000000L, 1000000000000L, 10000000000000L, 100000000000000L, 1000000000000000L,
+            10000000000000000L, 100000000000000000L, 1000000000000000000L
+        };
+    }
+
     public static final double POSITIVE_INFINITY = 1 / 0.0;
     public static final double NEGATIVE_INFINITY = -POSITIVE_INFINITY;
     public static final double NaN = 0 / 0.0;
@@ -114,10 +122,14 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         }
         char c = string.charAt(index);
 
+        // Up to 19 significant digits are collected. Digits are accumulated in int chunks of 9 digits,
+        // which are then added to long mantissa, since long arithmetic is much slower on JS.
         long mantissa = 0;
+        int chunk = 0;
+        int chunkSize = 0;
+        int digitCount = 0;
         int exp = -1;
         boolean hasOneDigit = false;
-        long mantissaPos = 1000000000000000000L;
         if (c != '.') {
             hasOneDigit = true;
             if (c < '0' || c > '9') {
@@ -141,9 +153,14 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
                 if (c < '0' || c > '9') {
                     break;
                 }
-                if (mantissaPos > 0) {
-                    mantissa = mantissa + (mantissaPos * (c - '0'));
-                    mantissaPos = Long.divideUnsigned(mantissaPos, 10);
+                if (digitCount < 19) {
+                    chunk = chunk * 10 + (c - '0');
+                    if (++chunkSize == 9) {
+                        mantissa = mantissa * 1000000000L + chunk;
+                        chunk = 0;
+                        chunkSize = 0;
+                    }
+                    ++digitCount;
                 }
                 ++exp;
                 ++index;
@@ -156,11 +173,16 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
                 if (c < '0' || c > '9') {
                     break;
                 }
-                if (mantissa == 0 && c == '0') {
+                if (digitCount == 0 && c == '0') {
                     exp--;
-                } else if (mantissaPos > 0) {
-                    mantissa = mantissa + (mantissaPos * (c - '0'));
-                    mantissaPos = Long.divideUnsigned(mantissaPos, 10);
+                } else if (digitCount < 19) {
+                    chunk = chunk * 10 + (c - '0');
+                    if (++chunkSize == 9) {
+                        mantissa = mantissa * 1000000000L + chunk;
+                        chunk = 0;
+                        chunkSize = 0;
+                    }
+                    ++digitCount;
                 }
                 ++index;
                 hasOneDigit = true;
@@ -203,6 +225,12 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
                 numExp = -numExp;
             }
             exp += numExp;
+        }
+
+        // Add remaining digits and align them, so that the first digit corresponds to 10^18
+        if (digitCount > 0) {
+            mantissa = mantissa * Constants.longPowersOfTen[chunkSize] + chunk;
+            mantissa *= Constants.longPowersOfTen[19 - digitCount];
         }
 
         return DoubleSynthesizer.synthesizeDouble(mantissa, exp, negative);

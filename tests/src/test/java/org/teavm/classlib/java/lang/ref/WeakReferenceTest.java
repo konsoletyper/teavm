@@ -15,24 +15,25 @@
  */
 package org.teavm.classlib.java.lang.ref;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.support.GCSupport;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipPlatform;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class WeakReferenceTest {
     @Test
@@ -48,7 +49,7 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID, TestPlatform.JAVASCRIPT})
     public void deref() {
         var ref = createAndTestRef(null);
         GCSupport.tryToTriggerGC(ref);
@@ -56,7 +57,7 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT})
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID, TestPlatform.JAVASCRIPT})
     public void refQueue() {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
@@ -84,7 +85,8 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, TestPlatform.JAVASCRIPT })
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID,
+            TestPlatform.JAVASCRIPT })
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
@@ -119,6 +121,83 @@ public class WeakReferenceTest {
 
         ref.clear();
         assertNull(ref.get());
+    }
+
+    @Test
+    public void enqueueClears() {
+        var obj = new Object();
+        var ref = new WeakReference<>(obj, new ReferenceQueue<>());
+        assertSame(obj, ref.get());
+
+        ref.enqueue();
+        assertNull(ref.get());
+    }
+
+    @Test
+    public void clearedRefNotEnqueued() {
+        var queue = new ReferenceQueue<>();
+        var refs = new WeakReference<?>[2];
+        runInAnotherThread(() -> {
+            var obj = new Object();
+            refs[0] = new WeakReference<>(obj, queue);
+            refs[1] = new WeakReference<>(obj, queue);
+        });
+        refs[1].clear();
+        GCSupport.tryToTriggerGC(refs[0]);
+        assertEquals(List.of(refs[0]), pollUntilEnqueued(queue, refs[0]));
+    }
+
+    @Test
+    public void unreachableRefNotEnqueued() {
+        var queue = new ReferenceQueue<>();
+        var holder = new Object[1];
+        var refs = new WeakReference<?>[2];
+        runInAnotherThread(() -> {
+            holder[0] = new Object();
+            refs[0] = new WeakReference<>(holder[0], queue);
+            refs[1] = new WeakReference<>(new WeakReference<>(holder[0], queue));
+        });
+        GCSupport.tryToTriggerGC(refs[1]);
+        assertNull(refs[1].get());
+
+        holder[0] = null;
+        GCSupport.tryToTriggerGC(refs[0]);
+        assertEquals(List.of(refs[0]), pollUntilEnqueued(queue, refs[0]));
+    }
+
+    // Objects that a test expects to be collected are created in another thread. When the optimizer inlines a helper
+    // method, its temporary variables become variables of the test method, which may keep them reachable.
+    private static void runInAnotherThread(Runnable action) {
+        var thread = new Thread(action);
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<Object> pollUntilEnqueued(ReferenceQueue<?> queue, Object expected) {
+        var result = new ArrayList<Object>();
+        for (var i = 0; i < 50 && !result.contains(expected); ++i) {
+            sleep(100);
+            for (var ref = queue.poll(); ref != null; ref = queue.poll()) {
+                result.add(ref);
+            }
+        }
+        sleep(100);
+        for (var ref = queue.poll(); ref != null; ref = queue.poll()) {
+            result.add(ref);
+        }
+        return result;
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     interface I {

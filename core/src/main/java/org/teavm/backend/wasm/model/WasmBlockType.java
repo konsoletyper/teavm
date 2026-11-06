@@ -60,4 +60,12 @@ public abstract class WasmBlockType {
             return type != null ? List.of(type) : List.of();
         }
     }
+
+    public static int inputCount(WasmBlockType type) {
+        return type != null ? type.getInputTypes().size() : 0;
+    }
+
+    public static int outputCount(WasmBlockType type) {
+        return type != null ? type.getOutputTypes().size() : 0;
+    }
 }

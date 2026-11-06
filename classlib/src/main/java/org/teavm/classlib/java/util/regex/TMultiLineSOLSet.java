@@ -68,4 +68,9 @@ class TMultiLineSOLSet extends TAbstractSet {
     protected String getName() {
         return "^";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TMultiLineSOLSet.class, "multiLineSOLSet", lt);
+    }
 }

@@ -16,20 +16,19 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class FileOutputStreamTest {
     private String fileName;
     private String fileString =
@@ -140,7 +139,7 @@ public class FileOutputStreamTest {
         byte[] buf = new byte[fileString.length() + 2];
         fis = new FileInputStream(f.getPath());
         fis.read(buf, 0, buf.length);
-        assertTrue("Failed to create appending stream", new String(buf, 0, buf.length).equals("HI" + fileString));
+        assertTrue(new String(buf, 0, buf.length).equals("HI" + fileString), "Failed to create appending stream");
     }
 
     @Test
@@ -190,7 +189,7 @@ public class FileOutputStreamTest {
         fis = new FileInputStream(f.getPath());
         byte[] rbytes = new byte[4000];
         fis.read(rbytes, 0, fileString.length());
-        assertEquals("Incorrect string returned", fileString, new String(rbytes, 0, fileString.length()));
+        assertEquals(fileString, new String(rbytes, 0, fileString.length()), "Incorrect string returned");
     }
 
     @Test
@@ -202,7 +201,7 @@ public class FileOutputStreamTest {
         fis = new FileInputStream(f.getPath());
         byte[] rbytes = new byte[4000];
         fis.read(rbytes, 0, fileString.length());
-        assertEquals("Incorrect bytes written", fileString, new String(rbytes, 0, fileString.length()));
+        assertEquals(fileString, new String(rbytes, 0, fileString.length()), "Incorrect bytes written");
 
         // Regression test for HARMONY-285
         File file = new File("FileOutputStream.tmp");
@@ -225,7 +224,7 @@ public class FileOutputStreamTest {
         fos.write('t');
         fos.close();
         fis = new FileInputStream(f.getPath());
-        assertEquals("Incorrect char written", 't', fis.read());
+        assertEquals('t', fis.read(), "Incorrect char written");
     }
 
     @Test
@@ -298,7 +297,7 @@ public class FileOutputStreamTest {
         assertEquals("A short string.", str);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (f != null) {
             f.delete();

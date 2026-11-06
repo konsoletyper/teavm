@@ -62,16 +62,37 @@ window.addEventListener("message", event => {
     }
 });
 
+// Errors that escape to the event loop (for example, a Wasm trap in a setTimeout callback) never reach
+// the code that reports test result, so we have to catch them here to fail the test instead of hanging
+let uncaughtErrorHandler = null;
+
+window.addEventListener("error", event => {
+    if (uncaughtErrorHandler !== null) {
+        uncaughtErrorHandler(event.error instanceof Error ? event.error : new Error(event.message));
+    }
+});
+
+window.addEventListener("unhandledrejection", event => {
+    if (uncaughtErrorHandler !== null) {
+        uncaughtErrorHandler(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+    }
+});
+
 function processRequest(event, processor) {
     (async function() {
         try {
-            await processor();
+            await new Promise((resolve, reject) => {
+                uncaughtErrorHandler = reject;
+                processor().then(resolve, reject);
+            });
             event.source.postMessage(wrapResponse({ status: "OK" }), "*");
         } catch (e) {
             event.source.postMessage(
                 wrapResponse({ status: "failed", errorMessage: e.message + "\n" + e.stack }),
                 "*"
             );
+        } finally {
+            uncaughtErrorHandler = null;
         }
     })();
 }

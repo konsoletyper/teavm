@@ -15,6 +15,6 @@
  */
 
 plugins {
-    id("org.teavm") version "0.16.0-SNAPSHOT" apply false
+    id("org.teavm") version "0.17.0-SNAPSHOT" apply false
 }
 

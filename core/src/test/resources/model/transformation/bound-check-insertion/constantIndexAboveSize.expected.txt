@@ -1,0 +1,9 @@
+var @this as this
+
+$start
+    @size := 2
+    @array := newArray I[@size]
+    @index := 2
+    @5 := new java.lang.ArrayIndexOutOfBoundsException
+    invoke `java.lang.ArrayIndexOutOfBoundsException.<init>()V` @5
+    throw @5

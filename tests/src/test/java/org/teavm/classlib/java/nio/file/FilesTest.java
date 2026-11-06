@@ -15,11 +15,11 @@
  */
 package org.teavm.classlib.java.nio.file;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,12 +42,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class FilesTest {
     @Test
     public void inputStream() throws IOException {
@@ -232,10 +231,10 @@ public class FilesTest {
             assertTrue(new File("test-dir/subdir1/subdir3").isDirectory());
             
             Files.createFile(Path.of("test-dir", "file"));
-            Assert.assertThrows(FileSystemException.class, () -> {
+            Assertions.assertThrows(FileSystemException.class, () -> {
                 Files.createDirectories(Path.of("test-dir", "file"));
             });
-            Assert.assertThrows(FileSystemException.class, () -> {
+            Assertions.assertThrows(FileSystemException.class, () -> {
                 Files.createDirectories(Path.of("test-dir", "file", "dir"));
             });
         } finally {
@@ -255,16 +254,16 @@ public class FilesTest {
             Files.delete(Path.of("test-dir"));
             assertFalse(new File("test-dir").exists());
 
-            Assert.assertThrows(NoSuchFileException.class, () -> Files.delete(Path.of("test-dir")));
+            Assertions.assertThrows(NoSuchFileException.class, () -> Files.delete(Path.of("test-dir")));
 
             new File("test-dir/subdir").mkdirs();
-            Assert.assertThrows(DirectoryNotEmptyException.class, () -> Files.delete(Path.of("test-dir")));
+            Assertions.assertThrows(DirectoryNotEmptyException.class, () -> Files.delete(Path.of("test-dir")));
 
             new File("test-file").createNewFile();
             Files.delete(Path.of("test-file"));
             assertFalse(new File("test-file").exists());
 
-            Assert.assertThrows(NoSuchFileException.class, () -> Files.delete(Path.of("test-file")));
+            Assertions.assertThrows(NoSuchFileException.class, () -> Files.delete(Path.of("test-file")));
         } finally {
             new File("test-dir/subdir").delete();
             new File("test-dir").delete();

@@ -256,7 +256,7 @@ public class WasmDefaultInstructionVisitor implements WasmInstructionVisitor {
     public void visit(WasmInt31Get instruction) {
     }
 
-    public void visitMany(Iterable<WasmInstruction> instructions) {
+    public void visitMany(WasmInstructionList instructions) {
         for (var instruction : instructions) {
             visitDefault(instruction);
         }

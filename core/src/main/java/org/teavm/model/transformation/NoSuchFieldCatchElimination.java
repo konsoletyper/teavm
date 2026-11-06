@@ -25,7 +25,7 @@ import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 public class NoSuchFieldCatchElimination {
     private UnreachableBasicBlockEliminator blockEliminator = new UnreachableBasicBlockEliminator();
 
-    public void apply(Program program) {
+    public void apply(Program program, int parameterCount) {
         boolean modified = false;
         for (BasicBlock block : program.getBasicBlocks()) {
             for (int i = 0; i < block.getTryCatchBlocks().size(); ++i) {
@@ -39,7 +39,7 @@ public class NoSuchFieldCatchElimination {
             }
         }
         if (modified) {
-            blockEliminator.optimize(program);
+            blockEliminator.optimize(program, parameterCount);
         }
     }
 

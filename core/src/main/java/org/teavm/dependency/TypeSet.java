@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -229,7 +229,7 @@ class TypeSet {
             if (domain == node) {
                 return;
             }
-            domain = new HashSet<>(Set.of((DependencyNode) domain));
+            domain = new LinkedHashSet<>(Set.of((DependencyNode) domain));
         }
         @SuppressWarnings("unchecked")
         var set = (Set<DependencyNode>) domain;
@@ -249,7 +249,7 @@ class TypeSet {
             if (nodes.contains(domain) && nodes.size() == 1) {
                 return;
             }
-            domain = new HashSet<>(Set.of((DependencyNode) domain));
+            domain = new LinkedHashSet<>(Set.of((DependencyNode) domain));
         }
         @SuppressWarnings("unchecked")
         var set = (Set<DependencyNode>) domain;

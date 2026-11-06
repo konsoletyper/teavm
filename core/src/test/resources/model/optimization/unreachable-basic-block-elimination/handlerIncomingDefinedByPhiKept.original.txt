@@ -1,0 +1,19 @@
+var @this as this
+
+$start
+    @cond := invokeStatic `Cond.invoke()I`
+    if @cond == 0 then goto $left else goto $right
+$left
+    @x_1 := invokeStatic `Foo.get()I`
+    goto $body
+$right
+    @x_2 := invokeStatic `Foo.get()I`
+    goto $body
+$body
+    @x := phi @x_1 from $left, @x_2 from $right
+    @e := new java.lang.RuntimeException
+    throw @e
+    catch java.lang.RuntimeException goto $handle
+$handle
+    @result := phi @x from $body
+    return @result

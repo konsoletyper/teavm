@@ -15,26 +15,25 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.Proxiable;
 import org.teavm.classlib.support.ProxyConfiguration;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class ProxyTest {
     @Test
@@ -42,10 +41,10 @@ public class ProxyTest {
         var sb = new StringBuilder();
         var handler = new LoggingInvocationHandler(sb);
         var proxy = Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { A.class }, handler);
-        assertTrue("Proxy should implement interface", proxy instanceof A);
-        assertTrue("Proxy should extend Proxy class", proxy instanceof Proxy);
-        assertTrue("Proxy.isProxyClass works", Proxy.isProxyClass(proxy.getClass()));
-        assertSame("Invocation handler extracted", handler, Proxy.getInvocationHandler(proxy));
+        assertTrue(proxy instanceof A, "Proxy should implement interface");
+        assertTrue(proxy instanceof Proxy, "Proxy should extend Proxy class");
+        assertTrue(Proxy.isProxyClass(proxy.getClass()), "Proxy.isProxyClass works");
+        assertSame(handler, Proxy.getInvocationHandler(proxy), "Invocation handler extracted");
 
         var a = (A) proxy;
         a.foo();
@@ -55,7 +54,7 @@ public class ProxyTest {
         assertEquals("A.foo;A.bar;Object.toString;", sb.toString());
         
         var other = Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { A.class }, handler);
-        assertSame("Proxy class is the same", proxy.getClass(), other.getClass());
+        assertSame(proxy.getClass(), other.getClass(), "Proxy class is the same");
     }
 
     @Test
@@ -70,7 +69,7 @@ public class ProxyTest {
                     return null;
                 });
         a.foo();
-        assertSame("Proxy instance captured", a, captured[0]);
+        assertSame(a, captured[0], "Proxy instance captured");
     }
 
     @Test
@@ -79,8 +78,8 @@ public class ProxyTest {
         var handler = new LoggingInvocationHandler(sb);
         var proxy = Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { A.class, B.class }, handler);
         
-        assertTrue("Proxy should implement A", proxy instanceof A);
-        assertTrue("Proxy should implement B", proxy instanceof B);
+        assertTrue(proxy instanceof A, "Proxy should implement A");
+        assertTrue(proxy instanceof B, "Proxy should implement B");
 
         var a = (A) proxy;
         var b = (B) proxy;
@@ -156,7 +155,7 @@ public class ProxyTest {
 
     @Test
     public void wrongArgs() {
-        assertFalse("Proxy.isProxyClass works for non-proxy", Proxy.isProxyClass(Object.class));
+        assertFalse(Proxy.isProxyClass(Object.class), "Proxy.isProxyClass works for non-proxy");
 
         try {
             Proxy.newProxyInstance(ProxyTest.class.getClassLoader(), new Class[] { NonInterface.class },
@@ -255,7 +254,7 @@ public class ProxyTest {
                     return null;
                 });
         a.foo();
-        assertFalse("Args array passed to handler should be null when no parameters", nonNull[0]);
+        assertFalse(nonNull[0], "Args array passed to handler should be null when no parameters");
     }
     
     @Test
@@ -307,8 +306,8 @@ public class ProxyTest {
                 });
         called[0] = false;
         var cls = a.getClass();
-        assertFalse("getClass() should not be routed through handler", called[0]);
-        assertTrue("getClass() returns proxy class", Proxy.isProxyClass(cls));
+        assertFalse(called[0], "getClass() should not be routed through handler");
+        assertTrue(Proxy.isProxyClass(cls), "getClass() returns proxy class");
     }
 
     @Test

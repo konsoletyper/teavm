@@ -15,7 +15,7 @@
  */
 package org.teavm.jso.impl;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.FunctionCall;
@@ -94,7 +94,7 @@ class JavaInvocationProcessor implements NodeVisitor {
         MethodReference caller = createCallbackMethod(method);
         MethodReference delegate = repository.methodMap.get(location.getMethod());
         repository.callbackCallees.put(caller, methodRef);
-        repository.callbackMethods.computeIfAbsent(delegate, key -> new HashSet<>()).add(caller);
+        repository.callbackMethods.computeIfAbsent(delegate, key -> new LinkedHashSet<>()).add(caller);
         validateSignature(method);
 
         StringLiteral newTarget = new StringLiteral();

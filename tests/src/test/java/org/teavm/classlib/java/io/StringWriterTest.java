@@ -16,15 +16,14 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.io.StringWriter;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class StringWriterTest {
     StringWriter sw = new StringWriter();
 
@@ -41,20 +40,20 @@ public class StringWriterTest {
     public void flush() {
         sw.flush();
         sw.write('c');
-        assertEquals("Failed to flush char", "c", sw.toString());
+        assertEquals("c", sw.toString(), "Failed to flush char");
     }
 
     @Test
     public void getBuffer() {
         sw.write("This is a test string");
         StringBuffer sb = sw.getBuffer();
-        assertEquals("Incorrect buffer returned", "This is a test string", sb.toString());
+        assertEquals("This is a test string", sb.toString(), "Incorrect buffer returned");
     }
 
     @Test
     public void toStringWorks() {
         sw.write("This is a test string");
-        assertEquals("Incorrect string returned", "This is a test string", sw.toString());
+        assertEquals("This is a test string", sw.toString(), "Incorrect string returned");
     }
 
     @Test
@@ -62,7 +61,7 @@ public class StringWriterTest {
         char[] c = new char[1000];
         "This is a test string".getChars(0, 21, c, 0);
         sw.write(c, 0, 21);
-        assertEquals("Chars not written properly", "This is a test string", sw.toString());
+        assertEquals("This is a test string", sw.toString(), "Chars not written properly");
     }
 
     @Test
@@ -73,8 +72,8 @@ public class StringWriterTest {
             obj.write(new char[0], 0, -1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException t) {
-            assertEquals("IndexOutOfBoundsException rather than a subclass expected",
-                    IndexOutOfBoundsException.class, t.getClass());
+            assertEquals(IndexOutOfBoundsException.class, t.getClass(),
+                    "IndexOutOfBoundsException rather than a subclass expected");
         }
     }
 
@@ -109,19 +108,19 @@ public class StringWriterTest {
     @Test
     public void writeI() {
         sw.write('c');
-        assertEquals("Char not written properly", "c", sw.toString());
+        assertEquals("c", sw.toString(), "Char not written properly");
     }
 
     @Test
     public void writeLjava_lang_String() {
         sw.write("This is a test string");
-        assertEquals("String not written properly", "This is a test string", sw.toString());
+        assertEquals("This is a test string", sw.toString(), "String not written properly");
     }
 
     @Test
     public void writeLjava_lang_StringII() {
         sw.write("This is a test string", 2, 2);
-        assertEquals("String not written properly", "is", sw.toString());
+        assertEquals("is", sw.toString(), "String not written properly");
     }
     
     @Test

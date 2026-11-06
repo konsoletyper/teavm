@@ -14,9 +14,9 @@
  *  limitations under the License.
  */
 
-import { load, defaults, wrapImport } from "./runtime";
+import { load, defaults, wrapImport, ExitError } from "./runtime";
 
 const teavmGlobal = globalThis as any;
 const ns = teavmGlobal["TeaVM"] || {};
 teavmGlobal["TeaVM"] = ns;
-ns["wasmGC"] = ns["wasmGC"] || { load, defaults, wrapImport };
+ns["wasmGC"] = ns["wasmGC"] || { load, defaults, wrapImport, ExitError };

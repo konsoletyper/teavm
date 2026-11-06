@@ -51,12 +51,8 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
         functionTypes.add(null);
         currentTypeIndex = index;
         writer.address().write("(type ");
-        writer.startLinkTarget("t" + index).write("(; ").write(String.valueOf(index)).write(" ;) ");
-        var name = nameProvider.type(index);
-        if (name != null) {
-            writer.write("$").write(name);
-        }
-        writer.endLinkTarget().write(" ");
+        writeDeclaration("t" + index, nameProvider.type(index), index);
+        writer.write(" ");
         if (!open || supertypes.length > 0) {
             currentTypeNeedsClosing = true;
             writer.write("(sub ");
@@ -92,12 +88,9 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
         writer.address().write("(field ");
         if (needsFieldIndex) {
             var index = fieldIndex++;
-            writer.startLinkTarget("f" + currentTypeIndex + "." + index).write("(; " + index + " ;)");
-            var name = nameProvider.field(currentTypeIndex, index);
-            if (name != null) {
-                writer.write(" ").write("$").write(name);
-            }
-            writer.endLinkTarget().write(" ");
+            writeDeclaration("f" + currentTypeIndex + "." + index, nameProvider.field(currentTypeIndex, index),
+                    index);
+            writer.write(" ");
         }
         if (mutable) {
             writer.write("(mut ");

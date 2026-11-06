@@ -16,18 +16,17 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class StreamTokenizerTest {
     private StreamTokenizer st;
 
@@ -36,28 +35,28 @@ public class StreamTokenizerTest {
     public void constructorLjava_io_InputStream() throws IOException {
         st = new StreamTokenizer(new StringReader("/comments\n d 8 'h'"));
 
-        assertEquals("the next token returned should be the letter d", StreamTokenizer.TT_WORD, st.nextToken());
-        assertEquals("the next token returned should be the letter d", "d", st.sval);
+        assertEquals(StreamTokenizer.TT_WORD, st.nextToken(), "the next token returned should be the letter d");
+        assertEquals("d", st.sval, "the next token returned should be the letter d");
 
-        assertEquals("the next token returned should be the digit 8", StreamTokenizer.TT_NUMBER, st.nextToken());
-        assertEquals("the next token returned should be the digit 8", 8.0, st.nval, 0.0001);
+        assertEquals(StreamTokenizer.TT_NUMBER, st.nextToken(), "the next token returned should be the digit 8");
+        assertEquals(8.0, st.nval, 0.0001, "the next token returned should be the digit 8");
 
-        assertEquals("the next token returned should be the quote character", 39, st.nextToken());
-        assertEquals("the next token returned should be the quote character", "h", st.sval);
+        assertEquals(39, st.nextToken(), "the next token returned should be the quote character");
+        assertEquals("h", st.sval, "the next token returned should be the quote character");
     }
 
     @Test
     public void constructorLjava_io_Reader() throws IOException {
         setTest("/testing\n d 8 'h' ");
-        assertEquals("the next token returned should be the letter d skipping the comments",
-                StreamTokenizer.TT_WORD, st.nextToken());
-        assertEquals("the next token returned should be the letter d", "d", st.sval);
+        assertEquals(StreamTokenizer.TT_WORD, st.nextToken(),
+                "the next token returned should be the letter d skipping the comments");
+        assertEquals("d", st.sval, "the next token returned should be the letter d");
 
-        assertEquals("the next token returned should be the digit 8", StreamTokenizer.TT_NUMBER, st.nextToken());
-        assertEquals("the next token returned should be the digit 8", 8.0, st.nval, 0.001);
+        assertEquals(StreamTokenizer.TT_NUMBER, st.nextToken(), "the next token returned should be the digit 8");
+        assertEquals(8.0, st.nval, 0.001, "the next token returned should be the digit 8");
 
-        assertEquals("the next token returned should be the quote character", 39, st.nextToken());
-        assertEquals("the next token returned should be the quote character", "h", st.sval);
+        assertEquals(39, st.nextToken(), "the next token returned should be the quote character");
+        assertEquals("h", st.sval, "the next token returned should be the quote character");
     }
 
     @Test
@@ -65,37 +64,37 @@ public class StreamTokenizerTest {
         setTest("*comment \n / 8 'h' ");
         st.ordinaryChar('/');
         st.commentChar('*');
-        assertEquals("nextToken() did not return the character / skiping the comments starting with *",
-                47, st.nextToken());
-        assertTrue("the next token returned should be the digit 8",
-               st.nextToken() == StreamTokenizer.TT_NUMBER && st.nval == 8.0);
-        assertTrue("the next token returned should be the quote character",
-               st.nextToken() == 39 && st.sval.equals("h"));
+        assertEquals(47, st.nextToken(),
+                "nextToken() did not return the character / skiping the comments starting with *");
+        assertTrue(st.nextToken() == StreamTokenizer.TT_NUMBER && st.nval == 8.0,
+                "the next token returned should be the digit 8");
+        assertTrue(st.nextToken() == 39 && st.sval.equals("h"),
+                "the next token returned should be the quote character");
     }
 
     @Test
     public void eolIsSignificantZ() throws IOException {
         setTest("d 8\n");
         // by default end of line characters are not significant
-        assertTrue("nextToken did not return d", st.nextToken() == StreamTokenizer.TT_WORD && st.sval.equals("d"));
-        assertTrue("nextToken did not return 8", st.nextToken() == StreamTokenizer.TT_NUMBER && st.nval == 8.0);
-        assertTrue("nextToken should be the end of file", st.nextToken() == StreamTokenizer.TT_EOF);
+        assertTrue(st.nextToken() == StreamTokenizer.TT_WORD && st.sval.equals("d"), "nextToken did not return d");
+        assertTrue(st.nextToken() == StreamTokenizer.TT_NUMBER && st.nval == 8.0, "nextToken did not return 8");
+        assertTrue(st.nextToken() == StreamTokenizer.TT_EOF, "nextToken should be the end of file");
         setTest("d\n");
         st.eolIsSignificant(true);
         // end of line characters are significant
-        assertTrue("nextToken did not return d", st.nextToken() == StreamTokenizer.TT_WORD && st.sval.equals("d"));
-        assertTrue("nextToken is the end of line", st.nextToken() == StreamTokenizer.TT_EOL);
+        assertTrue(st.nextToken() == StreamTokenizer.TT_WORD && st.sval.equals("d"), "nextToken did not return d");
+        assertTrue(st.nextToken() == StreamTokenizer.TT_EOL, "nextToken is the end of line");
     }
 
     @Test
     public void lineno() throws IOException {
         setTest("d\n 8\n");
-        assertEquals("the lineno should be 1", 1, st.lineno());
+        assertEquals(1, st.lineno(), "the lineno should be 1");
         st.nextToken();
         st.nextToken();
-        assertEquals("the lineno should be 2", 2, st.lineno());
+        assertEquals(2, st.lineno(), "the lineno should be 2");
         st.nextToken();
-        assertEquals("the next line no should be 3", 3, st.lineno());
+        assertEquals(3, st.lineno(), "the next line no should be 3");
     }
 
     @Test
@@ -105,7 +104,7 @@ public class StreamTokenizerTest {
         st.lowerCaseMode(true);
 
         st.nextToken();
-        assertEquals("sval not converted to lowercase.", "helloworld", st.sval);
+        assertEquals("helloworld", st.sval, "sval not converted to lowercase.");
     }
 
     @Test
@@ -116,34 +115,34 @@ public class StreamTokenizerTest {
         st.ordinaryChar('/');
         st.slashStarComments(true);
         st.nextToken();
-        assertTrue("Wrong Token type1: " + (char) st.ttype, st.ttype == StreamTokenizer.TT_NUMBER);
+        assertTrue(st.ttype == StreamTokenizer.TT_NUMBER, "Wrong Token type1: " + (char) st.ttype);
         st.nextToken();
-        assertTrue("Wrong Token type2: " + st.ttype, st.ttype == StreamTokenizer.TT_WORD);
+        assertTrue(st.ttype == StreamTokenizer.TT_WORD, "Wrong Token type2: " + st.ttype);
         st.nextToken();
-        assertTrue("Wrong Token type3: " + st.ttype, st.ttype == '/');
+        assertTrue(st.ttype == '/', "Wrong Token type3: " + st.ttype);
         st.nextToken();
-        assertTrue("Wrong Token type4: " + st.ttype, st.ttype == StreamTokenizer.TT_WORD);
+        assertTrue(st.ttype == StreamTokenizer.TT_WORD, "Wrong Token type4: " + st.ttype);
         st.nextToken();
-        assertTrue("Wrong Token type5: " + st.ttype, st.ttype == StreamTokenizer.TT_WORD);
+        assertTrue(st.ttype == StreamTokenizer.TT_WORD, "Wrong Token type5: " + st.ttype);
         st.nextToken();
-        assertTrue("Wrong Token type6: " + st.ttype, st.ttype == '\'');
-        assertTrue("Wrong Token type7: " + st.ttype, st.sval.equals("Hello World"));
+        assertTrue(st.ttype == '\'', "Wrong Token type6: " + st.ttype);
+        assertTrue(st.sval.equals("Hello World"), "Wrong Token type7: " + st.ttype);
         st.nextToken();
-        assertTrue("Wrong Token type8: " + st.ttype, st.ttype == -1);
+        assertTrue(st.ttype == -1, "Wrong Token type8: " + st.ttype);
 
         StreamTokenizer s = new StreamTokenizer(new StringReader("hello\n\n\n"));
         s.eolIsSignificant(true);
-        assertTrue("Wrong token 1,1", s.nextToken() == StreamTokenizer.TT_WORD && s.sval.equals("hello"));
-        assertTrue("Wrong token 1,2", s.nextToken() == '\n');
-        assertTrue("Wrong token 1,3", s.nextToken() == '\n');
-        assertTrue("Wrong token 1,4", s.nextToken() == '\n');
-        assertTrue("Wrong token 1,5", s.nextToken() == StreamTokenizer.TT_EOF);
+        assertTrue(s.nextToken() == StreamTokenizer.TT_WORD && s.sval.equals("hello"), "Wrong token 1,1");
+        assertTrue(s.nextToken() == '\n', "Wrong token 1,2");
+        assertTrue(s.nextToken() == '\n', "Wrong token 1,3");
+        assertTrue(s.nextToken() == '\n', "Wrong token 1,4");
+        assertTrue(s.nextToken() == StreamTokenizer.TT_EOF, "Wrong token 1,5");
         StreamTokenizer tokenizer = new StreamTokenizer(new StringReader("\n \r\n#"));
         tokenizer.ordinaryChar('\n'); // make \n ordinary
         tokenizer.eolIsSignificant(true);
-        assertTrue("Wrong token 2,1", tokenizer.nextToken() == '\n');
-        assertTrue("Wrong token 2,2", tokenizer.nextToken() == '\n');
-        assertEquals("Wrong token 2,3", '#', tokenizer.nextToken());
+        assertTrue(tokenizer.nextToken() == '\n', "Wrong token 2,1");
+        assertTrue(tokenizer.nextToken() == '\n', "Wrong token 2,2");
+        assertEquals('#', tokenizer.nextToken(), "Wrong token 2,3");
     }
 
     @Test
@@ -152,26 +151,26 @@ public class StreamTokenizerTest {
         setTest("Ffjein 893");
         st.ordinaryChar('F');
         st.nextToken();
-        assertTrue("OrdinaryChar failed." + (char) st.ttype, st.ttype == 'F');
+        assertTrue(st.ttype == 'F', "OrdinaryChar failed." + (char) st.ttype);
     }
 
     @Test
     public void ordinaryCharsII() throws IOException {
         setTest("azbc iof z 893");
         st.ordinaryChars('a', 'z');
-        assertEquals("OrdinaryChars failed.", 'a', st.nextToken());
-        assertEquals("OrdinaryChars failed.", 'z', st.nextToken());
+        assertEquals('a', st.nextToken(), "OrdinaryChars failed.");
+        assertEquals('z', st.nextToken(), "OrdinaryChars failed.");
     }
 
     @Test
     public void parseNumbers() throws IOException {
         // SM
         setTest("9.9 678");
-        assertTrue("Base behavior failed.", st.nextToken() == StreamTokenizer.TT_NUMBER);
+        assertTrue(st.nextToken() == StreamTokenizer.TT_NUMBER, "Base behavior failed.");
         st.ordinaryChars('0', '9');
-        assertEquals("setOrdinary failed.", '6', st.nextToken());
+        assertEquals('6', st.nextToken(), "setOrdinary failed.");
         st.parseNumbers();
-        assertTrue("parseNumbers failed.", st.nextToken() == StreamTokenizer.TT_NUMBER);
+        assertTrue(st.nextToken() == StreamTokenizer.TT_NUMBER, "parseNumbers failed.");
     }
 
     @Test
@@ -180,7 +179,7 @@ public class StreamTokenizerTest {
         setTest("Hello 897");
         st.nextToken();
         st.pushBack();
-        assertTrue("PushBack failed.", st.nextToken() == StreamTokenizer.TT_WORD);
+        assertTrue(st.nextToken() == StreamTokenizer.TT_WORD, "PushBack failed.");
     }
 
     @Test
@@ -188,11 +187,11 @@ public class StreamTokenizerTest {
         // SM
         setTest("<Hello World<    HelloWorldH");
         st.quoteChar('<');
-        assertEquals("QuoteChar failed.", '<', st.nextToken());
-        assertEquals("QuoteChar failed.", "Hello World", st.sval);
+        assertEquals('<', st.nextToken(), "QuoteChar failed.");
+        assertEquals("Hello World", st.sval, "QuoteChar failed.");
         st.quoteChar('H');
         st.nextToken();
-        assertEquals("QuoteChar failed for word.", "elloWorld", st.sval);
+        assertEquals("elloWorld", st.sval, "QuoteChar failed for word.");
     }
 
     @Test
@@ -200,10 +199,10 @@ public class StreamTokenizerTest {
         // SM
         setTest("H 9\' ello World");
         st.resetSyntax();
-        assertTrue("resetSyntax failed1." + (char) st.ttype, st.nextToken() == 'H');
-        assertTrue("resetSyntax failed1." + (char) st.ttype, st.nextToken() == ' ');
-        assertTrue("resetSyntax failed2." + (char) st.ttype, st.nextToken() == '9');
-        assertTrue("resetSyntax failed3." + (char) st.ttype, st.nextToken() == '\'');
+        assertTrue(st.nextToken() == 'H', "resetSyntax failed1." + (char) st.ttype);
+        assertTrue(st.nextToken() == ' ', "resetSyntax failed1." + (char) st.ttype);
+        assertTrue(st.nextToken() == '9', "resetSyntax failed2." + (char) st.ttype);
+        assertTrue(st.nextToken() == '\'', "resetSyntax failed3." + (char) st.ttype);
     }
 
     @Test
@@ -212,8 +211,8 @@ public class StreamTokenizerTest {
         setTest("// foo \r\n /fiji \r\n -456");
         st.ordinaryChar('/');
         st.slashSlashComments(true);
-        assertEquals("Test failed.", '/', st.nextToken());
-        assertTrue("Test failed.", st.nextToken() == StreamTokenizer.TT_WORD);
+        assertEquals('/', st.nextToken(), "Test failed.");
+        assertTrue(st.nextToken() == StreamTokenizer.TT_WORD, "Test failed.");
     }
     
     @Test
@@ -256,7 +255,7 @@ public class StreamTokenizerTest {
         setTest("/* foo \r\n /fiji \r\n*/ -456");
         st.ordinaryChar('/');
         st.slashStarComments(true);
-        assertTrue("Test failed.", st.nextToken() == StreamTokenizer.TT_NUMBER);
+        assertTrue(st.nextToken() == StreamTokenizer.TT_NUMBER, "Test failed.");
     }
 
     @Test
@@ -287,7 +286,7 @@ public class StreamTokenizerTest {
     public void test_toString() throws IOException {
         setTest("ABC Hello World");
         st.nextToken();
-        assertEquals("toString failed.", "Token[ABC], line 1", st.toString());
+        assertEquals("Token[ABC], line 1", st.toString(), "toString failed.");
 
         // Regression test for HARMONY-4070
         byte[] data = new byte[] { (byte) '-' };
@@ -301,33 +300,31 @@ public class StreamTokenizerTest {
     public void whitespaceCharsII() throws IOException {
         setTest("azbc iof z 893");
         st.whitespaceChars('a', 'z');
-        assertTrue("OrdinaryChar failed.", st.nextToken() == StreamTokenizer.TT_NUMBER);
+        assertTrue(st.nextToken() == StreamTokenizer.TT_NUMBER, "OrdinaryChar failed.");
     }
 
     @Test
     public void wordCharsII() throws IOException {
         setTest("A893 -9B87");
         st.wordChars('0', '9');
-        assertTrue("WordChar failed1.",
-               st.nextToken() == StreamTokenizer.TT_WORD);
-        assertEquals("WordChar failed2.", "A893", st.sval);
-        assertTrue("WordChar failed3.",
-               st.nextToken() == StreamTokenizer.TT_NUMBER);
+        assertTrue(st.nextToken() == StreamTokenizer.TT_WORD, "WordChar failed1.");
+        assertEquals("A893", st.sval, "WordChar failed2.");
+        assertTrue(st.nextToken() == StreamTokenizer.TT_NUMBER, "WordChar failed3.");
         st.nextToken();
-        assertEquals("WordChar failed4.", "B87", st.sval);
+        assertEquals("B87", st.sval, "WordChar failed4.");
 
         setTest("    Hello World");
         st.wordChars(' ', ' ');
         st.nextToken();
-        assertEquals("WordChars failed for whitespace.", "Hello World", st.sval);
+        assertEquals("Hello World", st.sval, "WordChars failed for whitespace.");
 
         setTest("    Hello World\r\n  \'Hello World\' Hello\' World");
         st.wordChars(' ', ' ');
         st.wordChars('\'', '\'');
         st.nextToken();
-        assertTrue("WordChars failed for whitespace: " + st.sval, st.sval.equals("Hello World"));
+        assertTrue(st.sval.equals("Hello World"), "WordChars failed for whitespace: " + st.sval);
         st.nextToken();
-        assertTrue("WordChars failed for quote1: " + st.sval, st.sval.equals("\'Hello World\' Hello\' World"));
+        assertTrue(st.sval.equals("\'Hello World\' Hello\' World"), "WordChars failed for quote1: " + st.sval);
     }
 
     private void setTest(String s) {

@@ -51,7 +51,7 @@ class TUCICharSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return (this.ch == Character.toLowerCase(Character.toUpperCase(testString.charAt(strIndex)))) ? 1 : -1;
     }
 

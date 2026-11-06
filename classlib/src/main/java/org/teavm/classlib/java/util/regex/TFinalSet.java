@@ -61,4 +61,9 @@ class TFinalSet extends TFSet {
     protected String getName() {
         return "FinalSet"; //$NON-NLS-1$
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TFinalSet.class, "finalSet");
+    }
 }

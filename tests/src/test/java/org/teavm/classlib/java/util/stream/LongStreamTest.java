@@ -15,10 +15,10 @@
  */
 package org.teavm.classlib.java.util.stream;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.teavm.classlib.java.util.stream.Helper.appendLongNumbersTo;
 import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
@@ -29,11 +29,10 @@ import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class LongStreamTest {
     @Test
     public void forEachWorks() {
@@ -148,6 +147,16 @@ public class LongStreamTest {
         assertArrayEquals(new long[] { 3, 2 }, LongStream.of(2, 3, 2, 3).skip(1).distinct().toArray());
         assertArrayEquals(new long[] { 2, 3 }, LongStream.of(2, 3, 2, 3).limit(2).distinct().toArray());
         assertArrayEquals(new long[] { 2, 3, 4, 1 }, LongStream.of(2, 2, 3, 2, 4, 3, 1).distinct().toArray());
+    }
+
+    @Test
+    public void distinctAcrossFlatMap() {
+        testLongStream(() -> LongStream.of(1, 2).flatMap(n -> LongStream.of(n, n + 1)).distinct(), 1, 2, 3);
+    }
+
+    @Test
+    public void distinctAcrossIteratorAdvances() {
+        testLongStream(() -> LongStream.of(2, 2, 3, 2, 1, 1).distinct(), 2, 3, 1);
     }
 
     @Test

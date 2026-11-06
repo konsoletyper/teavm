@@ -277,6 +277,10 @@ public final class TSystem extends TObject {
         outCache = out;
     }
 
+    @GeneratedBy(SystemNativeGenerator.class)
+    @Intrinsified
+    public static native void exit(int code);
+
     @DelegateTo("gcLowLevel")
     public static void gc() {
         // Do nothing

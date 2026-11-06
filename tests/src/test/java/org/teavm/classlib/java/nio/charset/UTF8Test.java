@@ -15,19 +15,18 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CoderResult;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class UTF8Test {
     private String hex = ""
             + "D097D0B4D0B5D181D18C20D0B220D0BCD0BED0B5D0BC20D0BED0B1D18AD18FD181D0BDD0B5D0BDD0B8D0B820D18F20D0BED"

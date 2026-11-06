@@ -46,77 +46,81 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.temporal.ValueRange;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.teavm.classlib.java.time.AbstractTest;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestValueRange extends AbstractTest {
 
     //-----------------------------------------------------------------------
     // of(long,long)
     //-----------------------------------------------------------------------
+    @Test
     public void test_of_longlong() {
         ValueRange test = ValueRange.of(1, 12);
-        assertEquals(test.getMinimum(), 1);
-        assertEquals(test.getLargestMinimum(), 1);
-        assertEquals(test.getSmallestMaximum(), 12);
-        assertEquals(test.getMaximum(), 12);
-        assertEquals(test.isFixed(), true);
-        assertEquals(test.isIntValue(), true);
+        assertEquals(1, test.getMinimum());
+        assertEquals(1, test.getLargestMinimum());
+        assertEquals(12, test.getSmallestMaximum());
+        assertEquals(12, test.getMaximum());
+        assertTrue(test.isFixed());
+        assertTrue(test.isIntValue());
     }
 
+    @Test
     public void test_of_longlong_big() {
         ValueRange test = ValueRange.of(1, 123456789012345L);
-        assertEquals(test.getMinimum(), 1);
-        assertEquals(test.getLargestMinimum(), 1);
-        assertEquals(test.getSmallestMaximum(), 123456789012345L);
-        assertEquals(test.getMaximum(), 123456789012345L);
-        assertEquals(test.isFixed(), true);
-        assertEquals(test.isIntValue(), false);
+        assertEquals(1, test.getMinimum());
+        assertEquals(1, test.getLargestMinimum());
+        assertEquals(123456789012345L, test.getSmallestMaximum());
+        assertEquals(123456789012345L, test.getMaximum());
+        assertTrue(test.isFixed());
+        assertFalse(test.isIntValue());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_of_longlong_minGtMax() {
-        ValueRange.of(12, 1);
+        assertThrows(IllegalArgumentException.class, () -> ValueRange.of(12, 1));
     }
 
     //-----------------------------------------------------------------------
     // of(long,long,long)
     //-----------------------------------------------------------------------
+    @Test
     public void test_of_longlonglong() {
         ValueRange test = ValueRange.of(1, 28, 31);
-        assertEquals(test.getMinimum(), 1);
-        assertEquals(test.getLargestMinimum(), 1);
-        assertEquals(test.getSmallestMaximum(), 28);
-        assertEquals(test.getMaximum(), 31);
-        assertEquals(test.isFixed(), false);
-        assertEquals(test.isIntValue(), true);
+        assertEquals(1, test.getMinimum());
+        assertEquals(1, test.getLargestMinimum());
+        assertEquals(28, test.getSmallestMaximum());
+        assertEquals(31, test.getMaximum());
+        assertFalse(test.isFixed());
+        assertTrue(test.isIntValue());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_of_longlonglong_minGtMax() {
-        ValueRange.of(12, 1, 2);
+        assertThrows(IllegalArgumentException.class, () -> ValueRange.of(12, 1, 2));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_of_longlonglong_smallestmaxminGtMax() {
-        ValueRange.of(1, 31, 28);
+        assertThrows(IllegalArgumentException.class, () -> ValueRange.of(1, 31, 28));
     }
 
     //-----------------------------------------------------------------------
     // of(long,long,long,long)
     //-----------------------------------------------------------------------
-    @DataProvider(name = "valid")
-    Object[][] data_valid() {
+    static Object[][] data_valid() {
         return new Object[][] {
                 {1, 1, 1, 1},
                 {1, 1, 1, 2},
@@ -130,19 +134,19 @@ public class TestValueRange extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "valid")
+    @ParameterizedTest
+    @MethodSource("data_valid")
     public void test_of_longlonglonglong(long sMin, long lMin, long sMax, long lMax) {
         ValueRange test = ValueRange.of(sMin, lMin, sMax, lMax);
-        assertEquals(test.getMinimum(), sMin);
-        assertEquals(test.getLargestMinimum(), lMin);
-        assertEquals(test.getSmallestMaximum(), sMax);
-        assertEquals(test.getMaximum(), lMax);
-        assertEquals(test.isFixed(), sMin == lMin && sMax == lMax);
-        assertEquals(test.isIntValue(), true);
+        assertEquals(sMin, test.getMinimum());
+        assertEquals(lMin, test.getLargestMinimum());
+        assertEquals(sMax, test.getSmallestMaximum());
+        assertEquals(lMax, test.getMaximum());
+        assertEquals(sMin == lMin && sMax == lMax, test.isFixed());
+        assertTrue(test.isIntValue());
     }
 
-    @DataProvider(name = "invalid")
-    Object[][] data_invalid() {
+    static Object[][] data_invalid() {
         return new Object[][] {
                 {1, 2, 31, 28},
                 {1, 31, 2, 28},
@@ -155,82 +159,91 @@ public class TestValueRange extends AbstractTest {
         };
     }
 
-    @Test(dataProvider = "invalid", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("data_invalid")
     public void test_of_longlonglonglong_invalid(long sMin, long lMin, long sMax, long lMax) {
-        ValueRange.of(sMin, lMin, sMax, lMax);
+        assertThrows(IllegalArgumentException.class, () -> ValueRange.of(sMin, lMin, sMax, lMax));
     }
 
     //-----------------------------------------------------------------------
     // isValidValue(long)
     //-----------------------------------------------------------------------
+    @Test
     public void test_isValidValue_long() {
         ValueRange test = ValueRange.of(1, 28, 31);
-        assertEquals(test.isValidValue(0), false);
-        assertEquals(test.isValidValue(1), true);
-        assertEquals(test.isValidValue(2), true);
-        assertEquals(test.isValidValue(30), true);
-        assertEquals(test.isValidValue(31), true);
-        assertEquals(test.isValidValue(32), false);
+        assertFalse(test.isValidValue(0));
+        assertTrue(test.isValidValue(1));
+        assertTrue(test.isValidValue(2));
+        assertTrue(test.isValidValue(30));
+        assertTrue(test.isValidValue(31));
+        assertFalse(test.isValidValue(32));
     }
 
     //-----------------------------------------------------------------------
     // isValidIntValue(long)
     //-----------------------------------------------------------------------
+    @Test
     public void test_isValidValue_long_int() {
         ValueRange test = ValueRange.of(1, 28, 31);
-        assertEquals(test.isValidValue(0), false);
-        assertEquals(test.isValidValue(1), true);
-        assertEquals(test.isValidValue(31), true);
-        assertEquals(test.isValidValue(32), false);
+        assertFalse(test.isValidValue(0));
+        assertTrue(test.isValidValue(1));
+        assertTrue(test.isValidValue(31));
+        assertFalse(test.isValidValue(32));
     }
 
+    @Test
     public void test_isValidValue_long_long() {
         ValueRange test = ValueRange.of(1, 28, Integer.MAX_VALUE + 1L);
-        assertEquals(test.isValidIntValue(0), false);
-        assertEquals(test.isValidIntValue(1), false);
-        assertEquals(test.isValidIntValue(31), false);
-        assertEquals(test.isValidIntValue(32), false);
+        assertFalse(test.isValidIntValue(0));
+        assertFalse(test.isValidIntValue(1));
+        assertFalse(test.isValidIntValue(31));
+        assertFalse(test.isValidIntValue(32));
     }
 
     //-----------------------------------------------------------------------
     // equals() / hashCode()
     //-----------------------------------------------------------------------
+    @Test
     public void test_equals1() {
         ValueRange a = ValueRange.of(1, 2, 3, 4);
         ValueRange b = ValueRange.of(1, 2, 3, 4);
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), true);
-        assertEquals(b.equals(a), true);
-        assertEquals(b.equals(b), true);
-        assertEquals(a.hashCode() == b.hashCode(), true);
+        assertTrue(a.equals(a));
+        assertTrue(a.equals(b));
+        assertTrue(b.equals(a));
+        assertTrue(b.equals(b));
+        assertTrue(a.hashCode() == b.hashCode());
     }
 
+    @Test
     public void test_equals2() {
         ValueRange a = ValueRange.of(1, 2, 3, 4);
-        assertEquals(a.equals(ValueRange.of(0, 2, 3, 4)), false);
-        assertEquals(a.equals(ValueRange.of(1, 3, 3, 4)), false);
-        assertEquals(a.equals(ValueRange.of(1, 2, 4, 4)), false);
-        assertEquals(a.equals(ValueRange.of(1, 2, 3, 5)), false);
+        assertFalse(a.equals(ValueRange.of(0, 2, 3, 4)));
+        assertFalse(a.equals(ValueRange.of(1, 3, 3, 4)));
+        assertFalse(a.equals(ValueRange.of(1, 2, 4, 4)));
+        assertFalse(a.equals(ValueRange.of(1, 2, 3, 5)));
     }
 
+    @Test
     public void test_equals_otherType() {
         ValueRange a = ValueRange.of(1, 12);
-        assertEquals(a.equals("Rubbish"), false);
+        assertFalse(a.equals("Rubbish"));
     }
 
+    @Test
     public void test_equals_null() {
         ValueRange a = ValueRange.of(1, 12);
-        assertEquals(a.equals(null), false);
+        assertFalse(a.equals(null));
     }
 
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
+    @Test
     public void test_toString() {
-        assertEquals(ValueRange.of(1, 1, 4, 4).toString(), "1 - 4");
-        assertEquals(ValueRange.of(1, 1, 3, 4).toString(), "1 - 3/4");
-        assertEquals(ValueRange.of(1, 2, 3, 4).toString(), "1/2 - 3/4");
-        assertEquals(ValueRange.of(1, 2, 4, 4).toString(), "1/2 - 4");
+        assertEquals("1 - 4", ValueRange.of(1, 1, 4, 4).toString());
+        assertEquals("1 - 3/4", ValueRange.of(1, 1, 3, 4).toString());
+        assertEquals("1/2 - 3/4", ValueRange.of(1, 2, 3, 4).toString());
+        assertEquals("1/2 - 4", ValueRange.of(1, 2, 4, 4).toString());
     }
 
 }

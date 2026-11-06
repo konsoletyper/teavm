@@ -17,7 +17,6 @@ package org.teavm.dependency;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
-import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -109,6 +108,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private ClassHierarchy classHierarchy;
     IncrementalCache incrementalCache = new IncrementalCache();
     boolean asyncSupported;
+    boolean arrayBoundsChecked;
     private ReferenceCache referenceCache;
     private Set<String> generatedClassNames = new HashSet<>();
     DependencyType classType;
@@ -167,6 +167,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     public void setAsyncSupported(boolean asyncSupported) {
         this.asyncSupported = asyncSupported;
+    }
+
+    public void setArrayBoundsChecked(boolean arrayBoundsChecked) {
+        this.arrayBoundsChecked = arrayBoundsChecked;
     }
 
     public DependencyAgent getAgent() {
@@ -270,7 +274,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             MethodHolder method = new MethodHolder(methodRef.getDescriptor());
             method.getModifiers().add(ElementModifier.STATIC);
             method.setProgram(ProgramUtils.copy(program));
-            new UnreachableBasicBlockEliminator().optimize(program);
+            new UnreachableBasicBlockEliminator().optimize(program, methodRef.parameterCount());
             cls.addMethod(method);
         } else {
             MethodDependency dep = getMethod(methodRef);
@@ -287,7 +291,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             }
             method.getModifiers().remove(ElementModifier.NATIVE);
             method.setProgram(ProgramUtils.copy(program));
-            new UnreachableBasicBlockEliminator().optimize(method.getProgram());
+            new UnreachableBasicBlockEliminator().optimize(method.getProgram(), method.parameterCount());
 
             dep.used = false;
             lock(dep, false);
@@ -707,10 +711,12 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                 DependencyType type = types.get(pendingTypes.iterator().next().value);
                 transition.consume(type);
             } else {
-                DependencyType[] typesToPropagate = new DependencyType[pendingTypes.size()];
-                int index = 0;
-                for (IntCursor cursor : pendingTypes) {
-                    typesToPropagate[index++] = types.get(cursor.value);
+                // IntHashSet's iteration order is unspecified, sort to keep analysis deterministic
+                int[] typeIndexes = pendingTypes.toArray();
+                Arrays.sort(typeIndexes);
+                DependencyType[] typesToPropagate = new DependencyType[typeIndexes.length];
+                for (int i = 0; i < typeIndexes.length; ++i) {
+                    typesToPropagate[i] = types.get(typeIndexes[i]);
                 }
                 transition.consume(typesToPropagate);
             }

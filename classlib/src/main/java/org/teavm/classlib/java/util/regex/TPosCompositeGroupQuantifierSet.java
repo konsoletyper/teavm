@@ -70,4 +70,10 @@ class TPosCompositeGroupQuantifierSet extends TCompositeGroupQuantifierSet {
             return next.matches(stringIndex, testString, matchResult);
         }
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TPosCompositeGroupQuantifierSet.class, "posCompositeGroupQuantifierSet", quantifier,
+                innerSet, type, setCounter);
+    }
 }

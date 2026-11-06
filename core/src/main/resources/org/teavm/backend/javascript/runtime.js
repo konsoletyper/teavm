@@ -53,6 +53,7 @@ let $rt_threadStarter = f => function() {
     });
 }
 let $rt_mainStarter = f => (args, callback) => {
+    $rt_checkAlive();
     if (!args) {
         args = [];
     }
@@ -64,6 +65,7 @@ let $rt_mainStarter = f => (args, callback) => {
 }
 
 let $rt_instanceMainStarter = (f, ctor, mainClass) => (args, callback) => {
+    $rt_checkAlive();
     if (!args) {
         args = [];
     }
@@ -150,8 +152,30 @@ let $rt_apply_topLevel = (method, args) => method.apply(null, args);
 
 let $rt_skip = (array, count) => count === 0 ? array : Array.prototype.slice.call(array, count);
 
-let $rt_callWithReceiver = f => function() {
+// Wrappers for Java methods exported to JS. They make sure no Java code is called after System.exit
+let $rt_exportInstanceMethod = f => function() {
+    $rt_checkAlive();
     return f.apply(null, [this].concat(Array.prototype.slice.call(arguments)));
+}
+let $rt_exportInstanceGetter = f => function() {
+    $rt_checkAlive();
+    return f(this);
+}
+let $rt_exportInstanceSetter = f => function(value) {
+    $rt_checkAlive();
+    f(this, value);
+}
+let $rt_exportStaticMethod = f => function() {
+    $rt_checkAlive();
+    return f.apply(null, arguments);
+}
+let $rt_exportStaticGetter = f => () => {
+    $rt_checkAlive();
+    return f();
+}
+let $rt_exportStaticSetter = f => value => {
+    $rt_checkAlive();
+    f(value);
 }
 
 let $rt_undefinedAsNull = v => typeof v === 'undefined' ? null : v;

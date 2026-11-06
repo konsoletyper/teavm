@@ -15,10 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.DuplicateFormatFlagsException;
 import java.util.FormatFlagsConversionMismatchException;
 import java.util.Formattable;
@@ -27,28 +28,28 @@ import java.util.IllegalFormatCodePointException;
 import java.util.IllegalFormatConversionException;
 import java.util.IllegalFormatFlagsException;
 import java.util.IllegalFormatPrecisionException;
+import java.util.IllegalFormatWidthException;
 import java.util.Locale;
 import java.util.MissingFormatWidthException;
 import java.util.UnknownFormatConversionException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class FormatterTest {
-    @Test(expected = UnknownFormatConversionException.class)
+    @Test
     public void unexpectedEndOfFormatString() {
-        new Formatter().format("%1", "foo");
+        assertThrows(UnknownFormatConversionException.class, () -> new Formatter().format("%1", "foo"));
     }
 
-    @Test(expected = DuplicateFormatFlagsException.class)
+    @Test
     public void duplicateFlag() {
-        new Formatter().format("%--s", "q");
+        assertThrows(DuplicateFormatFlagsException.class, () -> new Formatter().format("%--s", "q"));
     }
 
-    @Test(expected = UnknownFormatConversionException.class)
+    @Test
     public void noPrecisionAfterDot() {
-        new Formatter().format("%1.s", "q");
+        assertThrows(UnknownFormatConversionException.class, () -> new Formatter().format("%1.s", "q"));
     }
 
     @Test
@@ -300,5 +301,36 @@ public class FormatterTest {
         } catch (Exception e) {
             assertNotNull(e);
         }
+    }
+
+    @Test
+    public void escapedPercentDoesNotConsumeArgument() {
+        assertEquals("% 5", new Formatter().format("%% %d", 5).toString());
+        assertEquals("50% of x", new Formatter().format("%d%% of %s", 50, "x").toString());
+        assertEquals("% 5", new Formatter().format("%2$% %d", 5, 7).toString());
+        assertEquals("3 % 3", new Formatter().format("%d %% %<d", 3).toString());
+    }
+
+    @Test
+    public void formatsEscapedPercentWithWidth() {
+        assertEquals("    %", new Formatter().format("%5%").toString());
+        assertEquals("%    ", new Formatter().format("%-5%").toString());
+        var missingWidth = assertThrows(MissingFormatWidthException.class, () -> new Formatter().format("%1$-%"));
+        assertEquals("%-%", missingWidth.getFormatSpecifier());
+        assertThrows(IllegalFormatPrecisionException.class, () -> new Formatter().format("%.2%"));
+        var invalidFlags = assertThrows(IllegalFormatFlagsException.class, () -> new Formatter().format("%-+5%"));
+        assertEquals("-+", invalidFlags.getFlags());
+    }
+
+    @Test
+    public void formatsLineSeparator() {
+        var separator = System.lineSeparator();
+        assertEquals("a" + separator + "b", new Formatter().format("a%nb").toString());
+        assertEquals("1" + separator + "2", new Formatter().format("%d%n%d", 1, 2).toString());
+        assertEquals("1" + separator + "1", new Formatter().format("%d%n%<d", 1).toString());
+        var invalidFlags = assertThrows(IllegalFormatFlagsException.class, () -> new Formatter().format("%+ n"));
+        assertEquals("+ ", invalidFlags.getFlags());
+        assertThrows(IllegalFormatWidthException.class, () -> new Formatter().format("%5n"));
+        assertThrows(IllegalFormatPrecisionException.class, () -> new Formatter().format("%.2n"));
     }
 }

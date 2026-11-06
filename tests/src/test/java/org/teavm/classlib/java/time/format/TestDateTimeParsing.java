@@ -54,7 +54,10 @@ import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -65,19 +68,18 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.util.Locale;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Ignore;
-import org.testng.annotations.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test parsing of edge cases.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @TeaVMProperties(@TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US, fr_FR"))
 public class TestDateTimeParsing {
 
@@ -113,8 +115,7 @@ public class TestDateTimeParsing {
         .appendValue(OFFSET_SECONDS).appendLiteral(' ')
         .appendZoneId().toFormatter();
 
-    @DataProvider(name = "instantZones")
-    Object[][] data_instantZones() {
+    static Object[][] data_instantZones() {
         return new Object[][] {
             {LOCALFIELDS_ZONEID, "2014-06-30 01:02:03 Europe/Paris", ZonedDateTime.of(2014, 6, 30, 1, 2, 3, 0, PARIS)},
             {LOCALFIELDS_ZONEID, "2014-06-30 01:02:03 +02:30", ZonedDateTime.of(2014, 6, 30, 1, 2, 3, 0, OFFSET_0230)},
@@ -140,38 +141,41 @@ public class TestDateTimeParsing {
         };
     }
 
-    @Test(dataProvider = "instantZones")
+    @ParameterizedTest
+    @MethodSource("data_instantZones")
     public void test_parse_instantZones_ZDT(DateTimeFormatter formatter, String text, ZonedDateTime expected) {
         TemporalAccessor actual = formatter.parse(text);
-        assertEquals(ZonedDateTime.from(actual), expected);
+        assertEquals(expected, ZonedDateTime.from(actual));
     }
 
-    @Test(dataProvider = "instantZones")
+    @ParameterizedTest
+    @MethodSource("data_instantZones")
     public void test_parse_instantZones_LDT(DateTimeFormatter formatter, String text, ZonedDateTime expected) {
         TemporalAccessor actual = formatter.parse(text);
-        assertEquals(LocalDateTime.from(actual), expected.toLocalDateTime());
+        assertEquals(expected.toLocalDateTime(), LocalDateTime.from(actual));
     }
 
-    @Test(dataProvider = "instantZones")
+    @ParameterizedTest
+    @MethodSource("data_instantZones")
     public void test_parse_instantZones_Instant(DateTimeFormatter formatter, String text, ZonedDateTime expected) {
         TemporalAccessor actual = formatter.parse(text);
-        assertEquals(Instant.from(actual), expected.toInstant());
+        assertEquals(expected.toInstant(), Instant.from(actual));
     }
 
-    @Test(dataProvider = "instantZones")
+    @ParameterizedTest
+    @MethodSource("data_instantZones")
     public void test_parse_instantZones_supported(DateTimeFormatter formatter, String text, ZonedDateTime expected) {
         TemporalAccessor actual = formatter.parse(text);
-        assertEquals(actual.isSupported(INSTANT_SECONDS), true);
-        assertEquals(actual.isSupported(EPOCH_DAY), true);
-        assertEquals(actual.isSupported(SECOND_OF_DAY), true);
-        assertEquals(actual.isSupported(NANO_OF_SECOND), true);
-        assertEquals(actual.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(actual.isSupported(MILLI_OF_SECOND), true);
+        assertTrue(actual.isSupported(INSTANT_SECONDS));
+        assertTrue(actual.isSupported(EPOCH_DAY));
+        assertTrue(actual.isSupported(SECOND_OF_DAY));
+        assertTrue(actual.isSupported(NANO_OF_SECOND));
+        assertTrue(actual.isSupported(MICRO_OF_SECOND));
+        assertTrue(actual.isSupported(MILLI_OF_SECOND));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "instantNoZone")
-    Object[][] data_instantNoZone() {
+    static Object[][] data_instantNoZone() {
         return new Object[][] {
             {INSTANT, "2014-06-30T01:02:03Z", ZonedDateTime.of(2014, 6, 30, 1, 2, 3, 0, ZoneOffset.UTC).toInstant()},
             {INSTANTSECONDS, "86402", Instant.ofEpochSecond(86402)},
@@ -179,33 +183,37 @@ public class TestDateTimeParsing {
         };
     }
 
-    @Test(dataProvider = "instantNoZone", expectedExceptions = DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_instantNoZone")
     public void test_parse_instantNoZone_ZDT(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
-        ZonedDateTime.from(actual);
+        assertThrows(DateTimeException.class, () -> ZonedDateTime.from(actual));
     }
 
-    @Test(dataProvider = "instantNoZone", expectedExceptions = DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_instantNoZone")
     public void test_parse_instantNoZone_LDT(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
-        LocalDateTime.from(actual);
+        assertThrows(DateTimeException.class, () -> LocalDateTime.from(actual));
     }
 
-    @Test(dataProvider = "instantNoZone")
+    @ParameterizedTest
+    @MethodSource("data_instantNoZone")
     public void test_parse_instantNoZone_Instant(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
-        assertEquals(Instant.from(actual), expected);
+        assertEquals(expected, Instant.from(actual));
     }
 
-    @Test(dataProvider = "instantNoZone")
+    @ParameterizedTest
+    @MethodSource("data_instantNoZone")
     public void test_parse_instantNoZone_supported(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
-        assertEquals(actual.isSupported(INSTANT_SECONDS), true);
-        assertEquals(actual.isSupported(EPOCH_DAY), false);
-        assertEquals(actual.isSupported(SECOND_OF_DAY), false);
-        assertEquals(actual.isSupported(NANO_OF_SECOND), true);
-        assertEquals(actual.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(actual.isSupported(MILLI_OF_SECOND), true);
+        assertTrue(actual.isSupported(INSTANT_SECONDS));
+        assertFalse(actual.isSupported(EPOCH_DAY));
+        assertFalse(actual.isSupported(SECOND_OF_DAY));
+        assertTrue(actual.isSupported(NANO_OF_SECOND));
+        assertTrue(actual.isSupported(MICRO_OF_SECOND));
+        assertTrue(actual.isSupported(MILLI_OF_SECOND));
     }
 
     //-----------------------------------------------------------------------
@@ -215,15 +223,15 @@ public class TestDateTimeParsing {
             .appendValue(INSTANT_SECONDS).toFormatter();
         TemporalAccessor acc = fmt.parse("86402");
         Instant expected = Instant.ofEpochSecond(86402);
-        assertEquals(acc.isSupported(INSTANT_SECONDS), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(INSTANT_SECONDS), 86402L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
-        assertEquals(Instant.from(acc), expected);
+        assertTrue(acc.isSupported(INSTANT_SECONDS));
+        assertTrue(acc.isSupported(NANO_OF_SECOND));
+        assertTrue(acc.isSupported(MICRO_OF_SECOND));
+        assertTrue(acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(86402L, acc.getLong(INSTANT_SECONDS));
+        assertEquals(0L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MILLI_OF_SECOND));
+        assertEquals(expected, Instant.from(acc));
     }
 
     @Test
@@ -232,15 +240,15 @@ public class TestDateTimeParsing {
             .appendValue(INSTANT_SECONDS).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
         TemporalAccessor acc = fmt.parse("86402.123456789");
         Instant expected = Instant.ofEpochSecond(86402, 123456789);
-        assertEquals(acc.isSupported(INSTANT_SECONDS), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(INSTANT_SECONDS), 86402L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
-        assertEquals(Instant.from(acc), expected);
+        assertTrue(acc.isSupported(INSTANT_SECONDS));
+        assertTrue(acc.isSupported(NANO_OF_SECOND));
+        assertTrue(acc.isSupported(MICRO_OF_SECOND));
+        assertTrue(acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(86402L, acc.getLong(INSTANT_SECONDS));
+        assertEquals(123456789L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(123456L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(123L, acc.getLong(MILLI_OF_SECOND));
+        assertEquals(expected, Instant.from(acc));
     }
 
     @Test
@@ -248,14 +256,14 @@ public class TestDateTimeParsing {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendValue(SECOND_OF_DAY).toFormatter();
         TemporalAccessor acc = fmt.parse("864");
-        assertEquals(acc.isSupported(SECOND_OF_DAY), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(SECOND_OF_DAY), 864L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
+        assertTrue(acc.isSupported(SECOND_OF_DAY));
+        assertTrue(acc.isSupported(NANO_OF_SECOND));
+        assertTrue(acc.isSupported(MICRO_OF_SECOND));
+        assertTrue(acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(864L, acc.getLong(SECOND_OF_DAY));
+        assertEquals(0L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MILLI_OF_SECOND));
     }
 
     @Test
@@ -263,14 +271,14 @@ public class TestDateTimeParsing {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendValue(SECOND_OF_DAY).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
         TemporalAccessor acc = fmt.parse("864.123456789");
-        assertEquals(acc.isSupported(SECOND_OF_DAY), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(SECOND_OF_DAY), 864L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
+        assertTrue(acc.isSupported(SECOND_OF_DAY));
+        assertTrue(acc.isSupported(NANO_OF_SECOND));
+        assertTrue(acc.isSupported(MICRO_OF_SECOND));
+        assertTrue(acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(864L, acc.getLong(SECOND_OF_DAY));
+        assertEquals(123456789L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(123456L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(123L, acc.getLong(MILLI_OF_SECOND));
     }
 
     @Test
@@ -278,14 +286,14 @@ public class TestDateTimeParsing {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendValue(SECOND_OF_MINUTE).toFormatter();
         TemporalAccessor acc = fmt.parse("32");
-        assertEquals(acc.isSupported(SECOND_OF_MINUTE), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(SECOND_OF_MINUTE), 32L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
+        assertTrue(acc.isSupported(SECOND_OF_MINUTE));
+        assertTrue(acc.isSupported(NANO_OF_SECOND));
+        assertTrue(acc.isSupported(MICRO_OF_SECOND));
+        assertTrue(acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(32L, acc.getLong(SECOND_OF_MINUTE));
+        assertEquals(0L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MILLI_OF_SECOND));
     }
 
     @Test
@@ -293,24 +301,24 @@ public class TestDateTimeParsing {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendValue(SECOND_OF_MINUTE).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
         TemporalAccessor acc = fmt.parse("32.123456789");
-        assertEquals(acc.isSupported(SECOND_OF_MINUTE), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(SECOND_OF_MINUTE), 32L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
+        assertTrue(acc.isSupported(SECOND_OF_MINUTE));
+        assertTrue(acc.isSupported(NANO_OF_SECOND));
+        assertTrue(acc.isSupported(MICRO_OF_SECOND));
+        assertTrue(acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(32L, acc.getLong(SECOND_OF_MINUTE));
+        assertEquals(123456789L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(123456L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(123L, acc.getLong(MILLI_OF_SECOND));
     }
 
     @Test
-    @Ignore
+    @Disabled
     // TODO: fix this and unignore
     public void test_parse_tzdbGmtZone() {
         String dateString = "2015,7,21,0,0,0,GMT+02:00";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy,M,d,H,m,s,z", Locale.US);
         ZonedDateTime parsed = ZonedDateTime.parse(dateString, formatter);
-        assertEquals(parsed, ZonedDateTime.of(2015, 7, 21, 0, 0, 0, 0, ZoneId.of("Etc/GMT-2")));
+        assertEquals(ZonedDateTime.of(2015, 7, 21, 0, 0, 0, 0, ZoneId.of("Etc/GMT-2")), parsed);
     }
 
 }

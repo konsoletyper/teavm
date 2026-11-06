@@ -15,12 +15,11 @@
  */
 package org.teavm.tests;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.dependency.DependencyTestPatcher;
 import org.teavm.diagnostics.Problem;
@@ -41,8 +40,8 @@ public class JSOTest {
 
         assertNotNull(foundProblem);
         Object[] params = foundProblem.getParams();
-        assertThat(params[0], is(new MethodReference(JSOTest.class, "wrongNonStaticJSBody", void.class)));
-        assertThat(params[1], is(JSOTest.class.getName()));
+        assertEquals(new MethodReference(JSOTest.class, "wrongNonStaticJSBody", void.class), params[0]);
+        assertEquals(JSOTest.class.getName(), params[1]);
     }
 
     private static void callWrongNonStaticJSBody() {

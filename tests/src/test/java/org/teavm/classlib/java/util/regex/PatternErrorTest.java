@@ -32,19 +32,18 @@
 
 package org.teavm.classlib.java.util.regex;
 
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test boundary and error conditions in java.util.regex.Pattern
  */
 @SuppressWarnings("nls")
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class PatternErrorTest {
     @Test
     public void testCompileErrors() throws Exception {

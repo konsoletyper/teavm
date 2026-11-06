@@ -60,6 +60,9 @@ TeaVMThread.prototype.start = function(callback) {
     this.run();
 };
 TeaVMThread.prototype.resume = function() {
+    if ($rt_exited()) {
+        return;
+    }
     if ($rt_currentNativeThread !== null) {
         throw new teavm_globals.Error("Another thread is running");
     }

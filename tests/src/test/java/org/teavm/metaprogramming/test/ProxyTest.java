@@ -15,26 +15,28 @@
  */
 package org.teavm.metaprogramming.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
 import static org.teavm.metaprogramming.Metaprogramming.proxy;
 import static org.teavm.metaprogramming.Metaprogramming.unsupportedCase;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.extension.introspect.IntrospectClass;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.SkipPlatform;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
 import org.teavm.metaprogramming.Value;
 
 @CompileTime
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @SkipJVM
 @EachTestCompiledSeparately
+@SkipPlatform(BootstrapWasmGCTestPlatform.ID)
 public class ProxyTest {
     @Test
     public void createsProxy() {

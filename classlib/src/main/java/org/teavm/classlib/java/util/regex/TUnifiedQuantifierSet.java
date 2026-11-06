@@ -56,9 +56,16 @@ class TUnifiedQuantifierSet extends TLeafQuantifierSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
-        while (stringIndex + leaf.charCount() <= matchResult.getRightBound()
-                && leaf.accepts(stringIndex, testString) > 0) {
-            stringIndex += leaf.charCount();
+        while (true) {
+            if (stringIndex + leaf.charCount() > matchResult.getRightBound()) {
+                matchResult.hitEnd = true;
+                break;
+            }
+            int shift = leaf.accepts(stringIndex, testString, matchResult);
+            if (shift <= 0) {
+                break;
+            }
+            stringIndex += shift;
         }
 
         return next.matches(stringIndex, testString, matchResult);
@@ -70,12 +77,20 @@ class TUnifiedQuantifierSet extends TLeafQuantifierSet {
         if (startSearch < 0) {
             return -1;
         }
-        int newSearch = startSearch - leaf.charCount();
-        while (newSearch >= stringIndex && leaf.accepts(newSearch, testString) > 0) {
+        int newSearch = leaf.stepBack(startSearch, stringIndex, testString);
+        while (newSearch >= stringIndex && leaf.accepts(newSearch, testString, matchResult) > 0) {
             startSearch = newSearch;
-            newSearch -= leaf.charCount();
+            newSearch = leaf.stepBack(newSearch, stringIndex, testString);
         }
 
         return startSearch;
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TUnifiedQuantifierSet.class, "unifiedQuantifierSet", leaf, type);
     }
 }

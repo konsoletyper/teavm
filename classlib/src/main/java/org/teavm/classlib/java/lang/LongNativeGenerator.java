@@ -31,12 +31,22 @@ public class LongNativeGenerator implements Generator {
                 generateRuntimeCall(context, writer, "Long_ucompare");
                 break;
             case "divideUnsigned":
-                generateRuntimeCall(context, writer, "Long_udiv");
+                generateUnsignedOperation(context, writer, "/");
                 break;
             case "remainderUnsigned":
-                generateRuntimeCall(context, writer, "Long_urem");
+                generateUnsignedOperation(context, writer, "%");
                 break;
         }
+    }
+
+    // Written inline, since JS engines don't always inline small functions, while they generate much more
+    // efficient code when they see the whole BigInt expression wrapped into asIntN(64, ...)
+    private void generateUnsignedOperation(GeneratorContext context, SourceWriter writer, String op) {
+        writer.append("return ").appendFunction("Long_asIntN").append("(64,").ws()
+                .appendFunction("Long_asUintN").append("(64,").ws().append(context.getParameterName(1))
+                .append(")").ws().append(op).ws()
+                .appendFunction("Long_asUintN").append("(64,").ws().append(context.getParameterName(2))
+                .append("));").softNewLine();
     }
 
     private void generateRuntimeCall(GeneratorContext context, SourceWriter writer, String name) {

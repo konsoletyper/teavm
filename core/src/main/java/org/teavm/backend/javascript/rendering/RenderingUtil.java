@@ -229,13 +229,11 @@ public final class RenderingUtil {
     }
 
     public static void appendLongConstant(SourceWriter writer, long value) {
-        if (value == 0) {
-            writer.appendFunction("Long_ZERO");
-        } else if ((int) value == value) {
-            writer.appendFunction("Long_fromInt").append("(").append(String.valueOf(value)).append(")");
+        // Rendering long constants as BigInt literals allows JS engines to produce much more efficient code
+        if (value < 0) {
+            writer.append("(").append(value + "n").append(")");
         } else {
-            writer.appendFunction("Long_create").append("(" + (value & 0xFFFFFFFFL)
-                    + ", " + (value >>> 32) + ")");
+            writer.append(value + "n");
         }
     }
 }

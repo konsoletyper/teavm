@@ -62,7 +62,7 @@ public class RedundantNullCheckElimination implements MethodOptimization {
         }
 
         if (hasChanges) {
-            new UnreachableBasicBlockEliminator().optimize(program);
+            new UnreachableBasicBlockEliminator().optimize(program, context.getMethod().parameterCount());
         }
 
         nullness.dispose();

@@ -1,0 +1,8 @@
+var @this as this
+
+$start
+    @size := 2
+    @array := newArray I[@size]
+    @index := 1
+    @value := @array[@index] as int
+    return @value

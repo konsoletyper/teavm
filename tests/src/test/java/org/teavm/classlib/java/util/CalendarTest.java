@@ -31,20 +31,19 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class CalendarTest {
     Locale defaultLocale;
 
@@ -58,70 +57,60 @@ public class CalendarTest {
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
-        assertTrue("Incorrect result 0: " + cal.getTime().getTime(), cal
-                .getTime().getTime() == 1009861200000L);
+        assertTrue(cal.getTime().getTime() == 1009861200000L, "Incorrect result 0: " + cal.getTime().getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.MONTH, Calendar.MARCH);
-        assertTrue("Incorrect result 0a: " + cal.getTime(), cal.getTime()
-                .getTime() == 1014958800000L);
+        assertTrue(cal.getTime().getTime() == 1014958800000L, "Incorrect result 0a: " + cal.getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DATE, 24);
-        assertTrue("Incorrect result 0b: " + cal.getTime(), cal.getTime()
-                .getTime() == 1011848400000L);
+        assertTrue(cal.getTime().getTime() == 1011848400000L, "Incorrect result 0b: " + cal.getTime());
 
         cal.set(Calendar.MONTH, Calendar.OCTOBER);
         cal.set(Calendar.DATE, 31);
         cal.set(Calendar.MONTH, Calendar.NOVEMBER);
         cal.set(Calendar.DATE, 26);
-        assertTrue("Incorrect month: " + cal.get(Calendar.MONTH), cal
-                .get(Calendar.MONTH) == Calendar.NOVEMBER);
+        assertTrue(cal.get(Calendar.MONTH) == Calendar.NOVEMBER, "Incorrect month: " + cal.get(Calendar.MONTH));
 
         int dow = cal.get(Calendar.DAY_OF_WEEK);
         cal.set(Calendar.DATE, 27);
-        assertTrue("Incorrect DAY_OF_WEEK: " + cal.get(Calendar.DAY_OF_WEEK)
-                + " expected: " + dow, cal.get(Calendar.DAY_OF_WEEK) != dow);
+        assertTrue(cal.get(Calendar.DAY_OF_WEEK) != dow,
+                "Incorrect DAY_OF_WEEK: " + cal.get(Calendar.DAY_OF_WEEK) + " expected: " + dow);
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        assertTrue("Incorrect result 0c1: " + cal.getTime().getTime(), cal
-                .getTime().getTime() == 1010379600000L);
+        assertTrue(cal.getTime().getTime() == 1010379600000L, "Incorrect result 0c1: " + cal.getTime().getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.TUESDAY);
-        assertTrue("Incorrect result 0c2: " + cal.getTime().getTime(), cal
-                .getTime().getTime() == 1009861200000L);
+        assertTrue(cal.getTime().getTime() == 1009861200000L, "Incorrect result 0c2: " + cal.getTime().getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.THURSDAY);
-        assertTrue("Incorrect result 0c3: " + cal.getTime(), cal.getTime()
-                .getTime() == 1010034000000L);
+        assertTrue(cal.getTime().getTime() == 1010034000000L, "Incorrect result 0c3: " + cal.getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.WEEK_OF_MONTH, 2);
-        assertTrue("Incorrect result 0d: " + cal.getTime(), cal.getTime()
-                .getTime() == 1010293200000L);
+        assertTrue(cal.getTime().getTime() == 1010293200000L, "Incorrect result 0d: " + cal.getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DATE, 24);
         cal.set(Calendar.WEEK_OF_YEAR, 11);
-        assertTrue("Incorrect result 0g: " + cal.getTime(), cal.getTime()
-                .getTime() == 1011848400000L);
+        assertTrue(cal.getTime().getTime() == 1011848400000L, "Incorrect result 0g: " + cal.getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.get(Calendar.WEEK_OF_YEAR); // Force fields to compute
         cal.set(Calendar.WEEK_OF_YEAR, 11);
-        assertTrue("Incorrect result 0h: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015909200000L);
+        assertTrue(cal.getTime().getTime() == 1015909200000L, "Incorrect result 0h: " + cal.getTime());
 
         // WEEK_OF_YEAR has priority over MONTH/DATE
         cal.clear();
@@ -131,8 +120,7 @@ public class CalendarTest {
         cal.set(Calendar.MONTH, Calendar.JANUARY);
         cal.set(Calendar.DATE, 5);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        assertTrue("Incorrect result 1: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 1: " + cal.getTime());
 
         // WEEK_OF_YEAR has priority over MONTH/DATE
         cal.clear();
@@ -142,8 +130,7 @@ public class CalendarTest {
         cal.set(Calendar.DATE, 5);
         cal.set(Calendar.DAY_OF_YEAR, 170);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        assertTrue("Incorrect result 1a: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 1a: " + cal.getTime());
 
         // DAY_OF_WEEK has no effect when other fields not set
         cal.clear();
@@ -151,16 +138,14 @@ public class CalendarTest {
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.DATE, 11);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.TUESDAY);
-        assertTrue("Incorrect result 1b: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 1b: " + cal.getTime());
         // Regression for HARMONY-4384
         // Set DAY_OF_WEEK without DATE
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.TUESDAY);
-        assertEquals("Incorrect result 1b: " + cal.getTime(), 1015304400000L, cal.getTime()
-                .getTime());
+        assertEquals(1015304400000L, cal.getTime().getTime(), "Incorrect result 1b: " + cal.getTime());
 
         // WEEK_OF_MONTH has priority
         cal.clear();
@@ -171,7 +156,7 @@ public class CalendarTest {
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.DATE, 5);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        assertEquals("Incorrect result 2", new Date(1015822800000L), cal.getTime());
+        assertEquals(new Date(1015822800000L), cal.getTime(), "Incorrect result 2");
 
         // DAY_OF_WEEK_IN_MONTH has priority over WEEK_OF_YEAR
         cal.clear();
@@ -181,7 +166,7 @@ public class CalendarTest {
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.DATE, 5);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        assertEquals("Incorrect result 3", new Date(1015822800000L), cal.getTime());
+        assertEquals(new Date(1015822800000L), cal.getTime(), "Incorrect result 3");
 
         // WEEK_OF_MONTH has priority, MONTH not set
         cal.clear();
@@ -191,7 +176,7 @@ public class CalendarTest {
         cal.set(Calendar.WEEK_OF_MONTH, 3);
         cal.set(Calendar.DATE, 25);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        assertEquals("Incorrect result 4", new Date(1010984400000L), cal.getTime());
+        assertEquals(new Date(1010984400000L), cal.getTime(), "Incorrect result 4");
 
         // WEEK_OF_YEAR has priority when MONTH set last and DAY_OF_WEEK set
         cal.clear();
@@ -200,8 +185,7 @@ public class CalendarTest {
         cal.set(Calendar.DATE, 25);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         cal.set(Calendar.MONTH, Calendar.JANUARY);
-        assertTrue("Incorrect result 5: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 5: " + cal.getTime());
 
         // Use MONTH/DATE when WEEK_OF_YEAR set but not DAY_OF_WEEK
         cal.clear();
@@ -209,8 +193,7 @@ public class CalendarTest {
         cal.set(Calendar.WEEK_OF_YEAR, 12);
         cal.set(Calendar.DATE, 11);
         cal.set(Calendar.MONTH, Calendar.MARCH);
-        assertTrue("Incorrect result 5a: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 5a: " + cal.getTime());
 
         // Use MONTH/DATE when DAY_OF_WEEK is not set
         cal.clear();
@@ -219,8 +202,7 @@ public class CalendarTest {
         cal.set(Calendar.DATE, 11);
         cal.set(Calendar.WEEK_OF_MONTH, 1);
         cal.set(Calendar.MONTH, Calendar.MARCH);
-        assertTrue("Incorrect result 5b: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 5b: " + cal.getTime());
 
         // WEEK_OF_MONTH has priority
         cal.clear();
@@ -230,8 +212,7 @@ public class CalendarTest {
         cal.set(Calendar.WEEK_OF_MONTH, 3);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         cal.set(Calendar.MONTH, Calendar.MARCH);
-        assertTrue("Incorrect result 5c: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 5c: " + cal.getTime());
 
         // DATE has priority when set last
         cal.clear();
@@ -240,8 +221,7 @@ public class CalendarTest {
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.DATE, 11);
-        assertTrue("Incorrect result 6: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 6: " + cal.getTime());
 
         // DATE has priority when set last, MONTH not set
         cal.clear();
@@ -249,16 +229,14 @@ public class CalendarTest {
         cal.set(Calendar.WEEK_OF_YEAR, 12);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         cal.set(Calendar.DATE, 14);
-        assertTrue("Incorrect result 7: " + cal.getTime(), cal.getTime()
-                .getTime() == 1010984400000L);
+        assertTrue(cal.getTime().getTime() == 1010984400000L, "Incorrect result 7: " + cal.getTime());
 
         // DAY_OF_YEAR has priority when MONTH set last and DATE not set
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DAY_OF_YEAR, 70);
         cal.set(Calendar.MONTH, Calendar.JANUARY);
-        assertTrue("Incorrect result 8: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 8: " + cal.getTime());
 
         // DAY/MONTH has priority when DATE set after DAY_OF_YEAR
         cal.clear();
@@ -266,8 +244,7 @@ public class CalendarTest {
         cal.set(Calendar.DAY_OF_YEAR, 170);
         cal.set(Calendar.DATE, 11);
         cal.set(Calendar.MONTH, Calendar.MARCH);
-        assertTrue("Incorrect result 8a: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 8a: " + cal.getTime());
 
         // DAY_OF_YEAR has priority when set after DATE
         cal.clear();
@@ -275,16 +252,14 @@ public class CalendarTest {
         cal.set(Calendar.DATE, 15);
         cal.set(Calendar.DAY_OF_YEAR, 70);
         cal.set(Calendar.MONTH, Calendar.JANUARY);
-        assertTrue("Incorrect result 8b: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 8b: " + cal.getTime());
 
         // DATE has priority when set last
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DAY_OF_YEAR, 70);
         cal.set(Calendar.DATE, 14);
-        assertTrue("Incorrect result 9: " + cal.getTime(), cal.getTime()
-                .getTime() == 1010984400000L);
+        assertTrue(cal.getTime().getTime() == 1010984400000L, "Incorrect result 9: " + cal.getTime());
 
         // DATE has priority when set last
         cal.clear();
@@ -292,23 +267,20 @@ public class CalendarTest {
         cal.set(Calendar.WEEK_OF_YEAR, 15);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.THURSDAY);
         cal.set(Calendar.DATE, 14);
-        assertTrue("Incorrect result 9a: " + cal.getTime(), cal.getTime()
-                .getTime() == 1010984400000L);
+        assertTrue(cal.getTime().getTime() == 1010984400000L, "Incorrect result 9a: " + cal.getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         cal.set(Calendar.DATE, 14);
         cal.set(Calendar.WEEK_OF_YEAR, 11);
-        assertTrue("Incorrect result 9b: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 9b: " + cal.getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DATE, 14);
         cal.set(Calendar.WEEK_OF_YEAR, 11);
-        assertTrue("Incorrect result 9c: " + cal.getTime(), cal.getTime()
-                .getTime() == 1010984400000L);
+        assertTrue(cal.getTime().getTime() == 1010984400000L, "Incorrect result 9c: " + cal.getTime());
 
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
@@ -316,8 +288,7 @@ public class CalendarTest {
         cal.set(Calendar.DAY_OF_WEEK, Calendar.THURSDAY);
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.DATE, 11);
-        assertTrue("Incorrect result 9d: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 9d: " + cal.getTime());
 
         // DAY_OF_YEAR has priority when DAY_OF_MONTH set last and other fields
         // not set
@@ -325,8 +296,7 @@ public class CalendarTest {
         cal.set(Calendar.YEAR, 2002);
         cal.set(Calendar.DAY_OF_YEAR, 70);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.TUESDAY);
-        assertTrue("Incorrect result 10: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 10: " + cal.getTime());
 
         // MONTH/DATE has priority when DAY_OF_WEEK_IN_MONTH set last but
         // DAY_OF_WEEK not set
@@ -335,8 +305,7 @@ public class CalendarTest {
         cal.set(Calendar.DATE, 11);
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.DAY_OF_WEEK_IN_MONTH, 1);
-        assertTrue("Incorrect result 11: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 11: " + cal.getTime());
 
         // MONTH/DATE has priority when WEEK_OF_YEAR set last but DAY_OF_WEEK
         // not set
@@ -345,8 +314,7 @@ public class CalendarTest {
         cal.set(Calendar.DATE, 11);
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.WEEK_OF_YEAR, 15);
-        assertTrue("Incorrect result 12: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 12: " + cal.getTime());
 
         // MONTH/DATE has priority when WEEK_OF_MONTH set last but DAY_OF_WEEK
         // not set
@@ -355,8 +323,7 @@ public class CalendarTest {
         cal.set(Calendar.DATE, 11);
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.WEEK_OF_MONTH, 1);
-        assertTrue("Incorrect result 13: " + cal.getTime(), cal.getTime()
-                .getTime() == 1015822800000L);
+        assertTrue(cal.getTime().getTime() == 1015822800000L, "Incorrect result 13: " + cal.getTime());
 
         // Ensure last date field set is reset after computing
         cal.clear();
@@ -365,22 +332,19 @@ public class CalendarTest {
         cal.get(Calendar.YEAR);
         cal.set(Calendar.MONTH, Calendar.MARCH);
         cal.set(Calendar.AM_PM, Calendar.AM);
-        assertTrue("Incorrect result 14: " + cal.getTime(), cal.getTime()
-                .getTime() == 1016686800000L);
+        assertTrue(cal.getTime().getTime() == 1016686800000L, "Incorrect result 14: " + cal.getTime());
 
         int hour = cal.get(Calendar.HOUR);
         cal.set(Calendar.HOUR, hour);
         cal.set(Calendar.AM_PM, Calendar.PM);
-        assertEquals("AM_PM not changed", Calendar.PM, cal.get(Calendar.AM_PM));
+        assertEquals(Calendar.PM, cal.get(Calendar.AM_PM), "AM_PM not changed");
         // setting AM_PM without HOUR should not have any affect
         cal.set(Calendar.AM_PM, Calendar.AM);
-        assertEquals("AM_PM was changed 1",
-                Calendar.AM, cal.get(Calendar.AM_PM));
+        assertEquals(Calendar.AM, cal.get(Calendar.AM_PM), "AM_PM was changed 1");
         int hourOfDay = cal.get(Calendar.HOUR_OF_DAY);
         hour = cal.get(Calendar.HOUR);
         cal.set(Calendar.AM_PM, Calendar.PM);
-        assertEquals("AM_PM was changed 2",
-                Calendar.PM, cal.get(Calendar.AM_PM));
+        assertEquals(Calendar.PM, cal.get(Calendar.AM_PM), "AM_PM was changed 2");
         assertEquals(hour, cal.get(Calendar.HOUR));
         assertEquals(hourOfDay + 12, cal.get(Calendar.HOUR_OF_DAY));
 
@@ -401,12 +365,12 @@ public class CalendarTest {
         Calendar cal = Calendar.getInstance();
         // Use millisecond time for testing in Core
         cal.setTime(new Date(884581200000L)); // (98, Calendar.JANUARY, 12)
-        assertEquals("incorrect millis", 884581200000L, cal.getTime().getTime());
+        assertEquals(884581200000L, cal.getTime().getTime(), "incorrect millis");
         cal.setTimeZone(TimeZone.getTimeZone("EST"));
         cal.setTime(new Date(943506000000L)); // (99, Calendar.NOVEMBER, 25)
-        assertTrue("incorrect fields", cal.get(Calendar.YEAR) == 1999
+        assertTrue(cal.get(Calendar.YEAR) == 1999
                 && cal.get(Calendar.MONTH) == Calendar.NOVEMBER
-                && cal.get(Calendar.DATE) == 25);
+                && cal.get(Calendar.DATE) == 25, "incorrect fields");
     }
 
     /**
@@ -598,8 +562,7 @@ public class CalendarTest {
 
         for (int i = 0; i < fields.length; i++) {
             int index = fields[i];
-            assertEquals("Field " + index + " Should equal to "
-                    + defaults[i] + ".", defaults[i], calendar.get(index));
+            assertEquals(defaults[i], calendar.get(index), "Field " + index + " Should equal to " + defaults[i] + ".");
         }
     }
 
@@ -1032,7 +995,7 @@ public class CalendarTest {
     @Test
     public void test_getActualMaximum_I() {
         Calendar c = new MockCalendar();
-        assertEquals("should be equal to 0", 0, c.getActualMaximum(0));
+        assertEquals(0, c.getActualMaximum(0), "should be equal to 0");
     }
 
     /**
@@ -1041,7 +1004,7 @@ public class CalendarTest {
     @Test
     public void test_getActualMinimum_I() {
         Calendar c = new MockCalendar();
-        assertEquals("should be equal to 0", 0, c.getActualMinimum(0));
+        assertEquals(0, c.getActualMinimum(0), "should be equal to 0");
     }
 
     protected void setUp() {

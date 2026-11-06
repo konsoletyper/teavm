@@ -46,22 +46,21 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalField;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestJulianFields {
 
     private static final LocalDate JAN01_1970 = LocalDate.of(1970, 1, 1);
@@ -69,13 +68,12 @@ public class TestJulianFields {
     private static final LocalDate NOV12_1945 = LocalDate.of(1945, 11, 12);
     private static final LocalDate JAN01_0001 = LocalDate.of(1, 1, 1);
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "samples")
-    Object[][] data_samples() {
+    static Object[][] data_samples() {
         return new Object[][] {
             {ChronoField.EPOCH_DAY, JAN01_1970, 0L},
             {JulianFields.JULIAN_DAY, JAN01_1970, 2400001L + 40587L},
@@ -99,18 +97,20 @@ public class TestJulianFields {
         };
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_samples_get(TemporalField field, LocalDate date, long expected) {
-        assertEquals(date.getLong(field), expected);
+        assertEquals(expected, date.getLong(field));
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_samples_set(TemporalField field, LocalDate date, long value) {
-        assertEquals(field.adjustInto(LocalDate.MAX, value), date);
-        assertEquals(field.adjustInto(LocalDate.MIN, value), date);
-        assertEquals(field.adjustInto(JAN01_1970, value), date);
-        assertEquals(field.adjustInto(DEC31_1969, value), date);
-        assertEquals(field.adjustInto(NOV12_1945, value), date);
+        assertEquals(date, field.adjustInto(LocalDate.MAX, value));
+        assertEquals(date, field.adjustInto(LocalDate.MIN, value));
+        assertEquals(date, field.adjustInto(JAN01_1970, value));
+        assertEquals(date, field.adjustInto(DEC31_1969, value));
+        assertEquals(date, field.adjustInto(NOV12_1945, value));
     }
 
     //-----------------------------------------------------------------------
@@ -118,9 +118,9 @@ public class TestJulianFields {
     //-----------------------------------------------------------------------
     @Test
     public void test_toString() {
-        assertEquals(JulianFields.JULIAN_DAY.toString(), "JulianDay");
-        assertEquals(JulianFields.MODIFIED_JULIAN_DAY.toString(), "ModifiedJulianDay");
-        assertEquals(JulianFields.RATA_DIE.toString(), "RataDie");
+        assertEquals("JulianDay", JulianFields.JULIAN_DAY.toString());
+        assertEquals("ModifiedJulianDay", JulianFields.MODIFIED_JULIAN_DAY.toString());
+        assertEquals("RataDie", JulianFields.RATA_DIE.toString());
     }
 
 }

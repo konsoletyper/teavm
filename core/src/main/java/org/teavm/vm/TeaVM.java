@@ -1027,7 +1027,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     class PostProcessingClassHolderSource implements ListableClassHolderSource {
         private Linker linker = new Linker(dependencyAnalyzer);
         private Map<String, ClassHolder> cache = new HashMap<>();
-        private Set<String> classNames = Collections.unmodifiableSet(new HashSet<>(
+        private Set<String> classNames = Collections.unmodifiableSet(new LinkedHashSet<>(
                 dependencyAnalyzer.getReachableClasses().stream()
                         .filter(className -> dependencyAnalyzer.getClassSource().get(className) != null)
                         .collect(Collectors.toList())));
@@ -1105,7 +1105,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             this.classSource = classSource;
             this.classes = classes.stream()
                     .filter(className -> classSource.get(className) != null)
-                    .collect(Collectors.toUnmodifiableSet());
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
         }
 
         @Override

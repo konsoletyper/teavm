@@ -46,9 +46,10 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -64,17 +65,16 @@ import java.time.chrono.MinguoChronology;
 import java.time.chrono.MinguoEra;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestMinguoChronology {
 
     //-----------------------------------------------------------------------
@@ -84,17 +84,16 @@ public class TestMinguoChronology {
     public void test_chrono_byName() {
         Chronology c = MinguoChronology.INSTANCE;
         Chronology test = Chronology.of("Minguo");
-        Assert.assertNotNull(test, "The Minguo calendar could not be found byName");
-        Assert.assertEquals(test.getId(), "Minguo", "ID mismatch");
-        Assert.assertEquals(test.getCalendarType(), "roc", "Type mismatch");
-        Assert.assertEquals(test, c);
+        Assertions.assertNotNull(test, "The Minguo calendar could not be found byName");
+        Assertions.assertEquals("Minguo", test.getId(), "ID mismatch");
+        Assertions.assertEquals("roc", test.getCalendarType(), "Type mismatch");
+        Assertions.assertEquals(c, test);
     }
 
     //-----------------------------------------------------------------------
     // creation, toLocalDate()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "samples")
-    Object[][] data_samples() {
+    static Object[][] data_samples() {
         return new Object[][] {
             {MinguoChronology.INSTANCE.date(1, 1, 1), LocalDate.of(1912, 1, 1)},
             {MinguoChronology.INSTANCE.date(1, 1, 2), LocalDate.of(1912, 1, 2)},
@@ -113,18 +112,21 @@ public class TestMinguoChronology {
         };
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_toLocalDate(ChronoLocalDate minguo, LocalDate iso) {
-        assertEquals(LocalDate.from(minguo), iso);
+        assertEquals(iso, LocalDate.from(minguo));
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_fromCalendrical(ChronoLocalDate minguo, LocalDate iso) {
-        assertEquals(MinguoChronology.INSTANCE.date(iso), minguo);
+        assertEquals(minguo, MinguoChronology.INSTANCE.date(iso));
     }
 
     @SuppressWarnings("unused")
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_MinguoDate(ChronoLocalDate minguoDate, LocalDate iso) {
         ChronoLocalDate hd = minguoDate;
         ChronoLocalDateTime<?> hdt = hd.atTime(LocalTime.NOON);
@@ -152,8 +154,7 @@ public class TestMinguoChronology {
         ChronoZonedDateTime<?> h4 = h3.atZone(ZoneOffset.UTC);
     }
 
-    @DataProvider(name = "badDates")
-    Object[][] data_badDates() {
+    static Object[][] data_badDates() {
         return new Object[][] {
             {1912, 0, 0},
 
@@ -174,9 +175,10 @@ public class TestMinguoChronology {
             };
     }
 
-    @Test(dataProvider = "badDates", expectedExceptions = DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        MinguoChronology.INSTANCE.date(year, month, dom);
+        assertThrows(DateTimeException.class, () -> MinguoChronology.INSTANCE.date(year, month, dom));
     }
 
     //-----------------------------------------------------------------------
@@ -186,14 +188,14 @@ public class TestMinguoChronology {
     public void test_adjust1() {
         ChronoLocalDate base = MinguoChronology.INSTANCE.date(2012, 10, 29);
         ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, MinguoChronology.INSTANCE.date(2012, 10, 31));
+        assertEquals(MinguoChronology.INSTANCE.date(2012, 10, 31), test);
     }
 
     @Test
     public void test_adjust2() {
         ChronoLocalDate base = MinguoChronology.INSTANCE.date(1728, 12, 2);
         ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, MinguoChronology.INSTANCE.date(1728, 12, 31));
+        assertEquals(MinguoChronology.INSTANCE.date(1728, 12, 31), test);
     }
 
     //-----------------------------------------------------------------------
@@ -203,13 +205,13 @@ public class TestMinguoChronology {
     public void test_adjust_toLocalDate() {
         ChronoLocalDate minguo = MinguoChronology.INSTANCE.date(99, 1, 4);
         ChronoLocalDate test = minguo.with(LocalDate.of(2012, 7, 6));
-        assertEquals(test, MinguoChronology.INSTANCE.date(101, 7, 6));
+        assertEquals(MinguoChronology.INSTANCE.date(101, 7, 6), test);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_adjust_toMonth() {
         ChronoLocalDate minguo = MinguoChronology.INSTANCE.date(1726, 1, 4);
-        minguo.with(Month.APRIL);
+        assertThrows(DateTimeException.class, () -> minguo.with(Month.APRIL));
     }
 
     //-----------------------------------------------------------------------
@@ -219,21 +221,20 @@ public class TestMinguoChronology {
     public void test_LocalDate_adjustToMinguoDate() {
         ChronoLocalDate minguo = MinguoChronology.INSTANCE.date(101, 10, 29);
         LocalDate test = LocalDate.MIN.with(minguo);
-        assertEquals(test, LocalDate.of(2012, 10, 29));
+        assertEquals(LocalDate.of(2012, 10, 29), test);
     }
 
     @Test
     public void test_LocalDateTime_adjustToMinguoDate() {
         ChronoLocalDate minguo = MinguoChronology.INSTANCE.date(101, 10, 29);
         LocalDateTime test = LocalDateTime.MIN.with(minguo);
-        assertEquals(test, LocalDateTime.of(2012, 10, 29, 0, 0));
+        assertEquals(LocalDateTime.of(2012, 10, 29, 0, 0), test);
     }
 
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "toString")
-    Object[][] data_toString() {
+    static Object[][] data_toString() {
         return new Object[][] {
             {MinguoChronology.INSTANCE.date(1, 1, 1), "Minguo ROC 1-01-01"},
             {MinguoChronology.INSTANCE.date(1728, 10, 28), "Minguo ROC 1728-10-28"},
@@ -243,9 +244,10 @@ public class TestMinguoChronology {
         };
     }
 
-    @Test(dataProvider = "toString")
+    @ParameterizedTest
+    @MethodSource("data_toString")
     public void test_toString(ChronoLocalDate minguo, String expected) {
-        assertEquals(minguo.toString(), expected);
+        assertEquals(expected, minguo.toString());
     }
 
     //-----------------------------------------------------------------------

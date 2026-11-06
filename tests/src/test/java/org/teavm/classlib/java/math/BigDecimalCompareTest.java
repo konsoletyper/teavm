@@ -37,18 +37,17 @@
 
 package org.teavm.classlib.java.math;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class BigDecimalCompareTest {
     /**
      * Abs() of a negative BigDecimal
@@ -58,7 +57,7 @@ public class BigDecimalCompareTest {
         String a = "-123809648392384754573567356745735.63567890295784902768787678287E+21";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "123809648392384754573567356745735635678902957849027687.87678287";
-        assertEquals("incorrect value", result, aNumber.abs().toString());
+        assertEquals(result, aNumber.abs().toString(), "incorrect value");
     }
 
     /**
@@ -69,7 +68,7 @@ public class BigDecimalCompareTest {
         String a = "123809648392384754573567356745735.63567890295784902768787678287E+21";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "123809648392384754573567356745735635678902957849027687.87678287";
-        assertEquals("incorrect value", result, aNumber.abs().toString());
+        assertEquals(result, aNumber.abs().toString(), "incorrect value");
     }
 
     /**
@@ -85,8 +84,8 @@ public class BigDecimalCompareTest {
         String result = "1.23809648392385E+53";
         int resScale = -39;
         BigDecimal res = aNumber.abs(mc);
-        assertEquals("incorrect value", result, res.toString());
-        assertEquals("incorrect scale", resScale, res.scale());
+        assertEquals(result, res.toString(), "incorrect value");
+        assertEquals(resScale, res.scale(), "incorrect scale");
     }
 
     /**
@@ -102,8 +101,8 @@ public class BigDecimalCompareTest {
         String result = "1.2380964839238475457356735674573563567890E+53";
         int resScale = -13;
         BigDecimal res = aNumber.abs(mc);
-        assertEquals("incorrect value", result, res.toString());
-        assertEquals("incorrect scale", resScale, res.scale());
+        assertEquals(result, res.toString(), "incorrect value");
+        assertEquals(resScale, res.scale(), "incorrect scale");
     }
 
     /**
@@ -118,7 +117,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         int result = 1;
-        assertEquals("incorrect result", result, aNumber.compareTo(bNumber));
+        assertEquals(result, aNumber.compareTo(bNumber), "incorrect result");
     }
 
     /**
@@ -133,7 +132,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         int result = -1;
-        assertEquals("incorrect result", result, aNumber.compareTo(bNumber));
+        assertEquals(result, aNumber.compareTo(bNumber), "incorrect result");
     }
 
     /**
@@ -148,7 +147,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         int result = 1;
-        assertEquals("incorrect result", result, aNumber.compareTo(bNumber));
+        assertEquals(result, aNumber.compareTo(bNumber), "incorrect result");
     }
 
     /**
@@ -163,7 +162,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         int result = -1;
-        assertEquals("incorrect result", result, aNumber.compareTo(bNumber));
+        assertEquals(result, aNumber.compareTo(bNumber), "incorrect result");
     }
 
     /**
@@ -178,7 +177,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         int result = 1;
-        assertEquals("incorrect result", result, aNumber.compareTo(bNumber));
+        assertEquals(result, aNumber.compareTo(bNumber), "incorrect result");
     }
 
     /**
@@ -193,7 +192,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         int result = -1;
-        assertEquals("incorrect result", result, aNumber.compareTo(bNumber));
+        assertEquals(result, aNumber.compareTo(bNumber), "incorrect result");
     }
 
     /**
@@ -272,7 +271,7 @@ public class BigDecimalCompareTest {
         int bScale = -24;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
-        assertEquals("incorrect value", aNumber.hashCode(), bNumber.hashCode());
+        assertEquals(aNumber.hashCode(), bNumber.hashCode(), "incorrect value");
     }
 
     /**
@@ -286,7 +285,7 @@ public class BigDecimalCompareTest {
         int bScale = -24;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
-        assertTrue("incorrect value", aNumber.hashCode() != bNumber.hashCode());
+        assertTrue(aNumber.hashCode() != bNumber.hashCode(), "incorrect value");
     }
 
     /**
@@ -303,7 +302,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.max(bNumber));
+        assertEquals(cNumber, aNumber.max(bNumber), "incorrect value");
     }
 
     /**
@@ -320,7 +319,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.max(bNumber));
+        assertEquals(cNumber, aNumber.max(bNumber), "incorrect value");
     }
 
     /**
@@ -337,7 +336,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.max(bNumber));
+        assertEquals(cNumber, aNumber.max(bNumber), "incorrect value");
     }
 
     /**
@@ -354,7 +353,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.min(bNumber));
+        assertEquals(cNumber, aNumber.min(bNumber), "incorrect value");
     }
 
     /**
@@ -371,7 +370,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.min(bNumber));
+        assertEquals(cNumber, aNumber.min(bNumber), "incorrect value");
     }
 
     /**
@@ -388,7 +387,7 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.min(bNumber));
+        assertEquals(cNumber, aNumber.min(bNumber), "incorrect value");
     }
 
     /**
@@ -402,7 +401,7 @@ public class BigDecimalCompareTest {
         int cScale = 41;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.plus());
+        assertEquals(cNumber, aNumber.plus(), "incorrect value");
     }
 
     /**
@@ -419,8 +418,8 @@ public class BigDecimalCompareTest {
         int cScale = 10;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal res = aNumber.plus(mc);
-        assertEquals("incorrect value", c, res.toString());
-        assertEquals("incorrect scale", cScale, res.scale());
+        assertEquals(c, res.toString(), "incorrect value");
+        assertEquals(cScale, res.scale(), "incorrect scale");
     }
 
     /**
@@ -434,7 +433,7 @@ public class BigDecimalCompareTest {
         int cScale = 41;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.plus());
+        assertEquals(cNumber, aNumber.plus(), "incorrect value");
     }
 
     /**
@@ -451,8 +450,8 @@ public class BigDecimalCompareTest {
         int cScale = 27;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal res = aNumber.plus(mc);
-        assertEquals("incorrect value", c, res.toString());
-        assertEquals("incorrect scale", cScale, res.scale());
+        assertEquals(c, res.toString(), "incorrect value");
+        assertEquals(cScale, res.scale(), "incorrect scale");
     }
 
     /**
@@ -466,7 +465,7 @@ public class BigDecimalCompareTest {
         int cScale = 41;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.negate());
+        assertEquals(cNumber, aNumber.negate(), "incorrect value");
     }
 
     /**
@@ -484,8 +483,8 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal res = aNumber.negate(mc);
         String resString = res.toString();
-        assertEquals("incorrect value", c, resString.substring(0, resString.length() - 1));
-        assertEquals("incorrect scale", cScale, res.scale());
+        assertEquals(c, resString.substring(0, resString.length() - 1), "incorrect value");
+        assertEquals(cScale, res.scale(), "incorrect scale");
     }
 
     /**
@@ -499,7 +498,7 @@ public class BigDecimalCompareTest {
         int cScale = 41;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal cNumber = new BigDecimal(new BigInteger(c), cScale);
-        assertEquals("incorrect value", cNumber, aNumber.negate());
+        assertEquals(cNumber, aNumber.negate(), "incorrect value");
     }
 
     /**
@@ -517,8 +516,8 @@ public class BigDecimalCompareTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal res = aNumber.negate(mc);
         String resString = res.toString();
-        assertEquals("incorrect value", c, resString.substring(0, resString.length() - 1));
-        assertEquals("incorrect scale", cScale, res.scale());
+        assertEquals(c, resString.substring(0, resString.length() - 1), "incorrect value");
+        assertEquals(cScale, res.scale(), "incorrect scale");
     }
 
     /**
@@ -529,7 +528,7 @@ public class BigDecimalCompareTest {
         String a = "92948782094488478231212478987482988429808779810457634781384756794987";
         int aScale = 41;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
-        assertEquals("incorrect value", 1, aNumber.signum());
+        assertEquals(1, aNumber.signum(), "incorrect value");
     }
 
     /**
@@ -540,7 +539,7 @@ public class BigDecimalCompareTest {
         String a = "-92948782094488478231212478987482988429808779810457634781384756794987";
         int aScale = 41;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
-        assertEquals("incorrect value", -1, aNumber.signum());
+        assertEquals(-1, aNumber.signum(), "incorrect value");
     }
 
     /**
@@ -551,7 +550,7 @@ public class BigDecimalCompareTest {
         String a = "0";
         int aScale = 41;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
-        assertEquals("incorrect value", 0, aNumber.signum());
+        assertEquals(0, aNumber.signum(), "incorrect value");
     }
 
     /*

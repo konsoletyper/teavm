@@ -142,4 +142,9 @@ class TDotQuantifierSet extends TQuantifierSet {
     protected String getName() {
         return "<DotQuant>";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TDotQuantifierSet.class, "dotQuantifierSet", innerSet, type, lt);
+    }
 }

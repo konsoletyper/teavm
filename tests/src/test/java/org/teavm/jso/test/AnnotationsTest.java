@@ -15,9 +15,9 @@
  */
 package org.teavm.jso.test;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
@@ -25,12 +25,12 @@ import org.teavm.jso.JSProperty;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @SkipJVM
-@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
 @EachTestCompiledSeparately
 public class AnnotationsTest {
     @Test
@@ -68,8 +68,16 @@ public class AnnotationsTest {
         assertEquals(true, obj.active());
     }
 
+    @Test
+    public void bigIntLiteralInBody() {
+        assertEquals("9223372036854775807,255", bigIntLiterals());
+    }
+
     @JSBody(params = { "a", "b" }, script = "return a + b;")
     private static native int add(int a, int b);
+
+    @JSBody(script = "return String(9223372036854775806n + 1n) + ',' + String(0xFFn);")
+    private static native String bigIntLiterals();
 
     @JSBody(params = "n", script = "return n;")
     private static native Num convert(int n);

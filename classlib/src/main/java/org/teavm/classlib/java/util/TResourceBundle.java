@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.function.Supplier;
 import org.teavm.classlib.impl.ResourceBundleImpl;
 
 public abstract class TResourceBundle {
@@ -48,10 +46,18 @@ public abstract class TResourceBundle {
 
     private static final Map<String, TResourceBundle> cache = new HashMap<>();
 
-    private static final Map<String, Supplier<ResourceBundle>> bundleProviders =
-            ResourceBundleImpl.createBundleMap(false);
+    private static final Map<String, Integer> bundleIndexes = createBundleIndexes();
 
     private String name;
+
+    private static Map<String, Integer> createBundleIndexes() {
+        var result = new HashMap<String, Integer>();
+        var names = ResourceBundleImpl.bundleNames();
+        for (var i = 0; i < names.length; ++i) {
+            result.put(names[i], i);
+        }
+        return result;
+    }
 
     public TResourceBundle() {
     }
@@ -179,8 +185,8 @@ public abstract class TResourceBundle {
             return result;
         }
 
-        Supplier<ResourceBundle> provider = bundleProviders.get(bundleName);
-        bundle = provider != null ? (TResourceBundle) (Object) provider.get() : null;
+        Integer bundleIndex = bundleIndexes.get(bundleName);
+        bundle = bundleIndex != null ? (TResourceBundle) (Object) ResourceBundleImpl.createBundle(bundleIndex) : null;
 
         String extension = strip(locale);
         if (bundle != null) {

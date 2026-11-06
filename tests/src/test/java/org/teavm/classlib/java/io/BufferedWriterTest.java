@@ -16,22 +16,21 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class BufferedWriterTest {
     private BufferedWriter bw;
     private StringWriter sw;
@@ -95,12 +94,12 @@ public class BufferedWriterTest {
         sw = new StringWriter();
         bw = new BufferedWriter(sw);
         sw.write("Hi");
-        assertEquals("Constructor failed", "Hi", sw.toString());
+        assertEquals("Hi", sw.toString(), "Constructor failed");
     }
 
     @Test
     public void constructorLjava_io_WriterI() {
-        assertTrue("Used in tests", true);
+        assertTrue(true, "Used in tests");
     }
 
     static class MockWriter extends Writer {
@@ -142,7 +141,7 @@ public class BufferedWriterTest {
         } catch (IOException e) {
             // Expected
         }
-        assertTrue("Write after close", !sw.toString().equals(testString));
+        assertTrue(!sw.toString().equals(testString), "Write after close");
 
         // Regression test for HARMONY-4178
         MockWriter mw = new MockWriter();
@@ -151,11 +150,11 @@ public class BufferedWriterTest {
         bw.close();
 
         // flush should not be called on underlying stream
-        assertFalse("Flush was called in the underlying stream", mw.isFlushCalled());
+        assertFalse(mw.isFlushCalled(), "Flush was called in the underlying stream");
 
         // on the other hand the BufferedWriter itself should flush the
         // buffer
-        assertEquals("BufferdWriter do not flush itself before close", "a", mw.getWritten());
+        assertEquals("a", mw.getWritten(), "BufferdWriter do not flush itself before close");
     }
 
     @Test
@@ -167,9 +166,9 @@ public class BufferedWriterTest {
     @Test
     public void flush() throws Exception {
         bw.write("This should not cause a flush");
-        assertTrue("Bytes written without flush", sw.toString().equals(""));
+        assertTrue(sw.toString().equals(""), "Bytes written without flush");
         bw.flush();
-        assertEquals("Bytes not flushed", "This should not cause a flush", sw.toString());
+        assertEquals("This should not cause a flush", sw.toString(), "Bytes not flushed");
     }
 
     @Test
@@ -179,7 +178,7 @@ public class BufferedWriterTest {
         bw.newLine();
         bw.write("World");
         bw.flush();
-        assertTrue("Incorrect string written: " + sw.toString(), sw.toString().equals("Hello" + separator + "World"));
+        assertTrue(sw.toString().equals("Hello" + separator + "World"), "Incorrect string written: " + sw.toString());
     }
 
     @Test
@@ -187,7 +186,7 @@ public class BufferedWriterTest {
         char[] testCharArray = testString.toCharArray();
         bw.write(testCharArray, 500, 1000);
         bw.flush();
-        assertTrue("Incorrect string written", sw.toString().equals(testString.substring(500, 1500)));
+        assertTrue(sw.toString().equals(testString.substring(500, 1500)), "Incorrect string written");
     }
 
     @Test
@@ -221,16 +220,16 @@ public class BufferedWriterTest {
     @Test
     public void writeI() throws Exception {
         bw.write('T');
-        assertTrue("Char written without flush", sw.toString().equals(""));
+        assertTrue(sw.toString().equals(""), "Char written without flush");
         bw.flush();
-        assertEquals("Incorrect char written", "T", sw.toString());
+        assertEquals("T", sw.toString(), "Incorrect char written");
     }
 
     @Test
     public void writeLjava_lang_StringII() throws Exception {
         bw.write(testString);
         bw.flush();
-        assertTrue("Incorrect string written", sw.toString().equals(testString));
+        assertTrue(sw.toString().equals(testString), "Incorrect string written");
     }
 
     @Test
@@ -284,7 +283,7 @@ public class BufferedWriterTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         try {
             bw.close();

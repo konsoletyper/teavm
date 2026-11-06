@@ -52,12 +52,7 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
         writer.address().write("(import \"").write(currentModule).write("\" \"")
                 .write(currentName).write("\" ");
         writer.write("(func ");
-        writer.startLinkTarget("f" + functionIndex).write("(; " + functionIndex + " ;)");
-        var name = nameProvider.function(functionIndex);
-        if (name != null) {
-            writer.write(" $").write(name);
-        }
-        writer.endLinkTarget();
+        writeDeclaration("f" + functionIndex, nameProvider.function(functionIndex), functionIndex);
 
         writer.write(" (type ");
         writeTypeRef(typeIndex);
@@ -68,12 +63,7 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
         if (type != null) {
             for (var i = 0; i < type.parameterTypes.length; ++i) {
                 writer.write("(param ");
-                writer.startLinkTarget("l" + functionIndex + "." + i).write(" (; " + i + " ;)");
-                var paramName = nameProvider.local(functionIndex, i);
-                if (paramName != null) {
-                    writer.write(" $").write(paramName);
-                }
-                writer.endLinkTarget();
+                writeDeclaration("l" + functionIndex + "." + i, nameProvider.local(functionIndex, i), i);
                 writer.write(" ");
                 writeType(type.parameterTypes[i]);
                 writer.write(")").eol();
@@ -94,12 +84,7 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
         writer.address().write("(import \"").write(currentModule).write("\" \"")
                 .write(currentName).write("\" ");
         writer.write("(global ");
-        writer.startLinkTarget("g" + globalIndex).write("(; " + globalIndex + " ;)");
-        var name = nameProvider.global(globalIndex);
-        if (name != null) {
-            writer.write(" $").write(name);
-        }
-        writer.endLinkTarget();
+        writeDeclaration("g" + globalIndex, nameProvider.global(globalIndex), globalIndex);
         writer.write(" ");
         if (mutable) {
             writer.write("(mut ");

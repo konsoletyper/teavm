@@ -44,12 +44,7 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
     public boolean functionStart(int index, int size) {
         currentFunctionId = index;
         writer.address().write("(func ");
-        writer.startLinkTarget("f" + index).write("(; " + index + " ;)");
-        var name = nameProvider.function(index);
-        if (name != null) {
-            writer.write(" $").write(name);
-        }
-        writer.endLinkTarget();
+        writeDeclaration("f" + index, nameProvider.function(index), index);
 
         var typeRef = functionTypeRefs[index];
         writer.write(" (type ");
@@ -62,12 +57,7 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
             currentFunctionParameterCount = type.parameterTypes.length;
             for (var i = 0; i < type.parameterTypes.length; ++i) {
                 writer.write("(param ");
-                writer.startLinkTarget("l" + index + "." + i).write(" (; " + i + " ;)");
-                var paramName = nameProvider.local(index, i);
-                if (paramName != null) {
-                    writer.write(" $").write(paramName);
-                }
-                writer.endLinkTarget();
+                writeDeclaration("l" + index + "." + i, nameProvider.local(index, i), i);
                 writer.write(" ");
                 writeType(type.parameterTypes[i]);
                 writer.write(")").eol();
@@ -95,12 +85,8 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
         for (int i = 0; i < count; ++i) {
             writer.write("(local ");
             var id = i + start + currentFunctionParameterCount;
-            writer.startLinkTarget("l" + currentFunctionId + "." + id).write("(; " + id + " ;)");
-            var name = nameProvider.local(currentFunctionId, id);
-            if (name != null) {
-                writer.write(" ").write("$").write(name);
-            }
-            writer.endLinkTarget().write(" ");
+            writeDeclaration("l" + currentFunctionId + "." + id, nameProvider.local(currentFunctionId, id), id);
+            writer.write(" ");
             writeType(type);
             writer.write(")").eol();
         }

@@ -51,9 +51,11 @@ import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -79,23 +81,22 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.teavm.classlib.java.time.AbstractDateTimeTest;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test YearMonth.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestYearMonth extends AbstractDateTimeTest {
 
     private YearMonth test2008x06;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         test2008x06 = YearMonth.of(2008, 6);
     }
@@ -131,8 +132,8 @@ public class TestYearMonth extends AbstractDateTimeTest {
 
     //-----------------------------------------------------------------------
     void check(YearMonth test, int y, int m) {
-        assertEquals(test.getYear(), y);
-        assertEquals(test.getMonth().getValue(), m);
+        assertEquals(y, test.getYear());
+        assertEquals(m, test.getMonth().getValue());
     }
 
     //-----------------------------------------------------------------------
@@ -149,15 +150,15 @@ public class TestYearMonth extends AbstractDateTimeTest {
             expected = YearMonth.now(Clock.systemDefaultZone());
             test = YearMonth.now();
         }
-        assertEquals(test, expected);
+        assertEquals(expected, test);
     }
 
     //-----------------------------------------------------------------------
     // now(ZoneId)
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void now_ZoneId_nullZoneId() {
-        YearMonth.now((ZoneId) null);
+        assertThrows(NullPointerException.class, () -> YearMonth.now((ZoneId) null));
     }
 
     @Test
@@ -172,7 +173,7 @@ public class TestYearMonth extends AbstractDateTimeTest {
             expected = YearMonth.now(Clock.system(zone));
             test = YearMonth.now(zone);
         }
-        assertEquals(test, expected);
+        assertEquals(expected, test);
     }
 
     //-----------------------------------------------------------------------
@@ -183,13 +184,13 @@ public class TestYearMonth extends AbstractDateTimeTest {
         Instant instant = LocalDateTime.of(2010, 12, 31, 0, 0).toInstant(ZoneOffset.UTC);
         Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
         YearMonth test = YearMonth.now(clock);
-        assertEquals(test.getYear(), 2010);
-        assertEquals(test.getMonth(), Month.DECEMBER);
+        assertEquals(2010, test.getYear());
+        assertEquals(Month.DECEMBER, test.getMonth());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void now_Clock_nullClock() {
-        YearMonth.now((Clock) null);
+        assertThrows(NullPointerException.class, () -> YearMonth.now((Clock) null));
     }
 
     //-----------------------------------------------------------------------
@@ -199,19 +200,19 @@ public class TestYearMonth extends AbstractDateTimeTest {
         check(test, 2008, 2);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_intsMonth_yearTooLow() {
-        YearMonth.of(Year.MIN_VALUE - 1, Month.JANUARY);
+        assertThrows(DateTimeException.class, () -> YearMonth.of(Year.MIN_VALUE - 1, Month.JANUARY));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_intsMonth_dayTooHigh() {
-        YearMonth.of(Year.MAX_VALUE + 1, Month.JANUARY);
+        assertThrows(DateTimeException.class, () -> YearMonth.of(Year.MAX_VALUE + 1, Month.JANUARY));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_intsMonth_nullMonth() {
-        YearMonth.of(2008, null);
+        assertThrows(NullPointerException.class, () -> YearMonth.of(2008, null));
     }
 
     //-----------------------------------------------------------------------
@@ -221,47 +222,46 @@ public class TestYearMonth extends AbstractDateTimeTest {
         check(test, 2008, 2);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_ints_yearTooLow() {
-        YearMonth.of(Year.MIN_VALUE - 1, 2);
+        assertThrows(DateTimeException.class, () -> YearMonth.of(Year.MIN_VALUE - 1, 2));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_ints_dayTooHigh() {
-        YearMonth.of(Year.MAX_VALUE + 1, 2);
+        assertThrows(DateTimeException.class, () -> YearMonth.of(Year.MAX_VALUE + 1, 2));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_ints_monthTooLow() {
-        YearMonth.of(2008, 0);
+        assertThrows(DateTimeException.class, () -> YearMonth.of(2008, 0));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_ints_monthTooHigh() {
-        YearMonth.of(2008, 13);
+        assertThrows(DateTimeException.class, () -> YearMonth.of(2008, 13));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_CalendricalObject() {
-        assertEquals(YearMonth.from(LocalDate.of(2007, 7, 15)), YearMonth.of(2007, 7));
+        assertEquals(YearMonth.of(2007, 7), YearMonth.from(LocalDate.of(2007, 7, 15)));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        YearMonth.from(LocalTime.of(12, 30));
+        assertThrows(DateTimeException.class, () -> YearMonth.from(LocalTime.of(12, 30)));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_CalendricalObject_null() {
-        YearMonth.from((TemporalAccessor) null);
+        assertThrows(NullPointerException.class, () -> YearMonth.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
     // parse()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "goodParseData")
-    Object[][] provider_goodParseData() {
+    static Object[][] provider_goodParseData() {
         return new Object[][] {
                 {"0000-01", YearMonth.of(0, 1)},
                 {"0000-12", YearMonth.of(0, 12)},
@@ -290,15 +290,15 @@ public class TestYearMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "goodParseData")
+    @ParameterizedTest
+    @MethodSource("provider_goodParseData")
     public void factory_parse_success(String text, YearMonth expected) {
         YearMonth yearMonth = YearMonth.parse(text);
-        assertEquals(yearMonth, expected);
+        assertEquals(expected, yearMonth);
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "badParseData")
-    Object[][] provider_badParseData() {
+    static Object[][] provider_badParseData() {
         return new Object[][] {
                 {"", 0},
                 {"-00", 1},
@@ -318,27 +318,30 @@ public class TestYearMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "badParseData", expectedExceptions = DateTimeParseException.class)
+    @ParameterizedTest
+    @MethodSource("provider_badParseData")
     public void factory_parse_fail(String text, int pos) {
-        try {
-            YearMonth.parse(text);
-            fail(String.format("Parse should have failed for %s at position %d", text, pos));
-        } catch (DateTimeParseException ex) {
-            assertEquals(ex.getParsedString(), text);
-            assertEquals(ex.getErrorIndex(), pos);
-            throw ex;
-        }
+        assertThrows(DateTimeParseException.class, () -> {
+            try {
+                YearMonth.parse(text);
+                fail(String.format("Parse should have failed for %s at position %d", text, pos));
+            } catch (DateTimeParseException ex) {
+                assertEquals(text, ex.getParsedString());
+                assertEquals(pos, ex.getErrorIndex());
+                throw ex;
+            }
+        });
     }
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void factory_parse_illegalValue_Month() {
-        YearMonth.parse("2008-13");
+        assertThrows(DateTimeParseException.class, () -> YearMonth.parse("2008-13"));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_parse_nullText() {
-        YearMonth.parse(null);
+        assertThrows(NullPointerException.class, () -> YearMonth.parse(null));
     }
 
     //-----------------------------------------------------------------------
@@ -348,18 +351,18 @@ public class TestYearMonth extends AbstractDateTimeTest {
     public void factory_parse_formatter() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("u M");
         YearMonth test = YearMonth.parse("2010 12", f);
-        assertEquals(test, YearMonth.of(2010, 12));
+        assertEquals(YearMonth.of(2010, 12), test);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_parse_formatter_nullText() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("u M");
-        YearMonth.parse((String) null, f);
+        assertThrows(NullPointerException.class, () -> YearMonth.parse((String) null, f));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_parse_formatter_nullFormatter() {
-        YearMonth.parse("ANY", null);
+        assertThrows(NullPointerException.class, () -> YearMonth.parse("ANY", null));
     }
 
     //-----------------------------------------------------------------------
@@ -367,30 +370,30 @@ public class TestYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_get_TemporalField() {
-        assertEquals(test2008x06.get(YEAR), 2008);
-        assertEquals(test2008x06.get(MONTH_OF_YEAR), 6);
-        assertEquals(test2008x06.get(YEAR_OF_ERA), 2008);
-        assertEquals(test2008x06.get(ERA), 1);
+        assertEquals(2008, test2008x06.get(YEAR));
+        assertEquals(6, test2008x06.get(MONTH_OF_YEAR));
+        assertEquals(2008, test2008x06.get(YEAR_OF_ERA));
+        assertEquals(1, test2008x06.get(ERA));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_get_TemporalField_tooBig() {
-        test2008x06.get(PROLEPTIC_MONTH);
+        assertThrows(DateTimeException.class, () -> test2008x06.get(PROLEPTIC_MONTH));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_get_TemporalField_null() {
-        test2008x06.get((TemporalField) null);
+        assertThrows(NullPointerException.class, () -> test2008x06.get((TemporalField) null));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_get_TemporalField_invalidField() {
-        test2008x06.get(MockFieldNoValue.INSTANCE);
+        assertThrows(DateTimeException.class, () -> test2008x06.get(MockFieldNoValue.INSTANCE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_get_TemporalField_timeField() {
-        test2008x06.get(ChronoField.AMPM_OF_DAY);
+        assertThrows(DateTimeException.class, () -> test2008x06.get(ChronoField.AMPM_OF_DAY));
     }
 
     //-----------------------------------------------------------------------
@@ -398,33 +401,32 @@ public class TestYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_getLong_TemporalField() {
-        assertEquals(test2008x06.getLong(YEAR), 2008);
-        assertEquals(test2008x06.getLong(MONTH_OF_YEAR), 6);
-        assertEquals(test2008x06.getLong(YEAR_OF_ERA), 2008);
-        assertEquals(test2008x06.getLong(ERA), 1);
-        assertEquals(test2008x06.getLong(PROLEPTIC_MONTH), 2008 * 12 + 6 - 1);
+        assertEquals(2008, test2008x06.getLong(YEAR));
+        assertEquals(6, test2008x06.getLong(MONTH_OF_YEAR));
+        assertEquals(2008, test2008x06.getLong(YEAR_OF_ERA));
+        assertEquals(1, test2008x06.getLong(ERA));
+        assertEquals(2008 * 12 + 6 - 1, test2008x06.getLong(PROLEPTIC_MONTH));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_getLong_TemporalField_null() {
-        test2008x06.getLong((TemporalField) null);
+        assertThrows(NullPointerException.class, () -> test2008x06.getLong((TemporalField) null));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_getLong_TemporalField_invalidField() {
-        test2008x06.getLong(MockFieldNoValue.INSTANCE);
+        assertThrows(DateTimeException.class, () -> test2008x06.getLong(MockFieldNoValue.INSTANCE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_getLong_TemporalField_timeField() {
-        test2008x06.getLong(ChronoField.AMPM_OF_DAY);
+        assertThrows(DateTimeException.class, () -> test2008x06.getLong(ChronoField.AMPM_OF_DAY));
     }
 
     //-----------------------------------------------------------------------
     // get*()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sampleDates")
-    Object[][] provider_sampleDates() {
+    static Object[][] provider_sampleDates() {
         return new Object[][] {
             {2008, 1},
             {2008, 2},
@@ -439,19 +441,19 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_with_Year() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.with(Year.of(2000)), YearMonth.of(2000, 6));
+        assertEquals(YearMonth.of(2000, 6), test.with(Year.of(2000)));
     }
 
     @Test
     public void test_with_Year_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.with(Year.of(2008)), test);
+        assertEquals(test, test.with(Year.of(2008)));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_with_Year_null() {
         YearMonth test = YearMonth.of(2008, 6);
-        test.with((Year) null);
+        assertThrows(NullPointerException.class, () -> test.with((Year) null));
     }
 
     //-----------------------------------------------------------------------
@@ -460,19 +462,19 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_with_Month() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.with(Month.JANUARY), YearMonth.of(2008, 1));
+        assertEquals(YearMonth.of(2008, 1), test.with(Month.JANUARY));
     }
 
     @Test
     public void test_with_Month_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.with(Month.JUNE), test);
+        assertEquals(test, test.with(Month.JUNE));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_with_Month_null() {
         YearMonth test = YearMonth.of(2008, 6);
-        test.with((Month) null);
+        assertThrows(NullPointerException.class, () -> test.with((Month) null));
     }
 
     //-----------------------------------------------------------------------
@@ -481,25 +483,25 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_withYear() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.withYear(1999), YearMonth.of(1999, 6));
+        assertEquals(YearMonth.of(1999, 6), test.withYear(1999));
     }
 
     @Test
     public void test_withYear_int_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.withYear(2008), test);
+        assertEquals(test, test.withYear(2008));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withYear_tooLow() {
         YearMonth test = YearMonth.of(2008, 6);
-        test.withYear(Year.MIN_VALUE - 1);
+        assertThrows(DateTimeException.class, () -> test.withYear(Year.MIN_VALUE - 1));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withYear_tooHigh() {
         YearMonth test = YearMonth.of(2008, 6);
-        test.withYear(Year.MAX_VALUE + 1);
+        assertThrows(DateTimeException.class, () -> test.withYear(Year.MAX_VALUE + 1));
     }
 
     //-----------------------------------------------------------------------
@@ -508,25 +510,25 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_withMonth() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.withMonth(1), YearMonth.of(2008, 1));
+        assertEquals(YearMonth.of(2008, 1), test.withMonth(1));
     }
 
     @Test
     public void test_withMonth_int_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.withMonth(6), test);
+        assertEquals(test, test.withMonth(6));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withMonth_tooLow() {
         YearMonth test = YearMonth.of(2008, 6);
-        test.withMonth(0);
+        assertThrows(DateTimeException.class, () -> test.withMonth(0));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withMonth_tooHigh() {
         YearMonth test = YearMonth.of(2008, 6);
-        test.withMonth(13);
+        assertThrows(DateTimeException.class, () -> test.withMonth(13));
     }
 
     //-----------------------------------------------------------------------
@@ -535,49 +537,49 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_plusYears_long() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.plusYears(1), YearMonth.of(2009, 6));
+        assertEquals(YearMonth.of(2009, 6), test.plusYears(1));
     }
 
     @Test
     public void test_plusYears_long_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.plusYears(0), test);
+        assertEquals(test, test.plusYears(0));
     }
 
     @Test
     public void test_plusYears_long_negative() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.plusYears(-1), YearMonth.of(2007, 6));
+        assertEquals(YearMonth.of(2007, 6), test.plusYears(-1));
     }
 
     @Test
     public void test_plusYears_long_big() {
         YearMonth test = YearMonth.of(-40, 6);
-        assertEquals(test.plusYears(20L + Year.MAX_VALUE), YearMonth.of((int) (-40L + 20L + Year.MAX_VALUE), 6));
+        assertEquals(YearMonth.of((int) (-40L + 20L + Year.MAX_VALUE), 6), test.plusYears(20L + Year.MAX_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_plusYears_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 6);
-        test.plusYears(1);
+        assertThrows(DateTimeException.class, () -> test.plusYears(1));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_plusYears_long_invalidTooLargeMaxAddMax() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
-        test.plusYears(Long.MAX_VALUE);
+        assertThrows(DateTimeException.class, () -> test.plusYears(Long.MAX_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_plusYears_long_invalidTooLargeMaxAddMin() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
-        test.plusYears(Long.MIN_VALUE);
+        assertThrows(DateTimeException.class, () -> test.plusYears(Long.MIN_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_plusYears_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 6);
-        test.plusYears(-1);
+        assertThrows(DateTimeException.class, () -> test.plusYears(-1));
     }
 
     //-----------------------------------------------------------------------
@@ -586,62 +588,62 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_plusMonths_long() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.plusMonths(1), YearMonth.of(2008, 7));
+        assertEquals(YearMonth.of(2008, 7), test.plusMonths(1));
     }
 
     @Test
     public void test_plusMonths_long_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.plusMonths(0), test);
+        assertEquals(test, test.plusMonths(0));
     }
 
     @Test
     public void test_plusMonths_long_overYears() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.plusMonths(7), YearMonth.of(2009, 1));
+        assertEquals(YearMonth.of(2009, 1), test.plusMonths(7));
     }
 
     @Test
     public void test_plusMonths_long_negative() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.plusMonths(-1), YearMonth.of(2008, 5));
+        assertEquals(YearMonth.of(2008, 5), test.plusMonths(-1));
     }
 
     @Test
     public void test_plusMonths_long_negativeOverYear() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.plusMonths(-6), YearMonth.of(2007, 12));
+        assertEquals(YearMonth.of(2007, 12), test.plusMonths(-6));
     }
 
     @Test
     public void test_plusMonths_long_big() {
         YearMonth test = YearMonth.of(-40, 6);
         long months = 20L + Integer.MAX_VALUE;
-        assertEquals(test.plusMonths(months), YearMonth.of((int) (-40L + months / 12), 6 + (int) (months % 12)));
+        assertEquals(YearMonth.of((int) (-40L + months / 12), 6 + (int) (months % 12)), test.plusMonths(months));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_plusMonths_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
-        test.plusMonths(1);
+        assertThrows(DateTimeException.class, () -> test.plusMonths(1));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_plusMonths_long_invalidTooLargeMaxAddMax() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
-        test.plusMonths(Long.MAX_VALUE);
+        assertThrows(DateTimeException.class, () -> test.plusMonths(Long.MAX_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_plusMonths_long_invalidTooLargeMaxAddMin() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
-        test.plusMonths(Long.MIN_VALUE);
+        assertThrows(DateTimeException.class, () -> test.plusMonths(Long.MIN_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_plusMonths_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 1);
-        test.plusMonths(-1);
+        assertThrows(DateTimeException.class, () -> test.plusMonths(-1));
     }
 
     //-----------------------------------------------------------------------
@@ -650,49 +652,49 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_minusYears_long() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.minusYears(1), YearMonth.of(2007, 6));
+        assertEquals(YearMonth.of(2007, 6), test.minusYears(1));
     }
 
     @Test
     public void test_minusYears_long_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.minusYears(0), test);
+        assertEquals(test, test.minusYears(0));
     }
 
     @Test
     public void test_minusYears_long_negative() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.minusYears(-1), YearMonth.of(2009, 6));
+        assertEquals(YearMonth.of(2009, 6), test.minusYears(-1));
     }
 
     @Test
     public void test_minusYears_long_big() {
         YearMonth test = YearMonth.of(40, 6);
-        assertEquals(test.minusYears(20L + Year.MAX_VALUE), YearMonth.of((int) (40L - 20L - Year.MAX_VALUE), 6));
+        assertEquals(YearMonth.of((int) (40L - 20L - Year.MAX_VALUE), 6), test.minusYears(20L + Year.MAX_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_minusYears_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 6);
-        test.minusYears(-1);
+        assertThrows(DateTimeException.class, () -> test.minusYears(-1));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_minusYears_long_invalidTooLargeMaxSubtractMax() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 12);
-        test.minusYears(Long.MAX_VALUE);
+        assertThrows(DateTimeException.class, () -> test.minusYears(Long.MAX_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_minusYears_long_invalidTooLargeMaxSubtractMin() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 12);
-        test.minusYears(Long.MIN_VALUE);
+        assertThrows(DateTimeException.class, () -> test.minusYears(Long.MIN_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_minusYears_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 6);
-        test.minusYears(1);
+        assertThrows(DateTimeException.class, () -> test.minusYears(1));
     }
 
     //-----------------------------------------------------------------------
@@ -701,62 +703,62 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_minusMonths_long() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.minusMonths(1), YearMonth.of(2008, 5));
+        assertEquals(YearMonth.of(2008, 5), test.minusMonths(1));
     }
 
     @Test
     public void test_minusMonths_long_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.minusMonths(0), test);
+        assertEquals(test, test.minusMonths(0));
     }
 
     @Test
     public void test_minusMonths_long_overYears() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.minusMonths(6), YearMonth.of(2007, 12));
+        assertEquals(YearMonth.of(2007, 12), test.minusMonths(6));
     }
 
     @Test
     public void test_minusMonths_long_negative() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.minusMonths(-1), YearMonth.of(2008, 7));
+        assertEquals(YearMonth.of(2008, 7), test.minusMonths(-1));
     }
 
     @Test
     public void test_minusMonths_long_negativeOverYear() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.minusMonths(-7), YearMonth.of(2009, 1));
+        assertEquals(YearMonth.of(2009, 1), test.minusMonths(-7));
     }
 
     @Test
     public void test_minusMonths_long_big() {
         YearMonth test = YearMonth.of(40, 6);
         long months = 20L + Integer.MAX_VALUE;
-        assertEquals(test.minusMonths(months), YearMonth.of((int) (40L - months / 12), 6 - (int) (months % 12)));
+        assertEquals(YearMonth.of((int) (40L - months / 12), 6 - (int) (months % 12)), test.minusMonths(months));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_minusMonths_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
-        test.minusMonths(-1);
+        assertThrows(DateTimeException.class, () -> test.minusMonths(-1));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_minusMonths_long_invalidTooLargeMaxSubtractMax() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
-        test.minusMonths(Long.MAX_VALUE);
+        assertThrows(DateTimeException.class, () -> test.minusMonths(Long.MAX_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_minusMonths_long_invalidTooLargeMaxSubtractMin() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
-        test.minusMonths(Long.MIN_VALUE);
+        assertThrows(DateTimeException.class, () -> test.minusMonths(Long.MIN_VALUE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_minusMonths_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 1);
-        test.minusMonths(1);
+        assertThrows(DateTimeException.class, () -> test.minusMonths(1));
     }
 
     //-----------------------------------------------------------------------
@@ -766,33 +768,33 @@ public class TestYearMonth extends AbstractDateTimeTest {
     public void test_adjustDate() {
         YearMonth test = YearMonth.of(2008, 6);
         LocalDate date = LocalDate.of(2007, 1, 1);
-        assertEquals(test.adjustInto(date), LocalDate.of(2008, 6, 1));
+        assertEquals(LocalDate.of(2008, 6, 1), test.adjustInto(date));
     }
 
     @Test
     public void test_adjustDate_preserveDoM() {
         YearMonth test = YearMonth.of(2011, 3);
         LocalDate date = LocalDate.of(2008, 2, 29);
-        assertEquals(test.adjustInto(date), LocalDate.of(2011, 3, 29));
+        assertEquals(LocalDate.of(2011, 3, 29), test.adjustInto(date));
     }
 
     @Test
     public void test_adjustDate_resolve() {
         YearMonth test = YearMonth.of(2007, 2);
         LocalDate date = LocalDate.of(2008, 3, 31);
-        assertEquals(test.adjustInto(date), LocalDate.of(2007, 2, 28));
+        assertEquals(LocalDate.of(2007, 2, 28), test.adjustInto(date));
     }
 
     @Test
     public void test_adjustDate_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         LocalDate date = LocalDate.of(2008, 6, 30);
-        assertEquals(test.adjustInto(date), date);
+        assertEquals(date, test.adjustInto(date));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_adjustDate_null() {
-        test2008x06.adjustInto((LocalDate) null);
+        assertThrows(NullPointerException.class, () -> test2008x06.adjustInto((LocalDate) null));
     }
 
     //-----------------------------------------------------------------------
@@ -800,8 +802,8 @@ public class TestYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_isLeapYear() {
-        assertEquals(YearMonth.of(2007, 6).isLeapYear(), false);
-        assertEquals(YearMonth.of(2008, 6).isLeapYear(), true);
+        assertFalse(YearMonth.of(2007, 6).isLeapYear());
+        assertTrue(YearMonth.of(2008, 6).isLeapYear());
     }
 
     //-----------------------------------------------------------------------
@@ -810,19 +812,19 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_lengthOfMonth_june() {
         YearMonth test = YearMonth.of(2007, 6);
-        assertEquals(test.lengthOfMonth(), 30);
+        assertEquals(30, test.lengthOfMonth());
     }
 
     @Test
     public void test_lengthOfMonth_febNonLeap() {
         YearMonth test = YearMonth.of(2007, 2);
-        assertEquals(test.lengthOfMonth(), 28);
+        assertEquals(28, test.lengthOfMonth());
     }
 
     @Test
     public void test_lengthOfMonth_febLeap() {
         YearMonth test = YearMonth.of(2008, 2);
-        assertEquals(test.lengthOfMonth(), 29);
+        assertEquals(29, test.lengthOfMonth());
     }
 
     //-----------------------------------------------------------------------
@@ -830,8 +832,8 @@ public class TestYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_lengthOfYear() {
-        assertEquals(YearMonth.of(2007, 6).lengthOfYear(), 365);
-        assertEquals(YearMonth.of(2008, 6).lengthOfYear(), 366);
+        assertEquals(365, YearMonth.of(2007, 6).lengthOfYear());
+        assertEquals(366, YearMonth.of(2008, 6).lengthOfYear());
     }
 
     //-----------------------------------------------------------------------
@@ -840,37 +842,37 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_isValidDay_int_june() {
         YearMonth test = YearMonth.of(2007, 6);
-        assertEquals(test.isValidDay(1), true);
-        assertEquals(test.isValidDay(30), true);
+        assertTrue(test.isValidDay(1));
+        assertTrue(test.isValidDay(30));
 
-        assertEquals(test.isValidDay(-1), false);
-        assertEquals(test.isValidDay(0), false);
-        assertEquals(test.isValidDay(31), false);
-        assertEquals(test.isValidDay(32), false);
+        assertFalse(test.isValidDay(-1));
+        assertFalse(test.isValidDay(0));
+        assertFalse(test.isValidDay(31));
+        assertFalse(test.isValidDay(32));
     }
 
     @Test
     public void test_isValidDay_int_febNonLeap() {
         YearMonth test = YearMonth.of(2007, 2);
-        assertEquals(test.isValidDay(1), true);
-        assertEquals(test.isValidDay(28), true);
+        assertTrue(test.isValidDay(1));
+        assertTrue(test.isValidDay(28));
 
-        assertEquals(test.isValidDay(-1), false);
-        assertEquals(test.isValidDay(0), false);
-        assertEquals(test.isValidDay(29), false);
-        assertEquals(test.isValidDay(32), false);
+        assertFalse(test.isValidDay(-1));
+        assertFalse(test.isValidDay(0));
+        assertFalse(test.isValidDay(29));
+        assertFalse(test.isValidDay(32));
     }
 
     @Test
     public void test_isValidDay_int_febLeap() {
         YearMonth test = YearMonth.of(2008, 2);
-        assertEquals(test.isValidDay(1), true);
-        assertEquals(test.isValidDay(29), true);
+        assertTrue(test.isValidDay(1));
+        assertTrue(test.isValidDay(29));
 
-        assertEquals(test.isValidDay(-1), false);
-        assertEquals(test.isValidDay(0), false);
-        assertEquals(test.isValidDay(30), false);
-        assertEquals(test.isValidDay(32), false);
+        assertFalse(test.isValidDay(-1));
+        assertFalse(test.isValidDay(0));
+        assertFalse(test.isValidDay(30));
+        assertFalse(test.isValidDay(32));
     }
 
     //-----------------------------------------------------------------------
@@ -879,13 +881,13 @@ public class TestYearMonth extends AbstractDateTimeTest {
     @Test
     public void test_atDay_int() {
         YearMonth test = YearMonth.of(2008, 6);
-        assertEquals(test.atDay(30), LocalDate.of(2008, 6, 30));
+        assertEquals(LocalDate.of(2008, 6, 30), test.atDay(30));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_atDay_int_invalidDay() {
         YearMonth test = YearMonth.of(2008, 6);
-        test.atDay(31);
+        assertThrows(DateTimeException.class, () -> test.atDay(31));
     }
 
     //-----------------------------------------------------------------------
@@ -893,18 +895,18 @@ public class TestYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_query() {
-        assertEquals(test2008x06.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
-        assertEquals(test2008x06.query(TemporalQueries.localDate()), null);
-        assertEquals(test2008x06.query(TemporalQueries.localTime()), null);
-        assertEquals(test2008x06.query(TemporalQueries.offset()), null);
-        assertEquals(test2008x06.query(TemporalQueries.precision()), ChronoUnit.MONTHS);
-        assertEquals(test2008x06.query(TemporalQueries.zone()), null);
-        assertEquals(test2008x06.query(TemporalQueries.zoneId()), null);
+        assertEquals(IsoChronology.INSTANCE, test2008x06.query(TemporalQueries.chronology()));
+        assertEquals(null, test2008x06.query(TemporalQueries.localDate()));
+        assertEquals(null, test2008x06.query(TemporalQueries.localTime()));
+        assertEquals(null, test2008x06.query(TemporalQueries.offset()));
+        assertEquals(ChronoUnit.MONTHS, test2008x06.query(TemporalQueries.precision()));
+        assertEquals(null, test2008x06.query(TemporalQueries.zone()));
+        assertEquals(null, test2008x06.query(TemporalQueries.zoneId()));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_query_null() {
-        test2008x06.query(null);
+        assertThrows(NullPointerException.class, () -> test2008x06.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -932,37 +934,37 @@ public class TestYearMonth extends AbstractDateTimeTest {
                 YearMonth b = localDates[j];
                 if (i < j) {
                     assertTrue(a.compareTo(b) < 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), true, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertTrue(a.isBefore(b), a + " <=> " + b);
+                    assertFalse(a.isAfter(b), a + " <=> " + b);
+                    assertFalse(a.equals(b), a + " <=> " + b);
                 } else if (i > j) {
                     assertTrue(a.compareTo(b) > 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), true, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertFalse(a.isBefore(b), a + " <=> " + b);
+                    assertTrue(a.isAfter(b), a + " <=> " + b);
+                    assertFalse(a.equals(b), a + " <=> " + b);
                 } else {
-                    assertEquals(a.compareTo(b), 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), true, a + " <=> " + b);
+                    assertEquals(0, a.compareTo(b), a + " <=> " + b);
+                    assertFalse(a.isBefore(b), a + " <=> " + b);
+                    assertFalse(a.isAfter(b), a + " <=> " + b);
+                    assertTrue(a.equals(b), a + " <=> " + b);
                 }
             }
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_compareTo_ObjectNull() {
-        test2008x06.compareTo(null);
+        assertThrows(NullPointerException.class, () -> test2008x06.compareTo(null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_isBefore_ObjectNull() {
-        test2008x06.isBefore(null);
+        assertThrows(NullPointerException.class, () -> test2008x06.isBefore(null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_isAfter_ObjectNull() {
-        test2008x06.isAfter(null);
+        assertThrows(NullPointerException.class, () -> test2008x06.isAfter(null));
     }
 
     //-----------------------------------------------------------------------
@@ -975,51 +977,52 @@ public class TestYearMonth extends AbstractDateTimeTest {
         YearMonth c = YearMonth.of(2007, 6);
         YearMonth d = YearMonth.of(2008, 5);
 
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), true);
-        assertEquals(a.equals(c), false);
-        assertEquals(a.equals(d), false);
+        assertTrue(a.equals(a));
+        assertTrue(a.equals(b));
+        assertFalse(a.equals(c));
+        assertFalse(a.equals(d));
 
-        assertEquals(b.equals(a), true);
-        assertEquals(b.equals(b), true);
-        assertEquals(b.equals(c), false);
-        assertEquals(b.equals(d), false);
+        assertTrue(b.equals(a));
+        assertTrue(b.equals(b));
+        assertFalse(b.equals(c));
+        assertFalse(b.equals(d));
 
-        assertEquals(c.equals(a), false);
-        assertEquals(c.equals(b), false);
-        assertEquals(c.equals(c), true);
-        assertEquals(c.equals(d), false);
+        assertFalse(c.equals(a));
+        assertFalse(c.equals(b));
+        assertTrue(c.equals(c));
+        assertFalse(c.equals(d));
 
-        assertEquals(d.equals(a), false);
-        assertEquals(d.equals(b), false);
-        assertEquals(d.equals(c), false);
-        assertEquals(d.equals(d), true);
+        assertFalse(d.equals(a));
+        assertFalse(d.equals(b));
+        assertFalse(d.equals(c));
+        assertTrue(d.equals(d));
     }
 
     @Test
     public void test_equals_itself_true() {
-        assertEquals(test2008x06.equals(test2008x06), true);
+        assertTrue(test2008x06.equals(test2008x06));
     }
 
     @Test
     public void test_equals_string_false() {
-        assertEquals(test2008x06.equals("2007-07-15"), false);
+        assertFalse(test2008x06.equals("2007-07-15"));
     }
 
     @Test
     public void test_equals_null_false() {
-        assertEquals(test2008x06.equals(null), false);
+        assertFalse(test2008x06.equals(null));
     }
 
     //-----------------------------------------------------------------------
     // hashCode()
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "sampleDates")
+    @ParameterizedTest
+    @MethodSource("provider_sampleDates")
     public void test_hashCode(int y, int m) {
         YearMonth a = YearMonth.of(y, m);
         assertEquals(a.hashCode(), a.hashCode());
         YearMonth b = YearMonth.of(y, m);
-        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(b.hashCode(), a.hashCode());
     }
 
     @Test
@@ -1035,8 +1038,7 @@ public class TestYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sampleToString")
-    Object[][] provider_sampleToString() {
+    static Object[][] provider_sampleToString() {
         return new Object[][] {
             {2008, 1, "2008-01"},
             {2008, 12, "2008-12"},
@@ -1046,11 +1048,12 @@ public class TestYearMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "sampleToString")
+    @ParameterizedTest
+    @MethodSource("provider_sampleToString")
     public void test_toString(int y, int m, String expected) {
         YearMonth test = YearMonth.of(y, m);
         String str = test.toString();
-        assertEquals(str, expected);
+        assertEquals(expected, str);
     }
 
     //-----------------------------------------------------------------------
@@ -1060,12 +1063,12 @@ public class TestYearMonth extends AbstractDateTimeTest {
     public void test_format_formatter() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("y M");
         String t = YearMonth.of(2010, 12).format(f);
-        assertEquals(t, "2010 12");
+        assertEquals("2010 12", t);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_format_formatter_null() {
-        YearMonth.of(2010, 12).format(null);
+        assertThrows(NullPointerException.class, () -> YearMonth.of(2010, 12).format(null));
     }
 
 }

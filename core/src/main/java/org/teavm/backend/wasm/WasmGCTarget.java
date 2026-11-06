@@ -220,6 +220,9 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var deps = new WasmGCDependencies(dependencyAnalyzer);
         deps.contribute();
         deps.contributeStandardExports();
+        if (strict) {
+            BoundCheckInsertion.contributeDependencies(dependencyAnalyzer);
+        }
 
         var reflectionSuppliers = new ArrayList<ReflectionSupplier>();
         for (var supplier : ServiceLoader.load(ReflectionSupplier.class, dependencyAnalyzer.getClassLoader())) {

@@ -138,7 +138,7 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
             do {
                 changed = new GlobalValueNumbering(true).optimize(program)
                         | new ConstantConditionElimination().optimize(containingMethod.getDescriptor(), program);
-                new UnreachableBasicBlockEliminator().optimize(program);
+                new UnreachableBasicBlockEliminator().optimize(program, containingMethod.parameterCount());
             } while (changed);
         }
     }

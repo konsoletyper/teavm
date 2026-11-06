@@ -48,8 +48,8 @@
 
 package org.teavm.classlib.support;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -71,28 +71,24 @@ public class ListTestSupport {
             Object elem;
             elem = list.get(counter);
             hashCode = 31 * hashCode + elem.hashCode();
-            assertTrue("ListTest - get failed", elem.equals(counter));
+            assertTrue(elem.equals(counter), "ListTest - get failed");
         }
-        assertTrue("ListTest - hashCode failed", hashCode == list.hashCode());
+        assertTrue(hashCode == list.hashCode(), "ListTest - hashCode failed");
 
         list.add(50, 1000);
-        assertTrue("ListTest - a) add with index failed--did not insert", list.get(50).equals(1000));
-        assertTrue("ListTest - b) add with index failed--did not move following elements",
-                list.get(51).equals(50));
-        assertTrue("ListTest - c) add with index failed--affected previous elements",
-                list.get(49).equals(49));
+        assertTrue(list.get(50).equals(1000), "ListTest - a) add with index failed--did not insert");
+        assertTrue(list.get(51).equals(50), "ListTest - b) add with index failed--did not move following elements");
+        assertTrue(list.get(49).equals(49), "ListTest - c) add with index failed--affected previous elements");
 
         list.set(50, 2000);
-        assertTrue("ListTest - a) set failed--did not set", list.get(50).equals(2000));
-        assertTrue("ListTest - b) set failed--affected following elements", list.get(51).equals(50));
-        assertTrue("ListTest - c) set failed--affected previous elements", list.get(49).equals(49));
+        assertTrue(list.get(50).equals(2000), "ListTest - a) set failed--did not set");
+        assertTrue(list.get(51).equals(50), "ListTest - b) set failed--affected following elements");
+        assertTrue(list.get(49).equals(49), "ListTest - c) set failed--affected previous elements");
 
         list.remove(50);
-        assertTrue("ListTest - a) remove with index failed--did not remove", list.get(50).equals(50));
-        assertTrue("ListTest - b) remove with index failed--did not move following elements",
-                list.get(51).equals(51));
-        assertTrue("ListTest - c) remove with index failed--affected previous elements",
-                list.get(49).equals(49));
+        assertTrue(list.get(50).equals(50), "ListTest - a) remove with index failed--did not remove");
+        assertTrue(list.get(51).equals(51), "ListTest - b) remove with index failed--did not move following elements");
+        assertTrue(list.get(49).equals(49), "ListTest - c) remove with index failed--affected previous elements");
 
         List<Integer> myList = new LinkedList<>();
         myList.add(500);
@@ -100,35 +96,30 @@ public class ListTestSupport {
         myList.add(502);
 
         list.addAll(50, myList);
-        assertTrue("ListTest - a) addAll with index failed--did not insert", list.get(50).equals(500));
-        assertTrue("ListTest - b) addAll with index failed--did not insert", list.get(51).equals(501));
-        assertTrue("ListTest - c) addAll with index failed--did not insert", list.get(52).equals(502));
-        assertTrue("ListTest - d) addAll with index failed--did not move following elements",
-                list.get(53).equals(50));
-        assertTrue("ListTest - e) addAll with index failed--affected previous elements",
-                list.get(49).equals(49));
+        assertTrue(list.get(50).equals(500), "ListTest - a) addAll with index failed--did not insert");
+        assertTrue(list.get(51).equals(501), "ListTest - b) addAll with index failed--did not insert");
+        assertTrue(list.get(52).equals(502), "ListTest - c) addAll with index failed--did not insert");
+        assertTrue(list.get(53).equals(50), "ListTest - d) addAll with index failed--did not move following elements");
+        assertTrue(list.get(49).equals(49), "ListTest - e) addAll with index failed--affected previous elements");
 
         List<Integer> mySubList = list.subList(50, 53);
         assertEquals(3, mySubList.size());
-        assertTrue("ListTest - a) sublist Failed--does not contain correct elements",
-                mySubList.get(0).equals(500));
-        assertTrue("ListTest - b) sublist Failed--does not contain correct elements",
-                mySubList.get(1).equals(501));
-        assertTrue("ListTest - c) sublist Failed--does not contain correct elements",
-                mySubList.get(2).equals(502));
+        assertTrue(mySubList.get(0).equals(500), "ListTest - a) sublist Failed--does not contain correct elements");
+        assertTrue(mySubList.get(1).equals(501), "ListTest - b) sublist Failed--does not contain correct elements");
+        assertTrue(mySubList.get(2).equals(502), "ListTest - c) sublist Failed--does not contain correct elements");
 
         t_listIterator(mySubList);
 
         mySubList.clear();
-        assertEquals("ListTest - Clearing the sublist did not remove the appropriate elements from the original list",
-                100, list.size());
+        assertEquals(100, list.size(),
+                "ListTest - Clearing the sublist did not remove the appropriate elements from the original list");
 
         t_listIterator(list);
         ListIterator<Integer> li = list.listIterator();
         for (int counter = 0; li.hasNext(); counter++) {
             Object elem;
             elem = li.next();
-            assertTrue("ListTest - listIterator failed", elem.equals(counter));
+            assertTrue(elem.equals(counter), "ListTest - listIterator failed");
         }
 
         new CollectionTestSupport(list).runTest();
@@ -137,46 +128,46 @@ public class ListTestSupport {
 
     public void t_listIterator(List<Integer> list) {
         ListIterator<Integer> li = list.listIterator(1);
-        assertTrue("listIterator(1)", li.next() == list.get(1));
+        assertTrue(li.next() == list.get(1), "listIterator(1)");
 
         int orgSize = list.size();
         li = list.listIterator();
         for (int i = 0; i <= orgSize; i++) {
             if (i == 0) {
-                assertTrue("list iterator hasPrevious(): " + i, !li.hasPrevious());
+                assertTrue(!li.hasPrevious(), "list iterator hasPrevious(): " + i);
             } else {
-                assertTrue("list iterator hasPrevious(): " + i, li.hasPrevious());
+                assertTrue(li.hasPrevious(), "list iterator hasPrevious(): " + i);
             }
             if (i == list.size()) {
-                assertTrue("list iterator hasNext(): " + i, !li.hasNext());
+                assertTrue(!li.hasNext(), "list iterator hasNext(): " + i);
             } else {
-                assertTrue("list iterator hasNext(): " + i, li.hasNext());
+                assertTrue(li.hasNext(), "list iterator hasNext(): " + i);
             }
-            assertTrue("list iterator nextIndex(): " + i, li.nextIndex() == i);
-            assertTrue("list iterator previousIndex(): " + i, li.previousIndex() == i - 1);
+            assertTrue(li.nextIndex() == i, "list iterator nextIndex(): " + i);
+            assertTrue(li.previousIndex() == i - 1, "list iterator previousIndex(): " + i);
             boolean exception = false;
             try {
-                assertTrue("list iterator next(): " + i, li.next() == list.get(i));
+                assertTrue(li.next() == list.get(i), "list iterator next(): " + i);
             } catch (NoSuchElementException e) {
                 exception = true;
             }
             if (i == list.size()) {
-                assertTrue("list iterator next() exception: " + i, exception);
+                assertTrue(exception, "list iterator next() exception: " + i);
             } else {
-                assertTrue("list iterator next() exception: " + i, !exception);
+                assertTrue(!exception, "list iterator next() exception: " + i);
             }
         }
 
         for (int i = orgSize - 1; i >= 0; i--) {
-            assertTrue("list iterator previous(): " + i, li.previous() == list.get(i));
-            assertTrue("list iterator nextIndex()2: " + i, li.nextIndex() == i);
-            assertTrue("list iterator previousIndex()2: " + i, li.previousIndex() == i - 1);
+            assertTrue(li.previous() == list.get(i), "list iterator previous(): " + i);
+            assertTrue(li.nextIndex() == i, "list iterator nextIndex()2: " + i);
+            assertTrue(li.previousIndex() == i - 1, "list iterator previousIndex()2: " + i);
             if (i == 0) {
-                assertTrue("list iterator hasPrevious()2: " + i, !li.hasPrevious());
+                assertTrue(!li.hasPrevious(), "list iterator hasPrevious()2: " + i);
             } else {
-                assertTrue("list iterator hasPrevious()2: " + i, li.hasPrevious());
+                assertTrue(li.hasPrevious(), "list iterator hasPrevious()2: " + i);
             }
-            assertTrue("list iterator hasNext()2: " + i, li.hasNext());
+            assertTrue(li.hasNext(), "list iterator hasNext()2: " + i);
         }
         boolean exception = false;
         try {
@@ -184,34 +175,34 @@ public class ListTestSupport {
         } catch (NoSuchElementException e) {
             exception = true;
         }
-        assertTrue("list iterator previous() exception", exception);
+        assertTrue(exception, "list iterator previous() exception");
 
         Integer add1 = 600;
         Integer add2 = 601;
         li.add(add1);
-        assertTrue("list iterator add(), size()", list.size() == (orgSize + 1));
-        assertEquals("list iterator add(), nextIndex()", 1, li.nextIndex());
-        assertEquals("list iterator add(), previousIndex()", 0, li.previousIndex());
+        assertTrue(list.size() == (orgSize + 1), "list iterator add(), size()");
+        assertEquals(1, li.nextIndex(), "list iterator add(), nextIndex()");
+        assertEquals(0, li.previousIndex(), "list iterator add(), previousIndex()");
         Object next = li.next();
-        assertTrue("list iterator add(), next(): " + next, next == list.get(1));
+        assertTrue(next == list.get(1), "list iterator add(), next(): " + next);
         li.add(add2);
         Object previous = li.previous();
-        assertTrue("list iterator add(), previous(): " + previous, previous == add2);
-        assertEquals("list iterator add(), nextIndex()2", 2, li.nextIndex());
-        assertEquals("list iterator add(), previousIndex()2", 1, li.previousIndex());
+        assertTrue(previous == add2, "list iterator add(), previous(): " + previous);
+        assertEquals(2, li.nextIndex(), "list iterator add(), nextIndex()2");
+        assertEquals(1, li.previousIndex(), "list iterator add(), previousIndex()2");
 
         li.remove();
-        assertTrue("list iterator remove(), size()", list.size() == (orgSize + 1));
-        assertEquals("list iterator remove(), nextIndex()", 2, li.nextIndex());
-        assertEquals("list iterator remove(), previousIndex()", 1, li.previousIndex());
-        assertTrue("list iterator previous()2", li.previous() == list.get(1));
-        assertTrue("list iterator previous()3", li.previous() == list.get(0));
-        assertTrue("list iterator next()2", li.next() == list.get(0));
+        assertTrue(list.size() == (orgSize + 1), "list iterator remove(), size()");
+        assertEquals(2, li.nextIndex(), "list iterator remove(), nextIndex()");
+        assertEquals(1, li.previousIndex(), "list iterator remove(), previousIndex()");
+        assertTrue(li.previous() == list.get(1), "list iterator previous()2");
+        assertTrue(li.previous() == list.get(0), "list iterator previous()3");
+        assertTrue(li.next() == list.get(0), "list iterator next()2");
         li.remove();
-        assertTrue("list iterator hasPrevious()3", !li.hasPrevious());
-        assertTrue("list iterator hasNext()3", li.hasNext());
-        assertTrue("list iterator size()", list.size() == orgSize);
-        assertEquals("list iterator nextIndex()3", 0, li.nextIndex());
-        assertEquals("list iterator previousIndex()3", -1, li.previousIndex());
+        assertTrue(!li.hasPrevious(), "list iterator hasPrevious()3");
+        assertTrue(li.hasNext(), "list iterator hasNext()3");
+        assertTrue(list.size() == orgSize, "list iterator size()");
+        assertEquals(0, li.nextIndex(), "list iterator nextIndex()3");
+        assertEquals(-1, li.previousIndex(), "list iterator previousIndex()3");
     }
 }

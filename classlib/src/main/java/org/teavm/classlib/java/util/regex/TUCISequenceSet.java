@@ -55,7 +55,7 @@ class TUCISequenceSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         for (int i = 0; i < string.length(); i++) {
             if (string.charAt(i) != Character.toLowerCase(Character.toUpperCase(testString.charAt(strIndex + i)))) {
                 return -1;

@@ -46,10 +46,11 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -62,17 +63,16 @@ import java.time.chrono.JapaneseChronology;
 import java.time.chrono.JapaneseEra;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestJapaneseChronology {
 
     //-----------------------------------------------------------------------
@@ -82,17 +82,16 @@ public class TestJapaneseChronology {
     public void test_chrono_byName() {
         Chronology c = JapaneseChronology.INSTANCE;
         Chronology test = Chronology.of("Japanese");
-        Assert.assertNotNull(test, "The Japanese calendar could not be found byName");
-        Assert.assertEquals(test.getId(), "Japanese", "ID mismatch");
-        Assert.assertEquals(test.getCalendarType(), "japanese", "Type mismatch");
-        Assert.assertEquals(test, c);
+        Assertions.assertNotNull(test, "The Japanese calendar could not be found byName");
+        Assertions.assertEquals("Japanese", test.getId(), "ID mismatch");
+        Assertions.assertEquals("japanese", test.getCalendarType(), "Type mismatch");
+        Assertions.assertEquals(c, test);
     }
 
     //-----------------------------------------------------------------------
     // creation, toLocalDate()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "samples")
-    Object[][] data_samples() {
+    static Object[][] data_samples() {
         return new Object[][] {
             {JapaneseChronology.INSTANCE.date(1890, 3, 3), LocalDate.of(1890, 3, 3)},
             {JapaneseChronology.INSTANCE.date(1890, 10, 28), LocalDate.of(1890, 10, 28)},
@@ -100,18 +99,19 @@ public class TestJapaneseChronology {
         };
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_toLocalDate(ChronoLocalDate jdate, LocalDate iso) {
-        assertEquals(LocalDate.from(jdate), iso);
+        assertEquals(iso, LocalDate.from(jdate));
     }
 
-    @Test(dataProvider = "samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_fromCalendrical(ChronoLocalDate jdate, LocalDate iso) {
-        assertEquals(JapaneseChronology.INSTANCE.date(iso), jdate);
+        assertEquals(jdate, JapaneseChronology.INSTANCE.date(iso));
     }
 
-    @DataProvider(name = "badDates")
-    Object[][] data_badDates() {
+    static Object[][] data_badDates() {
         return new Object[][] {
             {1728, 0, 0},
             {1890, 0, 0},
@@ -131,9 +131,10 @@ public class TestJapaneseChronology {
         };
     }
 
-    @Test(dataProvider = "badDates", expectedExceptions = DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        JapaneseChronology.INSTANCE.date(year, month, dom);
+        assertThrows(DateTimeException.class, () -> JapaneseChronology.INSTANCE.date(year, month, dom));
     }
 
     //-----------------------------------------------------------------------
@@ -143,14 +144,14 @@ public class TestJapaneseChronology {
     public void test_adjust1() {
         ChronoLocalDate base = JapaneseChronology.INSTANCE.date(1890, 10, 29);
         ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, JapaneseChronology.INSTANCE.date(1890, 10, 31));
+        assertEquals(JapaneseChronology.INSTANCE.date(1890, 10, 31), test);
     }
 
     @Test
     public void test_adjust2() {
         ChronoLocalDate base = JapaneseChronology.INSTANCE.date(1890, 12, 2);
         ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, JapaneseChronology.INSTANCE.date(1890, 12, 31));
+        assertEquals(JapaneseChronology.INSTANCE.date(1890, 12, 31), test);
     }
 
     //-----------------------------------------------------------------------
@@ -160,13 +161,13 @@ public class TestJapaneseChronology {
     public void test_adjust_toLocalDate() {
         ChronoLocalDate jdate = JapaneseChronology.INSTANCE.date(1890, 1, 4);
         ChronoLocalDate test = jdate.with(LocalDate.of(2012, 7, 6));
-        assertEquals(test, JapaneseChronology.INSTANCE.date(2012, 7, 6));
+        assertEquals(JapaneseChronology.INSTANCE.date(2012, 7, 6), test);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_adjust_toMonth() {
         ChronoLocalDate jdate = JapaneseChronology.INSTANCE.date(1890, 1, 4);
-        jdate.with(Month.APRIL);
+        assertThrows(DateTimeException.class, () -> jdate.with(Month.APRIL));
     }
 
     //-----------------------------------------------------------------------
@@ -176,21 +177,20 @@ public class TestJapaneseChronology {
     public void test_LocalDate_adjustToJapaneseDate() {
         ChronoLocalDate jdate = JapaneseChronology.INSTANCE.date(1890, 10, 29);
         LocalDate test = LocalDate.MIN.with(jdate);
-        assertEquals(test, LocalDate.of(1890, 10, 29));
+        assertEquals(LocalDate.of(1890, 10, 29), test);
     }
 
     @Test
     public void test_LocalDateTime_adjustToJapaneseDate() {
         ChronoLocalDate jdate = JapaneseChronology.INSTANCE.date(1890, 10, 29);
         LocalDateTime test = LocalDateTime.MIN.with(jdate);
-        assertEquals(test, LocalDateTime.of(1890, 10, 29, 0, 0));
+        assertEquals(LocalDateTime.of(1890, 10, 29, 0, 0), test);
     }
 
     //-----------------------------------------------------------------------
     // Check Japanese Eras
     //-----------------------------------------------------------------------
-    @DataProvider(name = "japaneseEras")
-    Object[][] data_japaneseEras() {
+    static Object[][] data_japaneseEras() {
         return new Object[][] {
             { JapaneseEra.MEIJI, -1, "Meiji"},
             { JapaneseEra.TAISHO, 0, "Taisho"},
@@ -200,12 +200,13 @@ public class TestJapaneseChronology {
         };
     }
 
-    @Test(dataProvider = "japaneseEras")
+    @ParameterizedTest
+    @MethodSource("data_japaneseEras")
     public void test_Japanese_Eras(Era era, int eraValue, String name) {
-        assertEquals(era.getValue(), eraValue, "EraValue");
-        assertEquals(era.toString(), name, "Era Name");
-        assertEquals(era, JapaneseChronology.INSTANCE.eraOf(eraValue), "JapaneseChrono.eraOf()");
-        assertEquals(JapaneseEra.valueOf(name), era);
+        assertEquals(eraValue, era.getValue(), "EraValue");
+        assertEquals(name, era.toString(), "Era Name");
+        assertEquals(JapaneseChronology.INSTANCE.eraOf(eraValue), era, "JapaneseChrono.eraOf()");
+        assertEquals(era, JapaneseEra.valueOf(name));
         List<Era> eras = JapaneseChronology.INSTANCE.eras();
         assertTrue(eras.contains(era), "Era is not present in JapaneseChronology.INSTANCE.eras()");
     }
@@ -232,8 +233,7 @@ public class TestJapaneseChronology {
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "toString")
-    Object[][] data_toString() {
+    static Object[][] data_toString() {
         return new Object[][] {
             {JapaneseChronology.INSTANCE.date(1873,  9,  8), "Japanese Meiji 6-09-08"},
             {JapaneseChronology.INSTANCE.date(1912,  7, 29), "Japanese Meiji 45-07-29"},
@@ -248,9 +248,10 @@ public class TestJapaneseChronology {
         };
     }
 
-    @Test(dataProvider = "toString")
+    @ParameterizedTest
+    @MethodSource("data_toString")
     public void test_toString(ChronoLocalDate jdate, String expected) {
-        assertEquals(jdate.toString(), expected);
+        assertEquals(expected, jdate.toString());
     }
 
     //-----------------------------------------------------------------------

@@ -106,7 +106,7 @@ public class ReferenceResolver {
             }
         }
         if (modified) {
-            unreachableBlockEliminator.optimize(program);
+            unreachableBlockEliminator.optimize(program, method.parameterCount());
             modified = false;
         }
         this.program = null;

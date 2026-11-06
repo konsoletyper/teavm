@@ -175,7 +175,7 @@ public class Inlining {
         depthsByBlock = null;
         instructionsToSkip = null;
 
-        new UnreachableBasicBlockEliminator().optimize(program);
+        new UnreachableBasicBlockEliminator().optimize(program, method.parameterCount());
         strategy.methodChanged(method);
     }
 

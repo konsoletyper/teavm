@@ -1,0 +1,17 @@
+var @this as this
+
+$start
+    @size := 2
+    @array := newArray I[@size]
+    @cond := invokeStatic `Cond.invoke()I`
+    if @cond == 0 then goto $bad else goto $good
+$bad
+    @index := 2
+    @value := @array[@index] as int
+    goto $join
+$good
+    @zero := 0
+    goto $join
+$join
+    @result := phi @value from $bad, @zero from $good
+    return @result

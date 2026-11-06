@@ -634,64 +634,115 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
     }
 
+    // Long operations are written inline rather than as calls to runtime functions, since JS engines
+    // generate efficient code for BigInt arithmetic wrapped into asIntN(64, ...) only when they see the whole
+    // expression, and they don't always inline small functions into large ones.
+    private void visitLongBinary(BinaryExpr expr, String op) {
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        writer.appendFunction("Long_asIntN").append("(64,").ws();
+        precedence = Precedence.min();
+        visitBinary(expr.getOperation(), op, () -> expr.getFirstOperand().acceptVisitor(this),
+                () -> expr.getSecondOperand().acceptVisitor(this));
+        writer.append(")");
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
+    }
+
+    private void visitLongShift(BinaryExpr expr, String function) {
+        if (!(expr.getSecondOperand() instanceof ConstantExpr)
+                || !(((ConstantExpr) expr.getSecondOperand()).getValue() instanceof Integer)) {
+            visitBinaryFunction(expr, function);
+            return;
+        }
+        var shift = (Integer) ((ConstantExpr) expr.getSecondOperand()).getValue() & 63;
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        if (shift == 0) {
+            expr.getFirstOperand().acceptVisitor(this);
+        } else {
+            // Passing shift amount as BigInt literal allows JS engines to produce much more efficient code.
+            // JS engines can do this only when shift is written inline, since they don't always inline
+            // small functions into large ones.
+            writer.appendFunction("Long_asIntN").append("(64,").ws();
+            if (expr.getOperation() == BinaryOperation.UNSIGNED_RIGHT_SHIFT) {
+                writer.appendFunction("Long_asUintN").append("(64,").ws();
+                precedence = Precedence.min();
+                expr.getFirstOperand().acceptVisitor(this);
+                writer.append(")").ws().append(">>").ws().append(shift + "n");
+            } else {
+                precedence = Precedence.min();
+                visitBinary(expr.getOperation(), expr.getOperation() == BinaryOperation.LEFT_SHIFT ? "<<" : ">>",
+                        () -> expr.getFirstOperand().acceptVisitor(this), () -> writer.append(shift + "n"));
+            }
+            writer.append(")");
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
+    }
+
     @Override
     public void visit(BinaryExpr expr) {
         if (expr.getType() == OperationType.LONG) {
             switch (expr.getOperation()) {
                 case ADD:
-                    visitBinaryFunction(expr, "Long_add");
+                    visitLongBinary(expr, "+");
                     break;
                 case SUBTRACT:
-                    visitBinaryFunction(expr, "Long_sub");
+                    visitLongBinary(expr, "-");
                     break;
                 case MULTIPLY:
-                    visitBinaryFunction(expr, "Long_mul");
+                    visitLongBinary(expr, "*");
                     break;
                 case DIVIDE:
-                    visitBinaryFunction(expr, "Long_div");
+                    visitLongBinary(expr, "/");
                     break;
                 case MODULO:
-                    visitBinaryFunction(expr, "Long_rem");
+                    visitLongBinary(expr, "%");
                     break;
                 case BITWISE_OR:
-                    visitBinaryFunction(expr, "Long_or");
+                    visitLongBinary(expr, "|");
                     break;
                 case BITWISE_AND:
-                    visitBinaryFunction(expr, "Long_and");
+                    visitLongBinary(expr, "&");
                     break;
                 case BITWISE_XOR:
-                    visitBinaryFunction(expr, "Long_xor");
+                    visitLongBinary(expr, "^");
                     break;
                 case LEFT_SHIFT:
-                    visitBinaryFunction(expr, "Long_shl");
+                    visitLongShift(expr, "Long_shl");
                     break;
                 case RIGHT_SHIFT:
-                    visitBinaryFunction(expr, "Long_shr");
+                    visitLongShift(expr, "Long_shr");
                     break;
                 case UNSIGNED_RIGHT_SHIFT:
-                    visitBinaryFunction(expr, "Long_shru");
+                    visitLongShift(expr, "Long_shru");
                     break;
                 case COMPARE_LESS:
                 case COMPARE_GREATER:
                     visitBinaryFunction(expr, "Long_compare");
                     break;
                 case EQUALS:
-                    visitBinaryFunction(expr, "Long_eq");
+                    visitBinary(expr, "===", false);
                     break;
                 case NOT_EQUALS:
-                    visitBinaryFunction(expr, "Long_ne");
+                    visitBinary(expr, "!==", false);
                     break;
                 case LESS:
-                    visitBinaryFunction(expr, "Long_lt");
+                    visitBinary(expr, "<", false);
                     break;
                 case LESS_OR_EQUALS:
-                    visitBinaryFunction(expr, "Long_le");
+                    visitBinary(expr, "<=", false);
                     break;
                 case GREATER:
-                    visitBinaryFunction(expr, "Long_gt");
+                    visitBinary(expr, ">", false);
                     break;
                 case GREATER_OR_EQUALS:
-                    visitBinaryFunction(expr, "Long_ge");
+                    visitBinary(expr, ">=", false);
                     break;
                 default:
                     break;
@@ -788,8 +839,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         switch (expr.getOperation()) {
             case NOT: {
                 if (expr.getType() == OperationType.LONG) {
-                    writer.appendFunction("Long_not").append("(");
-                    precedence = Precedence.min();
+                    writer.appendFunction("Long_asIntN").append("(64,").ws().append("~");
+                    precedence = Precedence.UNARY;
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
                 } else {
@@ -807,8 +858,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
             case NEGATE:
                 if (expr.getType() == OperationType.LONG) {
-                    writer.appendFunction("Long_neg").append("(");
-                    precedence = Precedence.min();
+                    writer.appendFunction("Long_asIntN").append("(64,").ws().append("-");
+                    precedence = Precedence.UNARY;
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
                 } else if (expr.getType() == OperationType.INT) {
@@ -945,12 +996,28 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             case LONG:
                 switch (expr.getTarget()) {
                     case INT:
+                        var outerPrecedence = precedence;
                         precedence = Precedence.MEMBER_ACCESS;
-                        Expr longShifted = extractLongRightShiftedBy32(expr.getValue());
-                        if (longShifted != null) {
+                        var longShift = extractLongRightShiftBy32OrMore(expr.getValue());
+                        if (longShift != null) {
+                            // (int) (a >> n), where n >= 32, takes bits from high word only,
+                            // which is cheaper than shifting BigInt and then converting it to int
+                            var extraShift = longShift.shift - 32;
+                            var needsParentheses = extraShift > 0
+                                    && outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal();
+                            if (needsParentheses) {
+                                writer.append('(');
+                            }
                             writer.appendFunction("Long_hi").append("(");
-                            longShifted.acceptVisitor(this);
+                            precedence = Precedence.min();
+                            longShift.value.acceptVisitor(this);
                             writer.append(")");
+                            if (extraShift > 0) {
+                                writer.ws().append(longShift.unsigned ? ">>>" : ">>").ws().append(extraShift);
+                            }
+                            if (needsParentheses) {
+                                writer.append(')');
+                            }
                         } else {
                             writer.appendFunction("Long_lo").append("(");
                             expr.getValue().acceptVisitor(this);
@@ -978,8 +1045,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         writer.append(')');
                         break;
                     case INT:
-                        visitBinary(BinaryOperation.BITWISE_OR, "|", () -> expr.getValue().acceptVisitor(this),
-                                () -> writer.append("0"));
+                        writer.appendFunction("$rt_doubleToInt").append("(");
+                        precedence = Precedence.min();
+                        expr.getValue().acceptVisitor(this);
+                        writer.append(')');
                         break;
                     default:
                         expr.getValue().acceptVisitor(this);
@@ -991,7 +1060,19 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
     }
 
-    private Expr extractLongRightShiftedBy32(Expr expr) {
+    private static class LongRightShift {
+        final Expr value;
+        final int shift;
+        final boolean unsigned;
+
+        LongRightShift(Expr value, int shift, boolean unsigned) {
+            this.value = value;
+            this.shift = shift;
+            this.unsigned = unsigned;
+        }
+    }
+
+    private LongRightShift extractLongRightShiftBy32OrMore(Expr expr) {
         if (!(expr instanceof BinaryExpr)) {
             return null;
         }
@@ -1009,11 +1090,15 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
 
         Object rightConstant = ((ConstantExpr) binary.getSecondOperand()).getValue();
-        if (rightConstant.equals(32) || rightConstant.equals(32L)) {
-            return binary.getFirstOperand();
+        if (!(rightConstant instanceof Integer)) {
+            return null;
         }
-
-        return null;
+        var shift = (Integer) rightConstant & 63;
+        if (shift < 32) {
+            return null;
+        }
+        return new LongRightShift(binary.getFirstOperand(), shift,
+                binary.getOperation() == BinaryOperation.UNSIGNED_RIGHT_SHIFT);
     }
 
     @Override

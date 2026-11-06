@@ -16,19 +16,18 @@
 
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class PipedOutputStreamTest  {
     static class PReader implements Runnable {
@@ -135,9 +134,9 @@ public class PipedOutputStreamTest  {
         rt = new Thread(reader);
         rt.start();
         out.write("HelloWorld".getBytes("UTF-8"), 0, 10);
-        assertTrue("Bytes written before flush", reader.available() != 0);
+        assertTrue(reader.available() != 0, "Bytes written before flush");
         out.flush();
-        assertEquals("Wrote incorrect bytes", "HelloWorld", reader.read(10));
+        assertEquals("HelloWorld", reader.read(10), "Wrote incorrect bytes");
     }
 
     @Test
@@ -148,7 +147,7 @@ public class PipedOutputStreamTest  {
         rt.start();
         out.write("HelloWorld".getBytes("UTF-8"), 0, 10);
         out.flush();
-        assertEquals("Wrote incorrect bytes", "HelloWorld", reader.read(10));
+        assertEquals("HelloWorld", reader.read(10), "Wrote incorrect bytes");
     }
 
     @Test
@@ -159,10 +158,10 @@ public class PipedOutputStreamTest  {
         rt.start();
         out.write('c');
         out.flush();
-        assertEquals("Wrote incorrect byte", "c", reader.read(1));
+        assertEquals("c", reader.read(1), "Wrote incorrect byte");
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (rt != null) {
             rt.interrupt();

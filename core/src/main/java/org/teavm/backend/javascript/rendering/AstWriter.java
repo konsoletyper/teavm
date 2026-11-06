@@ -31,6 +31,7 @@ import org.mozilla.javascript.ast.ArrayComprehensionLoop;
 import org.mozilla.javascript.ast.ArrayLiteral;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
+import org.mozilla.javascript.ast.BigIntLiteral;
 import org.mozilla.javascript.ast.Block;
 import org.mozilla.javascript.ast.BreakStatement;
 import org.mozilla.javascript.ast.CatchClause;
@@ -176,7 +177,7 @@ public class AstWriter {
                 print((FunctionCall) node, precedence);
                 break;
             case Token.FUNCTION:
-                return print((FunctionNode) node);
+                return print((FunctionNode) node, precedence);
             case Token.ARRAYCOMP:
                 print((ArrayComprehension) node);
                 break;
@@ -188,6 +189,9 @@ public class AstWriter {
                 break;
             case Token.NUMBER:
                 print((NumberLiteral) node);
+                break;
+            case Token.BIGINT:
+                print((BigIntLiteral) node);
                 break;
             case Token.STRING:
                 print((StringLiteral) node);
@@ -693,6 +697,10 @@ public class AstWriter {
         writer.append(node.getValue());
     }
 
+    private void print(BigIntLiteral node) {
+        writer.append(node.getBigInt().toString()).append('n');
+    }
+
     private void print(StringLiteral node) {
         writer.append(node.getQuoteCharacter());
         writer.append(ScriptRuntime.escapeString(node.getValue(), node.getQuoteCharacter()));
@@ -759,11 +767,21 @@ public class AstWriter {
     }
 
     protected boolean print(FunctionNode node) {
+        return print(node, PRECEDENCE_COMMA);
+    }
+
+    private boolean print(FunctionNode node, int precedence) {
         var isArrow = node.getFunctionType() == FunctionNode.ARROW_FUNCTION;
         if (isTopLevelOutput() && !isArrow && node.getFunctionName() != null
                 && isTopLevelIdentifier(node.getFunctionName().getIdentifier())) {
             printTopLevel(node);
             return true;
+        }
+        // Arrow function is an assignment expression, so it requires parentheses when used as an operand,
+        // as a callee or as a target of property access
+        var needsParentheses = isArrow && precedence < PRECEDENCE_ASSIGN;
+        if (needsParentheses) {
+            writer.append('(');
         }
         var wasInFunction = inFunction;
         inFunction = true;
@@ -793,7 +811,12 @@ public class AstWriter {
 
         if (node.isExpressionClosure()) {
             if (node.getBody().getLastChild() instanceof ReturnStatement) {
-                print(((ReturnStatement) node.getBody().getLastChild()).getReturnValue());
+                var returnValue = ((ReturnStatement) node.getBody().getLastChild()).getReturnValue();
+                if (isArrow) {
+                    printArrowFunctionBody(returnValue);
+                } else {
+                    print(returnValue);
+                }
                 if (node.getFunctionType() == FunctionNode.FUNCTION_STATEMENT) {
                     writer.append(";");
                 }
@@ -802,9 +825,48 @@ public class AstWriter {
             print(node.getBody());
         }
 
+        if (needsParentheses) {
+            writer.append(')');
+        }
         leaveScope(scope);
         inFunction = wasInFunction;
         return false;
+    }
+
+    private void printArrowFunctionBody(AstNode body) {
+        // Body of arrow function is an assignment expression. Additionally, it can't start with '{',
+        // since it would be parsed as a block, so object literal requires parentheses.
+        if (startsWithObjectLiteral(body)) {
+            writer.append('(');
+            print(body);
+            writer.append(')');
+        } else {
+            print(body, PRECEDENCE_ASSIGN);
+        }
+    }
+
+    private static boolean startsWithObjectLiteral(AstNode node) {
+        while (true) {
+            if (node instanceof ObjectLiteral) {
+                return true;
+            } else if (node instanceof ParenthesizedExpression) {
+                node = ((ParenthesizedExpression) node).getExpression();
+            } else if (node instanceof PropertyGet) {
+                node = ((PropertyGet) node).getTarget();
+            } else if (node instanceof ElementGet) {
+                node = ((ElementGet) node).getTarget();
+            } else if (node instanceof FunctionCall && !(node instanceof NewExpression)) {
+                node = ((FunctionCall) node).getTarget();
+            } else if (node instanceof InfixExpression) {
+                node = ((InfixExpression) node).getLeft();
+            } else if (node instanceof ConditionalExpression) {
+                node = ((ConditionalExpression) node).getTestExpression();
+            } else if (node instanceof UpdateExpression && ((UpdateExpression) node).isPostfix()) {
+                node = ((UpdateExpression) node).getOperand();
+            } else {
+                return false;
+            }
+        }
     }
 
     private void printTopLevel(FunctionNode node) {

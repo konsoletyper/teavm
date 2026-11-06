@@ -60,7 +60,7 @@ class TRangeSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return chars.contains(testString.charAt(strIndex)) ? 1 : -1;
     }
 
@@ -85,5 +85,13 @@ class TRangeSet extends TLeafSet {
 
     protected TAbstractCharClass getChars() {
         return chars;
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (alt != chars.alt) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TRangeSet.class, "rangeSet", chars);
     }
 }

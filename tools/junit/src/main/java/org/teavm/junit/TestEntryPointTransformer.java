@@ -15,18 +15,22 @@
  */
 package org.teavm.junit;
 
-import static org.teavm.junit.TeaVMTestRunner.JUNIT3_AFTER;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT3_BASE_CLASS;
-import static org.teavm.junit.TeaVMTestRunner.JUNIT3_BEFORE;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT4_AFTER;
 import static org.teavm.junit.TeaVMTestRunner.JUNIT4_BEFORE;
+import static org.teavm.junit.TeaVMTestRunner.JUNIT4_TEST;
+import static org.teavm.junit.TeaVMTestRunner.JUPITER_AFTER_EACH;
+import static org.teavm.junit.TeaVMTestRunner.JUPITER_BEFORE_EACH;
 import static org.teavm.junit.TeaVMTestRunner.TESTNG_AFTER;
 import static org.teavm.junit.TeaVMTestRunner.TESTNG_BEFORE;
 import static org.teavm.junit.TeaVMTestRunner.TESTNG_PROVIDER;
 import static org.teavm.junit.TeaVMTestRunner.TESTNG_TEST;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.BasicBlock;
@@ -38,6 +42,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -51,11 +56,19 @@ import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
+    // Don't put these constants to TeaVMTestRunner, since this class should not depend on JVM-specific
+    // test infrastructure, as it can be compiled by TeaVM (see TestCompilationPlugins)
+    private static final MethodReference JUNIT3_BEFORE = new MethodReference(JUNIT3_BASE_CLASS, "setUp",
+            ValueType.VOID);
+    private static final MethodReference JUNIT3_AFTER = new MethodReference(JUNIT3_BASE_CLASS, "tearDown",
+            ValueType.VOID);
     private String testClassName;
+    private Map<MethodReference, JupiterArgumentsPlan> parameterizedPlans;
     private int suffixGenerator;
 
-    TestEntryPointTransformer(String testClassName) {
+    TestEntryPointTransformer(String testClassName, Map<MethodReference, JupiterArgumentsPlan> parameterizedPlans) {
         this.testClassName = testClassName;
+        this.parameterizedPlans = parameterizedPlans;
     }
 
     @Override
@@ -105,10 +118,13 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
 
         List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
         Collections.reverse(classes);
+        Set<MethodDescriptor> seen = new HashSet<>();
         classes.stream()
                 .flatMap(cls -> cls.getMethods().stream())
                 .filter(m -> m.getAnnotations().get(JUNIT4_BEFORE) != null
-                        || m.getAnnotations().get(TESTNG_BEFORE) != null)
+                        || m.getAnnotations().get(TESTNG_BEFORE) != null
+                        || m.getAnnotations().get(JUPITER_BEFORE_EACH) != null)
+                .filter(m -> seen.add(m.getDescriptor()))
                 .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
 
         pe.exit();
@@ -119,10 +135,13 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
 
         List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
+        Set<MethodDescriptor> seen = new HashSet<>();
         classes.stream()
                 .flatMap(cls -> cls.getMethods().stream())
                 .filter(m -> m.getAnnotations().get(JUNIT4_AFTER) != null
-                        || m.getAnnotations().get(TESTNG_AFTER) != null)
+                        || m.getAnnotations().get(TESTNG_AFTER) != null
+                        || m.getAnnotations().get(JUPITER_AFTER_EACH) != null)
+                .filter(m -> seen.add(m.getDescriptor()))
                 .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
 
         if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testClassName, false)) {
@@ -155,6 +174,12 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         ValueEmitter list = pe.var(2, List.class);
 
         MethodReader testMethodReader = context.getHierarchy().getClassSource().resolve(testMethod);
+        JupiterArgumentsPlan plan = parameterizedPlans.get(testMethod);
+        if (plan != null) {
+            generateAddLaunchersWithJupiterPlan(testMethodReader, pe, list, plan, launcherClass.getName());
+            return;
+        }
+
         AnnotationReader testNgAnnot = testMethodReader.getAnnotations().get(TESTNG_TEST);
         if (testNgAnnot != null) {
             AnnotationValue dataProviderValue = testNgAnnot.getValue("dataProvider");
@@ -186,9 +211,58 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
                 .invokeSpecial(providerMethod.getReference());
         if (data.getType() instanceof ValueType.Array) {
             generateAddLaunchersWithProviderArray(testMethodReader, pe, list, data, launcherClassName);
+            pe.exit();
         } else {
             generateAddLaunchersWithProviderIterator(testMethodReader, pe, list, data, launcherClassName);
         }
+    }
+
+    private void generateAddLaunchersWithJupiterPlan(MethodReader testMethodReader, ProgramEmitter pe,
+            ValueEmitter list, JupiterArgumentsPlan plan, String launcherClassName) {
+        pe.setField(TestEntryPoint.class, "collectInvocationFailures", pe.constant(1).cast(boolean.class));
+        if (!plan.sharedInstance) {
+            pe.setField(TestEntryPoint.class, "instancePerInvocation", pe.constant(1).cast(boolean.class));
+        }
+        for (var segment : plan.segments) {
+            if (segment instanceof JupiterArgumentsPlan.StaticRow) {
+                List<JupiterArgumentsPlan.StaticValue> values = ((JupiterArgumentsPlan.StaticRow) segment).values;
+                ValueEmitter[] arguments = new ValueEmitter[testMethodReader.parameterCount()];
+                for (int i = 0; i < arguments.length; ++i) {
+                    arguments[i] = values.get(i).emit(pe, testMethodReader.parameterType(i));
+                }
+                list.invokeVirtual("add", boolean.class, pe.construct(launcherClassName, arguments)
+                        .cast(Object.class));
+            } else {
+                ValueEmitter source;
+                String converterName;
+                if (segment instanceof JupiterArgumentsPlan.FactoryMethod factory) {
+                    if (factory.isStatic) {
+                        source = pe.invoke(factory.method);
+                    } else {
+                        ValueEmitter instance = pe.getField(TestEntryPoint.class, "testCase", Object.class)
+                                .cast(ValueType.object(factory.method.getClassName()));
+                        source = factory.isPrivate
+                                ? instance.invokeSpecial(factory.method)
+                                : instance.invokeVirtual(factory.method);
+                    }
+                    converterName = "fromMethod";
+                } else {
+                    var factory = (JupiterArgumentsPlan.FactoryField) segment;
+                    if (factory.isStatic) {
+                        source = pe.getField(factory.field, factory.type);
+                    } else {
+                        source = pe.getField(TestEntryPoint.class, "testCase", Object.class)
+                                .cast(ValueType.object(factory.field.getClassName()))
+                                .getField(factory.field.getFieldName(), factory.type);
+                    }
+                    converterName = "fromField";
+                }
+                ValueEmitter data = pe.invoke(JupiterArgumentsRuntime.class, converterName, Object[][].class,
+                        source.cast(Object.class), pe.constant(testMethodReader.parameterCount()));
+                generateAddLaunchersWithProviderArray(testMethodReader, pe, list, data, launcherClassName);
+            }
+        }
+        pe.exit();
     }
 
     private void generateAddLaunchersWithProviderArray(MethodReader testMethodReader, ProgramEmitter pe,
@@ -213,7 +287,6 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         pe.jump(loopHead);
 
         pe.enter(loopExit);
-        pe.exit();
     }
 
     private void generateAddLaunchersWithProviderIterator(MethodReader testMethodReader, ProgramEmitter pe,
@@ -259,7 +332,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
                 case BYTE:
                     return value.cast(Number.class).invokeVirtual("byteValue", byte.class);
                 case SHORT:
-                    return value.cast(Number.class).invokeVirtual("shortValue", byte.class);
+                    return value.cast(Number.class).invokeVirtual("shortValue", short.class);
                 case INTEGER:
                     return value.cast(Number.class).invokeVirtual("intValue", int.class);
                 case LONG:
@@ -311,7 +384,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
                 .invokeSpecial(testMethod, arguments.toArray(new ValueEmitter[0]));
 
         MethodReader testMethodReader = hierarchy.getClassSource().resolve(testMethod);
-        String[] expectedExceptions = TeaVMTestRunner.getExpectedExceptions(testMethodReader);
+        String[] expectedExceptions = getExpectedExceptions(testMethodReader);
         if (expectedExceptions.length != 0) {
             BasicBlock handler = pe.getProgram().createBasicBlock();
 
@@ -329,5 +402,35 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
 
             pe.enter(handler);
         }
+    }
+
+    static String[] getExpectedExceptions(MethodReader method) {
+        AnnotationReader annot = method.getAnnotations().get(JUNIT4_TEST);
+        if (annot != null) {
+            AnnotationValue expected = annot.getValue("expected");
+            if (expected == null) {
+                return new String[0];
+            }
+
+            ValueType result = expected.getJavaClass();
+            return new String[] { ((ValueType.Object) result).getClassName() };
+        }
+
+        annot = method.getAnnotations().get(TESTNG_TEST);
+        if (annot != null) {
+            AnnotationValue expected = annot.getValue("expectedExceptions");
+            if (expected == null) {
+                return new String[0];
+            }
+
+            List<AnnotationValue> list = expected.getList();
+            String[] result = new String[list.size()];
+            for (int i = 0; i < list.size(); ++i) {
+                result[i] = ((ValueType.Object) list.get(i).getJavaClass()).getClassName();
+            }
+            return result;
+        }
+
+        return new String[0];
     }
 }

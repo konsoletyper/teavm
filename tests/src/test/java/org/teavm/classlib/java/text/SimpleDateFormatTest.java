@@ -15,20 +15,20 @@
  */
 package org.teavm.classlib.java.text;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class SimpleDateFormatTest {
     public SimpleDateFormatTest() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -164,5 +164,37 @@ public class SimpleDateFormatTest {
     public void fieldsParsedWithoutDelimiters() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyMMddHHmm", Locale.ENGLISH);
         assertEquals(1403602380000L, getTimeWithoutZoneOffset(format.parse("1406240933")));
+    }
+
+    @Test
+    public void numericGeneralTimeZoneParsed() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.ENGLISH);
+        assertEquals(1403602429000L, parseFully(format, "2014-06-24 09:33:49 GMT+00:00"));
+        assertEquals(1403602429000L - 2 * 3600_000L, parseFully(format, "2014-06-24 09:33:49 GMT+02:00"));
+        assertEquals(1403602429000L - 1800_000L, parseFully(format, "2014-06-24 09:33:49 GMT+00:30"));
+        assertEquals(1403602429000L + 5 * 3600_000L + 1800_000L,
+                parseFully(format, "2014-06-24 09:33:49 GMT-05:30"));
+        assertEquals(1403602429000L - 3600_000L, parseFully(format, "2014-06-24 09:33:49 GMT+1:00"));
+    }
+
+    @Test
+    public void rfc822TimeZoneParsed() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.ENGLISH);
+        assertEquals(1403602429000L - 5400_000L, parseFully(format, "2014-06-24 09:33:49 +0130"));
+        assertEquals(1403602429000L + 1800_000L, parseFully(format, "2014-06-24 09:33:49 -0030"));
+    }
+
+    @Test
+    public void iso8601TimeZoneKeepsSignOfZeroHours() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss XXX", Locale.ENGLISH);
+        assertEquals(1403602429000L - 1800_000L, parseFully(format, "2014-06-24 09:33:49 +00:30"));
+    }
+
+    private long parseFully(SimpleDateFormat format, String text) {
+        ParsePosition position = new ParsePosition(0);
+        Date date = format.parse(text, position);
+        assertEquals(-1, position.getErrorIndex(), text);
+        assertEquals(text.length(), position.getIndex(), text);
+        return date.getTime();
     }
 }

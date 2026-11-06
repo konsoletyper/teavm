@@ -41,6 +41,9 @@ public final class EventQueue {
         if (PlatformDetector.isWebAssemblyGC()) {
             return offerWasmGC(action, time);
         }
+        if (PlatformDetector.isJavaScript()) {
+            return offerJS(action, time);
+        }
         ensureCapacity(size + 1);
         int current = size;
         while (current > 0) {
@@ -64,11 +67,23 @@ public final class EventQueue {
     @Intrinsified
     private static native int offerWasmGC(Event action, double time);
 
+    // Implemented by the JavaScript backend's EventQueueGenerator, on top of setTimeout.
+    private static native int offerJS(Event action, double time);
+
     private static void run(Event action) {
         action.run();
     }
 
     public static void kill(int id) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            // offer() schedules a host timer on Wasm GC, so the timer must be cancelled there.
+            killWasmGC(id);
+            return;
+        }
+        if (PlatformDetector.isJavaScript()) {
+            killJS(id);
+            return;
+        }
         for (int i = 0; i < size; ++i) {
             if (data[i].id == id) {
                 remove(i);
@@ -78,7 +93,9 @@ public final class EventQueue {
     }
 
     @Import(name = "kill", module = "teavmAsync")
-    private static native int killWasmGC(int id);
+    private static native void killWasmGC(int id);
+
+    private static native void killJS(int id);
 
     public static void process() {
         while (size > 0 && !finished) {

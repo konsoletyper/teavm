@@ -88,7 +88,7 @@ public class Parser {
             Program program = programParser.parse(node);
             var optimizer = new UnreachableBasicBlockEliminator();
             optimizer.removeUnreachableInstructions(program);
-            optimizer.optimize(program);
+            optimizer.optimize(program, method.parameterCount());
 
             Graph cfg = ProgramUtils.buildControlFlowGraph(program);
             if (GraphUtils.isIrreducible(cfg)) {

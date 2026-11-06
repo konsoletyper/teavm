@@ -33,67 +33,66 @@
 
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 @SuppressWarnings("RedundantCast")
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class StringTokenizerTest {
     @Test
     public void test_ConstructorLjava_lang_StringLjava_lang_String() {
         StringTokenizer st = new StringTokenizer("This:is:a:test:String", ":");
-        assertTrue("Created incorrect tokenizer", st.countTokens() == 5 && (st.nextElement().equals("This")));
+        assertTrue(st.countTokens() == 5 && (st.nextElement().equals("This")), "Created incorrect tokenizer");
     }
 
     @Test
     public void test_ConstructorLjava_lang_StringLjava_lang_StringZ() {
         StringTokenizer st = new StringTokenizer("This:is:a:test:String", ":", true);
         st.nextElement();
-        assertTrue("Created incorrect tokenizer", st.countTokens() == 8 && (st.nextElement().equals(":")));
+        assertTrue(st.countTokens() == 8 && (st.nextElement().equals(":")), "Created incorrect tokenizer");
     }
 
     @Test
     public void test_countTokens() {
         StringTokenizer st = new StringTokenizer("This is a test String");
-        assertEquals("Incorrect token count returned", 5, st.countTokens());
+        assertEquals(5, st.countTokens(), "Incorrect token count returned");
     }
 
     @Test
     public void test_hasMoreElements() {
         StringTokenizer st = new StringTokenizer("This is a test String");
         st.nextElement();
-        assertTrue("hasMoreElements returned incorrect value", st.hasMoreElements());
+        assertTrue(st.hasMoreElements(), "hasMoreElements returned incorrect value");
         st.nextElement();
         st.nextElement();
         st.nextElement();
         st.nextElement();
-        assertTrue("hasMoreElements returned incorrect value", !st.hasMoreElements());
+        assertTrue(!st.hasMoreElements(), "hasMoreElements returned incorrect value");
     }
 
     @Test
     public void test_hasMoreTokens() {
         StringTokenizer st = new StringTokenizer("This is a test String");
         for (int counter = 0; counter < 5; counter++) {
-            assertTrue("StringTokenizer incorrectly reports it has no more tokens", st.hasMoreTokens());
+            assertTrue(st.hasMoreTokens(), "StringTokenizer incorrectly reports it has no more tokens");
             st.nextToken();
         }
-        assertTrue("StringTokenizer incorrectly reports it has more tokens", !st.hasMoreTokens());
+        assertTrue(!st.hasMoreTokens(), "StringTokenizer incorrectly reports it has more tokens");
     }
 
     @Test
     public void test_nextElement() {
         StringTokenizer st = new StringTokenizer("This is a test String");
-        assertEquals("nextElement returned incorrect value", "This", st.nextElement());
-        assertEquals("nextElement returned incorrect value", "is", st.nextElement());
-        assertEquals("nextElement returned incorrect value", "a", st.nextElement());
-        assertEquals("nextElement returned incorrect value", "test", st.nextElement());
-        assertEquals("nextElement returned incorrect value", "String", st.nextElement());
+        assertEquals("This", st.nextElement(), "nextElement returned incorrect value");
+        assertEquals("is", st.nextElement(), "nextElement returned incorrect value");
+        assertEquals("a", st.nextElement(), "nextElement returned incorrect value");
+        assertEquals("test", st.nextElement(), "nextElement returned incorrect value");
+        assertEquals("String", st.nextElement(), "nextElement returned incorrect value");
         try {
             st.nextElement();
             fail("nextElement failed to throw a NoSuchElementException when it should have been out of elements");
@@ -105,11 +104,11 @@ public class StringTokenizerTest {
     @Test
     public void test_nextToken() {
         StringTokenizer st = new StringTokenizer("This is a test String");
-        assertEquals("nextToken returned incorrect value", "This", st.nextToken());
-        assertEquals("nextToken returned incorrect value", "is", st.nextToken());
-        assertEquals("nextToken returned incorrect value", "a", st.nextToken());
-        assertEquals("nextToken returned incorrect value", "test", st.nextToken());
-        assertEquals("nextToken returned incorrect value", "String", st.nextToken());
+        assertEquals("This", st.nextToken(), "nextToken returned incorrect value");
+        assertEquals("is", st.nextToken(), "nextToken returned incorrect value");
+        assertEquals("a", st.nextToken(), "nextToken returned incorrect value");
+        assertEquals("test", st.nextToken(), "nextToken returned incorrect value");
+        assertEquals("String", st.nextToken(), "nextToken returned incorrect value");
         try {
             st.nextToken();
             fail("nextToken failed to throw a NoSuchElementException when it should have been out of elements");
@@ -121,10 +120,10 @@ public class StringTokenizerTest {
     @Test
     public void test_nextTokenLjava_lang_String() {
         StringTokenizer st = new StringTokenizer("This is a test String");
-        assertEquals("nextToken(String) returned incorrect value with normal token String", "This", st.nextToken(" "));
-        assertEquals("nextToken(String) returned incorrect value with custom token String", " is a ",
-                st.nextToken("tr"));
-        assertEquals("calling nextToken() did not use the new default delimiter list", "es", st.nextToken());
+        assertEquals("This", st.nextToken(" "), "nextToken(String) returned incorrect value with normal token String");
+        assertEquals(" is a ", st.nextToken("tr"),
+                "nextToken(String) returned incorrect value with custom token String");
+        assertEquals("es", st.nextToken(), "calling nextToken() did not use the new default delimiter list");
     }
 
     @Test

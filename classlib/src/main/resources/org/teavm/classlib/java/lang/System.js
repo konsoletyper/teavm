@@ -34,3 +34,6 @@ function doArrayCopy(src, srcPos, dest, destPos, length) {
 function currentTimeMillis() {
     return Long_fromNumber(new (teavm_globals.Date)().getTime());
 }
+function exit(code) {
+    $rt_exit(code);
+}

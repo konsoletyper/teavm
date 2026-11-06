@@ -15,15 +15,14 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class LongTest {
     @Test
     public void parsesLongInSubstring() {
@@ -183,24 +182,19 @@ public class LongTest {
 
     @Test
     public void decode() {
-        assertEquals("Returned incorrect value for hex string", 255L,
-                Long.decode("0xFF").longValue());
-        assertEquals("Returned incorrect value for dec string", -89000L,
-                Long.decode("-89000").longValue());
-        assertEquals("Returned incorrect value for 0 decimal", 0,
-                Long.decode("0").longValue());
-        assertEquals("Returned incorrect value for 0 hex", 0,
-                Long.decode("0x0").longValue());
-        assertEquals("Returned incorrect value for most negative value decimal", 0x8000000000000000L,
-                Long.decode("-9223372036854775808").longValue());
-        assertEquals("Returned incorrect value for most negative value hex", 0x8000000000000000L,
-                Long.decode("-0x8000000000000000").longValue());
-        assertEquals("Returned incorrect value for most positive value decimal", 0x7fffffffffffffffL,
-                Long.decode("9223372036854775807").longValue());
-        assertEquals("Returned incorrect value for most positive value hex", 0x7fffffffffffffffL,
-                Long.decode("0x7fffffffffffffff").longValue());
-        assertEquals("Failed for 07654321765432", 07654321765432L,
-                Long.decode("07654321765432").longValue());
+        assertEquals(255L, Long.decode("0xFF").longValue(), "Returned incorrect value for hex string");
+        assertEquals(-89000L, Long.decode("-89000").longValue(), "Returned incorrect value for dec string");
+        assertEquals(0, Long.decode("0").longValue(), "Returned incorrect value for 0 decimal");
+        assertEquals(0, Long.decode("0x0").longValue(), "Returned incorrect value for 0 hex");
+        assertEquals(0x8000000000000000L, Long.decode("-9223372036854775808").longValue(),
+                "Returned incorrect value for most negative value decimal");
+        assertEquals(0x8000000000000000L, Long.decode("-0x8000000000000000").longValue(),
+                "Returned incorrect value for most negative value hex");
+        assertEquals(0x7fffffffffffffffL, Long.decode("9223372036854775807").longValue(),
+                "Returned incorrect value for most positive value decimal");
+        assertEquals(0x7fffffffffffffffL, Long.decode("0x7fffffffffffffff").longValue(),
+                "Returned incorrect value for most positive value hex");
+        assertEquals(07654321765432L, Long.decode("07654321765432").longValue(), "Failed for 07654321765432");
         try {
             Long.decode(null); // undocumented NPE
             fail();
@@ -247,23 +241,20 @@ public class LongTest {
 
     @Test
     public void test_parseLong() {
-        assertEquals("Returned incorrect value",
-                100000000L, Long.parseLong("100000000", 10));
-        assertEquals("Returned incorrect value from hex string", 68719476735L,
-                Long.parseLong("FFFFFFFFF", 16));
-        assertEquals("Returned incorrect value from octal string: " + Long.parseLong("77777777777"),
-                8589934591L, Long.parseLong("77777777777", 8));
-        assertEquals("Returned incorrect value for 0 hex", 0, Long.parseLong("0", 16));
-        assertEquals("Returned incorrect value for most negative value hex", 0x8000000000000000L,
-                Long.parseLong("-8000000000000000", 16));
-        assertEquals("Returned incorrect value for most positive value hex", 0x7fffffffffffffffL,
-                Long.parseLong("7fffffffffffffff", 16));
-        assertEquals("Returned incorrect value for 0 decimal", 0,
-                Long.parseLong("0", 10));
-        assertEquals("Returned incorrect value for most negative value decimal", 0x8000000000000000L,
-                Long.parseLong("-9223372036854775808", 10));
-        assertEquals("Returned incorrect value for most positive value decimal", 0x7fffffffffffffffL,
-                Long.parseLong("9223372036854775807", 10));
+        assertEquals(100000000L, Long.parseLong("100000000", 10), "Returned incorrect value");
+        assertEquals(68719476735L, Long.parseLong("FFFFFFFFF", 16), "Returned incorrect value from hex string");
+        assertEquals(8589934591L, Long.parseLong("77777777777", 8),
+                "Returned incorrect value from octal string: " + Long.parseLong("77777777777"));
+        assertEquals(0, Long.parseLong("0", 16), "Returned incorrect value for 0 hex");
+        assertEquals(0x8000000000000000L, Long.parseLong("-8000000000000000", 16),
+                "Returned incorrect value for most negative value hex");
+        assertEquals(0x7fffffffffffffffL, Long.parseLong("7fffffffffffffff", 16),
+                "Returned incorrect value for most positive value hex");
+        assertEquals(0, Long.parseLong("0", 10), "Returned incorrect value for 0 decimal");
+        assertEquals(0x8000000000000000L, Long.parseLong("-9223372036854775808", 10),
+                "Returned incorrect value for most negative value decimal");
+        assertEquals(0x7fffffffffffffffL, Long.parseLong("9223372036854775807", 10),
+                "Returned incorrect value for most positive value decimal");
         try {
             Long.parseLong("999999999999", 8);
             fail();

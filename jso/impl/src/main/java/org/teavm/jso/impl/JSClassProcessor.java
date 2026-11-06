@@ -728,6 +728,7 @@ class JSClassProcessor {
                 invoke.setMethod(JSMethods.THROW_CCE_IF_FALSE);
                 invoke.setArguments(instanceOfResult, cast.getValue());
                 invoke.setReceiver(cast.getReceiver());
+                invoke.setLocation(cast.getLocation());
                 replacement.add(invoke);
             }
             return true;
@@ -1396,7 +1397,7 @@ class JSClassProcessor {
         var errorReporter = new TeaVMErrorReporter(diagnostics, new CallLocation(methodToProcess.getReference()));
         var env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
-        env.setLanguageVersion(Context.VERSION_1_8);
+        env.setLanguageVersion(Context.VERSION_ES6);
         env.setIdeMode(true);
         var parser = new JSParser(env, errorReporter);
         AstRoot rootNode;
@@ -1413,7 +1414,7 @@ class JSClassProcessor {
             var importsList = importsValue.getList();
             imports = new JsBodyImportInfo[importsList.size()];
             for (var i = 0; i < importsList.size(); ++i) {
-                var importAnnot = importsList.get(0).getAnnotation();
+                var importAnnot = importsList.get(i).getAnnotation();
                 imports[i] = new JsBodyImportInfo(importAnnot.getValue("alias").getString(),
                         importAnnot.getValue("fromModule").getString());
             }

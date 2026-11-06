@@ -30,12 +30,8 @@ public class DisassemblyGlobalSectionListener extends BaseDisassemblyListener im
     @Override
     public CodeListener startGlobal(int index, WasmHollowType type, boolean mutable) {
         writer.address().write("(global ");
-        writer.startLinkTarget("g" + index).write("(; ").write(String.valueOf(index)).write(" ;)");
-        var name = nameProvider.global(index);
-        if (name != null) {
-            writer.write(" $").write(name);
-        }
-        writer.endLinkTarget().write(" ");
+        writeDeclaration("g" + index, nameProvider.global(index), index);
+        writer.write(" ");
         if (mutable) {
             writer.write("(mut ");
             writeType(type);

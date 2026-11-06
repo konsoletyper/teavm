@@ -1,0 +1,11 @@
+var @this as this
+
+$start
+    @size := 2
+    @array := newArray I[@size]
+    @zero := 0
+    @one := 1
+    @index := @zero - @one as int
+    @7 := new java.lang.ArrayIndexOutOfBoundsException
+    invoke `java.lang.ArrayIndexOutOfBoundsException.<init>()V` @7
+    throw @7

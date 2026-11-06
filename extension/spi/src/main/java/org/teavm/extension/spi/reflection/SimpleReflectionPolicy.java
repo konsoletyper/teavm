@@ -19,7 +19,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -55,7 +55,7 @@ public abstract class SimpleReflectionPolicy implements ReflectionPolicy {
 
     @Override
     public Collection<IntrospectMember> classAccessibleMembers(IntrospectClass<?> cls) {
-        var members = new HashSet<IntrospectMember>();
+        var members = new LinkedHashSet<IntrospectMember>();
         for (var policy : policies) {
             if (policy.predicate.test(cls)) {
                 for (var field : cls.declaredFields()) {

@@ -1,0 +1,248 @@
+/*
+ *  Copyright 2026 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.teavm.classlib.java.util.regex;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
+
+/**
+ * Patterns passed as literals to {@link Pattern#compile(String)} are compiled in build time.
+ * These tests check that such patterns behave exactly like patterns compiled in run time.
+ */
+@TeaVMTest
+public class PatternLiteralTest {
+    private static final String[] INPUTS = {
+        "", "abc", "ABC", "a1b22c333", "foo bar  baz\tqux", "2026-10-04, 1999-01-31", "x+y=z; (a|b)",
+        "line1\nline2\r\nline3", "aaa bbb aaa", "Hello, World!", "été фоо",
+        "😀 smile 😁", "foo.bar@example.com"
+    };
+
+    @Test
+    public void sameAsRuntimeCompiled() {
+        check(Pattern.compile("a"), "a");
+        check(Pattern.compile("abc"), "abc");
+        check(Pattern.compile("\\d+"), "\\d+");
+        check(Pattern.compile("\\D+"), "\\D+");
+        check(Pattern.compile("\\w+"), "\\w+");
+        check(Pattern.compile("\\W"), "\\W");
+        check(Pattern.compile("\\s+"), "\\s+");
+        check(Pattern.compile("\\S+"), "\\S+");
+        check(Pattern.compile("[a-z]+"), "[a-z]+");
+        check(Pattern.compile("[^a-z ]+"), "[^a-z ]+");
+        check(Pattern.compile("[a-cx-z0-2]"), "[a-cx-z0-2]");
+        check(Pattern.compile("[\\w.]+@[\\w.]+"), "[\\w.]+@[\\w.]+");
+        check(Pattern.compile("(\\d{4})-(\\d{2})-(\\d{2})"), "(\\d{4})-(\\d{2})-(\\d{2})");
+        check(Pattern.compile("(?<year>\\d{4})-(?<month>\\d\\d)"), "(?<year>\\d{4})-(?<month>\\d\\d)");
+        check(Pattern.compile("a*"), "a*");
+        check(Pattern.compile("a+?"), "a+?");
+        check(Pattern.compile("a*+"), "a*+");
+        check(Pattern.compile("a?b"), "a?b");
+        check(Pattern.compile("a{2,3}"), "a{2,3}");
+        check(Pattern.compile("a{2,}?"), "a{2,}?");
+        check(Pattern.compile("(ab)+"), "(ab)+");
+        check(Pattern.compile("(?:ab|c)*"), "(?:ab|c)*");
+        check(Pattern.compile("(a|b)*?c"), "(a|b)*?c");
+        check(Pattern.compile("(?:a|bc){1,2}"), "(?:a|bc){1,2}");
+        check(Pattern.compile("(?>a|ab)c"), "(?>a|ab)c");
+        check(Pattern.compile("foo|bar|baz"), "foo|bar|baz");
+        check(Pattern.compile("a(?=b)"), "a(?=b)");
+        check(Pattern.compile("a(?!b)"), "a(?!b)");
+        check(Pattern.compile("(?<=a)b"), "(?<=a)b");
+        check(Pattern.compile("(?<!a)b"), "(?<!a)b");
+        check(Pattern.compile("^\\w+"), "^\\w+");
+        check(Pattern.compile("\\w+$"), "\\w+$");
+        check(Pattern.compile("(?m)^\\w+$"), "(?m)^\\w+$");
+        check(Pattern.compile("\\bba"), "\\bba");
+        check(Pattern.compile("a\\B"), "a\\B");
+        check(Pattern.compile(".+"), ".+");
+        check(Pattern.compile("(?s).+"), "(?s).+");
+        check(Pattern.compile("a.*?a"), "a.*?a");
+        check(Pattern.compile("(?s)l.+?\\d"), "(?s)l.+?\\d");
+        check(Pattern.compile("[^a-z ]*?\\d"), "[^a-z ]*?\\d");
+        check(Pattern.compile("\\Aa|c\\z"), "\\Aa|c\\z");
+        check(Pattern.compile("\\Ga"), "\\Ga");
+        check(Pattern.compile("[\\p{L}]+"), "[\\p{L}]+");
+        check(Pattern.compile("\\p{Lu}"), "\\p{Lu}");
+        check(Pattern.compile("\\P{L}+"), "\\P{L}+");
+        check(Pattern.compile("\\p{Punct}"), "\\p{Punct}");
+        check(Pattern.compile("\\p{InGreek}"), "\\p{InGreek}");
+        check(Pattern.compile("😀"), "😀");
+        check(Pattern.compile("[😀-😁]"), "[😀-😁]");
+        check(Pattern.compile("\\Q(a|b)\\E"), "\\Q(a|b)\\E");
+        check(Pattern.compile("(a)|(b)"), "(a)|(b)");
+        check(Pattern.compile("(\\w)\\1"), "(\\w)\\1");
+        check(Pattern.compile("\\p{javaLowerCase}+"), "\\p{javaLowerCase}+");
+        check(Pattern.compile("[a-z]+[0-9]+"), "[a-z]+[0-9]+");
+        check(Pattern.compile("[a-z]+[a-c]\\d"), "[a-z]+[a-c]\\d");
+        check(Pattern.compile("\\d+\\.\\d+"), "\\d+\\.\\d+");
+        check(Pattern.compile("[^,]+,"), "[^,]+,");
+        check(Pattern.compile("[\\w.]+@[^@\\s]+\\.com"), "[\\w.]+@[^@\\s]+\\.com");
+        check(Pattern.compile("foo|bar|baz\\d"), "foo|bar|baz\\d");
+        check(Pattern.compile("(?:a|ab)c"), "(?:a|ab)c");
+        check(Pattern.compile("\\d{2,4}-[a-z]+?\\b"), "\\d{2,4}-[a-z]+?\\b");
+        check(Pattern.compile("[a-z]*+\\d?+x"), "[a-z]*+\\d?+x");
+    }
+
+    @Test
+    public void sameAsRuntimeCompiledWithFlags() {
+        check(Pattern.compile("abc", Pattern.CASE_INSENSITIVE), "abc", Pattern.CASE_INSENSITIVE);
+        check(Pattern.compile("[a-c]+", Pattern.CASE_INSENSITIVE), "[a-c]+", Pattern.CASE_INSENSITIVE);
+        check(Pattern.compile("(?i)hello"), "(?i)hello", 0);
+        check(Pattern.compile("^line\\d$", Pattern.MULTILINE), "^line\\d$", Pattern.MULTILINE);
+        check(Pattern.compile("^line\\d$", Pattern.MULTILINE | Pattern.UNIX_LINES), "^line\\d$",
+                Pattern.MULTILINE | Pattern.UNIX_LINES);
+        check(Pattern.compile("e.l", Pattern.DOTALL), "e.l", Pattern.DOTALL);
+        check(Pattern.compile("a b # comment", Pattern.COMMENTS), "a b # comment", Pattern.COMMENTS);
+        check(Pattern.compile("(a|b)", Pattern.LITERAL), "(a|b)", Pattern.LITERAL);
+        check(Pattern.compile("ÉTÉ", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE), "ÉTÉ",
+                Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    }
+
+    @Test
+    public void properties() {
+        var pattern = Pattern.compile("(?<word>\\w+)-(\\d+)", Pattern.CASE_INSENSITIVE);
+        assertEquals("(?<word>\\w+)-(\\d+)", pattern.pattern());
+        assertEquals("(?<word>\\w+)-(\\d+)", pattern.toString());
+        assertEquals(Pattern.CASE_INSENSITIVE, pattern.flags());
+        assertEquals(Map.of("word", 1), pattern.namedGroups());
+
+        var matcher = pattern.matcher("abc-123");
+        assertTrue(matcher.matches());
+        assertEquals(2, matcher.groupCount());
+        assertEquals("abc", matcher.group("word"));
+        assertEquals("123", matcher.group(2));
+    }
+
+    @Test
+    public void syntaxErrorReportedInRuntime() {
+        assertThrows(PatternSyntaxException.class, () -> Pattern.compile("(abc"));
+        assertThrows(PatternSyntaxException.class, () -> Pattern.compile("[a-"));
+        assertThrows(IllegalArgumentException.class, () -> Pattern.compile("abc", 0xFFFFFF));
+    }
+
+    @Test
+    public void newInstanceEachTime() {
+        var patterns = new ArrayList<Pattern>();
+        for (var i = 0; i < 2; ++i) {
+            patterns.add(Pattern.compile("a+b"));
+        }
+        assertFalse(patterns.get(0) == patterns.get(1));
+        assertEquals(List.of("", "c"), List.of(patterns.get(0).split("aabc")));
+        assertEquals(List.of("", "c"), List.of(patterns.get(1).split("aabc")));
+    }
+
+    @Test
+    public void stringMethods() {
+        for (var i = 0; i < 2; ++i) {
+            for (var input : INPUTS) {
+                assertEquals(List.of(input.split(dynamic("\\s*,\\s*"))), List.of(input.split("\\s*,\\s*")));
+                assertEquals(List.of(input.split(dynamic("\\d"), 2)), List.of(input.split("\\d", 2)));
+                assertEquals(input.replaceAll(dynamic("(\\w)(\\w)"), "$2$1"), input.replaceAll("(\\w)(\\w)", "$2$1"));
+                assertEquals(input.replaceFirst(dynamic("[a-z]+"), "<$0>"), input.replaceFirst("[a-z]+", "<$0>"));
+                assertEquals(input.matches(dynamic("\\w*")), input.matches("\\w*"));
+                assertEquals(Pattern.matches(dynamic("[a-z]+"), input), Pattern.matches("[a-z]+", input));
+            }
+        }
+        assertEquals(List.of("a", "b", "c"), List.of(new Splitter() { }.split("a, b,c")));
+    }
+
+    @Test
+    public void splitBySingleChar() {
+        var inputs = List.of("", ",", ",,", "a", "a,b", ",a,b", "a,b,", "a,,b,,", ",,a,,", "abc", "a,b,c,d");
+        for (var input : inputs) {
+            for (var limit = -1; limit <= 5; ++limit) {
+                var expected = List.of(Pattern.compile(dynamic(",")).split(input, limit));
+                assertEquals(expected, List.of(input.split(",", limit)), "Literal split of " + input + " " + limit);
+                assertEquals(expected, List.of(input.split(dynamic(","), limit)),
+                        "Dynamic split of " + input + " " + limit);
+            }
+            var expected = List.of(Pattern.compile(dynamic(",")).split(input));
+            assertEquals(expected, List.of(input.split(",")), "Literal split of " + input);
+            assertEquals(expected, List.of(input.split(dynamic(","))), "Dynamic split of " + input);
+
+            var dotted = input.replace(',', '.');
+            expected = List.of(Pattern.compile(dynamic("\\.")).split(dotted));
+            assertEquals(expected, List.of(dotted.split("\\.")), "Literal split of " + dotted);
+            assertEquals(expected, List.of(dotted.split(dynamic("\\."))), "Dynamic split of " + dotted);
+            assertEquals(List.of(dotted.split(dynamic(".")).length), List.of(dotted.split(".").length));
+        }
+        assertEquals(List.of("a", "c"), List.of("abc".split(dynamic("\\Qb\\E"))));
+        assertEquals(List.of("", "", "bc"), List.of("aabc".split("\\w", 3)));
+    }
+
+    @Test
+    public void stringMethodsReportErrors() {
+        assertThrows(PatternSyntaxException.class, () -> "abc".split("(abc"));
+        assertThrows(PatternSyntaxException.class, () -> "abc".replaceAll("[a-", ""));
+        String nullString = dynamic(null);
+        assertThrows(NullPointerException.class, () -> nullString.split(", "));
+        assertThrows(NullPointerException.class, () -> nullString.matches("a+"));
+        assertThrows(NullPointerException.class, () -> nullString.replaceAll("a+", ""));
+    }
+
+    interface Splitter {
+        default String[] split(String s) {
+            return s.split("\\s*,\\s*");
+        }
+    }
+
+    private static void check(Pattern precompiled, String source) {
+        check(precompiled, source, 0);
+    }
+
+    private static void check(Pattern precompiled, String source, int flags) {
+        var expected = Pattern.compile(dynamic(source), flags);
+        assertEquals(expected.pattern(), precompiled.pattern());
+        assertEquals(expected.flags(), precompiled.flags());
+        assertEquals(expected.namedGroups(), precompiled.namedGroups());
+        for (var input : INPUTS) {
+            assertEquals(describeMatches(expected, input), describeMatches(precompiled, input),
+                    "Pattern " + source + " on input " + input);
+            assertEquals(List.of(expected.split(input)), List.of(precompiled.split(input)),
+                    "Pattern " + source + " splitting input " + input);
+        }
+    }
+
+    private static String describeMatches(Pattern pattern, String input) {
+        var sb = new StringBuilder();
+        var matcher = pattern.matcher(input);
+        sb.append(matcher.matches()).append(';').append(matcher.lookingAt()).append(';');
+        matcher.reset();
+        while (matcher.find()) {
+            sb.append('[').append(matcher.start()).append(',').append(matcher.end());
+            for (var i = 1; i <= matcher.groupCount(); ++i) {
+                sb.append(',').append(matcher.group(i));
+            }
+            sb.append(']');
+        }
+        sb.append(';').append(matcher.hitEnd());
+        return sb.toString();
+    }
+
+    // Prevents pattern from being compiled in build time
+    private static String dynamic(String value) {
+        return value != null ? new StringBuilder(value).toString() : null;
+    }
+}

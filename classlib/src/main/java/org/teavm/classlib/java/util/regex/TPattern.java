@@ -116,9 +116,14 @@ public final class TPattern implements Serializable {
     private transient TLexer lexemes;
 
     /**
+     * Source of the pattern
+     */
+    String source;
+
+    /**
      * Pattern compile flags;
      */
-    private int flags;
+    int flags;
 
     /*
      * All backreferences that may be used in pattern.
@@ -130,15 +135,15 @@ public final class TPattern implements Serializable {
      */
     transient private boolean needsBackRefReplacement;
 
-    transient private int globalGroupIndex = -1;
+    transient int globalGroupIndex = -1;
 
-    transient private int compCount = -1;
+    transient int compCount = -1;
 
-    transient private int consCount = -1;
+    transient int consCount = -1;
 
     transient TAbstractSet start;
 
-    private Map<String, Integer> namedGroups;
+    Map<String, Integer> namedGroups;
 
     /**
      * Returns a {@link TMatcher} for the {@code Pattern} and a given input. The
@@ -233,7 +238,7 @@ public final class TPattern implements Serializable {
      * @return the regular expression.
      */
     public String pattern() {
-        return lexemes.toString();
+        return source;
     }
 
     @Override
@@ -308,6 +313,7 @@ public final class TPattern implements Serializable {
      */
     private TPattern compileImpl(String pattern, int flags) throws TPatternSyntaxException {
         this.lexemes = new TLexer(pattern, flags);
+        this.source = pattern;
         this.flags = flags;
 
         start = processExpression(-1, this.flags, null);
@@ -315,6 +321,8 @@ public final class TPattern implements Serializable {
             throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
         }
         finalizeCompile();
+        lexemes = null;
+        backRefs = null;
         return this;
     }
 
@@ -421,6 +429,15 @@ public final class TPattern implements Serializable {
         if (lexemes.back() == TLexer.CHAR_VERTICAL_BAR) {
             children.add(new TEmptySet(fSet));
         }
+        TAbstractSet alternativesMachine = TStateMachineSet.createAlternatives(children, fSet);
+        if (alternativesMachine != null) {
+            children.clear();
+            children.add(alternativesMachine);
+        } else {
+            for (int i = 0; i < children.size(); ++i) {
+                children.set(i, createStateMachines(children.get(i), fSet));
+            }
+        }
 
         if (flags != saveFlags && !saveChangedFlags) {
             flags = saveFlags;
@@ -458,6 +475,29 @@ public final class TPattern implements Serializable {
                         return new TJointSet(children, fSet);
                 }
         }
+    }
+
+    /**
+     * Replaces parts of chain of nodes that starts with {@code first} and ends before {@code end}
+     * with state machines. Returns new first node.
+     */
+    private TAbstractSet createStateMachines(TAbstractSet first, TAbstractSet end) {
+        TAbstractSet previous = null;
+        TAbstractSet node = first;
+        while (node != null && node != end) {
+            TAbstractSet machine = TStateMachineSet.create(node, end);
+            if (machine != null) {
+                if (previous == null) {
+                    first = machine;
+                } else {
+                    previous.setNext(machine);
+                }
+                node = machine;
+            }
+            previous = node;
+            node = node.getNext();
+        }
+        return first;
     }
 
     /**
@@ -654,18 +694,8 @@ public final class TPattern implements Serializable {
             switch (quant) {
                 case TLexer.QUANT_STAR:
                 case TLexer.QUANT_PLUS: {
-                    TQuantifierSet q;
-
                     lexemes.next();
-                    if (term.getType() == TAbstractSet.TYPE_DOTSET) {
-                        if (!hasFlag(TPattern.DOTALL)) {
-                            q = new TDotQuantifierSet(term, last, quant, TAbstractLineTerminator.getInstance(flags));
-                        } else {
-                            q = new TDotAllQuantifierSet(term, last, quant);
-                        }
-                    } else {
-                        q = new TGroupQuantifierSet(term, last, quant);
-                    }
+                    TQuantifierSet q = new TGroupQuantifierSet(term, last, quant);
                     term.setNext(q);
                     return q;
                 }
@@ -742,7 +772,16 @@ public final class TPattern implements Serializable {
                 case TLexer.QUANT_STAR:
                 case TLexer.QUANT_PLUS: {
                     lexemes.next();
-                    TLeafQuantifierSet q = new TLeafQuantifierSet(leaf, last, quant);
+                    TQuantifierSet q;
+                    if (leaf.getType() == TAbstractSet.TYPE_DOTSET) {
+                        if (!hasFlag(TPattern.DOTALL)) {
+                            q = new TDotQuantifierSet(leaf, last, quant, TAbstractLineTerminator.getInstance(flags));
+                        } else {
+                            q = new TDotAllQuantifierSet(leaf, last, quant);
+                        }
+                    } else {
+                        q = new TLeafQuantifierSet(leaf, last, quant);
+                    }
                     leaf.setNext(q);
                     return q;
                 }
@@ -1361,6 +1400,16 @@ public final class TPattern implements Serializable {
      * Dismiss public constructor.
      *
      */
-    private TPattern() {
+    TPattern() {
+    }
+
+    void describe(TPatternWriter writer) {
+        if (needsBackRefReplacement) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TPattern.class, "pattern", source, flags, start, globalGroupIndex, compCount, consCount);
+        for (var entry : namedGroups.entrySet()) {
+            writer.call("namedGroup", this, entry.getKey(), entry.getValue());
+        }
     }
 }

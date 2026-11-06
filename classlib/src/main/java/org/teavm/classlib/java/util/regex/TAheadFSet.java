@@ -54,4 +54,9 @@ class TAheadFSet extends TFSet {
     protected String getName() {
         return "AheadFSet";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TAheadFSet.class, "aheadFSet");
+    }
 }

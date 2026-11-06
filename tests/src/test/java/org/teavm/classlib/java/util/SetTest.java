@@ -15,21 +15,20 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class SetTest {
     @Test
     public void of() {
@@ -123,12 +122,12 @@ public class SetTest {
         }
 
         for (String value : expected) {
-            assertTrue("contains returns true for existing elements", actual.contains(value));
+            assertTrue(actual.contains(value), "contains returns true for existing elements");
         }
 
-        assertFalse("contains return false for non-existing element", actual.contains("*"));
+        assertFalse(actual.contains("*"), "contains return false for non-existing element");
 
-        assertEquals("isEmpty works properly", expected.length == 0, actual.isEmpty());
+        assertEquals(expected.length == 0, actual.isEmpty(), "isEmpty works properly");
 
         String[] expectedCopy = expected.clone();
         for (String elem : actual) {
@@ -141,11 +140,11 @@ public class SetTest {
                 }
             }
 
-            assertTrue("iterator returned strange value", found);
+            assertTrue(found, "iterator returned strange value");
         }
 
         for (String e : expectedCopy) {
-            assertNull("Iterator did not return all of expected elements", e);
+            assertNull(e, "Iterator did not return all of expected elements");
         }
     }
 

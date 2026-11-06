@@ -15,8 +15,8 @@
  */
 package org.teavm.vm;
 
+import static org.teavm.metaprogramming.Metaprogramming.caller;
 import static org.teavm.metaprogramming.Metaprogramming.emit;
-import static org.teavm.metaprogramming.Metaprogramming.findClass;
 import java.lang.reflect.Modifier;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.javascript.spi.GeneratedBy;
@@ -25,12 +25,12 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.PluggableDependency;
+import org.teavm.extension.introspect.IntrospectClass;
+import org.teavm.extension.introspect.IntrospectMethod;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
-import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.Value;
-import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -46,7 +46,13 @@ public final class TeaVMPluginUtil {
             return;
         }
 
-        handleNativesImpl(host, host.getExtension(TeaVMJavaScriptHost.class), cls);
+        handleDependenciesImpl(host, cls);
+        /*
+        var jsHost = host.getExtension(TeaVMJavaScriptHost.class);
+        if (jsHost != null) {
+            handleNativesImpl(host, jsHost, cls);
+        }
+         */
     }
 
     @PlatformMarker
@@ -58,63 +64,73 @@ public final class TeaVMPluginUtil {
     private static native void handleNativesImpl(TeaVMHost host, TeaVMJavaScriptHost jsHost, Class<?> cls);
 
     private static void handleNativesImpl(Value<TeaVMHost> host, Value<TeaVMJavaScriptHost> jsHost,
-            ReflectClass<?> cls) {
-        for (ReflectMethod method : cls.getDeclaredMethods()) {
-            if (!Modifier.isNative(method.getModifiers())) {
+            IntrospectClass<?> cls) {
+        for (var method : cls.declaredMethods()) {
+            if (!Modifier.isNative(method.modifiers())) {
                 continue;
             }
 
-            GeneratedBy generatedBy = method.getAnnotation(GeneratedBy.class);
+            var generatedBy = method.annotation(GeneratedBy.class);
             if (generatedBy != null) {
-                ReflectClass<?> generatorClass = findClass(generatedBy.value().getName());
-                ReflectMethod generatorConstructor = generatorClass.getMethod("<init>");
+                var generatorClass = (IntrospectClass<?>) generatedBy.value("value");
+                var generatorConstructor = generatorClass.method("<init>");
+                var generatorConstructorCaller = caller(generatorConstructor);
 
                 Value<MethodReference> methodRef = methodToReference(method);
-                emit(() -> jsHost.get().add(methodRef.get(), (Generator) generatorConstructor.construct()));
+                emit(() -> jsHost.get().add(methodRef.get(), (Generator) generatorConstructorCaller.construct()));
             }
 
-            InjectedBy injectedBy = method.getAnnotation(InjectedBy.class);
+            var injectedBy = method.annotation(InjectedBy.class);
             if (injectedBy != null) {
-                ReflectClass<?> generatorClass = findClass(injectedBy.value().getName());
-                ReflectMethod generatorConstructor = generatorClass.getMethod("<init>");
+                var generatorClass = (IntrospectClass<?>) injectedBy.value("value");
+                var generatorConstructor = generatorClass.method("<init>");
+                var generatorConstructorCaller = caller(generatorConstructor);
 
                 Value<MethodReference> methodRef = methodToReference(method);
-                emit(() -> jsHost.get().add(methodRef.get(), (Injector) generatorConstructor.construct()));
-            }
-
-            PluggableDependency dependency = method.getAnnotation(PluggableDependency.class);
-            if (dependency != null) {
-                ReflectClass<?> generatorClass = findClass(dependency.value().getName());
-                ReflectMethod generatorConstructor = generatorClass.getMethod("<init>");
-
-                Value<MethodReference> methodRef = methodToReference(method);
-                emit(() -> host.get().add(methodRef.get(), (DependencyPlugin) generatorConstructor.construct()));
+                emit(() -> jsHost.get().add(methodRef.get(), (Injector) generatorConstructorCaller.construct()));
             }
         }
     }
 
-    private static Value<MethodReference> methodToReference(ReflectMethod method) {
-        int signatureSize = method.getParameterCount() + 1;
+    @Meta
+    private static native void handleDependenciesImpl(TeaVMHost host, Class<?> cls);
+
+    private static void handleDependenciesImpl(Value<TeaVMHost> host, IntrospectClass<?> cls) {
+        for (var method : cls.declaredMethods()) {
+            var dependency = method.annotation(PluggableDependency.class);
+            if (dependency != null) {
+                var generatorClass = (IntrospectClass<?>) dependency.value("value");
+                var generatorConstructor = generatorClass.method("<init>");
+
+                Value<MethodReference> methodRef = methodToReference(method);
+                var generatorConstructorCaller = caller(generatorConstructor);
+                emit(() -> host.get().add(methodRef.get(), (DependencyPlugin) generatorConstructorCaller.construct()));
+            }
+        }
+    }
+
+    private static Value<MethodReference> methodToReference(IntrospectMethod method) {
+        int signatureSize = method.parameters().size() + 1;
         Value<ValueType[]> signature = emit(() -> new ValueType[signatureSize]);
-        for (int i = 0; i < method.getParameterCount(); ++i) {
-            Value<ValueType> paramType = classToValueType(method.getParameterType(i));
+        for (int i = 0; i < method.parameters().size(); ++i) {
+            Value<ValueType> paramType = classToValueType(method.parameters().get(i).type());
             int index = i;
             emit(() -> signature.get()[index] = paramType.get());
         }
-        Value<ValueType> returnType = classToValueType(method.getReturnType());
+        Value<ValueType> returnType = classToValueType(method.returnType());
         emit(() -> signature.get()[signatureSize - 1] = returnType.get());
 
-        String className = method.getDeclaringClass().getName();
-        String name = method.getName();
+        String className = method.declaringClass().name();
+        String name = method.name();
         return emit(() -> new MethodReference(className, new MethodDescriptor(name, signature.get())));
     }
 
-    private static Value<ValueType> classToValueType(ReflectClass<?> cls) {
+    private static Value<ValueType> classToValueType(IntrospectClass<?> cls) {
         if (cls.isArray()) {
-            Value<ValueType> itemType = classToValueType(cls.getComponentType());
+            Value<ValueType> itemType = classToValueType(cls.componentType());
             return emit(() -> ValueType.arrayOf(itemType.get()));
         } else if (cls.isPrimitive()) {
-            switch (cls.getName()) {
+            switch (cls.name()) {
                 case "boolean":
                     return emit(() -> ValueType.BOOLEAN);
                 case "byte":
@@ -134,10 +150,10 @@ public final class TeaVMPluginUtil {
                 case "void":
                     return emit(() -> ValueType.VOID);
                 default:
-                    throw new IllegalArgumentException("Unexpected primitive type: " + cls.getName());
+                    throw new IllegalArgumentException("Unexpected primitive type: " + cls.name());
             }
         } else {
-            String name = cls.getName();
+            String name = cls.name();
             return emit(() -> ValueType.object(name));
         }
     }

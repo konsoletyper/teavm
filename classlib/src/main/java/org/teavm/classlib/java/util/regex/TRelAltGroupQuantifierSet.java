@@ -58,4 +58,9 @@ class TRelAltGroupQuantifierSet extends TAltGroupQuantifierSet {
 
         return nextIndex < 0 ? innerSet.matches(stringIndex, testString, matchResult) : nextIndex;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TRelAltGroupQuantifierSet.class, "relAltGroupQuantifierSet", innerSet, type);
+    }
 }

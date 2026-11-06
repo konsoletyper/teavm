@@ -95,4 +95,8 @@ class TQuantifier extends TSpecialToken implements Cloneable {
     public Object clone() {
         return new TQuantifier(min, max);
     }
+
+    void describe(TPatternWriter writer) {
+        writer.create(this, TQuantifier.class, "quantifier", min, max);
+    }
 }

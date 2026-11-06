@@ -50,11 +50,16 @@ class TLeafQuantifierSet extends TQuantifierSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
+        int start = stringIndex;
         int i = 0;
         int shift = 0;
 
-        while (stringIndex + leaf.charCount() <= matchResult.getRightBound()) {
-            shift = leaf.accepts(stringIndex, testString);
+        while (true) {
+            if (stringIndex + leaf.charCount() > matchResult.getRightBound()) {
+                matchResult.hitEnd = true;
+                break;
+            }
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift <= 0) {
                 break;
             }
@@ -68,7 +73,7 @@ class TLeafQuantifierSet extends TQuantifierSet {
                 return shift;
             }
 
-            stringIndex -= leaf.charCount();
+            stringIndex = leaf.stepBack(stringIndex, start, testString);
         }
         return -1;
     }
@@ -91,5 +96,13 @@ class TLeafQuantifierSet extends TQuantifierSet {
         }
         super.setInnerSet(innerSet);
         this.leaf = (TLeafSet) innerSet;
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TLeafQuantifierSet.class, "leafQuantifierSet", leaf, type);
     }
 }

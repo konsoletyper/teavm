@@ -59,4 +59,9 @@ class TReluctantGroupQuantifierSet extends TGroupQuantifierSet {
             return res;
         }
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TReluctantGroupQuantifierSet.class, "reluctantGroupQuantifierSet", innerSet, type);
+    }
 }

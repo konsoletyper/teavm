@@ -22,8 +22,8 @@ import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -122,7 +122,7 @@ class LoopInversionImpl {
     }
 
     private List<LoopWithExits> getLoopsWithExits(LoopGraph cfg) {
-        Map<Loop, LoopWithExits> loops = new HashMap<>();
+        Map<Loop, LoopWithExits> loops = new LinkedHashMap<>();
 
         for (int node = 0; node < cfg.size(); ++node) {
             Loop loop = cfg.loopAt(node);

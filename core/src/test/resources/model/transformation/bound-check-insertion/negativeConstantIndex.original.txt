@@ -1,0 +1,10 @@
+var @this as this
+
+$start
+    @size := 2
+    @array := newArray I[@size]
+    @zero := 0
+    @one := 1
+    @index := @zero - @one as int
+    @value := @array[@index] as int
+    return @value

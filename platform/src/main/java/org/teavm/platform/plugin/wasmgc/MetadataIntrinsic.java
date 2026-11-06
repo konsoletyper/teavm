@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.strings.WasmGCStringProvider;
@@ -42,6 +41,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.Resource;
@@ -87,7 +87,7 @@ class MetadataIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
         builder.getGlobal(getGlobal());
     }

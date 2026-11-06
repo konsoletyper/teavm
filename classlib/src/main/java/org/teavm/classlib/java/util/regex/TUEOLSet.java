@@ -78,4 +78,9 @@ final class TUEOLSet extends TAbstractSet {
     protected String getName() {
         return "<EOL>"; //$NON-NLS-1$
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TUEOLSet.class, "ueolSet", consCounter);
+    }
 }

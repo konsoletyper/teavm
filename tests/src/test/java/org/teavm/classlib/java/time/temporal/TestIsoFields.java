@@ -54,34 +54,33 @@ import static java.time.DayOfWeek.THURSDAY;
 import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.IsoFields;
 import java.time.temporal.ValueRange;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestIsoFields {
 
+    @Test
     public void test_enum() {
         assertTrue(IsoFields.WEEK_OF_WEEK_BASED_YEAR instanceof Enum);
         assertTrue(IsoFields.WEEK_BASED_YEAR instanceof Enum);
         assertTrue(IsoFields.WEEK_BASED_YEARS instanceof Enum);
     }
 
-    @DataProvider(name = "week")
-    Object[][] data_week() {
+    static Object[][] data_week() {
         return new Object[][] {
                 {LocalDate.of(1969, 12, 29), MONDAY, 1, 1970},
                 {LocalDate.of(2012, 12, 23), SUNDAY, 51, 2012},
@@ -101,37 +100,41 @@ public class TestIsoFields {
     //-----------------------------------------------------------------------
     // WEEK_OF_WEEK_BASED_YEAR
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "week")
+    @ParameterizedTest
+    @MethodSource("data_week")
     public void test_WOWBY(LocalDate date, DayOfWeek dow, int week, int wby) {
-        assertEquals(date.getDayOfWeek(), dow);
-        assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), week);
-        assertEquals(date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR), week);
+        assertEquals(dow, date.getDayOfWeek());
+        assertEquals(week, IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date));
+        assertEquals(week, date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR));
     }
 
     //-----------------------------------------------------------------------
     // WEEK_BASED_YEAR
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "week")
+    @ParameterizedTest
+    @MethodSource("data_week")
     public void test_WBY(LocalDate date, DayOfWeek dow, int week, int wby) {
-        assertEquals(date.getDayOfWeek(), dow);
-        assertEquals(IsoFields.WEEK_BASED_YEAR.getFrom(date), wby);
-        assertEquals(date.get(IsoFields.WEEK_BASED_YEAR), wby);
+        assertEquals(dow, date.getDayOfWeek());
+        assertEquals(wby, IsoFields.WEEK_BASED_YEAR.getFrom(date));
+        assertEquals(wby, date.get(IsoFields.WEEK_BASED_YEAR));
     }
 
     //-----------------------------------------------------------------------
     // parse weeks
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "week")
+    @ParameterizedTest
+    @MethodSource("data_week")
     public void test_parse_weeks(LocalDate date, DayOfWeek dow, int week, int wby) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral('-')
                 .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral('-')
                 .appendValue(DAY_OF_WEEK).toFormatter();
         LocalDate parsed = LocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_loop() {
         // loop round at least one 400 year cycle, including before 1970
         LocalDate date = LocalDate.of(1960, 1, 5);  // Tuseday of week 1 1960
@@ -155,14 +158,14 @@ public class TestIsoFields {
                     wby++;
                 }
             }
-            assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.rangeRefinedBy(date), ValueRange.of(1, weekLen),
+            assertEquals(ValueRange.of(1, weekLen), IsoFields.WEEK_OF_WEEK_BASED_YEAR.rangeRefinedBy(date),
                     "Failed on " + date + " " + date.getDayOfWeek());
-            assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), week,
+            assertEquals(week, IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date),
                     "Failed on " + date + " " + date.getDayOfWeek());
-            assertEquals(date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR), week,
+            assertEquals(week, date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR),
                     "Failed on " + date + " " + date.getDayOfWeek());
-            assertEquals(IsoFields.WEEK_BASED_YEAR.getFrom(date), wby, "Failed on " + date + " " + date.getDayOfWeek());
-            assertEquals(date.get(IsoFields.WEEK_BASED_YEAR), wby, "Failed on " + date + " " + date.getDayOfWeek());
+            assertEquals(wby, IsoFields.WEEK_BASED_YEAR.getFrom(date), "Failed on " + date + " " + date.getDayOfWeek());
+            assertEquals(wby, date.get(IsoFields.WEEK_BASED_YEAR), "Failed on " + date + " " + date.getDayOfWeek());
             date = date.plusDays(1);
         }
     }
@@ -170,8 +173,7 @@ public class TestIsoFields {
     //-----------------------------------------------------------------------
      // quarters between
      //-----------------------------------------------------------------------
-     @DataProvider(name = "quartersBetween")
-     Object[][] data_quartersBetween() {
+     static Object[][] data_quartersBetween() {
          return new Object[][] {
                  {LocalDate.of(2000, 1, 1), LocalDate.of(2000, 1, 1), 0},
                  {LocalDate.of(2000, 1, 1), LocalDate.of(2000, 1, 2), 0},
@@ -202,9 +204,10 @@ public class TestIsoFields {
          };
      }
 
-     @Test(dataProvider = "quartersBetween")
+     @ParameterizedTest
+     @MethodSource("data_quartersBetween")
      public void test_quarters_between(LocalDate start, LocalDate end, long expected) {
-         assertEquals(IsoFields.QUARTER_YEARS.between(start, end), expected);
+         assertEquals(expected, IsoFields.QUARTER_YEARS.between(start, end));
      }
 
     // TODO: more tests

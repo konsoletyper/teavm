@@ -15,18 +15,19 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.instruction.WasmInstructionBuilder;
+import org.teavm.model.instructions.InvokeInstruction;
 
 public class SystemIntrinsic implements WasmGCInlineIntrinsic {
     private WasmFunctionTypes functionTypes;
     private WasmModule module;
-    private WasmFunction workerFunction;
+    private WasmFunction currentTimeFunction;
+    private WasmFunction killFunction;
 
     public SystemIntrinsic(WasmFunctionTypes functionTypes, WasmModule module) {
         this.functionTypes = functionTypes;
@@ -34,15 +35,31 @@ public class SystemIntrinsic implements WasmGCInlineIntrinsic {
     }
 
     @Override
-    public void apply(InvocationExpr invocation, WasmGCInlineIntrinsicContext context,
+    public void apply(InvokeInstruction invocation, WasmGCInlineIntrinsicContext context,
             WasmInstructionBuilder builder) {
-        if (workerFunction == null) {
-            workerFunction = new WasmFunction(functionTypes.of(WasmType.FLOAT64));
-            workerFunction.setName("teavm@currentTimeMillis");
-            workerFunction.setImportName("currentTimeMillis");
-            workerFunction.setImportModule("teavmDate");
-            module.functions.add(workerFunction);
+        switch (invocation.getMethod().getName()) {
+            case "currentTimeMillis":
+                if (currentTimeFunction == null) {
+                    currentTimeFunction = new WasmFunction(functionTypes.of(WasmType.FLOAT64));
+                    currentTimeFunction.setName("teavm@currentTimeMillis");
+                    currentTimeFunction.setImportName("currentTimeMillis");
+                    currentTimeFunction.setImportModule("teavmDate");
+                    module.functions.add(currentTimeFunction);
+                }
+                builder.call(currentTimeFunction).convert(WasmNumType.FLOAT64, WasmNumType.INT64, true);
+                break;
+            case "exit":
+                if (killFunction == null) {
+                    killFunction = new WasmFunction(functionTypes.of(null, WasmType.INT32));
+                    killFunction.setName("teavm@kill");
+                    killFunction.setImportName("kill");
+                    killFunction.setImportModule("teavm");
+                    module.functions.add(killFunction);
+                }
+                context.emitLocal(builder, invocation.getArguments().get(0))
+                        .call(killFunction)
+                        .unreachable();
+                break;
         }
-        builder.call(workerFunction).convert(WasmNumType.FLOAT64, WasmNumType.INT64, true);
     }
 }

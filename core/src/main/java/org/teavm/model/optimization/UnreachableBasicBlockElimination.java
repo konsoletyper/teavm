@@ -20,7 +20,7 @@ import org.teavm.model.Program;
 public class UnreachableBasicBlockElimination implements MethodOptimization {
     @Override
     public boolean optimize(MethodOptimizationContext context, Program program) {
-        new UnreachableBasicBlockEliminator().optimize(program);
+        new UnreachableBasicBlockEliminator().optimize(program, context.getMethod().parameterCount());
         return false;
     }
 }

@@ -15,10 +15,10 @@
  */
 package org.teavm.classlib.java.util.stream;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.teavm.classlib.java.util.stream.Helper.appendDoubleNumbersTo;
 import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
@@ -30,11 +30,10 @@ import java.util.Spliterator;
 import java.util.function.DoubleSupplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class DoubleStreamTest {
     @Test
     public void forEachWorks() {
@@ -162,6 +161,19 @@ public class DoubleStreamTest {
         sb.setLength(0);
         DoubleStream.of(2, 2, 3, 2, 4, 3, 1).distinct().forEach(appendDoubleNumbersTo(sb));
         assertEquals("2.0;3.0;4.0;1.0;", sb.toString());
+    }
+
+    @Test
+    public void distinctAcrossConcat() {
+        assertArrayEquals(new long[] { 0, Long.MIN_VALUE, 0x7ff8000000000000L },
+                DoubleStream.concat(DoubleStream.of(0.0, -0.0, Double.NaN),
+                        DoubleStream.of(-0.0, 0.0, Double.longBitsToDouble(0x7ff8000000000001L)))
+                        .distinct().mapToLong(Double::doubleToLongBits).toArray());
+    }
+
+    @Test
+    public void distinctAcrossIteratorAdvances() {
+        testDoubleStream(() -> DoubleStream.of(2, 2, 3, 2, 1, 1).distinct(), 2, 3, 1);
     }
 
     @Test

@@ -15,19 +15,18 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class PipedInputStreamTest {
     static class PWriter implements Runnable {
@@ -116,7 +115,7 @@ public class PipedInputStreamTest {
         synchronized (pw) {
             pw.wait(10000);
         }
-        assertTrue("Available returned incorrect number of bytes: " + pis.available(), pis.available() == 1000);
+        assertTrue(pis.available() == 1000, "Available returned incorrect number of bytes: " + pis.available());
 
         PipedInputStream pin = new PipedInputStream();
         PipedOutputStream pout = new PipedOutputStream(pin);
@@ -126,7 +125,7 @@ public class PipedInputStreamTest {
         for (int i = 0; i < 1024; i++) {
             pout.write(i);
         }
-        assertEquals("Incorrect available count", 1024, pin.available());
+        assertEquals(1024, pin.available(), "Incorrect available count");
     }
 
     @Test
@@ -150,7 +149,7 @@ public class PipedInputStreamTest {
     public void connectLjava_io_PipedOutputStream() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
-        assertEquals("Non-conected pipe returned non-zero available bytes", 0, pis.available());
+        assertEquals(0, pis.available(), "Non-conected pipe returned non-zero available bytes");
 
         pis.connect(pos);
         pw = new PWriter(pos, 1000);
@@ -160,7 +159,7 @@ public class PipedInputStreamTest {
         synchronized (pw) {
             pw.wait(10000);
         }
-        assertEquals("Available returned incorrect number of bytes", 1000, pis.available());
+        assertEquals(1000, pis.available(), "Available returned incorrect number of bytes");
     }
 
     @Test
@@ -176,8 +175,8 @@ public class PipedInputStreamTest {
         synchronized (pw) {
             pw.wait(10000);
         }
-        assertEquals("Available returned incorrect number of bytes", 1000, pis.available());
-        assertEquals("read returned incorrect byte", pw.bytes[0], (byte) pis.read());
+        assertEquals(1000, pis.available(), "Available returned incorrect number of bytes");
+        assertEquals(pw.bytes[0], (byte) pis.read(), "read returned incorrect byte");
     }
 
     @Test
@@ -194,10 +193,10 @@ public class PipedInputStreamTest {
         synchronized (pw) {
             pw.wait(10000);
         }
-        assertTrue("Available returned incorrect number of bytes: " + pis.available(), pis.available() == 1000);
+        assertTrue(pis.available() == 1000, "Available returned incorrect number of bytes: " + pis.available());
         pis.read(buf, 0, 400);
         for (int i = 0; i < 400; i++) {
-            assertEquals("read returned incorrect byte[]", pw.bytes[i], buf[i]);
+            assertEquals(pw.bytes[i], buf[i], "read returned incorrect byte[]");
         }
     }
 
@@ -208,9 +207,8 @@ public class PipedInputStreamTest {
             obj.read(new byte[0], 0, -1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException t) {
-            assertEquals(
-                    "IndexOutOfBoundsException rather than a subclass expected",
-                    IndexOutOfBoundsException.class, t.getClass());
+            assertEquals(IndexOutOfBoundsException.class, t.getClass(),
+                    "IndexOutOfBoundsException rather than a subclass expected");
         }
     }
 
@@ -298,11 +296,11 @@ public class PipedInputStreamTest {
             // Do nothing
         }
         writeRunnable.readerAlive = false;
-        assertTrue("reader thread failed to read", readRunnable.pass);
+        assertTrue(readRunnable.pass, "reader thread failed to read");
         while (writeThread.isAlive()) {
             // Do nothing
         }
-        assertTrue("writer thread failed to recognize dead reader", writeRunnable.pass);
+        assertTrue(writeRunnable.pass, "writer thread failed to recognize dead reader");
 
         // attempt to write to stream after writer closed
         pis = new PipedInputStream();
@@ -344,9 +342,7 @@ public class PipedInputStreamTest {
         while (t.isAlive()) {
             // Do nothing
         }
-        assertTrue(
-                "write failed to throw IOException on closed PipedOutputStream",
-                myRun.pass);
+        assertTrue(myRun.pass, "write failed to throw IOException on closed PipedOutputStream");
     }
 
     static class Worker extends Thread {
@@ -376,17 +372,17 @@ public class PipedInputStreamTest {
         Thread worker = new Worker(out);
         worker.start();
         Thread.sleep(2000);
-        assertEquals("Should read 20.", 20, in.read());
+        assertEquals(20, in.read(), "Should read 20.");
         worker.join();
-        assertEquals("Write end is closed, should return -1", -1, in.read());
+        assertEquals(-1, in.read(), "Write end is closed, should return -1");
         byte[] buf = new byte[1];
-        assertEquals("Write end is closed, should return -1", -1, in.read(buf, 0, 1));
-        assertEquals("Buf len 0 should return first", 0, in.read(buf, 0, 0));
+        assertEquals(-1, in.read(buf, 0, 1), "Write end is closed, should return -1");
+        assertEquals(0, in.read(buf, 0, 0), "Buf len 0 should return first");
         in.close();
         out.close();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         try {
             if (t != null) {

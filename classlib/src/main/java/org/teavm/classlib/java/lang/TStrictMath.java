@@ -279,6 +279,14 @@ public final class TStrictMath extends TObject {
         return TMath.hypot(x, y);
     }
 
+    public static double fma(double a, double b, double c) {
+        return TMath.fma(a, b, c);
+    }
+
+    public static float fma(float a, float b, float c) {
+        return TMath.fma(a, b, c);
+    }
+
     public static double expm1(double x) {
         return TMath.expm1(x);
     }

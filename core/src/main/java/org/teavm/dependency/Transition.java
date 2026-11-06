@@ -45,7 +45,7 @@ class Transition {
         }
 
         if (shouldMergeDomains()) {
-            mergeDomains(new DependencyType[] { type });
+            mergeDomains();
         } else {
             destination.propagate(type);
         }
@@ -57,13 +57,17 @@ class Transition {
         }
 
         if (shouldMergeDomains()) {
-            mergeDomains(types);
+            mergeDomains();
         } else {
             destination.propagate(types);
         }
     }
 
-    private void mergeDomains(DependencyType[] types) {
+    private void mergeDomains() {
+        // This was called from `propagate`, which delivers types from source to destination
+        // However, merging already does this, do we don't need types, passed from `propagate`,
+        // they'll be already in the domain
+        var types = source.typeSet.getTypesForNode(source, destination, null);
         destination.dependencyAnalyzer.merging = true;
         destination.moveToSeparateDomain();
         destination.scheduleMultipleTypes(types, () -> {

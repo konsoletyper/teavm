@@ -1,0 +1,13 @@
+var @this as this
+
+$start
+    @first := invokeStatic `Foo.get()I`
+    @size := 2
+    @array := newArray I[@size]
+    @index := 2
+    @value := @array[@index] as int
+    return @value
+    catch java.lang.RuntimeException goto $handle
+$handle
+    @result := phi @first from $start
+    return @result

@@ -16,11 +16,11 @@
 
 package org.teavm.classlib.java.net;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -28,11 +28,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class URLTest {
     URL u;
     URL u1;
@@ -47,115 +46,114 @@ public class URLTest {
     public void test_ConstructorLjava_lang_String() throws IOException {
         // Tests for multiple URL instantiation basic parsing test
         u = new URL("http://www.yahoo1.com:8080/dir1/dir2/test.cgi?point1.html#anchor1");
-        assertEquals("u returns a wrong protocol", "http", u.getProtocol());
-        assertEquals("u returns a wrong host", "www.yahoo1.com", u.getHost());
-        assertEquals("u returns a wrong port", 8080, u.getPort());
-        assertEquals("u returns a wrong file", "/dir1/dir2/test.cgi?point1.html", u.getFile());
-        assertEquals("u returns a wrong anchor", "anchor1", u.getRef());
+        assertEquals("http", u.getProtocol(), "u returns a wrong protocol");
+        assertEquals("www.yahoo1.com", u.getHost(), "u returns a wrong host");
+        assertEquals(8080, u.getPort(), "u returns a wrong port");
+        assertEquals("/dir1/dir2/test.cgi?point1.html", u.getFile(), "u returns a wrong file");
+        assertEquals("anchor1", u.getRef(), "u returns a wrong anchor");
 
         // test for no file
         u1 = new URL("http://www.yahoo2.com:9999");
-        assertEquals("u1 returns a wrong protocol", "http", u1.getProtocol());
-        assertEquals("u1 returns a wrong host", "www.yahoo2.com", u1.getHost());
-        assertEquals("u1 returns a wrong port", 9999, u1.getPort());
-        assertTrue("u1 returns a wrong file", u1.getFile().equals(""));
-        assertNull("u1 returns a wrong anchor", u1.getRef());
+        assertEquals("http", u1.getProtocol(), "u1 returns a wrong protocol");
+        assertEquals("www.yahoo2.com", u1.getHost(), "u1 returns a wrong host");
+        assertEquals(9999, u1.getPort(), "u1 returns a wrong port");
+        assertTrue(u1.getFile().equals(""), "u1 returns a wrong file");
+        assertNull(u1.getRef(), "u1 returns a wrong anchor");
 
         // test for no port
         u2 = new URL("http://www.yahoo3.com/dir1/dir2/test.cgi?point1.html#anchor1");
-        assertEquals("u2 returns a wrong protocol", "http", u2.getProtocol());
-        assertEquals("u2 returns a wrong host", "www.yahoo3.com", u2.getHost());
-        assertEquals("u2 returns a wrong port", -1, u2.getPort());
-        assertEquals("u2 returns a wrong file", "/dir1/dir2/test.cgi?point1.html", u2.getFile());
-        assertEquals("u2 returns a wrong anchor", "anchor1", u2.getRef());
+        assertEquals("http", u2.getProtocol(), "u2 returns a wrong protocol");
+        assertEquals("www.yahoo3.com", u2.getHost(), "u2 returns a wrong host");
+        assertEquals(-1, u2.getPort(), "u2 returns a wrong port");
+        assertEquals("/dir1/dir2/test.cgi?point1.html", u2.getFile(), "u2 returns a wrong file");
+        assertEquals("anchor1", u2.getRef(), "u2 returns a wrong anchor");
 
         // test for no port
         URL u2a = new URL("file://www.yahoo3.com/dir1/dir2/test.cgi#anchor1");
-        assertEquals("u2a returns a wrong protocol", "file", u2a.getProtocol());
-        assertEquals("u2a returns a wrong host", "www.yahoo3.com", u2a.getHost());
-        assertEquals("u2a returns a wrong port", -1, u2a.getPort());
-        assertEquals("u2a returns a wrong file", "/dir1/dir2/test.cgi", u2a.getFile());
-        assertEquals("u2a returns a wrong anchor", "anchor1", u2a.getRef());
+        assertEquals("file", u2a.getProtocol(), "u2a returns a wrong protocol");
+        assertEquals("www.yahoo3.com", u2a.getHost(), "u2a returns a wrong host");
+        assertEquals(-1, u2a.getPort(), "u2a returns a wrong port");
+        assertEquals("/dir1/dir2/test.cgi", u2a.getFile(), "u2a returns a wrong file");
+        assertEquals("anchor1", u2a.getRef(), "u2a returns a wrong anchor");
 
         // test for no file, no port
         u3 = new URL("http://www.yahoo4.com/");
-        assertEquals("u3 returns a wrong protocol", "http", u3.getProtocol());
-        assertEquals("u3 returns a wrong host", "www.yahoo4.com", u3.getHost());
-        assertEquals("u3 returns a wrong port", -1, u3.getPort());
-        assertEquals("u3 returns a wrong file", "/", u3.getFile());
-        assertNull("u3 returns a wrong anchor", u3.getRef());
+        assertEquals("http", u3.getProtocol(), "u3 returns a wrong protocol");
+        assertEquals("www.yahoo4.com", u3.getHost(), "u3 returns a wrong host");
+        assertEquals(-1, u3.getPort(), "u3 returns a wrong port");
+        assertEquals("/", u3.getFile(), "u3 returns a wrong file");
+        assertNull(u3.getRef(), "u3 returns a wrong anchor");
 
         // test for no file, no port
         URL u3a = new URL("file://www.yahoo4.com/");
-        assertEquals("u3a returns a wrong protocol", "file", u3a.getProtocol());
-        assertEquals("u3a returns a wrong host", "www.yahoo4.com", u3a.getHost());
-        assertEquals("u3a returns a wrong port", -1, u3a.getPort());
-        assertEquals("u3a returns a wrong file", "/", u3a.getFile());
-        assertNull("u3a returns a wrong anchor", u3a.getRef());
+        assertEquals("file", u3a.getProtocol(), "u3a returns a wrong protocol");
+        assertEquals("www.yahoo4.com", u3a.getHost(), "u3a returns a wrong host");
+        assertEquals(-1, u3a.getPort(), "u3a returns a wrong port");
+        assertEquals("/", u3a.getFile(), "u3a returns a wrong file");
+        assertNull(u3a.getRef(), "u3a returns a wrong anchor");
 
         // test for no file, no port
         URL u3b = new URL("file://www.yahoo4.com");
-        assertEquals("u3b returns a wrong protocol", "file", u3b.getProtocol());
-        assertEquals("u3b returns a wrong host", "www.yahoo4.com", u3b.getHost());
-        assertEquals("u3b returns a wrong port", -1, u3b.getPort());
-        assertTrue("u3b returns a wrong file", u3b.getFile().equals(""));
-        assertNull("u3b returns a wrong anchor", u3b.getRef());
+        assertEquals("file", u3b.getProtocol(), "u3b returns a wrong protocol");
+        assertEquals("www.yahoo4.com", u3b.getHost(), "u3b returns a wrong host");
+        assertEquals(-1, u3b.getPort(), "u3b returns a wrong port");
+        assertTrue(u3b.getFile().equals(""), "u3b returns a wrong file");
+        assertNull(u3b.getRef(), "u3b returns a wrong anchor");
 
         // test for non-port ":" and wierd characters occurrences
         u4 = new URL("http://www.yahoo5.com/di!@$%^&*()_+r1/di:::r2/test.cgi?point1.html#anchor1");
-        assertEquals("u4 returns a wrong protocol", "http", u4.getProtocol());
-        assertEquals("u4 returns a wrong host", "www.yahoo5.com", u4.getHost());
-        assertEquals("u4 returns a wrong port", -1, u4.getPort());
-        assertEquals("u4 returns a wrong file", "/di!@$%^&*()_+r1/di:::r2/test.cgi?point1.html", u4.getFile());
-        assertEquals("u4 returns a wrong anchor", "anchor1", u4.getRef());
+        assertEquals("http", u4.getProtocol(), "u4 returns a wrong protocol");
+        assertEquals("www.yahoo5.com", u4.getHost(), "u4 returns a wrong host");
+        assertEquals(-1, u4.getPort(), "u4 returns a wrong port");
+        assertEquals("/di!@$%^&*()_+r1/di:::r2/test.cgi?point1.html", u4.getFile(), "u4 returns a wrong file");
+        assertEquals("anchor1", u4.getRef(), "u4 returns a wrong anchor");
 
         u5 = new URL("file:/testing.tst");
-        assertEquals("u5 returns a wrong protocol", "file", u5.getProtocol());
-        assertTrue("u5 returns a wrong host", u5.getHost().equals(""));
-        assertEquals("u5 returns a wrong port", -1, u5.getPort());
-        assertEquals("u5 returns a wrong file", "/testing.tst", u5.getFile());
-        assertNull("u5 returns a wrong anchor", u5.getRef());
+        assertEquals("file", u5.getProtocol(), "u5 returns a wrong protocol");
+        assertTrue(u5.getHost().equals(""), "u5 returns a wrong host");
+        assertEquals(-1, u5.getPort(), "u5 returns a wrong port");
+        assertEquals("/testing.tst", u5.getFile(), "u5 returns a wrong file");
+        assertNull(u5.getRef(), "u5 returns a wrong anchor");
 
         URL u5a = new URL("file:testing.tst");
-        assertEquals("u5a returns a wrong protocol", "file", u5a.getProtocol());
-        assertTrue("u5a returns a wrong host", u5a.getHost().equals(""));
-        assertEquals("u5a returns a wrong port", -1, u5a.getPort());
-        assertEquals("u5a returns a wrong file", "testing.tst", u5a.getFile());
-        assertNull("u5a returns a wrong anchor", u5a.getRef());
+        assertEquals("file", u5a.getProtocol(), "u5a returns a wrong protocol");
+        assertTrue(u5a.getHost().equals(""), "u5a returns a wrong host");
+        assertEquals(-1, u5a.getPort(), "u5a returns a wrong port");
+        assertEquals("testing.tst", u5a.getFile(), "u5a returns a wrong file");
+        assertNull(u5a.getRef(), "u5a returns a wrong anchor");
 
         URL u6 = new URL("http://host:/file");
-        assertEquals("u6 return a wrong port", -1, u6.getPort());
+        assertEquals(-1, u6.getPort(), "u6 return a wrong port");
 
         URL u7 = new URL("file:../../file.txt");
-        assertTrue("u7 returns a wrong file: " + u7.getFile(), u7.getFile().equals("../../file.txt"));
+        assertTrue(u7.getFile().equals("../../file.txt"), "u7 returns a wrong file: " + u7.getFile());
 
         URL u8 = new URL("http://[fec0::1:20d:60ff:fe24:7410]:35/file.txt");
-        assertTrue("u8 returns a wrong protocol " + u8.getProtocol(), u8.getProtocol().equals("http"));
-        assertTrue("u8 returns a wrong host " + u8.getHost(), u8.getHost().equals("[fec0::1:20d:60ff:fe24:7410]"));
-        assertTrue("u8 returns a wrong port " + u8.getPort(), u8.getPort() == 35);
-        assertTrue("u8 returns a wrong file " + u8.getFile(), u8.getFile().equals("/file.txt"));
-        assertNull("u8 returns a wrong anchor " + u8.getRef(), u8.getRef());
+        assertTrue(u8.getProtocol().equals("http"), "u8 returns a wrong protocol " + u8.getProtocol());
+        assertTrue(u8.getHost().equals("[fec0::1:20d:60ff:fe24:7410]"), "u8 returns a wrong host " + u8.getHost());
+        assertTrue(u8.getPort() == 35, "u8 returns a wrong port " + u8.getPort());
+        assertTrue(u8.getFile().equals("/file.txt"), "u8 returns a wrong file " + u8.getFile());
+        assertNull(u8.getRef(), "u8 returns a wrong anchor " + u8.getRef());
 
         URL u9 = new URL("file://[fec0::1:20d:60ff:fe24:7410]/file.txt#sogood");
-        assertTrue("u9 returns a wrong protocol " + u9.getProtocol(), u9.getProtocol().equals("file"));
-        assertTrue("u9 returns a wrong host " + u9.getHost(), u9.getHost().equals("[fec0::1:20d:60ff:fe24:7410]"));
-        assertTrue("u9 returns a wrong port " + u9.getPort(), u9.getPort() == -1);
-        assertTrue("u9 returns a wrong file " + u9.getFile(), u9.getFile().equals("/file.txt"));
-        assertTrue("u9 returns a wrong anchor " + u9.getRef(), u9.getRef().equals("sogood"));
+        assertTrue(u9.getProtocol().equals("file"), "u9 returns a wrong protocol " + u9.getProtocol());
+        assertTrue(u9.getHost().equals("[fec0::1:20d:60ff:fe24:7410]"), "u9 returns a wrong host " + u9.getHost());
+        assertTrue(u9.getPort() == -1, "u9 returns a wrong port " + u9.getPort());
+        assertTrue(u9.getFile().equals("/file.txt"), "u9 returns a wrong file " + u9.getFile());
+        assertTrue(u9.getRef().equals("sogood"), "u9 returns a wrong anchor " + u9.getRef());
 
         URL u10 = new URL("file://[fec0::1:20d:60ff:fe24:7410]");
-        assertTrue("u10 returns a wrong protocol " + u10.getProtocol(), u10.getProtocol().equals("file"));
-        assertTrue("u10 returns a wrong host " + u10.getHost(), u10.getHost()
-                .equals("[fec0::1:20d:60ff:fe24:7410]"));
-        assertTrue("u10 returns a wrong port " + u10.getPort(), u10.getPort() == -1);
+        assertTrue(u10.getProtocol().equals("file"), "u10 returns a wrong protocol " + u10.getProtocol());
+        assertTrue(u10.getHost().equals("[fec0::1:20d:60ff:fe24:7410]"), "u10 returns a wrong host " + u10.getHost());
+        assertTrue(u10.getPort() == -1, "u10 returns a wrong port " + u10.getPort());
 
         URL u11 = new URL("file:////file.txt");
-        assertNull("u11 returns a wrong authority " + u11.getAuthority(), u11.getAuthority());
-        assertTrue("u11 returns a wrong file " + u11.getFile(), u11.getFile().equals("////file.txt"));
+        assertNull(u11.getAuthority(), "u11 returns a wrong authority " + u11.getAuthority());
+        assertTrue(u11.getFile().equals("////file.txt"), "u11 returns a wrong file " + u11.getFile());
 
         URL u12 = new URL("file:///file.txt");
-        assertTrue("u12 returns a wrong authority", u12.getAuthority().equals(""));
-        assertTrue("u12 returns a wrong file " + u12.getFile(), u12.getFile().equals("/file.txt"));
+        assertTrue(u12.getAuthority().equals(""), "u12 returns a wrong authority");
+        assertTrue(u12.getFile().equals("/file.txt"), "u12 returns a wrong file " + u12.getFile());
 
 
         // test for error catching
@@ -169,7 +167,7 @@ public class URLTest {
         } catch (MalformedURLException e) {
             caught = true;
         }
-        assertTrue("Should have throw MalformedURLException", caught);
+        assertTrue(caught, "Should have throw MalformedURLException");
 
         // unknown protocol
         try {
@@ -177,7 +175,7 @@ public class URLTest {
         } catch (MalformedURLException e) {
             caught = true;
         }
-        assertTrue("3 Failed to throw MalformedURLException", caught);
+        assertTrue(caught, "3 Failed to throw MalformedURLException");
 
         caught = false;
         // no protocol
@@ -186,7 +184,7 @@ public class URLTest {
         } catch (MalformedURLException e) {
             caught = true;
         }
-        assertTrue("4 Failed to throw MalformedURLException", caught);
+        assertTrue(caught, "4 Failed to throw MalformedURLException");
 
         caught = false;
 
@@ -194,23 +192,23 @@ public class URLTest {
         try {
             // No leading or trailing spaces.
             u1 = new URL("file:/some/path");
-            assertEquals("5 got wrong file length1", 10, u1.getFile().length());
+            assertEquals(10, u1.getFile().length(), "5 got wrong file length1");
 
             // Leading spaces.
             u1 = new URL("  file:/some/path");
-            assertEquals("5 got wrong file length2", 10, u1.getFile().length());
+            assertEquals(10, u1.getFile().length(), "5 got wrong file length2");
 
             // Trailing spaces.
             u1 = new URL("file:/some/path  ");
-            assertEquals("5 got wrong file length3", 10, u1.getFile().length());
+            assertEquals(10, u1.getFile().length(), "5 got wrong file length3");
 
             // Leading and trailing.
             u1 = new URL("  file:/some/path ");
-            assertEquals("5 got wrong file length4", 10, u1.getFile().length());
+            assertEquals(10, u1.getFile().length(), "5 got wrong file length4");
 
             // in-place spaces.
             u1 = new URL("  file:  /some/path ");
-            assertEquals("5 got wrong file length5", 12, u1.getFile().length());
+            assertEquals(12, u1.getFile().length(), "5 got wrong file length5");
 
         } catch (MalformedURLException e) {
             fail("5 Did not expect the exception " + e);
@@ -222,7 +220,7 @@ public class URLTest {
             String file = "file:/a!/b/../d";
 
             u = new URL("jar:" + file);
-            assertEquals("Wrong file (jar protocol, relative path)", file, u.getFile());
+            assertEquals(file, u.getFile(), "Wrong file (jar protocol, relative path)");
         } catch (MalformedURLException e) {
             fail("Unexpected exception (jar protocol, relative path)" + e);
         }
@@ -234,7 +232,7 @@ public class URLTest {
         } catch (MalformedURLException e) {
             caught = true;
         }
-        assertTrue("7 Failed to throw MalformedURLException", caught);
+        assertTrue(caught, "7 Failed to throw MalformedURLException");
     }
 
     @Test
@@ -244,175 +242,175 @@ public class URLTest {
         URL uf = new URL("file://www.yahoo.com");
         // basic ones
         u1 = new URL(u, "file.java");
-        assertEquals("1 returns a wrong protocol", "http", u1.getProtocol());
-        assertEquals("1 returns a wrong host", "www.yahoo.com", u1.getHost());
-        assertEquals("1 returns a wrong port", -1, u1.getPort());
-        assertEquals("1 returns a wrong file", "/file.java", u1.getFile());
-        assertNull("1 returns a wrong anchor", u1.getRef());
+        assertEquals("http", u1.getProtocol(), "1 returns a wrong protocol");
+        assertEquals("www.yahoo.com", u1.getHost(), "1 returns a wrong host");
+        assertEquals(-1, u1.getPort(), "1 returns a wrong port");
+        assertEquals("/file.java", u1.getFile(), "1 returns a wrong file");
+        assertNull(u1.getRef(), "1 returns a wrong anchor");
 
         URL u1f = new URL(uf, "file.java");
-        assertEquals("1f returns a wrong protocol", "file", u1f.getProtocol());
-        assertEquals("1f returns a wrong host", "www.yahoo.com", u1f.getHost());
-        assertEquals("1f returns a wrong port", -1, u1f.getPort());
-        assertEquals("1f returns a wrong file", "/file.java", u1f.getFile());
-        assertNull("1f returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "1f returns a wrong protocol");
+        assertEquals("www.yahoo.com", u1f.getHost(), "1f returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "1f returns a wrong port");
+        assertEquals("/file.java", u1f.getFile(), "1f returns a wrong file");
+        assertNull(u1f.getRef(), "1f returns a wrong anchor");
 
         u1 = new URL(u, "dir1/dir2/../file.java");
-        assertEquals("3 returns a wrong protocol", "http", u1.getProtocol());
-        assertTrue("3 returns a wrong host: " + u1.getHost(), u1.getHost().equals("www.yahoo.com"));
-        assertEquals("3 returns a wrong port", -1, u1.getPort());
-        assertEquals("3 returns a wrong file", "/dir1/dir2/../file.java", u1.getFile());
-        assertNull("3 returns a wrong anchor", u1.getRef());
+        assertEquals("http", u1.getProtocol(), "3 returns a wrong protocol");
+        assertTrue(u1.getHost().equals("www.yahoo.com"), "3 returns a wrong host: " + u1.getHost());
+        assertEquals(-1, u1.getPort(), "3 returns a wrong port");
+        assertEquals("/dir1/dir2/../file.java", u1.getFile(), "3 returns a wrong file");
+        assertNull(u1.getRef(), "3 returns a wrong anchor");
 
         u1 = new URL(u, "http:dir1/dir2/../file.java");
-        assertEquals("3a returns a wrong protocol", "http", u1.getProtocol());
-        assertTrue("3a returns a wrong host: " + u1.getHost(), u1.getHost().equals(""));
-        assertEquals("3a returns a wrong port", -1, u1.getPort());
-        assertEquals("3a returns a wrong file", "dir1/dir2/../file.java", u1.getFile());
-        assertNull("3a returns a wrong anchor", u1.getRef());
+        assertEquals("http", u1.getProtocol(), "3a returns a wrong protocol");
+        assertTrue(u1.getHost().equals(""), "3a returns a wrong host: " + u1.getHost());
+        assertEquals(-1, u1.getPort(), "3a returns a wrong port");
+        assertEquals("dir1/dir2/../file.java", u1.getFile(), "3a returns a wrong file");
+        assertNull(u1.getRef(), "3a returns a wrong anchor");
 
         u = new URL("http://www.apache.org/testing/");
         u1 = new URL(u, "file.java");
-        assertEquals("4 returns a wrong protocol", "http", u1.getProtocol());
-        assertEquals("4 returns a wrong host", "www.apache.org", u1.getHost());
-        assertEquals("4 returns a wrong port", -1, u1.getPort());
-        assertEquals("4 returns a wrong file", "/testing/file.java", u1.getFile());
-        assertNull("4 returns a wrong anchor", u1.getRef());
+        assertEquals("http", u1.getProtocol(), "4 returns a wrong protocol");
+        assertEquals("www.apache.org", u1.getHost(), "4 returns a wrong host");
+        assertEquals(-1, u1.getPort(), "4 returns a wrong port");
+        assertEquals("/testing/file.java", u1.getFile(), "4 returns a wrong file");
+        assertNull(u1.getRef(), "4 returns a wrong anchor");
 
         uf = new URL("file://www.apache.org/testing/");
         u1f = new URL(uf, "file.java");
-        assertEquals("4f returns a wrong protocol", "file", u1f.getProtocol());
-        assertEquals("4f returns a wrong host", "www.apache.org", u1f.getHost());
-        assertEquals("4f returns a wrong port", -1, u1f.getPort());
-        assertEquals("4f returns a wrong file", "/testing/file.java", u1f.getFile());
-        assertNull("4f returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "4f returns a wrong protocol");
+        assertEquals("www.apache.org", u1f.getHost(), "4f returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "4f returns a wrong port");
+        assertEquals("/testing/file.java", u1f.getFile(), "4f returns a wrong file");
+        assertNull(u1f.getRef(), "4f returns a wrong anchor");
 
         uf = new URL("file:/testing/");
         u1f = new URL(uf, "file.java");
-        assertEquals("4fa returns a wrong protocol", "file", u1f.getProtocol());
-        assertTrue("4fa returns a wrong host", u1f.getHost().equals(""));
-        assertEquals("4fa returns a wrong port", -1, u1f.getPort());
-        assertEquals("4fa returns a wrong file", "/testing/file.java", u1f.getFile());
-        assertNull("4fa returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "4fa returns a wrong protocol");
+        assertTrue(u1f.getHost().equals(""), "4fa returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "4fa returns a wrong port");
+        assertEquals("/testing/file.java", u1f.getFile(), "4fa returns a wrong file");
+        assertNull(u1f.getRef(), "4fa returns a wrong anchor");
 
         uf = new URL("file:testing/");
         u1f = new URL(uf, "file.java");
-        assertEquals("4fb returns a wrong protocol", "file", u1f.getProtocol());
-        assertTrue("4fb returns a wrong host", u1f.getHost().equals(""));
-        assertEquals("4fb returns a wrong port", -1, u1f.getPort());
-        assertEquals("4fb returns a wrong file", "testing/file.java", u1f.getFile());
-        assertNull("4fb returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "4fb returns a wrong protocol");
+        assertTrue(u1f.getHost().equals(""), "4fb returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "4fb returns a wrong port");
+        assertEquals("testing/file.java", u1f.getFile(), "4fb returns a wrong file");
+        assertNull(u1f.getRef(), "4fb returns a wrong anchor");
 
         u1f = new URL(uf, "file:file.java");
-        assertEquals("4fc returns a wrong protocol", "file", u1f.getProtocol());
-        assertTrue("4fc returns a wrong host", u1f.getHost().equals(""));
-        assertEquals("4fc returns a wrong port", -1, u1f.getPort());
-        assertEquals("4fc returns a wrong file", "file.java", u1f.getFile());
-        assertNull("4fc returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "4fc returns a wrong protocol");
+        assertTrue(u1f.getHost().equals(""), "4fc returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "4fc returns a wrong port");
+        assertEquals("file.java", u1f.getFile(), "4fc returns a wrong file");
+        assertNull(u1f.getRef(), "4fc returns a wrong anchor");
 
         u1f = new URL(uf, "file:");
-        assertEquals("4fd returns a wrong protocol", "file", u1f.getProtocol());
-        assertTrue("4fd returns a wrong host", u1f.getHost().equals(""));
-        assertEquals("4fd returns a wrong port", -1, u1f.getPort());
-        assertTrue("4fd returns a wrong file", u1f.getFile().equals(""));
-        assertNull("4fd returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "4fd returns a wrong protocol");
+        assertTrue(u1f.getHost().equals(""), "4fd returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "4fd returns a wrong port");
+        assertTrue(u1f.getFile().equals(""), "4fd returns a wrong file");
+        assertNull(u1f.getRef(), "4fd returns a wrong anchor");
 
         u = new URL("http://www.apache.org/testing");
         u1 = new URL(u, "file.java");
-        assertEquals("5 returns a wrong protocol", "http", u1.getProtocol());
-        assertEquals("5 returns a wrong host", "www.apache.org", u1.getHost());
-        assertEquals("5 returns a wrong port", -1, u1.getPort());
-        assertEquals("5 returns a wrong file", "/file.java", u1.getFile());
-        assertNull("5 returns a wrong anchor", u1.getRef());
+        assertEquals("http", u1.getProtocol(), "5 returns a wrong protocol");
+        assertEquals("www.apache.org", u1.getHost(), "5 returns a wrong host");
+        assertEquals(-1, u1.getPort(), "5 returns a wrong port");
+        assertEquals("/file.java", u1.getFile(), "5 returns a wrong file");
+        assertNull(u1.getRef(), "5 returns a wrong anchor");
 
         uf = new URL("file://www.apache.org/testing");
         u1f = new URL(uf, "file.java");
-        assertEquals("5f returns a wrong protocol", "file", u1f.getProtocol());
-        assertEquals("5f returns a wrong host", "www.apache.org", u1f.getHost());
-        assertEquals("5f returns a wrong port", -1, u1f.getPort());
-        assertEquals("5f returns a wrong file", "/file.java", u1f.getFile());
-        assertNull("5f returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "5f returns a wrong protocol");
+        assertEquals("www.apache.org", u1f.getHost(), "5f returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "5f returns a wrong port");
+        assertEquals("/file.java", u1f.getFile(), "5f returns a wrong file");
+        assertNull(u1f.getRef(), "5f returns a wrong anchor");
 
         uf = new URL("file:/testing");
         u1f = new URL(uf, "file.java");
-        assertEquals("5fa returns a wrong protocol", "file", u1f.getProtocol());
-        assertTrue("5fa returns a wrong host", u1f.getHost().equals(""));
-        assertEquals("5fa returns a wrong port", -1, u1f.getPort());
-        assertEquals("5fa returns a wrong file", "/file.java", u1f.getFile());
-        assertNull("5fa returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "5fa returns a wrong protocol");
+        assertTrue(u1f.getHost().equals(""), "5fa returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "5fa returns a wrong port");
+        assertEquals("/file.java", u1f.getFile(), "5fa returns a wrong file");
+        assertNull(u1f.getRef(), "5fa returns a wrong anchor");
 
         uf = new URL("file:testing");
         u1f = new URL(uf, "file.java");
-        assertEquals("5fb returns a wrong protocol", "file", u1f.getProtocol());
-        assertTrue("5fb returns a wrong host", u1f.getHost().equals(""));
-        assertEquals("5fb returns a wrong port", -1, u1f.getPort());
-        assertEquals("5fb returns a wrong file", "file.java", u1f.getFile());
-        assertNull("5fb returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "5fb returns a wrong protocol");
+        assertTrue(u1f.getHost().equals(""), "5fb returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "5fb returns a wrong port");
+        assertEquals("file.java", u1f.getFile(), "5fb returns a wrong file");
+        assertNull(u1f.getRef(), "5fb returns a wrong anchor");
 
         u = new URL("http://www.apache.org/testing/foobaz");
         u1 = new URL(u, "/file.java");
-        assertEquals("6 returns a wrong protocol", "http", u1.getProtocol());
-        assertEquals("6 returns a wrong host", "www.apache.org", u1.getHost());
-        assertEquals("6 returns a wrong port", -1, u1.getPort());
-        assertEquals("6 returns a wrong file", "/file.java", u1.getFile());
-        assertNull("6 returns a wrong anchor", u1.getRef());
+        assertEquals("http", u1.getProtocol(), "6 returns a wrong protocol");
+        assertEquals("www.apache.org", u1.getHost(), "6 returns a wrong host");
+        assertEquals(-1, u1.getPort(), "6 returns a wrong port");
+        assertEquals("/file.java", u1.getFile(), "6 returns a wrong file");
+        assertNull(u1.getRef(), "6 returns a wrong anchor");
 
         uf = new URL("file://www.apache.org/testing/foobaz");
         u1f = new URL(uf, "/file.java");
-        assertEquals("6f returns a wrong protocol", "file", u1f.getProtocol());
-        assertEquals("6f returns a wrong host", "www.apache.org", u1f.getHost());
-        assertEquals("6f returns a wrong port", -1, u1f.getPort());
-        assertEquals("6f returns a wrong file", "/file.java", u1f.getFile());
-        assertNull("6f returns a wrong anchor", u1f.getRef());
+        assertEquals("file", u1f.getProtocol(), "6f returns a wrong protocol");
+        assertEquals("www.apache.org", u1f.getHost(), "6f returns a wrong host");
+        assertEquals(-1, u1f.getPort(), "6f returns a wrong port");
+        assertEquals("/file.java", u1f.getFile(), "6f returns a wrong file");
+        assertNull(u1f.getRef(), "6f returns a wrong anchor");
 
         u = new URL("http://www.apache.org:8000/testing/foobaz");
         u1 = new URL(u, "/file.java");
-        assertEquals("7 returns a wrong protocol", "http", u1.getProtocol());
-        assertEquals("7 returns a wrong host", "www.apache.org", u1.getHost());
-        assertEquals("7 returns a wrong port", 8000, u1.getPort());
-        assertEquals("7 returns a wrong file", "/file.java", u1.getFile());
-        assertNull("7 returns a wrong anchor", u1.getRef());
+        assertEquals("http", u1.getProtocol(), "7 returns a wrong protocol");
+        assertEquals("www.apache.org", u1.getHost(), "7 returns a wrong host");
+        assertEquals(8000, u1.getPort(), "7 returns a wrong port");
+        assertEquals("/file.java", u1.getFile(), "7 returns a wrong file");
+        assertNull(u1.getRef(), "7 returns a wrong anchor");
 
         u = new URL("http://www.apache.org/index.html");
         u1 = new URL(u, "#bar");
-        assertEquals("8 returns a wrong host", "www.apache.org", u1.getHost());
-        assertEquals("8 returns a wrong file", "/index.html", u1.getFile());
-        assertEquals("8 returns a wrong anchor", "bar", u1.getRef());
+        assertEquals("www.apache.org", u1.getHost(), "8 returns a wrong host");
+        assertEquals("/index.html", u1.getFile(), "8 returns a wrong file");
+        assertEquals("bar", u1.getRef(), "8 returns a wrong anchor");
 
         u = new URL("http://www.apache.org/index.html#foo");
         u1 = new URL(u, "http:#bar");
-        assertEquals("9 returns a wrong host", "www.apache.org", u1.getHost());
-        assertEquals("9 returns a wrong file", "/index.html", u1.getFile());
-        assertEquals("9 returns a wrong anchor", "bar", u1.getRef());
+        assertEquals("www.apache.org", u1.getHost(), "9 returns a wrong host");
+        assertEquals("/index.html", u1.getFile(), "9 returns a wrong file");
+        assertEquals("bar", u1.getRef(), "9 returns a wrong anchor");
 
         u = new URL("http://www.apache.org/index.html");
         u1 = new URL(u, "");
-        assertEquals("10 returns a wrong host", "www.apache.org", u1.getHost());
-        assertEquals("10 returns a wrong file", "/index.html", u1.getFile());
-        assertNull("10 returns a wrong anchor", u1.getRef());
+        assertEquals("www.apache.org", u1.getHost(), "10 returns a wrong host");
+        assertEquals("/index.html", u1.getFile(), "10 returns a wrong file");
+        assertNull(u1.getRef(), "10 returns a wrong anchor");
 
         uf = new URL("file://www.apache.org/index.html");
         u1f = new URL(uf, "");
-        assertEquals("10f returns a wrong host", "www.apache.org", u1.getHost());
-        assertEquals("10f returns a wrong file", "/index.html", u1.getFile());
-        assertNull("10f returns a wrong anchor", u1.getRef());
+        assertEquals("www.apache.org", u1.getHost(), "10f returns a wrong host");
+        assertEquals("/index.html", u1.getFile(), "10f returns a wrong file");
+        assertNull(u1.getRef(), "10f returns a wrong anchor");
 
         u = new URL("http://www.apache.org/index.html");
         u1 = new URL(u, "http://www.apache.org");
-        assertEquals("11 returns a wrong host", "www.apache.org", u1.getHost());
-        assertTrue("11 returns a wrong file", u1.getFile().equals(""));
-        assertNull("11 returns a wrong anchor", u1.getRef());
+        assertEquals("www.apache.org", u1.getHost(), "11 returns a wrong host");
+        assertTrue(u1.getFile().equals(""), "11 returns a wrong file");
+        assertNull(u1.getRef(), "11 returns a wrong anchor");
 
         // test for question mark processing
         u = new URL("http://www.foo.com/d0/d1/d2/cgi-bin?foo=bar/baz");
 
         // test for relative file and out of bound "/../" processing
         u1 = new URL(u, "../dir1/./dir2/../file.java");
-        assertTrue("A) returns a wrong file: " + u1.getFile(), u1.getFile().equals("/d0/d1/dir1/file.java"));
+        assertTrue(u1.getFile().equals("/d0/d1/dir1/file.java"), "A) returns a wrong file: " + u1.getFile());
 
         // test for absolute and relative file processing
         u1 = new URL(u, "/../dir1/./dir2/../file.java");
-        assertEquals("B) returns a wrong file", "/../dir1/./dir2/../file.java",  u1.getFile());
+        assertEquals("/../dir1/./dir2/../file.java", u1.getFile(),  "B) returns a wrong file");
 
         try {
             // u should raise a MalFormedURLException because u, the context is
@@ -440,11 +438,11 @@ public class URLTest {
     @Test
     public void test_ConstructorLjava_lang_StringLjava_lang_StringILjava_lang_String() throws MalformedURLException {
         u = new URL("http", "www.yahoo.com", 8080, "test.html#foo");
-        assertEquals("SSIS returns a wrong protocol", "http", u.getProtocol());
-        assertEquals("SSIS returns a wrong host", "www.yahoo.com", u.getHost());
-        assertEquals("SSIS returns a wrong port", 8080, u.getPort());
-        assertEquals("SSIS returns a wrong file", "test.html", u.getFile());
-        assertTrue("SSIS returns a wrong anchor: " + u.getRef(), u.getRef().equals("foo"));
+        assertEquals("http", u.getProtocol(), "SSIS returns a wrong protocol");
+        assertEquals("www.yahoo.com", u.getHost(), "SSIS returns a wrong host");
+        assertEquals(8080, u.getPort(), "SSIS returns a wrong port");
+        assertEquals("test.html", u.getFile(), "SSIS returns a wrong file");
+        assertTrue(u.getRef().equals("foo"), "SSIS returns a wrong anchor: " + u.getRef());
 
         // Regression for HARMONY-83
         new URL("http", "apache.org", 123456789, "file");
@@ -463,21 +461,21 @@ public class URLTest {
         // Test for method java.net.URL(java.lang.String, java.lang.String, int,
         // java.lang.String, java.net.URLStreamHandler)
         u = new URL("http", "www.yahoo.com", 8080, "test.html#foo", null);
-        assertEquals("SSISH1 returns a wrong protocol", "http", u.getProtocol());
-        assertEquals("SSISH1 returns a wrong host", "www.yahoo.com", u.getHost());
-        assertEquals("SSISH1 returns a wrong port", 8080, u.getPort());
-        assertEquals("SSISH1 returns a wrong file", "test.html", u.getFile());
-        assertTrue("SSISH1 returns a wrong anchor: " + u.getRef(), u.getRef().equals("foo"));
+        assertEquals("http", u.getProtocol(), "SSISH1 returns a wrong protocol");
+        assertEquals("www.yahoo.com", u.getHost(), "SSISH1 returns a wrong host");
+        assertEquals(8080, u.getPort(), "SSISH1 returns a wrong port");
+        assertEquals("test.html", u.getFile(), "SSISH1 returns a wrong file");
+        assertTrue(u.getRef().equals("foo"), "SSISH1 returns a wrong anchor: " + u.getRef());
     }
 
     @Test
     public void test_equalsLjava_lang_Object() throws MalformedURLException {
         u = new URL("http://www.apache.org:8080/dir::23??????????test.html");
         u1 = new URL("http://www.apache.org:8080/dir::23??????????test.html");
-        assertTrue("A) equals returns false for two identical URLs", u.equals(u1));
-        assertTrue("return true for null comparison", !u1.equals(null));
+        assertTrue(u.equals(u1), "A) equals returns false for two identical URLs");
+        assertTrue(!u1.equals(null), "return true for null comparison");
         u = new URL("ftp://www.apache.org:8080/dir::23??????????test.html");
-        assertTrue("Returned true for non-equal URLs", !u.equals(u1));
+        assertTrue(!u.equals(u1), "Returned true for non-equal URLs");
 
         // Regression for HARMONY-6556
         u = new URL("file", null, 0, "/test.txt");
@@ -494,10 +492,10 @@ public class URLTest {
         // Test for method boolean java.net.URL.sameFile(java.net.URL)
         u = new URL("http://www.yahoo.com");
         u1 = new URL("http", "www.yahoo.com", "");
-        assertTrue("Should be the same1", u.sameFile(u1));
+        assertTrue(u.sameFile(u1), "Should be the same1");
         u = new URL("http://www.yahoo.com/dir1/dir2/test.html#anchor1");
         u1 = new URL("http://www.yahoo.com/dir1/dir2/test.html#anchor2");
-        assertTrue("Should be the same ", u.sameFile(u1));
+        assertTrue(u.sameFile(u1), "Should be the same ");
 
         // regression test for Harmony-1040
         u = new URL("file", null, -1, "/d:/somedir/");
@@ -528,13 +526,10 @@ public class URLTest {
         try {
             u1 = new URL("http://www.yahoo2.com:9999");
             u = new URL("http://www.yahoo1.com:8080/dir1/dir2/test.cgi?point1.html#anchor1");
-            assertEquals(
-                    "a) Does not return the right url string",
-                    "http://www.yahoo1.com:8080/dir1/dir2/test.cgi?point1.html#anchor1",
-                    u.toString());
-            assertEquals("b) Does not return the right url string",
-                    "http://www.yahoo2.com:9999", u1.toString());
-            assertEquals("c) Does not return the right url string", u, new URL(u.toString()));
+            assertEquals("http://www.yahoo1.com:8080/dir1/dir2/test.cgi?point1.html#anchor1", u.toString(),
+                    "a) Does not return the right url string");
+            assertEquals("http://www.yahoo2.com:9999", u1.toString(), "b) Does not return the right url string");
+            assertEquals(u, new URL(u.toString()), "c) Does not return the right url string");
         } catch (Exception e) {
             // Do nothing
         }
@@ -545,18 +540,16 @@ public class URLTest {
         try {
             u1 = new URL("http://www.yahoo2.com:9999");
             u = new URL("http://www.yahoo1.com:8080/dir1/dir2/test.cgi?point1.html#anchor1");
-            assertEquals(
-                    "a) Does not return the right url string",
-                    "http://www.yahoo1.com:8080/dir1/dir2/test.cgi?point1.html#anchor1",
-                    u.toString());
-            assertEquals("b) Does not return the right url string", "http://www.yahoo2.com:9999", u1.toString());
-            assertTrue("c) Does not return the right url string", u.equals(new URL(u.toString())));
+            assertEquals("http://www.yahoo1.com:8080/dir1/dir2/test.cgi?point1.html#anchor1", u.toString(),
+                    "a) Does not return the right url string");
+            assertEquals("http://www.yahoo2.com:9999", u1.toString(), "b) Does not return the right url string");
+            assertTrue(u.equals(new URL(u.toString())), "c) Does not return the right url string");
 
             u = new URL("http:index");
-            assertEquals("2 wrong external form", "http:index", u.toExternalForm());
+            assertEquals("http:index", u.toExternalForm(), "2 wrong external form");
 
             u = new URL("http", null, "index");
-            assertEquals("2 wrong external form", "http:index", u.toExternalForm());
+            assertEquals("http:index", u.toExternalForm(), "2 wrong external form");
         } catch (Exception e) {
             // Do nothing
         }
@@ -566,18 +559,18 @@ public class URLTest {
     public void test_getFile() throws Exception {
         // Test for method java.lang.String java.net.URL.getFile()
         u = new URL("http", "www.yahoo.com", 1233, "test/!@$%^&*/test.html#foo");
-        assertEquals("returns a wrong file", "test/!@$%^&*/test.html", u.getFile());
+        assertEquals("test/!@$%^&*/test.html", u.getFile(), "returns a wrong file");
         u = new URL("http", "www.yahoo.com", 1233, "");
-        assertTrue("returns a wrong file", u.getFile().equals(""));
+        assertTrue(u.getFile().equals(""), "returns a wrong file");
     }
 
     @Test
     public void test_getPort() throws Exception {
         // Test for method int java.net.URL.getPort()
         u = new URL("http://member12.c++.com:9999");
-        assertTrue("return wrong port number " + u.getPort(), u.getPort() == 9999);
+        assertTrue(u.getPort() == 9999, "return wrong port number " + u.getPort());
         u = new URL("http://member12.c++.com:9999/");
-        assertEquals("return wrong port number", 9999, u.getPort());
+        assertEquals(9999, u.getPort(), "return wrong port number");
     }
 
     @Test
@@ -592,7 +585,7 @@ public class URLTest {
     public void test_getProtocol() throws Exception {
         // Test for method java.lang.String java.net.URL.getProtocol()
         u = new URL("http://www.yahoo2.com:9999");
-        assertTrue("u returns a wrong protocol: " + u.getProtocol(), u.getProtocol().equals("http"));
+        assertTrue(u.getProtocol().equals("http"), "u returns a wrong protocol: " + u.getProtocol());
     }
 
     @Test
@@ -601,12 +594,12 @@ public class URLTest {
         try {
             u1 = new URL("http://www.yahoo2.com:9999");
             u = new URL("http://www.yahoo1.com:8080/dir1/dir2/test.cgi?point1.html#anchor1");
-            assertEquals("returns a wrong anchor1", "anchor1", u.getRef());
-            assertNull("returns a wrong anchor2", u1.getRef());
+            assertEquals("anchor1", u.getRef(), "returns a wrong anchor1");
+            assertNull(u1.getRef(), "returns a wrong anchor2");
             u1 = new URL("http://www.yahoo2.com#ref");
-            assertEquals("returns a wrong anchor3", "ref", u1.getRef());
+            assertEquals("ref", u1.getRef(), "returns a wrong anchor3");
             u1 = new URL("http://www.yahoo2.com/file#ref1#ref2");
-            assertEquals("returns a wrong anchor4", "ref1#ref2", u1.getRef());
+            assertEquals("ref1#ref2", u1.getRef(), "returns a wrong anchor4");
         } catch (MalformedURLException e) {
             fail("Incorrect URL format : " + e.getMessage());
         }
@@ -624,13 +617,13 @@ public class URLTest {
         assertEquals("ref", testURL.getRef());
 
         testURL = new URL("http", "home", -1, "/java");
-        assertEquals("wrong authority2", "home", testURL.getAuthority());
-        assertNull("wrong userInfo2", testURL.getUserInfo());
-        assertEquals("wrong host2", "home", testURL.getHost());
-        assertEquals("wrong file2", "/java", testURL.getFile());
-        assertEquals("wrong path2", "/java", testURL.getPath());
-        assertNull("wrong query2", testURL.getQuery());
-        assertNull("wrong ref2", testURL.getRef());
+        assertEquals("home", testURL.getAuthority(), "wrong authority2");
+        assertNull(testURL.getUserInfo(), "wrong userInfo2");
+        assertEquals("home", testURL.getHost(), "wrong host2");
+        assertEquals("/java", testURL.getFile(), "wrong file2");
+        assertEquals("/java", testURL.getPath(), "wrong path2");
+        assertNull(testURL.getQuery(), "wrong query2");
+        assertNull(testURL.getRef(), "wrong ref2");
     }
 
     @Test
@@ -704,7 +697,7 @@ public class URLTest {
         URLStreamHandler myHandler = new MyHandler2();
         URL url = new URL(null, "foobar://example.com/foobar", myHandler);
         String s = url.toExternalForm();
-        assertEquals("Got wrong URL external form", "foobar://example.com", s);
+        assertEquals("foobar://example.com", s, "Got wrong URL external form");
     }
 
     static class MyURLStreamHandler extends URLStreamHandler {

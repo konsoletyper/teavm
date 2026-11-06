@@ -165,6 +165,10 @@ if (typeof Reflect === 'object') {
         },
         message: {
             get() {
+                if ($rt_exitCode !== null) {
+                    // Throwable.getMessage() may be overridden by user, don't run any Java code after System.exit
+                    return this[defaultMessage];
+                }
                 try {
                     let javaException = this[$rt_javaExceptionProp];
                     if (typeof javaException === 'object') {
@@ -190,6 +194,10 @@ let $rt_javaException = e => e instanceof teavm_globals.Error && typeof e[$rt_ja
 
 let $rt_jsException = e => typeof e.$jsException === 'object' ? e.$jsException : null;
 let $rt_wrapException = err => {
+    if ($rt_exitCode !== null) {
+        // System.exit was called, no Java catch or finally block should run anymore
+        throw err;
+    }
     let ex = err[$rt_javaExceptionProp];
     if (!ex) {
         ex = $rt_createException($rt_str("(JavaScript) " + err.toString()));
@@ -237,3 +245,64 @@ let $rt_setStack = (e, stack) => {
         teavm_javaMethod("java.lang.Throwable", "setStackTrace([Ljava/lang/StackTraceElement;)V")(e, stack);
     }
 }
+let $rt_exitCode = null;
+let $rt_exitHandler = null;
+let $rt_ExitError = (() => {
+    let message = code => "TeaVM module was terminated with exit code " + code;
+    let ExitError;
+    if (typeof Reflect === 'object') {
+        ExitError = function ExitError(exitCode) {
+            let self = teavm_globals.Reflect.construct(teavm_globals.Error, [message(exitCode)], ExitError);
+            teavm_globals.Object.setPrototypeOf(self, ExitError.prototype);
+            self.exitCode = exitCode;
+            return self;
+        };
+        ExitError.prototype = teavm_globals.Object.create(teavm_globals.Error.prototype, {
+            constructor: {
+                configurable: true,
+                writable: true,
+                value: ExitError
+            },
+            name: {
+                configurable: true,
+                writable: true,
+                value: "TeaVMExitError"
+            }
+        });
+    } else {
+        ExitError = function ExitError(exitCode) {
+            let self = new teavm_globals.Error(message(exitCode));
+            self.name = "TeaVMExitError";
+            self.exitCode = exitCode;
+            return self;
+        };
+    }
+    return ExitError;
+})();
+let $rt_exit = code => {
+    if ($rt_exitCode === null) {
+        $rt_exitCode = code;
+        if (typeof teavm_globals.process === "object" && teavm_globals.process !== null
+                && typeof teavm_globals.process.exit === "function") {
+            teavm_globals.process.exit(code);
+        } else if ($rt_exitHandler !== null) {
+            $rt_exitHandler(code);
+        }
+    }
+    throw new $rt_ExitError($rt_exitCode);
+}
+let $rt_exited = () => $rt_exitCode !== null;
+let $rt_checkAlive = () => {
+    if ($rt_exitCode !== null) {
+        throw new $rt_ExitError($rt_exitCode);
+    }
+}
+let $rt_runtimeApi = () => ({
+    setExitHandler: handler => {
+        $rt_exitHandler = typeof handler === "function" ? handler : null;
+    },
+    get killedWithCode() {
+        return $rt_exitCode;
+    },
+    ExitError: $rt_ExitError
+});

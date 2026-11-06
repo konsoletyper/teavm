@@ -16,11 +16,14 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.spi.Injector;
+import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-public class MathNativeGenerator implements Generator {
+public class MathNativeGenerator implements Generator, Injector {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         String name = methodRef.getName();
@@ -31,6 +34,19 @@ public class MathNativeGenerator implements Generator {
             name = "sign";
         }
         function(context, writer, name, methodRef.parameterCount());
+    }
+
+    @Override
+    public void generate(InjectorContext context, MethodReference methodRef) {
+        var writer = context.getWriter();
+        writer.appendGlobal("Math").append(".").append(methodRef.getName()).append("(");
+        for (int i = 0; i < context.argumentCount(); ++i) {
+            if (i > 0) {
+                writer.append(",").ws();
+            }
+            context.writeExpr(context.getArgument(i), Precedence.min());
+        }
+        writer.append(")");
     }
 
     private void function(GeneratorContext context, SourceWriter writer, String name, int paramCount) {

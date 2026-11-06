@@ -15,9 +15,9 @@
  */
 package org.teavm.jso.test;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSBodyImport;
 import org.teavm.junit.AttachJavaScript;
@@ -27,12 +27,12 @@ import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.ServeJS;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.SkipPlatform;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @SkipJVM
-@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
 @EachTestCompiledSeparately
 public class ImportModuleTest {
     @Test
@@ -40,14 +40,14 @@ public class ImportModuleTest {
             "org/teavm/jso/test/amd.js",
             "org/teavm/jso/test/amdModule.js"
     })
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
     public void amd() {
         assertEquals(23, runTestFunction());
     }
 
     @Test
     @AttachJavaScript("org/teavm/jso/test/commonjs.js")
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
+    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID})
     public void commonjs() {
         assertEquals(23, runTestFunction());
     }
@@ -78,6 +78,23 @@ public class ImportModuleTest {
         assertEquals("top level", ClassWithConstructorInModule.topLevelFunction());
         assertEquals("top level prop", ClassWithConstructorInModule.getTopLevelProperty());
     }
+
+    @Test
+    @JsModuleTest
+    @ServeJS(from = "org/teavm/jso/test/es2015.js", as = "testModule.js")
+    @ServeJS(from = "org/teavm/jso/test/es2015.js", as = "secondModule.js")
+    public void twoImports() {
+        assertEquals(46, runTestFunctionFromTwoModules());
+    }
+
+    @JSBody(
+            script = "return testModule.foo() + secondModule.foo();",
+            imports = {
+                    @JSBodyImport(alias = "testModule", fromModule = "./testModule.js"),
+                    @JSBodyImport(alias = "secondModule", fromModule = "./secondModule.js")
+            }
+    )
+    private static native int runTestFunctionFromTwoModules();
 
     @JSBody(
             script = "return testModule.foo();",

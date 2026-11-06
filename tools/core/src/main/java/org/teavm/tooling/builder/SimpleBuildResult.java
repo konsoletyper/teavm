@@ -15,24 +15,19 @@
  */
 package org.teavm.tooling.builder;
 
-import org.teavm.callgraph.CallGraph;
-import org.teavm.diagnostics.ProblemProvider;
+import java.util.List;
+import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.vm.TeaVM;
 
 public class SimpleBuildResult implements BuildResult {
-    private TeaVM vm;
+    private final List<RenderedProblem> problems;
 
     public SimpleBuildResult(TeaVM vm) {
-        this.vm = vm;
+        problems = TeaVMProblemRenderer.render(vm.getDependencyInfo().getCallGraph(), vm.getProblemProvider());
     }
 
     @Override
-    public CallGraph getCallGraph() {
-        return vm.getDependencyInfo().getCallGraph();
-    }
-
-    @Override
-    public ProblemProvider getProblems() {
-        return vm.getProblemProvider();
+    public List<RenderedProblem> getProblems() {
+        return problems;
     }
 }

@@ -174,7 +174,7 @@ int32_t teavm_gc_objectSize(void* address) {
     TeaVM_Array* array = (TeaVM_Array*) address;
     char* size = TEAVM_ALIGN((void*) sizeof(TeaVM_Array), itemSize);
     size += array->size * itemSize;
-    size = TEAVM_ALIGN(size, sizeof(void*));
+    size = TEAVM_ALIGN(size, 8);
     return (int32_t) (intptr_t) size;
 }
 

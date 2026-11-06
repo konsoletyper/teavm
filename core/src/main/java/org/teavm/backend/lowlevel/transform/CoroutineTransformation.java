@@ -80,6 +80,7 @@ public class CoroutineTransformation {
     private Variable fiberVar;
     private BasicBlockSplitter splitter;
     private SwitchInstruction resumeSwitch;
+    private int entryBlockReplacement;
     private int parameterCount;
     private ValueType returnType;
     private boolean hasThreads;
@@ -135,6 +136,7 @@ public class CoroutineTransformation {
 
         BasicBlock firstBlock = program.basicBlockAt(0);
         BasicBlock continueBlock = splitter.split(firstBlock, null);
+        entryBlockReplacement = continueBlock.getIndex();
         BasicBlock switchStateBlock = program.createBasicBlock();
         TextLocation location = continueBlock.getFirstInstruction().getLocation();
 
@@ -191,7 +193,10 @@ public class CoroutineTransformation {
             return Collections.emptyMap();
         }
 
-        BitSet live = livenessAnalysis.liveOut(block.getIndex());
+        // instructions of the entry block were moved to a new block by split prologue,
+        // which is unknown to liveness analysis
+        int livenessIndex = block.getIndex() == entryBlockReplacement ? 0 : block.getIndex();
+        BitSet live = livenessAnalysis.liveOut(livenessIndex);
 
         Map<Instruction, BitSet> result = new LinkedHashMap<>();
         UsageExtractor use = new UsageExtractor();

@@ -812,7 +812,8 @@ public class ReflectionMetadataGenerator {
         if (!(fieldType instanceof ValueType.Primitive)) {
             return true;
         }
-        return dependencies.getMethod(unboxMethodFor((ValueType.Primitive) fieldType)) != null;
+        var unboxMethod = dependencies.getMethod(unboxMethodFor((ValueType.Primitive) fieldType));
+        return unboxMethod != null && unboxMethod.isUsed();
     }
 
     private MethodReference unboxMethodFor(ValueType.Primitive type) {

@@ -73,4 +73,9 @@ class TDotAllQuantifierSet extends TQuantifierSet {
     protected String getName() {
         return "<DotAllQuant>";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TDotAllQuantifierSet.class, "dotAllQuantifierSet", innerSet, type);
+    }
 }

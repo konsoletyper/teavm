@@ -15,11 +15,8 @@
  */
 package org.teavm.tooling.builder;
 
-import org.teavm.callgraph.CallGraph;
-import org.teavm.diagnostics.ProblemProvider;
+import java.util.List;
 
 public interface BuildResult {
-    CallGraph getCallGraph();
-
-    ProblemProvider getProblems();
+    List<RenderedProblem> getProblems();
 }

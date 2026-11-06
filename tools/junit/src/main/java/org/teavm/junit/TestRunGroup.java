@@ -20,13 +20,13 @@ import java.io.File;
 class TestRunGroup {
     private File baseDirectory;
     private String fileName;
-    private TestPlatform kind;
+    private TestPlatformSupport<?> platform;
     private boolean module;
 
-    TestRunGroup(File baseDirectory, String fileName, TestPlatform kind, boolean module) {
+    TestRunGroup(File baseDirectory, String fileName, TestPlatformSupport<?> platform, boolean module) {
         this.baseDirectory = baseDirectory;
         this.fileName = fileName;
-        this.kind = kind;
+        this.platform = platform;
         this.module = module;
     }
 
@@ -38,8 +38,12 @@ class TestRunGroup {
         return fileName;
     }
 
-    TestPlatform getKind() {
-        return kind;
+    TestPlatformSupport<?> getPlatform() {
+        return platform;
+    }
+
+    String getKind() {
+        return platform.getPlatform();
     }
 
     boolean isModule() {

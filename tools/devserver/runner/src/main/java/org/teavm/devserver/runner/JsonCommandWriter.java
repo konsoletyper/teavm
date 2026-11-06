@@ -21,8 +21,6 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import org.teavm.common.JsonUtil;
 import org.teavm.devserver.DevServerListener;
-import org.teavm.diagnostics.DefaultProblemTextConsumer;
-import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
 import org.teavm.tooling.builder.BuildResult;
 
@@ -107,16 +105,16 @@ public class JsonCommandWriter implements TeaVMToolLog, DevServerListener {
 
     @Override
     public synchronized void compilationComplete(BuildResult result) {
-        var consumer = new DefaultProblemTextConsumer();
         try {
             writer.append("{\"type\":\"compilation-complete\"");
-            if (result != null && !result.getProblems().getProblems().isEmpty()) {
+            if (result != null && !result.getProblems().isEmpty()) {
                 writer.append(",\"problems\":[");
-                for (var i = 0; i < result.getProblems().getProblems().size(); ++i) {
+                var problems = result.getProblems();
+                for (var i = 0; i < problems.size(); ++i) {
                     if (i > 0) {
                         writer.append(",");
                     }
-                    var problem = result.getProblems().getProblems().get(i);
+                    var problem = problems.get(i);
                     writer.append("{\"severity\":");
                     switch (problem.getSeverity()) {
                         case ERROR:
@@ -127,12 +125,9 @@ public class JsonCommandWriter implements TeaVMToolLog, DevServerListener {
                             break;
                     }
                     writer.append(",\"location\":\"");
-                    var sb = new StringBuilder();
-                    TeaVMProblemRenderer.renderCallStack(result.getCallGraph(), problem.getLocation(), sb);
-                    JsonUtil.writeEscapedString(writer, sb.toString());
+                    JsonUtil.writeEscapedString(writer, problem.getStackTrace());
                     writer.append("\",\"message\":\"");
-                    problem.render(consumer);
-                    JsonUtil.writeEscapedString(writer, consumer.getText());
+                    JsonUtil.writeEscapedString(writer, problem.getText());
                     writer.append("\"}");
                 }
                 writer.append("]");

@@ -71,7 +71,7 @@ class TSequenceSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return startsWith(testString, strIndex) ? charCount : -1;
     }
 
@@ -117,6 +117,10 @@ class TSequenceSet extends TLeafSet {
         return -1;
     }
 
+    String getString() {
+        return string;
+    }
+
     @Override
     public String getName() {
         return "sequence: " + string; //$NON-NLS-1$
@@ -127,7 +131,7 @@ class TSequenceSet extends TLeafSet {
         if (set instanceof TCharSet) {
             return ((TCharSet) set).getChar() == string.charAt(0);
         } else if (set instanceof TRangeSet) {
-            return ((TRangeSet) set).accepts(0, string.substring(0, 1)) > 0;
+            return ((TRangeSet) set).getChars().contains(string.charAt(0));
         } else if (set instanceof TSupplRangeSet) {
             return ((TSupplRangeSet) set).contains(string.charAt(0))
                     || ((string.length() > 1) && ((TSupplRangeSet) set).contains(Character
@@ -243,5 +247,10 @@ class TSequenceSet extends TLeafSet {
                 hashCode &= mask;
             }
         }
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TSequenceSet.class, "sequenceSet", string);
     }
 }

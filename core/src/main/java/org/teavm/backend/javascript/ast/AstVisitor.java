@@ -30,6 +30,7 @@ import org.mozilla.javascript.ast.ArrayComprehensionLoop;
 import org.mozilla.javascript.ast.ArrayLiteral;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
+import org.mozilla.javascript.ast.BigIntLiteral;
 import org.mozilla.javascript.ast.Block;
 import org.mozilla.javascript.ast.BreakStatement;
 import org.mozilla.javascript.ast.CatchClause;
@@ -102,6 +103,9 @@ public class AstVisitor {
                 break;
             case Token.NUMBER:
                 visit((NumberLiteral) node);
+                break;
+            case Token.BIGINT:
+                visit((BigIntLiteral) node);
                 break;
             case Token.STRING:
                 visit((StringLiteral) node);
@@ -416,6 +420,9 @@ public class AstVisitor {
     }
 
     public void visit(NumberLiteral node) {
+    }
+
+    public void visit(BigIntLiteral node) {
     }
 
     public void visit(StringLiteral node) {

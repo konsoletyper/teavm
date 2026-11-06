@@ -49,14 +49,17 @@ function clone(obj) {
 
 function startThread(runnable) {
     teavm_globals.setTimeout(() => {
-        $rt_threadStarter(teavm_javaMethod("org.teavm.platform.Platform",
-            "launchThread(Lorg/teavm/platform/PlatformRunnable;)V"))(runnable);
+        if ($rt_exited()) {
+            return;
+        }
+        try {
+            $rt_threadStarter(teavm_javaMethod("org.teavm.platform.Platform",
+                "launchThread(Lorg/teavm/platform/PlatformRunnable;)V"))(runnable);
+        } catch (e) {
+            // System.exit was called by this thread: there's no JS caller to report to, so just stop
+            if (!$rt_exited()) {
+                throw e;
+            }
+        }
     }, 0);
-}
-
-function schedule(runnable, timeout) {
-    teavm_globals.setTimeout(() => {
-        teavm_javaMethod("org.teavm.platform.Platform",
-                "launchThread(Lorg/teavm/platform/PlatformRunnable;)V")(runnable);
-    }, timeout);
 }

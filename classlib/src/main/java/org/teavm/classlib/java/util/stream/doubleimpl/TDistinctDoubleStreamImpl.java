@@ -20,13 +20,14 @@ import java.util.Set;
 import java.util.function.DoublePredicate;
 
 public class TDistinctDoubleStreamImpl extends TWrappingDoubleStreamImpl {
+    private final Set<Double> visited = new HashSet<>();
+
     public TDistinctDoubleStreamImpl(TSimpleDoubleStreamImpl innerStream) {
         super(innerStream);
     }
 
     @Override
     protected DoublePredicate wrap(DoublePredicate consumer) {
-        Set<Double> visited = new HashSet<>();
         return e -> {
             if (!visited.add(e)) {
                 return true;

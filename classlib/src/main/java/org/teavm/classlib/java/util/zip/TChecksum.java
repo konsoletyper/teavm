@@ -16,6 +16,8 @@
 
 package org.teavm.classlib.java.util.zip;
 
+import java.nio.ByteBuffer;
+
 public interface TChecksum {
     long getValue();
 
@@ -24,4 +26,28 @@ public interface TChecksum {
     void update(byte[] buf, int off, int nbytes);
 
     void update(int val);
+
+    default void update(byte[] b) {
+        update(b, 0, b.length);
+    }
+
+    default void update(ByteBuffer buffer) {
+        int pos = buffer.position();
+        int limit = buffer.limit();
+        int rem = limit - pos;
+        if (rem <= 0) {
+            return;
+        }
+        if (buffer.hasArray()) {
+            update(buffer.array(), pos + buffer.arrayOffset(), rem);
+        } else {
+            byte[] b = new byte[Math.min(rem, 4096)];
+            while (buffer.hasRemaining()) {
+                int length = Math.min(buffer.remaining(), b.length);
+                buffer.get(b, 0, length);
+                update(b, 0, length);
+            }
+        }
+        buffer.position(limit);
+    }
 }

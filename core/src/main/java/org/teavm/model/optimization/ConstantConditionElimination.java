@@ -92,7 +92,7 @@ public class ConstantConditionElimination implements MethodOptimization {
         constants = null;
 
         if (changed) {
-            new UnreachableBasicBlockEliminator().optimize(program);
+            new UnreachableBasicBlockEliminator().optimize(program, descriptor.parameterCount());
         }
 
         return changed;

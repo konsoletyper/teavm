@@ -720,7 +720,7 @@ abstract class TDateFormatElement {
                 minutes = Character.digit(text.charAt(index++), 10) * 10 + Character.digit(text.charAt(index++), 10);
             }
             position.setIndex(index);
-            date.setTimeZone(getStaticTimeZone(sign * hours, minutes));
+            date.setTimeZone(getStaticTimeZone(sign, hours, minutes));
         }
 
         @Override
@@ -769,7 +769,8 @@ abstract class TDateFormatElement {
             int hours = 10 * Character.digit(text.charAt(index), 10) + Character.digit(text.charAt(index + 1), 10);
             int minutes = 10 * Character.digit(text.charAt(index + 2), 10)
                     + Character.digit(text.charAt(index + 3), 10);
-            date.setTimeZone(getStaticTimeZone(sign * hours, minutes));
+            date.setTimeZone(getStaticTimeZone(sign, hours, minutes));
+            position.setIndex(index + 4);
             return true;
         }
         return false;
@@ -792,7 +793,7 @@ abstract class TDateFormatElement {
                 position.setErrorIndex(index);
                 return;
             }
-            hours = 10 * hours + Character.digit(text.charAt(index), 10);
+            hours = 10 * hours + Character.digit(text.charAt(index++), 10);
         }
         if (index >= text.length() || text.charAt(index) != ':') {
             position.setErrorIndex(index);
@@ -805,15 +806,15 @@ abstract class TDateFormatElement {
             position.setErrorIndex(index);
             return;
         }
-        int minutes = Character.digit(text.charAt(index), 10) * 10 + Character.digit(text.charAt(index), 10);
+        int minutes = Character.digit(text.charAt(index), 10) * 10 + Character.digit(text.charAt(index + 1), 10);
         position.setIndex(index + 2);
-        TTimeZone tz = getStaticTimeZone(sign * hours, minutes);
+        TTimeZone tz = getStaticTimeZone(sign, hours, minutes);
         date.setTimeZone(tz);
     }
 
-    static TTimeZone getStaticTimeZone(int hours, int minutes) {
-        return TTimeZone.getTimeZone("GMT" + (hours > 0 ? '+' : '-') + Math.abs(hours)
-                + ":" + (minutes / 10) + (minutes % 10));
+    // The sign is separate from the hours, so that an offset such as +00:30 keeps its sign.
+    static TTimeZone getStaticTimeZone(int sign, int hours, int minutes) {
+        return TTimeZone.getTimeZone("GMT" + (sign < 0 ? '-' : '+') + hours + ":" + (minutes / 10) + (minutes % 10));
     }
 
     static class TrieNode {

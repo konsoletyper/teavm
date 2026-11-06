@@ -78,12 +78,12 @@ public class ReflectionTransformer implements ClassHolderTransformer {
         for (MethodHolder method : cls.getMethods()) {
             Program program = method.getProgram();
             if (program != null) {
-                transformProgram(program, context);
+                transformProgram(program, method.parameterCount(), context);
             }
         }
     }
 
-    private void transformProgram(Program program, ClassHolderTransformerContext context) {
+    private void transformProgram(Program program, int paramCount, ClassHolderTransformerContext context) {
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Instruction instruction : block) {
                 if (!(instruction instanceof InvokeInstruction)) {
@@ -106,7 +106,7 @@ public class ReflectionTransformer implements ClassHolderTransformer {
             }
         }
         if (hasTruncatedBlocks) {
-            new UnreachableBasicBlockEliminator().optimize(program);
+            new UnreachableBasicBlockEliminator().optimize(program, paramCount);
         }
         cleanup();
     }

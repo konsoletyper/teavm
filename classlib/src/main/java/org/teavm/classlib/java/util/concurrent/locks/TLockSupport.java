@@ -24,8 +24,7 @@ import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.interop.Platforms;
 import org.teavm.interop.UnsupportedOn;
-import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformRunnable;
+import org.teavm.runtime.EventQueue;
 
 @UnsupportedOn(Platforms.WEBASSEMBLY_GC)
 public final class TLockSupport {
@@ -131,7 +130,7 @@ public final class TLockSupport {
         ParkHandler handler;
     }
 
-    private static final class ParkHandler implements PlatformRunnable, TThreadInterruptHandler {
+    private static final class ParkHandler implements EventQueue.Event, TThreadInterruptHandler {
         private final TThread thread;
         private final ParkState state;
         private final Object blocker;
@@ -152,7 +151,7 @@ public final class TLockSupport {
         void schedule(long nanos) {
             long millis = nanos / 1_000_000L + (nanos % 1_000_000L == 0 ? 0 : 1);
             int timeout = millis >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) millis;
-            int id = Platform.schedule(this, timeout);
+            int id = EventQueue.offer(this, System.currentTimeMillis() + timeout);
             synchronized (state) {
                 if (state.handler == this) {
                     scheduleId = id;
@@ -195,7 +194,7 @@ public final class TLockSupport {
                 cancelSchedule(scheduleId);
                 scheduleId = -1;
             }
-            Platform.postpone(() -> {
+            EventQueue.offer(() -> {
                 synchronized (state) {
                     state.resumePending = false;
                 }
@@ -210,7 +209,7 @@ public final class TLockSupport {
         }
 
         private void cancelSchedule(int id) {
-            Platform.killSchedule(id);
+            EventQueue.kill(id);
         }
     }
 }

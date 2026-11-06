@@ -33,17 +33,16 @@
 
 package org.teavm.classlib.java.math;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class BigDecimalArithmeticTest {
     /**
      * Add two numbers of equal positive scales
@@ -59,8 +58,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.add(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -78,8 +77,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(5, RoundingMode.UP);
         BigDecimal result = aNumber.add(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -96,8 +95,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.add(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -115,8 +114,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(5, RoundingMode.FLOOR);
         BigDecimal result = aNumber.add(bNumber, mc);
-        assertEquals("incorrect value ", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value ");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -133,8 +132,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.add(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -152,8 +151,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(15, RoundingMode.CEILING);
         BigDecimal result = aNumber.add(bNumber, mc);
-        assertEquals("incorrect value", c, c.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, c.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -170,8 +169,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.add(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -188,8 +187,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.add(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -206,8 +205,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.subtract(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -225,8 +224,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(15, RoundingMode.CEILING);
         BigDecimal result = aNumber.subtract(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -243,8 +242,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.subtract(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -261,8 +260,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.subtract(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -281,8 +280,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(17, RoundingMode.DOWN);
         BigDecimal result = aNumber.subtract(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -299,8 +298,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.subtract(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -319,8 +318,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(70, RoundingMode.HALF_DOWN);
         BigDecimal result = aNumber.subtract(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -337,8 +336,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.multiply(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -356,8 +355,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(40, RoundingMode.HALF_DOWN);
         BigDecimal result = aNumber.multiply(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -374,8 +373,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.multiply(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -392,8 +391,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.multiply(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -411,8 +410,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(53, RoundingMode.HALF_UP);
         BigDecimal result = aNumber.multiply(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -429,8 +428,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.multiply(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -448,8 +447,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         MathContext mc = new MathContext(47, RoundingMode.HALF_UP);
         BigDecimal result = aNumber.multiply(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -467,8 +466,8 @@ public class BigDecimalArithmeticTest {
         int cScale = 100;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal result = aNumber.pow(exp);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -483,8 +482,8 @@ public class BigDecimalArithmeticTest {
         int cScale = 0;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal result = aNumber.pow(exp);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -495,8 +494,8 @@ public class BigDecimalArithmeticTest {
         String c = "1";
         int cScale = 0;
         BigDecimal result = BigDecimal.ZERO.pow(0);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -512,8 +511,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         MathContext mc = new MathContext(5, RoundingMode.HALF_UP);
         BigDecimal result = aNumber.pow(exp, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", cScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(cScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -529,7 +528,7 @@ public class BigDecimalArithmeticTest {
             aNumber.divide(bNumber);
             fail("ArithmeticException has not been caught");
         } catch (ArithmeticException e) {
-            assertEquals("Improper exception message", "Division by zero", e.getMessage());
+            assertEquals("Division by zero", e.getMessage(), "Improper exception message");
         }
     }
 
@@ -548,7 +547,7 @@ public class BigDecimalArithmeticTest {
             aNumber.divide(bNumber, BigDecimal.ROUND_UNNECESSARY);
             fail("ArithmeticException has not been caught");
         } catch (ArithmeticException e) {
-            assertEquals("Improper exception message", "Rounding necessary", e.getMessage());
+            assertEquals("Rounding necessary", e.getMessage(), "Improper exception message");
         }
     }
 
@@ -567,7 +566,7 @@ public class BigDecimalArithmeticTest {
             aNumber.divide(bNumber, 100);
             fail("IllegalArgumentException has not been caught");
         } catch (IllegalArgumentException e) {
-            assertEquals("Improper exception message", "Invalid rounding mode", e.getMessage());
+            assertEquals("Invalid rounding mode", e.getMessage(), "Improper exception message");
         }
     }
 
@@ -585,8 +584,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_CEILING);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -603,8 +602,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_CEILING);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -621,8 +620,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_CEILING);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -639,8 +638,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_CEILING);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -657,8 +656,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_UP);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -675,8 +674,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_UP);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -693,8 +692,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_DOWN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -711,8 +710,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_DOWN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -729,8 +728,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_FLOOR);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -747,8 +746,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_FLOOR);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -765,8 +764,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_CEILING);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -783,8 +782,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_CEILING);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -801,8 +800,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_UP);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -819,8 +818,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_UP);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -837,8 +836,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_UP);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -855,8 +854,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_UP);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -873,8 +872,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_UP);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -891,8 +890,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_DOWN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -909,8 +908,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_DOWN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -927,8 +926,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_DOWN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -945,8 +944,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_DOWN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -963,8 +962,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_DOWN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -981,8 +980,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_EVEN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -999,8 +998,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_EVEN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1017,8 +1016,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_EVEN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1035,8 +1034,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_EVEN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1053,8 +1052,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, resScale, BigDecimal.ROUND_HALF_EVEN);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1071,8 +1070,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1089,8 +1088,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1108,8 +1107,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, newScale, rm);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", newScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(newScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1127,8 +1126,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, newScale, rm);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", newScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(newScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1146,8 +1145,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, newScale, rm);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", newScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(newScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1165,8 +1164,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, newScale, rm);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", newScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(newScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1186,8 +1185,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, newScale, rm);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", newScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(newScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1205,8 +1204,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, newScale, rm);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", newScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(newScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1224,8 +1223,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, newScale, rm);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", newScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(newScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1245,8 +1244,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1266,8 +1265,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1287,8 +1286,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1308,8 +1307,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1329,8 +1328,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1350,8 +1349,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1371,8 +1370,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1406,8 +1405,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divideToIntegralValue(bNumber);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1427,8 +1426,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divideToIntegralValue(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1448,8 +1447,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divideToIntegralValue(bNumber, mc);
-        assertEquals("incorrect value", c, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(c, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1468,10 +1467,10 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal[] result = aNumber.divideAndRemainder(bNumber);
-        assertEquals("incorrect quotient value", res, result[0].toString());
-        assertEquals("incorrect quotient scale", resScale, result[0].scale());
-        assertEquals("incorrect remainder value", rem, result[1].toString());
-        assertEquals("incorrect remainder scale", remScale, result[1].scale());
+        assertEquals(res, result[0].toString(), "incorrect quotient value");
+        assertEquals(resScale, result[0].scale(), "incorrect quotient scale");
+        assertEquals(rem, result[1].toString(), "incorrect remainder value");
+        assertEquals(remScale, result[1].scale(), "incorrect remainder scale");
     }
 
     /**
@@ -1492,10 +1491,10 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal[] result = aNumber.divideAndRemainder(bNumber);
-        assertEquals("incorrect quotient value", res, result[0].toString());
-        assertEquals("incorrect quotient scale", resScale, result[0].scale());
-        assertEquals("incorrect remainder value", rem, result[1].toString());
-        assertEquals("incorrect remainder scale", remScale, result[1].scale());
+        assertEquals(res, result[0].toString(), "incorrect quotient value");
+        assertEquals(resScale, result[0].scale(), "incorrect quotient scale");
+        assertEquals(rem, result[1].toString(), "incorrect remainder value");
+        assertEquals(remScale, result[1].scale(), "incorrect remainder scale");
     }
 
     /**
@@ -1517,10 +1516,10 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal[] result = aNumber.divideAndRemainder(bNumber, mc);
-        assertEquals("incorrect quotient value", res, result[0].toString());
-        assertEquals("incorrect quotient scale", resScale, result[0].scale());
-        assertEquals("incorrect remainder value", rem, result[1].toString());
-        assertEquals("incorrect remainder scale", remScale, result[1].scale());
+        assertEquals(res, result[0].toString(), "incorrect quotient value");
+        assertEquals(resScale, result[0].scale(), "incorrect quotient scale");
+        assertEquals(rem, result[1].toString(), "incorrect remainder value");
+        assertEquals(remScale, result[1].scale(), "incorrect remainder scale");
     }
 
     /**
@@ -1542,10 +1541,10 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal[] result = aNumber.divideAndRemainder(bNumber, mc);
-        assertEquals("incorrect quotient value", res, result[0].toString());
-        assertEquals("incorrect quotient scale", resScale, result[0].scale());
-        assertEquals("incorrect remainder value", rem, result[1].toString());
-        assertEquals("incorrect remainder scale", remScale, result[1].scale());
+        assertEquals(res, result[0].toString(), "incorrect quotient value");
+        assertEquals(resScale, result[0].scale(), "incorrect quotient scale");
+        assertEquals(rem, result[1].toString(), "incorrect remainder value");
+        assertEquals(remScale, result[1].scale(), "incorrect remainder scale");
     }
 
     /**
@@ -1562,8 +1561,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.remainder(bNumber);
-        assertEquals("incorrect quotient value", res, result.toString());
-        assertEquals("incorrect quotient scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect quotient value");
+        assertEquals(resScale, result.scale(), "incorrect quotient scale");
     }
 
     /**
@@ -1580,8 +1579,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.remainder(bNumber);
-        assertEquals("incorrect quotient value", res, result.toString());
-        assertEquals("incorrect quotient scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect quotient value");
+        assertEquals(resScale, result.scale(), "incorrect quotient scale");
     }
 
     /**
@@ -1601,8 +1600,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.remainder(bNumber, mc);
-        assertEquals("incorrect quotient value", res, result.toString());
-        assertEquals("incorrect quotient scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect quotient value");
+        assertEquals(resScale, result.scale(), "incorrect quotient scale");
     }
 
     /**
@@ -1622,8 +1621,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.remainder(bNumber, mc);
-        assertEquals("incorrect quotient value", res, result.toString());
-        assertEquals("incorrect quotient scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect quotient value");
+        assertEquals(resScale, result.scale(), "incorrect quotient scale");
     }
 
     /**
@@ -1640,8 +1639,8 @@ public class BigDecimalArithmeticTest {
         int resScale = -45;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal result = aNumber.round(mc);
-        assertEquals("incorrect quotient value", res, result.toString());
-        assertEquals("incorrect quotient scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect quotient value");
+        assertEquals(resScale, result.scale(), "incorrect quotient scale");
     }
 
     /**
@@ -1658,8 +1657,8 @@ public class BigDecimalArithmeticTest {
         int resScale = 2;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal result = aNumber.round(mc);
-        assertEquals("incorrect quotient value", res, result.toString());
-        assertEquals("incorrect quotient scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect quotient value");
+        assertEquals(resScale, result.scale(), "incorrect quotient scale");
     }
 
     /**
@@ -1675,8 +1674,8 @@ public class BigDecimalArithmeticTest {
         String res = "3736186567876.876578956958765675671119238118911893939591735";
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal result = aNumber.round(mc);
-        assertEquals("incorrect quotient value", res, result.toString());
-        assertEquals("incorrect quotient scale", aScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect quotient value");
+        assertEquals(aScale, result.scale(), "incorrect quotient scale");
     }
 
     /**
@@ -1690,8 +1689,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal result = aNumber.ulp();
         String res = "1E+45";
         int resScale = -45;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1705,8 +1704,8 @@ public class BigDecimalArithmeticTest {
         BigDecimal result = aNumber.ulp();
         String res = "1E-45";
         int resScale = 45;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -1720,7 +1719,7 @@ public class BigDecimalArithmeticTest {
         BigDecimal result = aNumber.ulp();
         String res = "0.01";
         int resScale = 2;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 }

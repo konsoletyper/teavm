@@ -23,4 +23,12 @@ public interface BrowserRunParams {
     File stderrFile();
 
     File stdoutFile();
+
+    /**
+     * Port that browser should open for remote debugging (i.e. Chrome DevTools protocol), or 0 if remote
+     * debugging is not required.
+     */
+    default int remoteDebuggingPort() {
+        return 0;
+    }
 }

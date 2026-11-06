@@ -1,0 +1,11 @@
+var @this as this
+
+$start
+    @size := 4
+    @array := newArray I[@size]
+    @a := 1
+    @b := 0
+    @index := @a / @b as int
+    @index_1 := boundCheck @index upper @array lower
+    @value := @array[@index_1] as int
+    return @value

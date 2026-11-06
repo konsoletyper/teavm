@@ -503,7 +503,6 @@ class TByteBufferImpl extends TByteBuffer {
         long f = array[start + index + 5] & 0xFF;
         long g = array[start + index + 6] & 0xFF;
         long h = array[start + index + 7] & 0xFF;
-        position += 8;
         if (order == TByteOrder.BIG_ENDIAN) {
             return (a << 56) | (b << 48) | (c << 40) | (d << 32) | (e << 24) | (f << 16) | (g << 8) | h;
         } else {
@@ -516,8 +515,8 @@ class TByteBufferImpl extends TByteBuffer {
         if (readOnly) {
             throw new TReadOnlyBufferException();
         }
-        if (index < 0 || index + 3 >= limit) {
-            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 3) + ")");
+        if (index < 0 || index + 7 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 7) + ")");
         }
         if (order == TByteOrder.BIG_ENDIAN) {
             array[start + index + 0] = (byte) (value >> 56);

@@ -44,6 +44,8 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         }
         if (PlatformDetector.isC()) {
             var memory = Memory.malloc(capacity);
+            // A new direct buffer is zero-filled, as in the JDK; malloc does not clear memory.
+            Address.fillZero(memory, capacity);
             var result = new TByteBufferNative(null, null, 0, null, memory, capacity, false);
             GC.registerDirectBuffer(Address.ofObject(result).toStructure());
             result.limit = capacity;
@@ -54,6 +56,8 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             if (addr == null) {
                 throw new TOutOfMemoryError();
             }
+            // A new direct buffer is zero-filled, as in the JDK; Heap.alloc does not clear memory.
+            Address.fillZero(addr, capacity);
             var result = new TByteBufferWasmGC(null, null, 0, null, addr, capacity, false);
             result.regKey = JSObjects.create();
             result.regToken = JSObjects.create();

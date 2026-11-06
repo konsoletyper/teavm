@@ -35,6 +35,7 @@ public class TRuntime {
      * The argument serves as a status code; by convention, a nonzero status code indicates abnormal termination.
      */
     public void exit(@SuppressWarnings("unused") int status) {
+        System.exit(status);
     }
 
     /**

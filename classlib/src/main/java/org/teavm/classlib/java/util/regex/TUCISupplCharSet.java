@@ -113,7 +113,7 @@ class TUCISupplCharSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         char high = testString.charAt(strIndex++);
         char low = testString.charAt(strIndex);
         return (this.ch == Character.toLowerCase(Character.toUpperCase(Character.toCodePoint(high, low)))) ? 2 : -1;

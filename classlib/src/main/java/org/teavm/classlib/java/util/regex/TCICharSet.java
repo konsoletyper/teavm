@@ -52,7 +52,7 @@ class TCICharSet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int strIndex, CharSequence testString) {
+    public int accepts(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return (this.ch == testString.charAt(strIndex) || this.supplement == testString.charAt(strIndex)) ? 1 : -1;
     }
 
@@ -63,5 +63,10 @@ class TCICharSet extends TLeafSet {
 
     protected char getChar() {
         return ch;
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TCICharSet.class, "ciCharSet", ch);
     }
 }

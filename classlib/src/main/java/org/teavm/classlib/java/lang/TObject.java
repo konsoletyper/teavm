@@ -29,7 +29,6 @@ import org.teavm.interop.Rename;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Superclass;
 import org.teavm.interop.Unmanaged;
-import org.teavm.jso.browser.TimerHandler;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformObject;
 import org.teavm.platform.PlatformRunnable;
@@ -45,10 +44,9 @@ public class TObject {
     Monitor monitor;
 
     static class Monitor {
-        static final int MASK = 0x80000000;
-
         Queue<PlatformRunnable> enteringThreads;
-        Queue<NotifyListener> notifyListeners;
+        NotifyListener firstNotifyListener;
+        NotifyListener lastNotifyListener;
         TThread owner;
         int count;
         int id;
@@ -56,10 +54,6 @@ public class TObject {
         Monitor() {
             this.owner = TThread.currentThread();
         }
-    }
-
-    interface NotifyListener extends PlatformRunnable, EventQueue.Event {
-        boolean expired();
     }
 
     static void monitorEnterSync(TObject o) {
@@ -170,11 +164,7 @@ public class TObject {
 
         monitor.owner = null;
         if (monitor.enteringThreads != null && !monitor.enteringThreads.isEmpty()) {
-            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(() -> waitForOtherThreads(o));
-            } else {
-                Platform.postpone(() -> waitForOtherThreads(o));
-            }
+            EventQueue.offer(() -> waitForOtherThreads(o));
         } else {
             o.isEmptyMonitor();
         }
@@ -188,7 +178,9 @@ public class TObject {
         if (monitor.enteringThreads != null && !monitor.enteringThreads.isEmpty()) {
             var enteringThreads = monitor.enteringThreads;
             PlatformRunnable r = enteringThreads.remove();
-            monitor.enteringThreads = null;
+            if (enteringThreads.isEmpty()) {
+                monitor.enteringThreads = null;
+            }
             r.run();
         }
     }
@@ -200,7 +192,7 @@ public class TObject {
         }
         if (monitor.owner == null
                 && (monitor.enteringThreads == null || monitor.enteringThreads.isEmpty())
-                && (monitor.notifyListeners == null || monitor.notifyListeners.isEmpty())) {
+                && monitor.firstNotifyListener == null) {
             deleteMonitor();
             return true;
         } else {
@@ -329,12 +321,9 @@ public class TObject {
 
     @Unmanaged
     private static int identityLowLevel() {
-        int result = RuntimeObject.nextId++;
+        int result = RuntimeObject.nextId++ & 0x7fffffff;
         if (result == 0) {
-            result = RuntimeObject.nextId++;
-            if (result == Monitor.MASK) {
-                result = 1;
-            }
+            result = RuntimeObject.nextId++ & 0x7fffffff;
         }
         return result;
     }
@@ -400,23 +389,10 @@ public class TObject {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
-        var listeners = monitor.notifyListeners;
-        if (listeners == null) {
-            return;
-        }
-        while (!listeners.isEmpty()) {
-            NotifyListener listener = listeners.remove();
-            if (!listener.expired()) {
-                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                    EventQueue.offer(listener);
-                } else {
-                    Platform.postpone(listener);
-                }
-                break;
-            }
-        }
-        if (listeners.isEmpty()) {
-            monitor.notifyListeners = null;
+        var listener = monitor.firstNotifyListener;
+        if (listener != null) {
+            removeNotifyListener(this, listener);
+            EventQueue.offer(listener);
         }
     }
 
@@ -425,21 +401,17 @@ public class TObject {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
-        var listeners = monitor.notifyListeners;
-        if (listeners == null) {
-            return;
+        var listener = monitor.firstNotifyListener;
+        monitor.firstNotifyListener = null;
+        monitor.lastNotifyListener = null;
+        while (listener != null) {
+            var next = listener.next;
+            listener.prev = null;
+            listener.next = null;
+            listener.queued = false;
+            EventQueue.offer(listener);
+            listener = next;
         }
-        while (!listeners.isEmpty()) {
-            NotifyListener listener = listeners.remove();
-            if (!listener.expired()) {
-                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                    EventQueue.offer(listener);
-                } else {
-                    Platform.postpone(listener);
-                }
-            }
-        }
-        monitor.notifyListeners = null;
     }
 
     @Rename("wait")
@@ -470,59 +442,68 @@ public class TObject {
 
     final void waitImpl(long timeout, int nanos, AsyncCallback<Void> callback) {
         Monitor monitor = this.monitor;
-        var listener = new NotifyListenerImpl(this, callback, monitor.count);
-        if (monitor.notifyListeners == null) {
-            monitor.notifyListeners = new ArrayDeque<>();
-        }
-        monitor.notifyListeners.add(listener);
+        var listener = new NotifyListener(this, callback, monitor.count);
+        addNotifyListener(this, listener);
         TThread.currentThread().interruptHandler = listener;
         if (timeout > 0 || nanos > 0) {
             int timeoutToSchedule = timeout >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) timeout;
-            listener.timerId = PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()
-                    ? EventQueue.offer(listener, timeoutToSchedule + System.currentTimeMillis())
-                    : Platform.schedule(listener, timeoutToSchedule);
+            listener.timerId = EventQueue.offer(listener, timeoutToSchedule + System.currentTimeMillis());
         }
         monitorExit(this, monitor.count);
     }
 
-    static class NotifyListenerImpl implements NotifyListener, TimerHandler, PlatformRunnable,
-            TThreadInterruptHandler {
+    // Listener management lives in Object's own methods, since the Wasm backends rewrite access
+    // to the monitor field only there.
+    private static void addNotifyListener(TObject o, NotifyListener listener) {
+        Monitor monitor = o.monitor;
+        listener.prev = monitor.lastNotifyListener;
+        if (monitor.lastNotifyListener != null) {
+            monitor.lastNotifyListener.next = listener;
+        } else {
+            monitor.firstNotifyListener = listener;
+        }
+        monitor.lastNotifyListener = listener;
+        listener.queued = true;
+    }
+
+    private static void removeNotifyListener(TObject o, NotifyListener listener) {
+        if (!listener.queued) {
+            return;
+        }
+        Monitor monitor = o.monitor;
+        if (listener.prev != null) {
+            listener.prev.next = listener.next;
+        } else {
+            monitor.firstNotifyListener = listener.next;
+        }
+        if (listener.next != null) {
+            listener.next.prev = listener.prev;
+        } else {
+            monitor.lastNotifyListener = listener.prev;
+        }
+        listener.prev = null;
+        listener.next = null;
+        listener.queued = false;
+    }
+
+    // A waiting thread's entry in its monitor's wait queue. A wait that ends (by notify, by timeout or by interrupt)
+    // leaves the queue right away. Only a wait woken by notify ends later, when the event that notify scheduled runs,
+    // so the timeout or an interrupt can still come first; performed makes only the first of them resume the thread.
+    static class NotifyListener implements EventQueue.Event, TThreadInterruptHandler {
         final TObject obj;
         final AsyncCallback<Void> callback;
         final TThread currentThread = TThread.currentThread();
+        NotifyListener prev;
+        NotifyListener next;
+        boolean queued;
         int timerId = -1;
-        boolean expired;
         boolean performed;
         int lockCount;
 
-        NotifyListenerImpl(TObject obj, AsyncCallback<Void> callback, int lockCount) {
+        NotifyListener(TObject obj, AsyncCallback<Void> callback, int lockCount) {
             this.obj = obj;
             this.callback = callback;
             this.lockCount = lockCount;
-        }
-
-        @Override
-        public boolean expired() {
-            boolean result = expired;
-            expired = true;
-            return result;
-        }
-
-        @Override
-        public void onTimer() {
-            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(() -> {
-                    if (!expired()) {
-                        run();
-                    }
-                });
-            } else {
-                Platform.postpone(() -> {
-                    if (!expired()) {
-                        run();
-                    }
-                });
-            }
         }
 
         @Override
@@ -532,13 +513,10 @@ public class TObject {
             }
             performed = true;
             if (timerId >= 0) {
-                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                    EventQueue.kill(timerId);
-                } else {
-                    Platform.killSchedule(timerId);
-                }
+                EventQueue.kill(timerId);
                 timerId = -1;
             }
+            removeNotifyListener(obj, this);
             TThread.setCurrentThread(currentThread);
             monitorEnterWait(obj, lockCount, callback);
         }
@@ -550,36 +528,29 @@ public class TObject {
             }
             performed = true;
             if (timerId >= 0) {
-                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                    EventQueue.kill(timerId);
-                } else {
-                    Platform.killSchedule(timerId);
-                }
+                EventQueue.kill(timerId);
                 timerId = -1;
             }
-            TThread caller = TThread.currentThread();
-            TThread.setCurrentThread(currentThread);
-            TThread.interrupted();
-            TThread.setCurrentThread(caller);
-            Runnable reacquire = () -> {
-                TThread.setCurrentThread(currentThread);
-                monitorEnterWait(obj, lockCount, new AsyncCallback<Void>() {
-                    @Override
-                    public void complete(Void result) {
-                        callback.error(new TInterruptedException());
-                    }
+            removeNotifyListener(obj, this);
+            // As in the JDK, wait() holds the monitor again when it throws InterruptedException.
+            EventQueue.offer(this::reacquireThenFail);
+        }
 
-                    @Override
-                    public void error(Throwable error) {
-                        callback.error(error);
-                    }
-                });
-            };
-            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.offer(reacquire::run);
-            } else {
-                Platform.postpone(reacquire::run);
-            }
+        private void reacquireThenFail() {
+            TThread.setCurrentThread(currentThread);
+            monitorEnterWait(obj, lockCount, new AsyncCallback<>() {
+                @Override
+                public void complete(Void result) {
+                    // As in the JDK, throwing InterruptedException clears the thread's interrupt status.
+                    TThread.interrupted();
+                    callback.error(new TInterruptedException());
+                }
+
+                @Override
+                public void error(Throwable e) {
+                    callback.error(e);
+                }
+            });
         }
     }
 

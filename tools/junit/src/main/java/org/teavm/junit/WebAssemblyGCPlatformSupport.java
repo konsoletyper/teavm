@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
@@ -49,7 +48,6 @@ import org.teavm.tooling.sources.DefaultSourceFileResolver;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
 import org.teavm.tooling.sources.JarSourceFileProvider;
 import org.teavm.tooling.sources.SourceFileProvider;
-import org.teavm.vm.TeaVM;
 
 class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     private boolean disassembly;
@@ -86,7 +84,7 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     }
 
     @Override
-    CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
+    CompileResult compile(TestEntryPointSpec entryPoint, String baseName,
             TeaVMTestConfiguration<WasmGCTarget> configuration, File path, AnnotatedElement element) {
         var sourceMapBuilder = new SourceMapBuilder();
         var sourceMapFile = getOutputFile(path, baseName, configuration.getSuffix(), ".wasm.map");
@@ -127,11 +125,11 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
             }
         };
         return compile(configuration, targetSupplier, TestWasmGCEntryPoint.class.getName(), path,
-                ".wasm", postBuild, additionalProcessing, baseName);
+                ".wasm", postBuild, entryPoint::install, baseName);
     }
 
     @Override
-    TestPlatform getPlatform() {
+    String getPlatform() {
         return TestPlatform.WEBASSEMBLY_GC;
     }
 
@@ -205,6 +203,10 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     private void writeDisassembly(File outputPath, String name, TeaVMTestConfiguration<?> configuration) {
         var binPath = getOutputFile(outputPath, name, configuration.getSuffix(), getExtension());
         var htmlPath = getOutputFile(outputPath, name, configuration.getSuffix(), ".wast.html");
+        if (!binPath.isFile()) {
+            htmlPath.delete();
+            return;
+        }
         try (var writer = new OutputStreamWriter(new FileOutputStream(htmlPath))) {
             var disasmWriter = new DisassemblyHTMLWriter(new PrintWriter(writer));
             disasmWriter.setWithAddress(true);

@@ -29,7 +29,9 @@ Currently, three backends are supported:
   - `./maven`
   - `./core` - basic tool intergration API, used by Gradle and Maven plugins
   - `./idea`
+  - `./perf` - runner of JMH-compatible benchmarks compiled by TeaVM
 * `/test` - test suite
+* `/benchmarks` - performance benchmarks (JMH-style) for code produced by TeaVM, see `benchmarks/README.md`
 * `/samples` - samples for end users
 
 
@@ -60,6 +62,16 @@ Also, setting `teavm.tests.optimized` to true will compile each test twice: once
 ALWAYS pass all of these properties to Gradle, since user may override their value in local Gradle config.
 
 
+# Performance benchmarks
+
+Benchmarks live in `/benchmarks` module and are written with JMH annotations (only a subset is supported).
+They are compiled by TeaVM and run by `:tools:perf` on JS, Wasm GC and C backends, and can also run on JVM
+with real JMH for comparison. When changing code that may affect performance (classlib, optimizer,
+code generators), consider measuring the effect with `benchmarks/compare-stash.sh` (uncommitted changes vs
+`HEAD`) or `benchmarks/compare-commit.sh <commit>`. See `benchmarks/README.md` for Gradle tasks, properties
+and the supported subset of JMH.
+
+
 # Checking code style
 
 This project uses checkstyle, rules avaiable here: `config/checkstyle/checkstyle.xml`. You must ensure that the code conforms to these rules by running `checkstyleMain` Gradle task.
@@ -85,3 +97,10 @@ Links there omit `.md` extension, e.g. `foo/bar` instead of `foo/bar.md`.
 * When tests fails due to broken wasm file, you can find *.wast.html file right near the generated module.
   The HTML file also has `(; hex offset ;)` comment before each instruction to easily navigate through the file.
   Don't use any external validators, they don't support Wasm GC proposal fully.
+
+
+# Report policy
+
+IMPORTANT! When you asked to provide any report for the user, NEVER write it to scratchpad. Even
+if you used scratchpad to generate such result, ALWAYS copy data that you are supposed to provide to the user
+in project's directory.

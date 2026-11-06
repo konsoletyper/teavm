@@ -48,9 +48,9 @@
 
 package org.teavm.classlib.support;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Map;
 
 public class MapTest2Support {
@@ -68,30 +68,24 @@ public class MapTest2Support {
     public void runTest() {
         try {
             map.put("one", "1");
-            assertEquals("size should be one", 1, map.size());
+            assertEquals(1, map.size(), "size should be one");
             map.clear();
-            assertEquals("size should be zero", 0, map.size());
-            assertTrue("Should not have entries", !map.entrySet().iterator()
-                    .hasNext());
-            assertTrue("Should not have keys", !map.keySet().iterator()
-                    .hasNext());
-            assertTrue("Should not have values", !map.values().iterator()
-                    .hasNext());
+            assertEquals(0, map.size(), "size should be zero");
+            assertTrue(!map.entrySet().iterator().hasNext(), "Should not have entries");
+            assertTrue(!map.keySet().iterator().hasNext(), "Should not have keys");
+            assertTrue(!map.values().iterator().hasNext(), "Should not have values");
         } catch (UnsupportedOperationException e) {
             // ok
         }
 
         try {
             map.put("one", "1");
-            assertEquals("size should be one", 1, map.size());
+            assertEquals(1, map.size(), "size should be one");
             map.remove("one");
-            assertEquals("size should be zero", 0, map.size());
-            assertTrue("Should not have entries", !map.entrySet().iterator()
-                    .hasNext());
-            assertTrue("Should not have keys", !map.keySet().iterator()
-                    .hasNext());
-            assertTrue("Should not have values", !map.values().iterator()
-                    .hasNext());
+            assertEquals(0, map.size(), "size should be zero");
+            assertTrue(!map.entrySet().iterator().hasNext(), "Should not have entries");
+            assertTrue(!map.keySet().iterator().hasNext(), "Should not have keys");
+            assertTrue(!map.values().iterator().hasNext(), "Should not have values");
         } catch (UnsupportedOperationException e) {
             // ok
         }

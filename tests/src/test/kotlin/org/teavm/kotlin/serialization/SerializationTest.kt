@@ -18,14 +18,13 @@ package org.teavm.kotlin.serialization
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
-import org.junit.Assert.assertEquals
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import org.teavm.junit.SkipPlatform
-import org.teavm.junit.TeaVMTestRunner
+import org.teavm.junit.TeaVMTest
 import org.teavm.junit.TestPlatform
 
-@RunWith(TeaVMTestRunner::class)
+@TeaVMTest
 class SerializationTest {
     @Test
     fun serialize() {

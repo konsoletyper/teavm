@@ -15,22 +15,22 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Properties;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class SystemTest {
     @Test
@@ -123,31 +123,31 @@ public class SystemTest {
         }
     }
 
-    @Test(expected = ArrayStoreException.class)
+    @Test
     public void failsToCopyToUnrelatedReferenceArray() {
         String[] src = { "foo", "bar", "baz" };
         Integer[] dest = new Integer[3];
-        System.arraycopy(src, 0, dest, 0, 3);
+        assertThrows(ArrayStoreException.class, () -> System.arraycopy(src, 0, dest, 0, 3));
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void failsToCopyArraysWithInvalidIndexes() {
-        System.arraycopy(new Object[0], 0, new Object[0], 0, 1);
+        assertThrows(IndexOutOfBoundsException.class, () -> System.arraycopy(new Object[0], 0, new Object[0], 0, 1));
     }
 
-    @Test(expected = ArrayStoreException.class)
+    @Test
     public void failsToCopyArraysWithIncompatibleElements() {
-        System.arraycopy(new Object[1], 0, new int[1], 0, 1);
+        assertThrows(ArrayStoreException.class, () -> System.arraycopy(new Object[1], 0, new int[1], 0, 1));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void failsToCopyFromNullSource() {
-        System.arraycopy(null, 0, new int[1], 0, 1);
+        assertThrows(NullPointerException.class, () -> System.arraycopy(null, 0, new int[1], 0, 1));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void failsToCopyToNullTarget() {
-        System.arraycopy(new Object[1], 0, null, 0, 1);
+        assertThrows(NullPointerException.class, () -> System.arraycopy(new Object[1], 0, null, 0, 1));
     }
 
     @Test

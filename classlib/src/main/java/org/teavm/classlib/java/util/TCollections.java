@@ -474,117 +474,32 @@ public final class TCollections extends TObject {
 
     public static <T> TCollection<T> unmodifiableCollection(final TCollection<? extends T> c) {
         TObjects.requireNonNull(c);
-        return new TAbstractCollection<>() {
-            @Override public TIterator<T> iterator() {
-                return unmodifiableIterator(c.iterator());
-            }
-            @Override public int size() {
-                return c.size();
-            }
-            @Override public boolean remove(Object o) {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
-    private static <T> TIterator<T> unmodifiableIterator(final TIterator<? extends T> c) {
-        return new TIterator<>() {
-            @Override public boolean hasNext() {
-                return c.hasNext();
-            }
-            @Override public T next() {
-                return c.next();
-            }
-            @Override public void remove() {
-                throw new TUnsupportedOperationException();
-            }
-        };
+        return new TUnmodifiableCollection<>(c);
     }
 
     public static <T> TSet<T> unmodifiableSet(final TSet<? extends T> s) {
         TObjects.requireNonNull(s);
-        return new TAbstractSet<>() {
-            @Override public TIterator<T> iterator() {
-                return unmodifiableIterator(s.iterator());
-            }
-            @Override public int size() {
-                return s.size();
-            }
-            @Override public boolean remove(Object o) {
-                throw new UnsupportedOperationException();
-            }
-            @Override public boolean contains(Object o) {
-                return s.contains(o);
-            }
-            @Override public boolean containsAll(TCollection<?> c) {
-                return s.containsAll(c);
-            }
-            @Override public boolean isEmpty() {
-                return s.isEmpty();
-            }
-        };
+        return new TUnmodifiableSet<>(s);
     }
 
-    public static <K, V> TMap<K, V> unmodifiableMap(final TMap<? extends K, ? extends V> m) {
+    public static <T> TSortedSet<T> unmodifiableSortedSet(TSortedSet<T> s) {
+        TObjects.requireNonNull(s);
+        return new TUnmodifiableSortedSet<>(s);
+    }
+
+    public static <K, V> TMap<K, V> unmodifiableMap(TMap<? extends K, ? extends V> m) {
         TObjects.requireNonNull(m);
-        return new TAbstractMap<>() {
-            private TSet<Entry<K, V>> entrySetCache;
-
-            @Override public TSet<Entry<K, V>> entrySet() {
-                if (entrySetCache == null) {
-                    entrySetCache = unmodifiableMapEntrySet(m.entrySet());
-                }
-                return entrySetCache;
-            }
-            @Override public V remove(Object o) {
-                throw new UnsupportedOperationException();
-            }
-            @Override public boolean containsKey(Object key) {
-                return m.containsKey(key);
-            }
-            @Override public boolean containsValue(Object value) {
-                return m.containsValue(value);
-            }
-            @Override public int size() {
-                return m.size();
-            }
-            @Override public V get(Object key) {
-                return m.get(key);
-            }
-            @Override public boolean isEmpty() {
-                return m.isEmpty();
-            }
-        };
+        return new TUnmodifiableMap<>(m);
     }
 
-    private static <K, V> TSet<Entry<K, V>> unmodifiableMapEntrySet(
-            final TSet<? extends Entry<? extends K, ? extends V>> c) {
-        return new TAbstractSet<>() {
-            @Override public int size() {
-                return c.size();
-            }
-            @Override public TIterator<Entry<K, V>> iterator() {
-                return unmodifiableMapEntryIterator(c.iterator());
-            }
-            @Override public boolean remove(Object o) {
-                throw new UnsupportedOperationException();
-            }
-        };
+    public static <K, V> TSequencedMap<K, V> unmodifiableSequencedMap(TSequencedMap<? extends K, ? extends V> m) {
+        TObjects.requireNonNull(m);
+        return new TUnmodifiableSequencedMap<>(m);
     }
 
-    private static <K, V> TIterator<Entry<K, V>> unmodifiableMapEntryIterator(
-            final TIterator<? extends Entry<? extends K, ? extends V>> c) {
-        return new TIterator<>() {
-            @Override public boolean hasNext() {
-                return c.hasNext();
-            }
-            @Override public Entry<K, V> next() {
-                return new TAbstractMap.SimpleImmutableEntry<>(c.next());
-            }
-            @Override public void remove() {
-                throw new TUnsupportedOperationException();
-            }
-        };
+    public static <K, V> TSortedMap<K, V> unmodifiableSortedMap(TSortedMap<K, ? extends V> m) {
+        TObjects.requireNonNull(m);
+        return new TUnmodifiableSortedMap<>(m);
     }
 
     public static <T> TCollection<T> synchronizedCollection(TCollection<T> c) {

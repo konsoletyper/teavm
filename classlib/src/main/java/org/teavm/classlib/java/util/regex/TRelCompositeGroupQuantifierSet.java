@@ -80,4 +80,10 @@ class TRelCompositeGroupQuantifierSet extends TCompositeGroupQuantifierSet {
 
         return nextIndex;
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TRelCompositeGroupQuantifierSet.class, "relCompositeGroupQuantifierSet", quantifier,
+                innerSet, type, setCounter);
+    }
 }

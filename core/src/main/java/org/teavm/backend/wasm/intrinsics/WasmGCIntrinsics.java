@@ -43,12 +43,14 @@ import org.teavm.backend.wasm.intrinsics.reflection.TypeVariableInfoIntrinsic;
 import org.teavm.backend.wasm.intrinsics.reflection.TypeVariableReferenceIntrinsic;
 import org.teavm.backend.wasm.intrinsics.reflection.WildcardTypeInfoIntrinsic;
 import org.teavm.backend.wasm.model.instruction.WasmFloatType;
+import org.teavm.backend.wasm.model.instruction.WasmFloatUnaryOperation;
 import org.teavm.backend.wasm.model.instruction.WasmIntType;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.reflection.AnnotationGenerationHelper;
 import org.teavm.reflection.ReflectionDependencyListener;
 import org.teavm.runtime.EventQueue;
@@ -122,6 +124,18 @@ public class WasmGCIntrinsics {
                 floatIntrinsic);
         reg.registerIntrinsic(new MethodReference(Math.class, "max", float.class, float.class, float.class),
                 floatIntrinsic);
+        reg.registerIntrinsic(new MethodReference(Math.class, "abs", double.class, double.class),
+                new MathUnaryIntrinsic(WasmFloatType.FLOAT64, WasmFloatUnaryOperation.ABS));
+        reg.registerIntrinsic(new MethodReference(Math.class, "abs", float.class, float.class),
+                new MathUnaryIntrinsic(WasmFloatType.FLOAT32, WasmFloatUnaryOperation.ABS));
+        reg.registerIntrinsic(new MethodReference(Math.class, "sqrt", double.class, double.class),
+                new MathUnaryIntrinsic(WasmFloatType.FLOAT64, WasmFloatUnaryOperation.SQRT));
+        reg.registerIntrinsic(new MethodReference(Math.class, "floor", double.class, double.class),
+                new MathUnaryIntrinsic(WasmFloatType.FLOAT64, WasmFloatUnaryOperation.FLOOR));
+        reg.registerIntrinsic(new MethodReference(Math.class, "ceil", double.class, double.class),
+                new MathUnaryIntrinsic(WasmFloatType.FLOAT64, WasmFloatUnaryOperation.CEIL));
+        reg.registerIntrinsic(new MethodReference(Math.class.getName(), "rintImpl", ValueType.DOUBLE, ValueType.DOUBLE),
+                new MathUnaryIntrinsic(WasmFloatType.FLOAT64, WasmFloatUnaryOperation.NEAREST));
     }
 
     private static void fillReflection(IntrinsicRegistry<WasmGCInlineIntrinsic> reg,
@@ -133,8 +147,7 @@ public class WasmGCIntrinsics {
                 ctx::isAsyncMethod);
         metadataGen.generate();
         ctx.initializerRegistry().register(fn -> fn.getBody().builder().call(metadataGen.initFunction()));
-        reg.registerIntrinsic(ClassInfo.class, new ClassInfoIntrinsic(classInfoProvider, ctx.functionTypes(),
-                metadataGen));
+        reg.registerIntrinsic(ClassInfo.class, new ClassInfoIntrinsic(classInfoProvider, ctx.functionTypes()));
         reg.registerIntrinsic(ClassReflectionInfo.class, new ClassReflectionInfoIntrinsic(classInfoProvider));
         reg.registerIntrinsic(StringInfo.class, new StringInfoIntrinsic());
         reg.registerIntrinsic(AnnotationConstructor.class, new AnnotationConstructorIntrinsic(classInfoProvider));

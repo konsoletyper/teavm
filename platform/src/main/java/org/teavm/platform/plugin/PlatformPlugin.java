@@ -25,6 +25,7 @@ import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.wasm.TeaVMWasmGCHost;
 import org.teavm.interop.Async;
 import org.teavm.interop.PlatformMarker;
+import org.teavm.interop.Platforms;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -90,9 +91,10 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
         var isJs = host.getExtension(TeaVMJavaScriptHost.class) != null;
         host.add(new AsyncMethodProcessor(!isJs));
-        if (!isBootstrap()) {
+        if (isJs()) {
             TeaVMPluginUtil.handleNatives(host, Platform.class);
         }
+        TeaVMPluginUtil.handleNatives(host, StringAmplifier.class);
 
         host.registerService(MetadataRegistration.class, this);
     }
@@ -125,7 +127,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
     private void installWasmGC(TeaVMHost host, TeaVMWasmGCHost wasmGCHost) {
         wasmGCHost.contributeToCodeGen((ctx, reg) -> {
             reg.inlineIntrinsics().registerIntrinsic(StringAmplifier.class, (invocation, context, builder) -> {
-                context.generate(builder, invocation.getArguments().get(0));
+                context.emitLocal(builder, invocation.getArguments().get(0));
             });
         });
 
@@ -174,6 +176,11 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
     @PlatformMarker
     private static boolean isBootstrap() {
+        return false;
+    }
+
+    @PlatformMarker(Platforms.JAVASCRIPT)
+    private static boolean isJs() {
         return false;
     }
 }

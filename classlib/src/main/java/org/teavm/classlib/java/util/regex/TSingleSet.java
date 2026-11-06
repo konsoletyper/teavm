@@ -143,4 +143,12 @@ class TSingleSet extends TJointSet {
             kid.processSecondPass();
         }
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (!(fSet instanceof TFSet) || ((TFSet) fSet).getGroupIndex() != groupIndex) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TSingleSet.class, "singleSet", kid, fSet);
+    }
 }

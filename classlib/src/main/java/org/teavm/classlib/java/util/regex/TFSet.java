@@ -100,8 +100,24 @@ class TFSet extends TAbstractSet {
         }
 
         @Override
+        void describe(TPatternWriter writer) {
+            if (this != posFSet) {
+                throw TPatternWriter.unsupported();
+            }
+            writer.create(this, PossessiveFSet.class, "posFSet");
+        }
+
+        @Override
         public boolean hasConsumed(TMatchResultImpl mr) {
             return false;
         }
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (isBackReferenced) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TFSet.class, "fSet", groupIndex);
     }
 }

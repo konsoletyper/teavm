@@ -56,9 +56,10 @@ import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -80,28 +81,27 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Ignore;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test DateTimeFormatters.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestDateTimeFormatters {
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
     }
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_print_nullCalendrical() {
-        DateTimeFormatter.ISO_DATE.format(null);
+        assertThrows(NullPointerException.class, () -> DateTimeFormatter.ISO_DATE.format(null));
     }
 
     //-----------------------------------------------------------------------
@@ -110,18 +110,18 @@ public class TestDateTimeFormatters {
     @Test
     public void test_pattern_String() {
         DateTimeFormatter test = DateTimeFormatter.ofPattern("d MMM uuuu");
-        assertEquals(test.toString(), "Value(DayOfMonth)' 'Text(MonthOfYear,SHORT)' 'Value(Year,4,19,EXCEEDS_PAD)");
-        assertEquals(test.getLocale(), Locale.getDefault());
+        assertEquals("Value(DayOfMonth)' 'Text(MonthOfYear,SHORT)' 'Value(Year,4,19,EXCEEDS_PAD)", test.toString());
+        assertEquals(Locale.getDefault(), test.getLocale());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_pattern_String_invalid() {
-        DateTimeFormatter.ofPattern("p");
+        assertThrows(IllegalArgumentException.class, () -> DateTimeFormatter.ofPattern("p"));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_pattern_String_null() {
-        DateTimeFormatter.ofPattern(null);
+        assertThrows(NullPointerException.class, () -> DateTimeFormatter.ofPattern(null));
     }
 
     //-----------------------------------------------------------------------
@@ -130,30 +130,29 @@ public class TestDateTimeFormatters {
     @Test
     public void test_pattern_StringLocale() {
         DateTimeFormatter test = DateTimeFormatter.ofPattern("d MMM uuuu", Locale.UK);
-        assertEquals(test.toString(), "Value(DayOfMonth)' 'Text(MonthOfYear,SHORT)' 'Value(Year,4,19,EXCEEDS_PAD)");
-        assertEquals(test.getLocale(), Locale.UK);
+        assertEquals("Value(DayOfMonth)' 'Text(MonthOfYear,SHORT)' 'Value(Year,4,19,EXCEEDS_PAD)", test.toString());
+        assertEquals(Locale.UK, test.getLocale());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_pattern_StringLocale_invalid() {
-        DateTimeFormatter.ofPattern("p", Locale.UK);
+        assertThrows(IllegalArgumentException.class, () -> DateTimeFormatter.ofPattern("p", Locale.UK));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_pattern_StringLocale_nullPattern() {
-        DateTimeFormatter.ofPattern(null, Locale.UK);
+        assertThrows(NullPointerException.class, () -> DateTimeFormatter.ofPattern(null, Locale.UK));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_pattern_StringLocale_nullLocale() {
-        DateTimeFormatter.ofPattern("yyyy", null);
+        assertThrows(NullPointerException.class, () -> DateTimeFormatter.ofPattern("yyyy", null));
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoLocalDate")
-    Object[][] provider_sample_isoLocalDate() {
+    static Object[][] provider_sample_isoLocalDate() {
         return new Object[][]{
                 {2008, null, null, null, null, null, DateTimeException.class},
                 {null, 6, null, null, null, null, DateTimeException.class},
@@ -172,13 +171,14 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoLocalDate")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoLocalDate")
     public void test_print_isoLocalDate(
             Integer year, Integer month, Integer day, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(year, month, day, null, null, null, null, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_LOCAL_DATE.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_LOCAL_DATE.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_LOCAL_DATE.format(test);
@@ -189,7 +189,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoLocalDate")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoLocalDate")
     public void test_parse_isoLocalDate(
             Integer year, Integer month, Integer day, String offsetId, String zoneId,
             String input, Class<?> invalid) {
@@ -205,7 +206,7 @@ public class TestDateTimeFormatters {
         Expected expected = createDate(999999999, 8, 6);
         assertParseMatch(DateTimeFormatter.ISO_LOCAL_DATE.parseUnresolved("+999999999-08-06", new ParsePosition(0)),
                 expected);
-        assertEquals(LocalDate.parse("+999999999-08-06"), LocalDate.of(999999999, 8, 6));
+        assertEquals(LocalDate.of(999999999, 8, 6), LocalDate.parse("+999999999-08-06"));
     }
 
     @Test
@@ -215,9 +216,9 @@ public class TestDateTimeFormatters {
                 expected);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_parse_isoLocalDate_1000000000_failedCreate() {
-        LocalDate.parse("+1000000000-08-06");
+        assertThrows(DateTimeException.class, () -> LocalDate.parse("+1000000000-08-06"));
     }
 
     @Test
@@ -225,7 +226,7 @@ public class TestDateTimeFormatters {
         Expected expected = createDate(-999999999, 8, 6);
         assertParseMatch(DateTimeFormatter.ISO_LOCAL_DATE.parseUnresolved("-999999999-08-06", new ParsePosition(0)),
                 expected);
-        assertEquals(LocalDate.parse("-999999999-08-06"), LocalDate.of(-999999999, 8, 6));
+        assertEquals(LocalDate.of(-999999999, 8, 6), LocalDate.parse("-999999999-08-06"));
     }
 
     @Test
@@ -235,16 +236,15 @@ public class TestDateTimeFormatters {
                 expected);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_parse_isoLocalDate_M1000000000_failedCreate() {
-        LocalDate.parse("-1000000000-08-06");
+        assertThrows(DateTimeException.class, () -> LocalDate.parse("-1000000000-08-06"));
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoOffsetDate")
-    Object[][] provider_sample_isoOffsetDate() {
+    static Object[][] provider_sample_isoOffsetDate() {
         return new Object[][]{
                 {2008, null, null, null, null, null, DateTimeException.class},
                 {null, 6, null, null, null, null, DateTimeException.class},
@@ -263,13 +263,14 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoOffsetDate")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoOffsetDate")
     public void test_print_isoOffsetDate(
             Integer year, Integer month, Integer day, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(year, month, day, null, null, null, null, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_OFFSET_DATE.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_OFFSET_DATE.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_OFFSET_DATE.format(test);
@@ -280,7 +281,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoOffsetDate")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoOffsetDate")
     public void test_parse_isoOffsetDate(
             Integer year, Integer month, Integer day, String offsetId, String zoneId,
             String input, Class<?> invalid) {
@@ -294,8 +296,7 @@ public class TestDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoDate")
-    Object[][] provider_sample_isoDate() {
+    static Object[][] provider_sample_isoDate() {
         return new Object[][]{
                 {2008, null, null, null, null, null, DateTimeException.class},
                 {null, 6, null, null, null, null, DateTimeException.class},
@@ -314,13 +315,14 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoDate")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoDate")
     public void test_print_isoDate(
             Integer year, Integer month, Integer day, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(year, month, day, null, null, null, null, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_DATE.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_DATE.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_DATE.format(test);
@@ -331,7 +333,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoDate")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoDate")
     public void test_parse_isoDate(
             Integer year, Integer month, Integer day, String offsetId, String zoneId,
             String input, Class<?> invalid) {
@@ -347,8 +350,7 @@ public class TestDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoLocalTime")
-    Object[][] provider_sample_isoLocalTime() {
+    static Object[][] provider_sample_isoLocalTime() {
         return new Object[][]{
                 {11, null, null, null, null, null, null, DateTimeException.class},
                 {null, 5, null, null, null, null, null, DateTimeException.class},
@@ -379,13 +381,14 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoLocalTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoLocalTime")
     public void test_print_isoLocalTime(
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(null, null, null, hour, min, sec, nano, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_LOCAL_TIME.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_LOCAL_TIME.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_LOCAL_TIME.format(test);
@@ -396,7 +399,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoLocalTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoLocalTime")
     public void test_parse_isoLocalTime(
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String input, Class<?> invalid) {
@@ -410,8 +414,7 @@ public class TestDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoOffsetTime")
-    Object[][] provider_sample_isoOffsetTime() {
+    static Object[][] provider_sample_isoOffsetTime() {
         return new Object[][]{
                 {11, null, null, null, null, null, null, DateTimeException.class},
                 {null, 5, null, null, null, null, null, DateTimeException.class},
@@ -442,13 +445,14 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoOffsetTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoOffsetTime")
     public void test_print_isoOffsetTime(
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(null, null, null, hour, min, sec, nano, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_OFFSET_TIME.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_OFFSET_TIME.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_OFFSET_TIME.format(test);
@@ -459,7 +463,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoOffsetTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoOffsetTime")
     public void test_parse_isoOffsetTime(
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String input, Class<?> invalid) {
@@ -473,8 +478,7 @@ public class TestDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoTime")
-    Object[][] provider_sample_isoTime() {
+    static Object[][] provider_sample_isoTime() {
         return new Object[][]{
                 {11, null, null, null, null, null, null, DateTimeException.class},
                 {null, 5, null, null, null, null, null, DateTimeException.class},
@@ -505,13 +509,14 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoTime")
     public void test_print_isoTime(
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(null, null, null, hour, min, sec, nano, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_TIME.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_TIME.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_TIME.format(test);
@@ -522,7 +527,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoTime")
     public void test_parse_isoTime(
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String input, Class<?> invalid) {
@@ -538,8 +544,7 @@ public class TestDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoLocalDateTime")
-    Object[][] provider_sample_isoLocalDateTime() {
+    static Object[][] provider_sample_isoLocalDateTime() {
         return new Object[][]{
                 {2008, null, null, null, null, null, null, null, null, null, DateTimeException.class},
                 {null, 6, null, null, null, null, null, null, null, null, DateTimeException.class},
@@ -578,14 +583,15 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoLocalDateTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoLocalDateTime")
     public void test_print_isoLocalDateTime(
             Integer year, Integer month, Integer day,
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(year, month, day, hour, min, sec, nano, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(test);
@@ -596,7 +602,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoLocalDateTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoLocalDateTime")
     public void test_parse_isoLocalDateTime(
             Integer year, Integer month, Integer day,
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
@@ -611,8 +618,7 @@ public class TestDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoOffsetDateTime")
-    Object[][] provider_sample_isoOffsetDateTime() {
+    static Object[][] provider_sample_isoOffsetDateTime() {
         return new Object[][]{
                 {2008, null, null, null, null, null, null, null, null, null, DateTimeException.class},
                 {null, 6, null, null, null, null, null, null, null, null, DateTimeException.class},
@@ -653,14 +659,15 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoOffsetDateTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoOffsetDateTime")
     public void test_print_isoOffsetDateTime(
             Integer year, Integer month, Integer day,
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(year, month, day, hour, min, sec, nano, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(test);
@@ -671,7 +678,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoOffsetDateTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoOffsetDateTime")
     public void test_parse_isoOffsetDateTime(
             Integer year, Integer month, Integer day,
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
@@ -687,8 +695,7 @@ public class TestDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoZonedDateTime")
-    Object[][] provider_sample_isoZonedDateTime() {
+    static Object[][] provider_sample_isoZonedDateTime() {
         return new Object[][]{
                 {2008, null, null, null, null, null, null, null, null, null, DateTimeException.class},
                 {null, 6, null, null, null, null, null, null, null, null, DateTimeException.class},
@@ -743,14 +750,15 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoZonedDateTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoZonedDateTime")
     public void test_print_isoZonedDateTime(
             Integer year, Integer month, Integer day,
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(year, month, day, hour, min, sec, nano, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_ZONED_DATE_TIME.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_ZONED_DATE_TIME.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_ZONED_DATE_TIME.format(test);
@@ -761,7 +769,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoZonedDateTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoZonedDateTime")
     public void test_parse_isoZonedDateTime(
             Integer year, Integer month, Integer day,
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
@@ -781,8 +790,7 @@ public class TestDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sample_isoDateTime")
-    Object[][] provider_sample_isoDateTime() {
+    static Object[][] provider_sample_isoDateTime() {
         return new Object[][]{
                 {2008, null, null, null, null, null, null, null, null, null, DateTimeException.class},
                 {null, 6, null, null, null, null, null, null, null, null, DateTimeException.class},
@@ -826,14 +834,15 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "sample_isoDateTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoDateTime")
     public void test_print_isoDateTime(
             Integer year, Integer month, Integer day,
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
             String expected, Class<?> expectedEx) {
         TemporalAccessor test = buildAccessor(year, month, day, hour, min, sec, nano, offsetId, zoneId);
         if (expectedEx == null) {
-            assertEquals(DateTimeFormatter.ISO_DATE_TIME.format(test), expected);
+            assertEquals(expected, DateTimeFormatter.ISO_DATE_TIME.format(test));
         } else {
             try {
                 DateTimeFormatter.ISO_DATE_TIME.format(test);
@@ -844,7 +853,8 @@ public class TestDateTimeFormatters {
         }
     }
 
-    @Test(dataProvider = "sample_isoDateTime")
+    @ParameterizedTest
+    @MethodSource("provider_sample_isoDateTime")
     public void test_parse_isoDateTime(
             Integer year, Integer month, Integer day,
             Integer hour, Integer min, Integer sec, Integer nano, String offsetId, String zoneId,
@@ -867,25 +877,25 @@ public class TestDateTimeFormatters {
     @Test
     public void test_print_isoOrdinalDate() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(2008, 6, 3, 11, 5, 30), null, null);
-        assertEquals(DateTimeFormatter.ISO_ORDINAL_DATE.format(test), "2008-155");
+        assertEquals("2008-155", DateTimeFormatter.ISO_ORDINAL_DATE.format(test));
     }
 
     @Test
     public void test_print_isoOrdinalDate_offset() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(2008, 6, 3, 11, 5, 30), "Z", null);
-        assertEquals(DateTimeFormatter.ISO_ORDINAL_DATE.format(test), "2008-155Z");
+        assertEquals("2008-155Z", DateTimeFormatter.ISO_ORDINAL_DATE.format(test));
     }
 
     @Test
     public void test_print_isoOrdinalDate_zoned() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(2008, 6, 3, 11, 5, 30), "+02:00", "Europe/Paris");
-        assertEquals(DateTimeFormatter.ISO_ORDINAL_DATE.format(test), "2008-155+02:00");
+        assertEquals("2008-155+02:00", DateTimeFormatter.ISO_ORDINAL_DATE.format(test));
     }
 
     @Test
     public void test_print_isoOrdinalDate_zoned_largeYear() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(123456, 6, 3, 11, 5, 30), "Z", null);
-        assertEquals(DateTimeFormatter.ISO_ORDINAL_DATE.format(test), "+123456-155Z");
+        assertEquals("+123456-155Z", DateTimeFormatter.ISO_ORDINAL_DATE.format(test));
     }
 
     @Test
@@ -906,13 +916,13 @@ public class TestDateTimeFormatters {
                 throw new DateTimeException("Unsupported");
             }
         };
-        assertEquals(DateTimeFormatter.ISO_ORDINAL_DATE.format(test), "2008-231");
+        assertEquals("2008-231", DateTimeFormatter.ISO_ORDINAL_DATE.format(test));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_print_isoOrdinalDate_missingField() {
         TemporalAccessor test = Year.of(2008);
-        DateTimeFormatter.ISO_ORDINAL_DATE.format(test);
+        assertThrows(DateTimeException.class, () -> DateTimeFormatter.ISO_ORDINAL_DATE.format(test));
     }
 
     //-----------------------------------------------------------------------
@@ -936,63 +946,64 @@ public class TestDateTimeFormatters {
     @Test
     public void test_print_basicIsoDate() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(2008, 6, 3, 11, 5, 30), null, null);
-        assertEquals(DateTimeFormatter.BASIC_ISO_DATE.format(test), "20080603");
+        assertEquals("20080603", DateTimeFormatter.BASIC_ISO_DATE.format(test));
     }
 
     @Test
     public void test_print_basicIsoDate_offset() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(2008, 6, 3, 11, 5, 30), "Z", null);
-        assertEquals(DateTimeFormatter.BASIC_ISO_DATE.format(test), "20080603Z");
+        assertEquals("20080603Z", DateTimeFormatter.BASIC_ISO_DATE.format(test));
     }
 
     @Test
     public void test_print_basicIsoDate_zoned() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(2008, 6, 3, 11, 5, 30), "+02:00", "Europe/Paris");
-        assertEquals(DateTimeFormatter.BASIC_ISO_DATE.format(test), "20080603+0200");
+        assertEquals("20080603+0200", DateTimeFormatter.BASIC_ISO_DATE.format(test));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_print_basicIsoDate_largeYear() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(123456, 6, 3, 11, 5, 30), "Z", null);
-        DateTimeFormatter.BASIC_ISO_DATE.format(test);
+        assertThrows(DateTimeException.class, () -> DateTimeFormatter.BASIC_ISO_DATE.format(test));
     }
 
     @Test
     public void test_print_basicIsoDate_fields() {
         TemporalAccessor test = buildAccessor(LocalDate.of(2008, 6, 3), null, null);
-        assertEquals(DateTimeFormatter.BASIC_ISO_DATE.format(test), "20080603");
+        assertEquals("20080603", DateTimeFormatter.BASIC_ISO_DATE.format(test));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_print_basicIsoDate_missingField() {
         TemporalAccessor test = YearMonth.of(2008, 6);
-        DateTimeFormatter.BASIC_ISO_DATE.format(test);
+        assertThrows(DateTimeException.class, () -> DateTimeFormatter.BASIC_ISO_DATE.format(test));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_parse_basicIsoDate() {
         LocalDate expected = LocalDate.of(2008, 6, 3);
-        assertEquals(DateTimeFormatter.BASIC_ISO_DATE.parse("20080603", LocalDate::from), expected);
+        assertEquals(expected, DateTimeFormatter.BASIC_ISO_DATE.parse("20080603", LocalDate::from));
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_parse_basicIsoDate_largeYear() {
-        try {
-            LocalDate expected = LocalDate.of(123456, 6, 3);
-            assertEquals(DateTimeFormatter.BASIC_ISO_DATE.parse("+1234560603", LocalDate::from), expected);
-        } catch (DateTimeParseException ex) {
-            assertEquals(ex.getErrorIndex(), 0);
-            assertEquals(ex.getParsedString(), "+1234560603");
-            throw ex;
-        }
+        assertThrows(DateTimeParseException.class, () -> {
+            try {
+                LocalDate expected = LocalDate.of(123456, 6, 3);
+                assertEquals(expected, DateTimeFormatter.BASIC_ISO_DATE.parse("+1234560603", LocalDate::from));
+            } catch (DateTimeParseException ex) {
+                assertEquals(0, ex.getErrorIndex());
+                assertEquals("+1234560603", ex.getParsedString());
+                throw ex;
+            }
+        });
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "weekDate")
-    Iterator<Object[]> weekDate() {
+    static Iterator<Object[]> weekDate() {
         return new Iterator<Object[]>() {
             private ZonedDateTime date = ZonedDateTime.of(LocalDateTime.of(2003, 12, 29, 11, 5, 30),
                     ZoneId.of("Europe/Paris"));
@@ -1027,52 +1038,52 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "weekDate")
+    @ParameterizedTest
+    @MethodSource("weekDate")
     public void test_print_isoWeekDate(TemporalAccessor test, String expected) {
-        assertEquals(DateTimeFormatter.ISO_WEEK_DATE.format(test), expected);
+        assertEquals(expected, DateTimeFormatter.ISO_WEEK_DATE.format(test));
     }
 
     @Test
     public void test_print_isoWeekDate_zoned_largeYear() {
         TemporalAccessor test = buildAccessor(LocalDateTime.of(123456, 6, 3, 11, 5, 30), "Z", null);
-        assertEquals(DateTimeFormatter.ISO_WEEK_DATE.format(test), "+123456-W23-2Z");
+        assertEquals("+123456-W23-2Z", DateTimeFormatter.ISO_WEEK_DATE.format(test));
     }
 
     @Test
     public void test_print_isoWeekDate_fields() {
         TemporalAccessor test = buildAccessor(LocalDate.of(2004, 1, 27), null, null);
-        assertEquals(DateTimeFormatter.ISO_WEEK_DATE.format(test), "2004-W05-2");
+        assertEquals("2004-W05-2", DateTimeFormatter.ISO_WEEK_DATE.format(test));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_print_isoWeekDate_missingField() {
         TemporalAccessor test = YearMonth.of(2008, 6);
-        DateTimeFormatter.ISO_WEEK_DATE.format(test);
+        assertThrows(DateTimeException.class, () -> DateTimeFormatter.ISO_WEEK_DATE.format(test));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_parse_weekDate() {
         LocalDate expected = LocalDate.of(2004, 1, 28);
-        assertEquals(DateTimeFormatter.ISO_WEEK_DATE.parse("2004-W05-3", LocalDate::from), expected);
+        assertEquals(expected, DateTimeFormatter.ISO_WEEK_DATE.parse("2004-W05-3", LocalDate::from));
     }
 
     @Test
-    @Ignore
+    @Disabled
     // This does not work on JVM
     public void test_parse_weekDate_largeYear() {
         TemporalAccessor parsed = DateTimeFormatter.ISO_WEEK_DATE.parseUnresolved("+123456-W04-5",
                 new ParsePosition(0));
-        assertEquals(parsed.get(IsoFields.WEEK_BASED_YEAR), 123456);
-        assertEquals(parsed.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR), 4);
-        assertEquals(parsed.get(DAY_OF_WEEK), 5);
+        assertEquals(123456, parsed.get(IsoFields.WEEK_BASED_YEAR));
+        assertEquals(4, parsed.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR));
+        assertEquals(5, parsed.get(DAY_OF_WEEK));
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "rfc")
-    Object[][] data_rfc() {
+    static Object[][] data_rfc() {
         return new Object[][] {
             {LocalDateTime.of(2008, 6, 3, 11, 5, 30), "Z", "Tue, 3 Jun 2008 11:05:30 GMT"},
             {LocalDateTime.of(2008, 6, 30, 11, 5, 30), "Z", "Mon, 30 Jun 2008 11:05:30 GMT"},
@@ -1081,22 +1092,24 @@ public class TestDateTimeFormatters {
         };
     }
 
-    @Test(dataProvider = "rfc")
+    @ParameterizedTest
+    @MethodSource("data_rfc")
     public void test_print_rfc1123(LocalDateTime base, String offsetId, String expected) {
         TemporalAccessor test = buildAccessor(base, offsetId, null);
-        assertEquals(DateTimeFormatter.RFC_1123_DATE_TIME.format(test), expected);
+        assertEquals(expected, DateTimeFormatter.RFC_1123_DATE_TIME.format(test));
     }
 
-    @Test(dataProvider = "rfc")
+    @ParameterizedTest
+    @MethodSource("data_rfc")
     public void test_print_rfc1123_french(LocalDateTime base, String offsetId, String expected) {
         TemporalAccessor test = buildAccessor(base, offsetId, null);
-        assertEquals(DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.FRENCH).format(test), expected);
+        assertEquals(expected, DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.FRENCH).format(test));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_print_rfc1123_missingField() {
         TemporalAccessor test = YearMonth.of(2008, 6);
-        DateTimeFormatter.RFC_1123_DATE_TIME.format(test);
+        assertThrows(DateTimeException.class, () -> DateTimeFormatter.RFC_1123_DATE_TIME.format(test));
     }
 
     //-----------------------------------------------------------------------
@@ -1219,11 +1232,11 @@ public class TestDateTimeFormatters {
 
     private void assertParseMatch(TemporalAccessor parsed, Expected expected) {
         for (TemporalField field : expected.fieldValues.keySet()) {
-            assertEquals(parsed.isSupported(field), true);
+            assertTrue(parsed.isSupported(field));
             parsed.getLong(field);
         }
-        assertEquals(parsed.query(TemporalQueries.chronology()), expected.chrono);
-        assertEquals(parsed.query(TemporalQueries.zoneId()), expected.zone);
+        assertEquals(expected.chrono, parsed.query(TemporalQueries.chronology()));
+        assertEquals(expected.zone, parsed.query(TemporalQueries.zoneId()));
     }
 
     //-------------------------------------------------------------------------

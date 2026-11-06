@@ -27,6 +27,7 @@ import org.teavm.backend.wasm.parser.AddressListener;
 public abstract class DisassemblyWriter {
     private PrintWriter out;
     private boolean withAddress;
+    private boolean withIndices = true;
     private int indentLevel;
     private int address;
     private boolean hasAddress;
@@ -43,6 +44,18 @@ public abstract class DisassemblyWriter {
 
     public void setWithAddress(boolean withAddress) {
         this.withAddress = withAddress;
+    }
+
+    public boolean isWithIndices() {
+        return withIndices;
+    }
+
+    /**
+     * Sets whether indices of named entities (functions, types, locals, etc.) should be written
+     * along with their names. Entities without names are always referred by indices.
+     */
+    public void setWithIndices(boolean withIndices) {
+        this.withIndices = withIndices;
     }
 
     public void setAddressOffset(int addressOffset) {
@@ -128,37 +141,87 @@ public abstract class DisassemblyWriter {
             command.acceptVisitor(new LineInfoCommandVisitor() {
                 @Override
                 public void visit(LineInfoEnterCommand command) {
-                    printSingleDebugAnnotation("enter inline " + command.method().cls().name() + "."
-                            + command.method().name());
-                    ++lineInfoIndent;
+                    printEnterInline(command.method().cls().name(), command.method().name());
                 }
 
                 @Override
                 public void visit(LineInfoExitCommand command) {
-                    --lineInfoIndent;
-                    printSingleDebugAnnotation("exit inline");
+                    printExitInline();
                 }
 
                 @Override
                 public void visit(LineInfoFileCommand command) {
-                    if (command.file() == null) {
-                        printSingleDebugAnnotation("at <unknown>:" + command.line());
-                    } else {
-                        printSingleDebugAnnotation("at " + command.file().name() + ":" + command.line());
-                    }
+                    printFileLocation(command.file() != null ? command.file().name() : null, command.line());
                 }
 
                 @Override
                 public void visit(LineInfoLineCommand command) {
-                    printSingleDebugAnnotation("at " + command.line());
+                    printLineLocation(command.line());
                 }
             });
             ++currentCommandIndex;
         }
     }
 
+    /**
+     * Writes annotation about entering inlined method, the same way as annotations taken from debug line info.
+     * Useful when debug information is taken from other source, for example, from Wasm model.
+     * Must be called between lines.
+     */
+    public DisassemblyWriter debugEnterInline(String className, String methodName) {
+        writeDetachedAnnotation(() -> printEnterInline(className, methodName));
+        return this;
+    }
+
+    public DisassemblyWriter debugExitInline() {
+        writeDetachedAnnotation(this::printExitInline);
+        return this;
+    }
+
+    public DisassemblyWriter debugFileLocation(String file, int line) {
+        writeDetachedAnnotation(() -> printFileLocation(file, line));
+        return this;
+    }
+
+    public DisassemblyWriter debugLineLocation(int line) {
+        writeDetachedAnnotation(() -> printLineLocation(line));
+        return this;
+    }
+
+    private void writeDetachedAnnotation(Runnable action) {
+        // printSingleDebugAnnotation is normally called from startLine and relies on the line being started,
+        // otherwise its write() would trigger startLine again.
+        lineStarted = true;
+        action.run();
+        lineStarted = false;
+    }
+
+    private void printEnterInline(String className, String methodName) {
+        printSingleDebugAnnotation("enter inline " + className + "." + methodName);
+        ++lineInfoIndent;
+    }
+
+    private void printExitInline() {
+        --lineInfoIndent;
+        printSingleDebugAnnotation("exit inline");
+    }
+
+    private void printFileLocation(String file, int line) {
+        if (file == null) {
+            printSingleDebugAnnotation(line >= 0 ? "at <unknown>:" + line : "at <unknown>");
+        } else {
+            printSingleDebugAnnotation("at " + file + ":" + line);
+        }
+    }
+
+    private void printLineLocation(int line) {
+        printSingleDebugAnnotation("at " + line);
+    }
+
     private void printSingleDebugAnnotation(String text) {
-        out.print("                ");
+        if (withAddress) {
+            out.print("                ");
+        }
         for (int i = 0; i < indentLevel; ++i) {
             out.print("  ");
         }

@@ -15,24 +15,23 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class InputStreamTest {
     @Test
     @SuppressWarnings("resource")
     public void readAll() throws IOException {
         var is = new ChunkedInputStream(17, 1000);
         var bytes = is.readAllBytes();
-        assertEquals(17_000, bytes.length);
+        assertEquals(bytes.length, 17_000);
         for (var i = 0; i < bytes.length; ++i) {
-            assertEquals(i % 17, bytes[i], "wrong element at position " + i);
+            assertEquals(bytes[i], i % 17, "wrong element at position " + i);
         }
     }
 
@@ -41,9 +40,9 @@ public class InputStreamTest {
     public void readAllWithLargeChunks() throws IOException {
         var is = new ChunkedInputStream(3000, 2);
         var bytes = is.readAllBytes();
-        assertEquals(6000, bytes.length);
+        assertEquals(bytes.length, 6000);
         for (var i = 0; i < bytes.length; ++i) {
-            assertEquals((byte) (i % 3000), bytes[i], "wrong element at position " + i);
+            assertEquals(bytes[i], (byte) (i % 3000), "wrong element at position " + i);
         }
     }
 
@@ -52,9 +51,9 @@ public class InputStreamTest {
     public void readN() throws IOException {
         var is = new ChunkedInputStream(17, 1000);
         var bytes = is.readNBytes(5000);
-        assertEquals(5000, bytes.length);
+        assertEquals(bytes.length, 5000);
         for (var i = 0; i < bytes.length; ++i) {
-            assertEquals(i % 17, bytes[i], "wrong element at position " + i);
+            assertEquals(bytes[i], i % 17, "wrong element at position " + i);
         }
     }
 
@@ -65,9 +64,9 @@ public class InputStreamTest {
         var os = new ByteArrayOutputStream();
         is.transferTo(os);
         var bytes = os.toByteArray();
-        assertEquals(17_000, bytes.length);
+        assertEquals(bytes.length, 17_000);
         for (var i = 0; i < bytes.length; ++i) {
-            assertEquals(i % 17, bytes[i], "wrong element at position " + i);
+            assertEquals(bytes[i], i % 17, "wrong element at position " + i);
         }
     }
 
@@ -76,8 +75,8 @@ public class InputStreamTest {
     public void skipN() throws IOException {
         var is = new ChunkedInputStream(17, 1000);
         is.skipNBytes(19);
-        assertEquals(2, is.read());
-        assertEquals(17_000 - 20, is.readAllBytes().length);
+        assertEquals(is.read(), 2);
+        assertEquals(is.readAllBytes().length, 17_000 - 20);
     }
 
     static class ChunkedInputStream extends InputStream {

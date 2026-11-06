@@ -15,18 +15,17 @@
  */
 package org.teavm.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
@@ -36,10 +35,10 @@ import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.SkipPlatform;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class VMTest {
     @Test
@@ -148,6 +147,26 @@ public class VMTest {
             }
         }
         assertEquals(List.of("1", "2", "3"), list);
+    }
+    
+    @Test
+    public void finallyWithEmptyTryBody() {
+        Object result;
+        try {
+            result = methodWithFinally("ok");
+        } catch (Throwable t) {
+            fail("Exception not expected here");
+            return;
+        }
+        assertEquals("ok", result);
+    }
+
+    private static Object methodWithFinally(Object g) {
+        try {
+            return g;
+        } finally {
+            System.out.println("Never mind");
+        }
     }
 
     @Test
@@ -539,7 +558,7 @@ public class VMTest {
             assertEquals("ok", e.getMessage());
             exceptionCaught = true;
         }
-        assertTrue("Exception was not caught", exceptionCaught);
+        assertTrue(exceptionCaught, "Exception was not caught");
     }
 
     @Test
@@ -684,5 +703,164 @@ public class VMTest {
             return "same";
         }
         return "copied " + java.lang.reflect.Array.getLength(copy);
+    }
+
+    @Test
+    public void exceptionHandlerInitializesClass() {
+        assertEquals("B", classInitInHandler(true));
+        assertEquals("A", classInitInHandler(false));
+    }
+
+    private static String classInitInHandler(boolean fail) {
+        try {
+            failIf(fail);
+            return InitInHandler.A.name();
+        } catch (IllegalStateException e) {
+            return InitInHandler.B.name();
+        }
+    }
+
+    private static void failIf(boolean fail) {
+        if (fail) {
+            throw new IllegalStateException();
+        }
+    }
+
+    @Test
+    public void constantIndexBeyondConstantArraySizeThrows() {
+        var array = new int[2];
+        var caught = false;
+        try {
+            array[2] = 1;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            caught = true;
+        }
+        assertTrue(caught, "Exception was not caught (upper bound)");
+
+        caught = false;
+        try {
+            array[-1] = 1;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            caught = true;
+        }
+        assertTrue(caught, "Exception was not caught (lower bound)");
+    }
+
+    @Test
+    public void arrayIndexOutOfBoundsDeliveredToHandler() {
+        var array = new int[2];
+        var handled = false;
+        try {
+            array[arrayIndex(2)] = 1;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            // A virtual method that the test harness itself does not call,
+            // so that only the type of the caught exception makes it reachable
+            e.getLocalizedMessage();
+            handled = true;
+        }
+        assertTrue(handled);
+    }
+
+    @Test
+    public void arrayIndexOutOfBoundsPropagatesToCaller() {
+        var handled = false;
+        try {
+            storeAt(new int[2], arrayIndex(2));
+        } catch (IndexOutOfBoundsException e) {
+            e.getLocalizedMessage();
+            handled = true;
+        }
+        assertTrue(handled);
+    }
+
+    private static int arrayIndex(int value) {
+        return value;
+    }
+
+    private static void storeAt(int[] array, int index) {
+        array[index] = 1;
+    }
+
+    enum InitInHandler {
+        A,
+        B
+    }
+
+    @Test
+    public void exceptionHandlerSeesParameterBeforeNullCheck() {
+        var key = newKey();
+        assertEquals("attached built", attachOrCancel(new WorkingBuilder(), key));
+        assertTrue(key.valid);
+        key = newKey();
+        assertEquals("cancelled: build failed", attachOrCancel(new FailingBuilder(), key));
+        assertFalse(key.valid);
+    }
+
+    @Test
+    public void exceptionHandlerSeesLocalBeforeNullCheck() {
+        assertEquals("attached built", assignAndAttach(new WorkingBuilder()));
+        assertEquals("key assigned: build failed", assignAndAttach(new FailingBuilder()));
+    }
+
+    private static String attachOrCancel(Builder builder, Key key) {
+        try {
+            Object built = builder.build(key);
+            key.attach(built);
+            return "attached " + built;
+        } catch (IllegalStateException e) {
+            key.cancel();
+            return "cancelled: " + e.getMessage();
+        }
+    }
+
+    private static String assignAndAttach(Builder builder) {
+        Key key = null;
+        try {
+            key = newKey();
+            Object built = builder.build(key);
+            key.attach(built);
+            return "attached " + built;
+        } catch (IllegalStateException e) {
+            return (key != null ? "key assigned: " : "key not assigned: ") + e.getMessage();
+        }
+    }
+
+    private static final List<Key> KEYS = new ArrayList<>();
+
+    // The compiler cannot prove that the result is not null, so each call on it gets a null check
+    private static Key newKey() {
+        KEYS.add(new Key());
+        return KEYS.get(KEYS.size() - 1);
+    }
+
+    interface Builder {
+        Object build(Key key);
+    }
+
+    static class WorkingBuilder implements Builder {
+        @Override
+        public Object build(Key key) {
+            return "built";
+        }
+    }
+
+    static class FailingBuilder implements Builder {
+        @Override
+        public Object build(Key key) {
+            throw new IllegalStateException("build failed");
+        }
+    }
+
+    static class Key {
+        boolean valid = true;
+        Object attachment;
+
+        void attach(Object attachment) {
+            this.attachment = attachment;
+        }
+
+        void cancel() {
+            valid = false;
+        }
     }
 }

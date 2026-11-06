@@ -31,20 +31,22 @@
 
 package org.teavm.classlib.java.util.regex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import junit.framework.TestCase;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Tests simple Pattern compilation and Matcher methods
  */
 @SuppressWarnings("nls")
-@RunWith(TeaVMTestRunner.class)
-public class Pattern2Test extends TestCase {
+@TeaVMTest
+public class Pattern2Test {
     @Test
     public void testSimpleMatch() throws PatternSyntaxException {
         Pattern p = Pattern.compile("foo.*");

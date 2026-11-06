@@ -57,7 +57,7 @@ class TPossessiveCompositeQuantifierSet extends TCompositeQuantifierSet {
                 matchResult.hitEnd = true;
                 return -1;
             }
-            int shift = leaf.accepts(stringIndex, testString);
+            int shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift < 1) {
                 return -1;
             }
@@ -67,14 +67,24 @@ class TPossessiveCompositeQuantifierSet extends TCompositeQuantifierSet {
         for (; i < max; i++) {
             int shift;
             if (stringIndex + leaf.charCount() > matchResult.getRightBound()) {
+                matchResult.hitEnd = true;
                 break;
             }
-            shift = leaf.accepts(stringIndex, testString);
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift < 1) {
                 break;
             }
             stringIndex += shift;
         }
         return next.matches(stringIndex, testString, matchResult);
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TPossessiveCompositeQuantifierSet.class, "possessiveCompositeQuantifierSet", quantifier,
+                leaf, type);
     }
 }

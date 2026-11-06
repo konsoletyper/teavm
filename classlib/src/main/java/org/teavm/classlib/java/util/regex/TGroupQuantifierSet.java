@@ -68,4 +68,9 @@ class TGroupQuantifierSet extends TQuantifierSet {
     protected String getName() {
         return "<GroupQuant>";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TGroupQuantifierSet.class, "groupQuantifierSet", innerSet, type);
+    }
 }

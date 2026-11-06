@@ -218,6 +218,35 @@ public class AstWriterTest {
     }
 
     @Test
+    public void writesArrowFunction() throws IOException {
+        assertEquals("return x=>x+1;", transformEs6("return x => x + 1;"));
+        assertEquals("return (x,y)=>x+y;", transformEs6("return (x, y) => x + y;"));
+        assertEquals("return ()=>{foo();};", transformEs6("return () => { foo(); };"));
+        assertEquals("f(x=>x,y);", transformEs6("f(x => x, y);"));
+        assertEquals("let g=x=>y=>x+y;", transformEs6("let g = x => y => x + y;"));
+    }
+
+    @Test
+    public void writesParenthesesAroundArrowFunction() throws IOException {
+        assertEquals("return (()=>x)();", transformEs6("return (() => x)();"));
+        assertEquals("return (x=>x)(1);", transformEs6("return (x => x)(1);"));
+        assertEquals("return (()=>{return x;})();", transformEs6("return (() => { return x; })();"));
+        assertEquals("return (()=>x).call(null);", transformEs6("return (() => x).call(null);"));
+        assertEquals("return (()=>x)||y;", transformEs6("return (() => x) || y;"));
+        assertEquals("return new (()=>x)();", transformEs6("return new (() => x)();"));
+    }
+
+    @Test
+    public void writesParenthesesAroundArrowFunctionBody() throws IOException {
+        assertEquals("return ()=>({});", transformEs6("return () => ({});"));
+        assertEquals("return ()=>({foo:bar});", transformEs6("return () => ({ foo: bar });"));
+        assertEquals("return x=>({foo:x}.foo);", transformEs6("return x => ({ foo: x }).foo;"));
+        assertEquals("return x=>x.foo;", transformEs6("return x => (x).foo;"));
+        assertEquals("return x=>(a,b);", transformEs6("return x => (a, b);"));
+        assertEquals("return x=>y=>({foo:y});", transformEs6("return x => y => ({ foo: y });"));
+    }
+
+    @Test
     public void writesFunction() throws IOException {
         assertEquals(
                 "return function f(x,y){return x+y;};",
@@ -288,11 +317,19 @@ public class AstWriterTest {
         return transform(text, writerWithGlobals);
     }
 
+    private String transformEs6(String text) throws IOException {
+        return transform(text, writer, Context.VERSION_ES6);
+    }
+
     private String transform(String text, AstWriter writer) throws IOException {
+        return transform(text, writer, Context.VERSION_1_8);
+    }
+
+    private String transform(String text, AstWriter writer, int languageVersion) throws IOException {
         sb.setLength(0);
         var env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
-        env.setLanguageVersion(Context.VERSION_1_8);
+        env.setLanguageVersion(languageVersion);
         var factory = new JSParser(env);
         factory.enterFunction();
         var rootNode = factory.parse(new StringReader(text), null, 0);

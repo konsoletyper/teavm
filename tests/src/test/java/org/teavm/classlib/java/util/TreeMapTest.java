@@ -47,14 +47,14 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,12 +71,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 @SuppressWarnings("SuspiciousMethodCalls")
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TreeMapTest {
 
     public static class ReversedComparator implements Comparator<Object> {
@@ -141,23 +140,22 @@ public class TreeMapTest {
         // Test for method java.util.TreeMap(java.util.Comparator)
         Comparator<Object> comp = new ReversedComparator();
         TreeMap<Object, Object> reversedTreeMap = new TreeMap<>(comp);
-        assertTrue("TreeMap answered incorrect comparator", reversedTreeMap
-                .comparator() == comp);
+        assertTrue(reversedTreeMap.comparator() == comp, "TreeMap answered incorrect comparator");
         reversedTreeMap.put(Integer.toString(1), 1);
         reversedTreeMap.put(Integer.toString(2), 2);
-        assertTrue("TreeMap does not use comparator (firstKey was incorrect)",
-                reversedTreeMap.firstKey().equals(Integer.toString(2)));
-        assertTrue("TreeMap does not use comparator (lastKey was incorrect)",
-                reversedTreeMap.lastKey().equals(Integer.toString(1)));
+        assertTrue(reversedTreeMap.firstKey().equals(Integer.toString(2)),
+                "TreeMap does not use comparator (firstKey was incorrect)");
+        assertTrue(reversedTreeMap.lastKey().equals(Integer.toString(1)),
+                "TreeMap does not use comparator (lastKey was incorrect)");
     }
 
     @Test
     public void test_ConstructorLjava_util_Map() {
         // Test for method java.util.TreeMap(java.util.Map)
         TreeMap<Object, Object> myTreeMap = new TreeMap<>(new HashMap<>(tm));
-        assertEquals("Map is incorrect size", objArray.length, myTreeMap.size());
+        assertEquals(objArray.length, myTreeMap.size(), "Map is incorrect size");
         for (Object element : objArray) {
-            assertEquals("Map has incorrect mappings", myTreeMap.get(element.toString()), element);
+            assertEquals(myTreeMap.get(element.toString()), element, "Map has incorrect mappings");
         }
     }
 
@@ -169,19 +167,18 @@ public class TreeMapTest {
         reversedTreeMap.put(Integer.toString(1), 1);
         reversedTreeMap.put(Integer.toString(2), 2);
         TreeMap<Object, Object> anotherTreeMap = new TreeMap<>(reversedTreeMap);
-        assertTrue("New tree map does not answer correct comparator",
-                anotherTreeMap.comparator() == comp);
-        assertTrue("TreeMap does not use comparator (firstKey was incorrect)",
-                anotherTreeMap.firstKey().equals(Integer.toString(2)));
-        assertTrue("TreeMap does not use comparator (lastKey was incorrect)",
-                anotherTreeMap.lastKey().equals(Integer.toString(1)));
+        assertTrue(anotherTreeMap.comparator() == comp, "New tree map does not answer correct comparator");
+        assertTrue(anotherTreeMap.firstKey().equals(Integer.toString(2)),
+                "TreeMap does not use comparator (firstKey was incorrect)");
+        assertTrue(anotherTreeMap.lastKey().equals(Integer.toString(1)),
+                "TreeMap does not use comparator (lastKey was incorrect)");
     }
 
     @Test
     public void test_clear() {
         // Test for method void java.util.TreeMap.clear()
         tm.clear();
-        assertEquals("Cleared map returned non-zero size", 0, tm.size());
+        assertEquals(0, tm.size(), "Cleared map returned non-zero size");
     }
 
     @Test
@@ -189,11 +186,11 @@ public class TreeMapTest {
         // Test for method java.lang.Object java.util.TreeMap.clone()
         @SuppressWarnings("unchecked")
         TreeMap<Object, Object> clonedMap = (TreeMap<Object, Object>) tm.clone();
-        assertEquals("Cloned map does not equal the original map", clonedMap, tm);
-        assertNotSame("Cloned map is the same reference as the original map", clonedMap, tm);
+        assertEquals(clonedMap, tm, "Cloned map does not equal the original map");
+        assertNotSame(clonedMap, tm, "Cloned map is the same reference as the original map");
         for (Object element : objArray) {
-            assertSame("Cloned map contains incorrect elements", clonedMap.get(element.toString()),
-                    tm.get(element.toString()));
+            assertSame(clonedMap.get(element.toString()), tm.get(element.toString()),
+                    "Cloned map contains incorrect elements");
         }
 
         TreeMap<Object, Object> map = new TreeMap<>();
@@ -201,24 +198,24 @@ public class TreeMapTest {
         // get the keySet() and values() on the original Map
         Set<Object> keys = map.keySet();
         Collection<Object> values = map.values();
-        assertEquals("values() does not work", "value", values.iterator().next());
-        assertEquals("keySet() does not work", "key", keys.iterator().next());
+        assertEquals("value", values.iterator().next(), "values() does not work");
+        assertEquals("key", keys.iterator().next(), "keySet() does not work");
         @SuppressWarnings("unchecked")
         Map<Object, Object> map2 = (Map<Object, Object>) map.clone();
         map2.put("key", "value2");
         Collection<Object> values2 = map2.values();
-        assertNotSame("values() is identical", values, values2);
+        assertNotSame(values, values2, "values() is identical");
         // values() and keySet() on the cloned() map should be different
-        assertEquals("values() was not cloned", "value2", values2.iterator().next());
+        assertEquals("value2", values2.iterator().next(), "values() was not cloned");
         map2.clear();
         map2.put("key2", "value3");
         Set<Object> key2 = map2.keySet();
-        assertTrue("keySet() is identical", key2 != keys);
-        assertEquals("keySet() was not cloned", "key2", key2.iterator().next());
+        assertTrue(key2 != keys, "keySet() is identical");
+        assertEquals("key2", key2.iterator().next(), "keySet() was not cloned");
         @SuppressWarnings("unchecked")
         Map<Object, Object> map3 = (Map<Object, Object>) map.clone();
         map3.put("key2", "value2");
-        assertFalse("Original map modified through clone", map.containsKey("key2"));
+        assertFalse(map.containsKey("key2"), "Original map modified through clone");
     }
 
     @Test
@@ -226,31 +223,29 @@ public class TreeMapTest {
         // Test for method java.util.Comparator java.util.TreeMap.comparator()\
         Comparator<Object> comp = new ReversedComparator();
         TreeMap<Object, Object> reversedTreeMap = new TreeMap<>(comp);
-        assertTrue("TreeMap answered incorrect comparator", reversedTreeMap.comparator() == comp);
+        assertTrue(reversedTreeMap.comparator() == comp, "TreeMap answered incorrect comparator");
         reversedTreeMap.put(Integer.toString(1), 1);
         reversedTreeMap.put(Integer.toString(2), 2);
-        assertTrue("TreeMap does not use comparator (firstKey was incorrect)",
-                reversedTreeMap.firstKey().equals(Integer.toString(2)));
-        assertTrue("TreeMap does not use comparator (lastKey was incorrect)",
-                reversedTreeMap.lastKey().equals(Integer.toString(1)));
+        assertTrue(reversedTreeMap.firstKey().equals(Integer.toString(2)),
+                "TreeMap does not use comparator (firstKey was incorrect)");
+        assertTrue(reversedTreeMap.lastKey().equals(Integer.toString(1)),
+                "TreeMap does not use comparator (lastKey was incorrect)");
     }
 
     @Test
     public void test_containsKeyLjava_lang_Object() {
         // Test for method boolean
         // java.util.TreeMap.containsKey(java.lang.Object)
-        assertTrue("Returned false for valid key", tm.containsKey("95"));
-        assertTrue("Returned true for invalid key", !tm.containsKey("XXXXX"));
+        assertTrue(tm.containsKey("95"), "Returned false for valid key");
+        assertTrue(!tm.containsKey("XXXXX"), "Returned true for invalid key");
     }
 
     @Test
     public void test_containsValueLjava_lang_Object() {
         // Test for method boolean
         // java.util.TreeMap.containsValue(java.lang.Object)
-        assertTrue("Returned false for valid value", tm
-                .containsValue(objArray[986]));
-        assertTrue("Returned true for invalid value", !tm
-                .containsValue(new Object()));
+        assertTrue(tm.containsValue(objArray[986]), "Returned false for valid value");
+        assertTrue(!tm.containsValue(new Object()), "Returned true for invalid value");
     }
 
     @Test
@@ -258,18 +253,18 @@ public class TreeMapTest {
         // Test for method java.util.Set java.util.TreeMap.entrySet()
         Set<Map.Entry<Object, Object>> anEntrySet = tm.entrySet();
         Iterator<Map.Entry<Object, Object>> entrySetIterator = anEntrySet.iterator();
-        assertTrue("EntrySet is incorrect size", anEntrySet.size() == objArray.length);
+        assertTrue(anEntrySet.size() == objArray.length, "EntrySet is incorrect size");
         Map.Entry<Object, Object> entry;
         while (entrySetIterator.hasNext()) {
             entry = entrySetIterator.next();
-            assertTrue("EntrySet does not contain correct mappings", tm.get(entry.getKey()) == entry.getValue());
+            assertTrue(tm.get(entry.getKey()) == entry.getValue(), "EntrySet does not contain correct mappings");
         }
     }
 
     @Test
     public void test_firstKey() {
         // Test for method java.lang.Object java.util.TreeMap.firstKey()
-        assertEquals("Returned incorrect first key", "0", tm.firstKey());
+        assertEquals("0", tm.firstKey(), "Returned incorrect first key");
     }
 
     @Test
@@ -278,7 +273,7 @@ public class TreeMapTest {
         // java.util.TreeMap.get(java.lang.Object)
         Object o = new Object();
         tm.put("Hello", o);
-        assertTrue("Failed to get mapping", tm.get("Hello") == o);
+        assertTrue(tm.get("Hello") == o, "Failed to get mapping");
     }
 
     @Test
@@ -286,10 +281,9 @@ public class TreeMapTest {
         // Test for method java.util.SortedMap
         // java.util.TreeMap.headMap(java.lang.Object)
         Map<Object, Object> head = tm.headMap("100");
-        assertEquals("Returned map of incorrect size", 3, head.size());
-        assertTrue("Returned incorrect elements", head.containsKey("0")
-                && head.containsValue(Integer.parseInt("1"))
-                && head.containsKey("10"));
+        assertEquals(3, head.size(), "Returned map of incorrect size");
+        assertTrue(head.containsKey("0") && head.containsValue(Integer.parseInt("1")) && head.containsKey("10"),
+                "Returned incorrect elements");
 
         // Regression for Harmony-1026
         TreeMap<Integer, Double> map = new TreeMap<>(new MockComparator<>());
@@ -340,8 +334,8 @@ public class TreeMapTest {
             intMap.put(i, i);
         }
         sub = intMap.headMap(-1);
-        assertEquals("size should be zero", sub.size(), 0);
-        assertTrue("submap should be empty", sub.isEmpty());
+        assertEquals(sub.size(), 0, "size should be zero");
+        assertTrue(sub.isEmpty(), "submap should be empty");
         try {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
@@ -362,8 +356,8 @@ public class TreeMapTest {
             intMap.put(i, i);
         }
         sub = intMap.headMap(-1);
-        assertEquals("size should be zero", sub.size(), 0);
-        assertTrue("submap should be empty", sub.isEmpty());
+        assertEquals(sub.size(), 0, "size should be zero");
+        assertTrue(sub.isEmpty(), "submap should be empty");
         try {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
@@ -383,16 +377,16 @@ public class TreeMapTest {
     public void test_keySet() {
         // Test for method java.util.Set java.util.TreeMap.keySet()
         Set<Object> ks = tm.keySet();
-        assertTrue("Returned set of incorrect size", ks.size() == objArray.length);
+        assertTrue(ks.size() == objArray.length, "Returned set of incorrect size");
         for (int i = 0; i < tm.size(); i++) {
-            assertTrue("Returned set is missing keys", ks.contains(Integer.toString(i)));
+            assertTrue(ks.contains(Integer.toString(i)), "Returned set is missing keys");
         }
     }
 
     @Test
     public void test_lastKey() {
         // Test for method java.lang.Object java.util.TreeMap.lastKey()
-        assertTrue("Returned incorrect last key", tm.lastKey().equals(objArray[objArray.length - 1].toString()));
+        assertTrue(tm.lastKey().equals(objArray[objArray.length - 1].toString()), "Returned incorrect last key");
     }
 
     @Test
@@ -401,7 +395,7 @@ public class TreeMapTest {
         // java.util.TreeMap.put(java.lang.Object, java.lang.Object)
         Object o = new Object();
         tm.put("Hello", o);
-        assertTrue("Failed to put mapping", tm.get("Hello") == o);
+        assertTrue(tm.get("Hello") == o, "Failed to put mapping");
 
         tm = new TreeMap<>();
         assertNull(tm.put(1, new Object()));
@@ -412,9 +406,9 @@ public class TreeMapTest {
         // Test for method void java.util.TreeMap.putAll(java.util.Map)
         TreeMap<Object, Object> x = new TreeMap<>();
         x.putAll(tm);
-        assertTrue("Map incorrect size after put", x.size() == tm.size());
+        assertTrue(x.size() == tm.size(), "Map incorrect size after put");
         for (Object element : objArray) {
-            assertTrue("Failed to put all elements", x.get(element.toString()).equals(element));
+            assertTrue(x.get(element.toString()).equals(element), "Failed to put all elements");
         }
     }
 
@@ -423,13 +417,13 @@ public class TreeMapTest {
         // Test for method java.lang.Object
         // java.util.TreeMap.remove(java.lang.Object)
         tm.remove("990");
-        assertTrue("Failed to remove mapping", !tm.containsKey("990"));
+        assertTrue(!tm.containsKey("990"), "Failed to remove mapping");
     }
 
     @Test
     public void test_size() {
         // Test for method int java.util.TreeMap.size()
-        assertEquals("Returned incorrect size", 1000, tm.size());
+        assertEquals(1000, tm.size(), "Returned incorrect size");
     }
 
     @Test
@@ -437,10 +431,10 @@ public class TreeMapTest {
         // Test for method java.util.SortedMap
         // java.util.TreeMap.subMap(java.lang.Object, java.lang.Object)
         SortedMap<Object, Object> subMap = tm.subMap(objArray[100].toString(), objArray[109].toString());
-        assertEquals("subMap is of incorrect size", 9, subMap.size());
+        assertEquals(9, subMap.size(), "subMap is of incorrect size");
         for (int counter = 100; counter < 109; counter++) {
-            assertTrue("SubMap contains incorrect elements", subMap.get(
-                    objArray[counter].toString()).equals(objArray[counter]));
+            assertTrue(subMap.get(objArray[counter].toString()).equals(objArray[counter]),
+                    "SubMap contains incorrect elements");
         }
 
         try {
@@ -456,7 +450,7 @@ public class TreeMapTest {
         treeMapWithNull.put(null, "value2"); //$NON-NLS-1$
         SortedMap<String, String> subMapWithNull = treeMapWithNull.subMap(null,
                 "key1"); //$NON-NLS-1$
-        assertEquals("Size of subMap should be 1:", 1, subMapWithNull.size()); //$NON-NLS-1$
+        assertEquals(1, subMapWithNull.size(), "Size of subMap should be 1:"); //$NON-NLS-1$
 
         // Regression test for typo in lastKey method
         SortedMap<String, String> map = new TreeMap<>();
@@ -504,9 +498,9 @@ public class TreeMapTest {
         // Test for method java.util.SortedMap
         // java.util.TreeMap.tailMap(java.lang.Object)
         Map<Object, Object> tail = tm.tailMap(objArray[900].toString());
-        assertTrue("Returned map of incorrect size : " + tail.size(), tail.size() == (objArray.length - 900) + 9);
+        assertTrue(tail.size() == (objArray.length - 900) + 9, "Returned map of incorrect size : " + tail.size());
         for (int i = 900; i < objArray.length; i++) {
-            assertTrue("Map contains incorrect entries", tail.containsValue(objArray[i]));
+            assertTrue(tail.containsValue(objArray[i]), "Map contains incorrect entries");
         }
 
         // Regression for Harmony-1066
@@ -520,8 +514,8 @@ public class TreeMapTest {
             intMap.put(i, i);
         }
         sub = intMap.tailMap(size);
-        assertEquals("size should be zero", sub.size(), 0);
-        assertTrue("submap should be empty", sub.isEmpty());
+        assertEquals(sub.size(), 0, "size should be zero");
+        assertTrue(sub.isEmpty(), "submap should be empty");
         try {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
@@ -542,8 +536,8 @@ public class TreeMapTest {
             intMap.put(i, i);
         }
         sub = intMap.tailMap(size);
-        assertEquals("size should be zero", sub.size(), 0);
-        assertTrue("submap should be empty", sub.isEmpty());
+        assertEquals(sub.size(), 0, "size should be zero");
+        assertTrue(sub.isEmpty(), "submap should be empty");
         try {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
@@ -564,10 +558,9 @@ public class TreeMapTest {
         // Test for method java.util.Collection java.util.TreeMap.values()
         Collection<Object> vals = tm.values();
         vals.iterator();
-        assertTrue("Returned collection of incorrect size",
-                vals.size() == objArray.length);
+        assertTrue(vals.size() == objArray.length, "Returned collection of incorrect size");
         for (Object element : objArray) {
-            assertTrue("Collection contains incorrect elements", vals.contains(element));
+            assertTrue(vals.contains(element), "Collection contains incorrect elements");
         }
 
         TreeMap<Object, Object> myTreeMap = new TreeMap<>();
@@ -576,8 +569,8 @@ public class TreeMapTest {
         }
         Collection<Object> values = myTreeMap.values();
         values.remove(0);
-        assertTrue("Removing from the values collection should remove from the original map",
-                !myTreeMap.containsValue(0));
+        assertTrue(!myTreeMap.containsValue(0),
+                "Removing from the values collection should remove from the original map");
     }
 
     /*
@@ -592,54 +585,51 @@ public class TreeMapTest {
 
         master.put("null", null);
         Object[] entry = master.entrySet().toArray();
-        assertFalse("Empty map should not contain the null-valued entry",
-                testMap.entrySet().contains(entry[0]));
+        assertFalse(testMap.entrySet().contains(entry[0]), "Empty map should not contain the null-valued entry");
 
         Map<String, String> submap = testMap.subMap("a", "z");
         entry = master.entrySet().toArray();
-        assertFalse("Empty submap should not contain the null-valued entry",
-                submap.entrySet().contains(entry[0]));
+        assertFalse(submap.entrySet().contains(entry[0]), "Empty submap should not contain the null-valued entry");
 
         testMap.put("null", null);
-        assertTrue("entrySet().containsAll(...) should work with null values",
-                testMap.entrySet().containsAll(master.entrySet()));
+        assertTrue(testMap.entrySet().containsAll(master.entrySet()),
+                "entrySet().containsAll(...) should work with null values");
 
         master.clear();
         master.put("null", "0");
         entry = master.entrySet().toArray();
-        assertFalse("Null-valued entry should not equal non-null-valued entry",
-                testMap.entrySet().contains(entry[0]));
+        assertFalse(testMap.entrySet().contains(entry[0]), "Null-valued entry should not equal non-null-valued entry");
     }
 
     @Test
     public void mapReversed() {
         NavigableMap<Integer, String> map = createMapOfEvenNumbers();
         NavigableMap<Integer, String> reversedMap = map.descendingMap();
-        assertEquals("The first key of reverse map is wrong", Integer.valueOf(998), reversedMap.firstKey());
-        assertEquals("The last key of reverse map is wrong", Integer.valueOf(0), reversedMap.lastKey());
-        assertTrue("Reversed map does not contain element from original map", reversedMap.containsKey(256));
-        assertEquals("Reversed map is of a wrong size", 500, reversedMap.size());
+        assertEquals(Integer.valueOf(998), reversedMap.firstKey(), "The first key of reverse map is wrong");
+        assertEquals(Integer.valueOf(0), reversedMap.lastKey(), "The last key of reverse map is wrong");
+        assertTrue(reversedMap.containsKey(256), "Reversed map does not contain element from original map");
+        assertEquals(500, reversedMap.size(), "Reversed map is of a wrong size");
         assertNull(reversedMap.get(1000));
         Iterator<Integer> keys = reversedMap.keySet().iterator();
-        assertEquals("Wrong first element got from iterator", Integer.valueOf(998), keys.next());
-        assertEquals("Wrong second element got from iterator", Integer.valueOf(996), keys.next());
-        assertEquals("Wrong third element got from iterator", Integer.valueOf(994), keys.next());
+        assertEquals(Integer.valueOf(998), keys.next(), "Wrong first element got from iterator");
+        assertEquals(Integer.valueOf(996), keys.next(), "Wrong second element got from iterator");
+        assertEquals(Integer.valueOf(994), keys.next(), "Wrong third element got from iterator");
     }
 
     @Test
     public void submapReversed() {
         NavigableMap<Integer, String> map = createMapOfEvenNumbers();
         NavigableMap<Integer, String> reversedMap = map.subMap(100, true, 201, true).descendingMap();
-        assertEquals("The first key of  map is wrong", Integer.valueOf(200), reversedMap.firstKey());
-        assertEquals("The last key of map is wrong", Integer.valueOf(100), reversedMap.lastKey());
-        assertTrue("Reversed map does not contain element from original map", reversedMap.containsKey(104));
-        assertEquals("Reversed map is of a wrong size", 51, reversedMap.size());
+        assertEquals(Integer.valueOf(200), reversedMap.firstKey(), "The first key of  map is wrong");
+        assertEquals(Integer.valueOf(100), reversedMap.lastKey(), "The last key of map is wrong");
+        assertTrue(reversedMap.containsKey(104), "Reversed map does not contain element from original map");
+        assertEquals(51, reversedMap.size(), "Reversed map is of a wrong size");
         assertNull(reversedMap.get(103));
         assertNull(reversedMap.get(256));
         Iterator<Integer> keys = reversedMap.keySet().iterator();
-        assertEquals("Wrong first element got from iterator", Integer.valueOf(200), keys.next());
-        assertEquals("Wrong second element got from iterator", Integer.valueOf(198), keys.next());
-        assertEquals("Wrong third element got from iterator", Integer.valueOf(196), keys.next());
+        assertEquals(Integer.valueOf(200), keys.next(), "Wrong first element got from iterator");
+        assertEquals(Integer.valueOf(198), keys.next(), "Wrong second element got from iterator");
+        assertEquals(Integer.valueOf(196), keys.next(), "Wrong third element got from iterator");
     }
 
     @Test
@@ -647,16 +637,16 @@ public class TreeMapTest {
         NavigableMap<Integer, String> map = createMapOfEvenNumbers();
         NavigableMap<Integer, String> reversedMap = map.subMap(100, true, 901, true).descendingMap()
                 .subMap(800, false, 201, false);
-        assertEquals("The first key of map is wrong", Integer.valueOf(798), reversedMap.firstKey());
-        assertEquals("The last key of map is wrong", Integer.valueOf(202), reversedMap.lastKey());
-        assertTrue("Reversed map does not contain element from original map", reversedMap.containsKey(244));
-        assertEquals("Reversed map is of a wrong size", 299, reversedMap.size());
+        assertEquals(Integer.valueOf(798), reversedMap.firstKey(), "The first key of map is wrong");
+        assertEquals(Integer.valueOf(202), reversedMap.lastKey(), "The last key of map is wrong");
+        assertTrue(reversedMap.containsKey(244), "Reversed map does not contain element from original map");
+        assertEquals(299, reversedMap.size(), "Reversed map is of a wrong size");
         assertNull(reversedMap.get(225));
         assertNull(reversedMap.get(100));
         Iterator<Integer> keys = reversedMap.keySet().iterator();
-        assertEquals("Wrong first element got from iterator", Integer.valueOf(798), keys.next());
-        assertEquals("Wrong second element got from iterator", Integer.valueOf(796), keys.next());
-        assertEquals("Wrong third element got from iterator", Integer.valueOf(794), keys.next());
+        assertEquals(Integer.valueOf(798), keys.next(), "Wrong first element got from iterator");
+        assertEquals(Integer.valueOf(796), keys.next(), "Wrong second element got from iterator");
+        assertEquals(Integer.valueOf(794), keys.next(), "Wrong third element got from iterator");
     }
 
     @Test
@@ -664,17 +654,17 @@ public class TreeMapTest {
         NavigableMap<Integer, String> map = createMapOfEvenNumbers();
         NavigableMap<Integer, String> reversedMap = map.subMap(100, true, 901, true).descendingMap()
                 .tailMap(800, false);
-        assertEquals("The first key of map is wrong", Integer.valueOf(798), reversedMap.firstKey());
-        assertEquals("The last key of map is wrong", Integer.valueOf(100), reversedMap.lastKey());
-        assertTrue("Reversed map does not contain element from original map", reversedMap.containsKey(144));
-        assertEquals("Reversed map is of a wrong size", 350, reversedMap.size());
+        assertEquals(Integer.valueOf(798), reversedMap.firstKey(), "The first key of map is wrong");
+        assertEquals(Integer.valueOf(100), reversedMap.lastKey(), "The last key of map is wrong");
+        assertTrue(reversedMap.containsKey(144), "Reversed map does not contain element from original map");
+        assertEquals(350, reversedMap.size(), "Reversed map is of a wrong size");
         assertNull(reversedMap.get(225));
         assertNull(reversedMap.get(94));
         assertNull(reversedMap.get(908));
         Iterator<Integer> keys = reversedMap.keySet().iterator();
-        assertEquals("Wrong first element got from iterator", Integer.valueOf(798), keys.next());
-        assertEquals("Wrong second element got from iterator", Integer.valueOf(796), keys.next());
-        assertEquals("Wrong third element got from iterator", Integer.valueOf(794), keys.next());
+        assertEquals(Integer.valueOf(798), keys.next(), "Wrong first element got from iterator");
+        assertEquals(Integer.valueOf(796), keys.next(), "Wrong second element got from iterator");
+        assertEquals(Integer.valueOf(794), keys.next(), "Wrong third element got from iterator");
     }
 
     private TreeMap<Integer, String> createMapOfEvenNumbers() {
@@ -697,8 +687,8 @@ public class TreeMapTest {
             assertEquals(Integer.valueOf(i), removed);
             assertEquals(100, tm.size());
             tm.put(i, i + 1);
-            assertTrue("13 is expected to be in the map: " + i, tm.containsKey(13));
-            assertTrue("99 is expected to be in the map: " + i, tm.containsKey(99));
+            assertTrue(tm.containsKey(13), "13 is expected to be in the map: " + i);
+            assertTrue(tm.containsKey(99), "99 is expected to be in the map: " + i);
             assertEquals(101, tm.size());
         }
     }

@@ -15,366 +15,230 @@
  */
 package org.teavm.tooling.daemon;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.rmi.AlreadyBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.teavm.backend.javascript.JSModuleType;
+import org.teavm.backend.wasm.WasmDebugInfoLevel;
+import org.teavm.backend.wasm.WasmDebugInfoLocation;
+import org.teavm.backend.wasm.render.WasmBinaryVersion;
+import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
+import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
 import org.teavm.tooling.sources.JarSourceFileProvider;
+import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
-public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildService {
-    private static final int MIN_PORT = 10000;
-    private static final int MAX_PORT = 1 << 16;
-    private static final String DAEMON_MESSAGE_PREFIX = "TeaVM daemon port: ";
-    private static final String INCREMENTAL_PROPERTY = "teavm.daemon.incremental";
-    private boolean incremental;
-    private int port;
-    private Registry registry;
-    private File incrementalCache;
-    private ClassLoader lastJarClassLoader;
-    private List<String> lastJarClassPath;
+public final class BuildDaemon {
+    private static final Options OPTIONS = createOptions();
 
-    BuildDaemon(boolean incremental) throws RemoteException {
-        super();
-        this.incremental = incremental;
-        Random random = new Random();
-        for (int i = 0; i < 20; ++i) {
-            port = random.nextInt(MAX_PORT - MIN_PORT) + MIN_PORT;
-            try {
-                registry = LocateRegistry.createRegistry(port);
-            } catch (RemoteException e) {
-                continue;
-            }
-            try {
-                registry.bind(RemoteBuildService.ID, this);
-            } catch (RemoteException | AlreadyBoundException e) {
-                throw new IllegalStateException("Could not bind remote build assistant service", e);
-            }
-
-            setupIncrementalCache();
-
-            return;
-        }
-        throw new IllegalStateException("Could not create RMI registry");
+    private BuildDaemon() {
     }
 
-    private void setupIncrementalCache() {
-        if (!incremental) {
-            return;
-        }
-
-        Thread mainThread = Thread.currentThread();
+    public static void main(String[] args) {
+        CommandLine commandLine;
         try {
-            incrementalCache = Files.createTempDirectory("teavm-cache").toFile();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                if (incrementalCache != null) {
-                    deleteDirectory(incrementalCache);
-                }
-                try {
-                    mainThread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }));
-        } catch (IOException e) {
-            System.err.println("Could not setup incremental cache");
-            e.printStackTrace(System.err);
-            incremental = false;
-        }
-    }
-
-    private static void deleteDirectory(File directory)  {
-        if (directory.isDirectory()) {
-            for (File child : directory.listFiles()) {
-                deleteDirectory(child);
-            }
-        }
-        directory.delete();
-    }
-
-    public static void main(String[] args) throws RemoteException {
-        boolean incremental = Boolean.parseBoolean(System.getProperty(INCREMENTAL_PROPERTY, "false"));
-        BuildDaemon daemon = new BuildDaemon(incremental);
-        System.out.println(DAEMON_MESSAGE_PREFIX + daemon.port);
-        if (daemon.incrementalCache != null) {
-            System.out.println("Incremental cache set up in " + daemon.incrementalCache);
-        }
-    }
-
-    @Override
-    public RemoteBuildResponse build(RemoteBuildRequest request, RemoteBuildCallback callback) {
-        System.out.println("Build started");
-
-        TeaVMTool tool = new TeaVMTool();
-        tool.setIncremental(incremental || request.incremental);
-        if (tool.isIncremental()) {
-            tool.setCacheDirectory(request.cacheDirectory != null
-                    ? new File(request.cacheDirectory)
-                    : incrementalCache);
-        }
-        tool.setProgressListener(createProgressListener(callback));
-        tool.setLog(new RemoteBuildLog(callback));
-        if (request.transformers != null) {
-            tool.getTransformers().addAll(Arrays.asList(request.transformers));
-        }
-        if (request.classesToPreserve != null) {
-            tool.getClassesToPreserve().addAll(Arrays.asList(request.classesToPreserve));
-        }
-        tool.setTargetType(request.targetType);
-        tool.setMainClass(request.mainClass);
-        tool.setEntryPointName(request.entryPointName);
-        tool.setTargetDirectory(new File(request.targetDirectory));
-        tool.setTargetFileName(request.tagetFileName);
-        tool.setClassLoader(buildClassLoader(request.classPath, incremental && request.incremental));
-        tool.setClassPath(request.classPath.stream().map(File::new).collect(Collectors.toList()));
-
-        tool.setSourceMapsFileGenerated(request.sourceMapsFileGenerated);
-        tool.setDebugInformationGenerated(request.debugInformationGenerated);
-        if (request.sourceFilePolicy != null) {
-            tool.setSourceFilePolicy(TeaVMSourceFilePolicy.valueOf(request.sourceFilePolicy));
-        }
-        if (request.properties != null) {
-            tool.getProperties().putAll(request.properties);
+            commandLine = new DefaultParser().parse(OPTIONS, args);
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.exit(-1);
+            return;
         }
 
-        tool.setOptimizationLevel(request.optimizationLevel);
-        tool.setFastDependencyAnalysis(request.fastDependencyAnalysis);
-        tool.setObfuscated(request.obfuscated);
-        tool.setJsModuleType(request.jsModuleType);
-        tool.setMaxTopLevelNames(request.maxTopLevelNames);
-        tool.setStrict(request.strict);
-        tool.setWasmVersion(request.wasmVersion);
-        tool.setWasmDebugInfoLocation(request.wasmDebugInfoLocation);
-        tool.setWasmDebugInfoLevel(request.wasmDebugInfoLevel);
-        tool.setMinHeapSize(request.minHeapSize);
-        tool.setMaxHeapSize(request.maxHeapSize);
-        tool.setMinDirectBuffersSize(request.minDirectBuffersSize);
-        tool.setSharedBuffer(request.sharedBuffer);
-        tool.setHeapDump(request.heapDump);
-        tool.setShortFileNames(request.shortFileNames);
-        tool.setAssertionsRemoved(request.assertionsRemoved);
+        var writer = new DaemonJsonWriter();
+        var tool = new TeaVMTool();
+        tool.setLog(writer);
+        tool.setProgressListener(createProgressListener(writer));
 
-        for (String sourceDirectory : request.sourceDirectories) {
-            tool.addSourceFileProvider(new DirectorySourceFileProvider(new File(sourceDirectory)));
-        }
-        for (String sourceJar : request.sourceJarFiles) {
-            tool.addSourceFileProvider(new JarSourceFileProvider(new File(sourceJar)));
+        URLClassLoader classLoader;
+        try {
+            classLoader = configureTool(tool, commandLine);
+        } catch (RuntimeException e) {
+            writer.error(e);
+            System.exit(-1);
+            return;
         }
 
-        RemoteBuildResponse response = new RemoteBuildResponse();
         try {
             tool.generate();
-            System.out.println("Build complete");
         } catch (TeaVMToolException | RuntimeException | Error e) {
-            response.exception = e;
-        }
-
-        if (response.exception == null) {
-            response.callGraph = tool.getDependencyInfo().getCallGraph();
-            response.problems.addAll(tool.getProblemProvider().getProblems());
-            response.severeProblems.addAll(tool.getProblemProvider().getSevereProblems());
-        }
-
-        return response;
-    }
-
-    private ClassLoader buildClassLoader(List<String> classPathEntries, boolean incremental) {
-        System.out.println("Classpath: " + classPathEntries);
-        Function<String, URL> mapper = entry -> {
+            writer.error(e);
+            System.exit(-1);
+            return;
+        } finally {
             try {
-                return new File(entry).toURI().toURL();
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(entry);
+                classLoader.close();
+            } catch (Exception e) {
+                // do nothing
             }
-        };
-        List<String> jarEntries = classPathEntries.stream()
-                .filter(entry -> entry.endsWith(".jar"))
-                .collect(Collectors.toList());
-
-        ClassLoader jarClassLoader = null;
-
-        if (incremental) {
-            if (jarEntries.equals(lastJarClassPath) && lastJarClassLoader != null) {
-                jarClassLoader = lastJarClassLoader;
-                System.out.println("Reusing previous class path");
-            }
-        } else {
-            lastJarClassLoader = null;
-            lastJarClassPath = null;
-        }
-        if (jarClassLoader == null) {
-            URL[] jarUrls = jarEntries.stream()
-                    .map(mapper)
-                    .toArray(URL[]::new);
-            jarClassLoader = new URLClassLoader(jarUrls);
-        }
-        if (incremental) {
-            lastJarClassPath = jarEntries;
-            lastJarClassLoader = jarClassLoader;
         }
 
-        URL[] urls = classPathEntries.stream()
-                .filter(entry -> !entry.endsWith(".jar"))
-                .map(mapper)
-                .toArray(URL[]::new);
-
-        return new URLClassLoader(urls, jarClassLoader);
+        var problems = TeaVMProblemRenderer.render(tool.getDependencyInfo().getCallGraph(),
+                tool.getProblemProvider());
+        writer.complete(problems);
     }
 
-    private TeaVMProgressListener createProgressListener(RemoteBuildCallback callback) {
+    private static TeaVMProgressListener createProgressListener(DaemonJsonWriter writer) {
         return new TeaVMProgressListener() {
-            private long lastReportedTime;
-
             @Override
             public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
-                try {
-                    return callback.phaseStarted(phase, count);
-                } catch (RemoteException e) {
-                    throw new RuntimeException(e);
-                }
+                writer.phaseStarted(phase, count);
+                return TeaVMProgressFeedback.CONTINUE;
             }
 
             @Override
             public TeaVMProgressFeedback progressReached(int progress) {
-                if ((System.currentTimeMillis() - lastReportedTime) > 100) {
-                    lastReportedTime = System.currentTimeMillis();
-                    try {
-                        return callback.progressReached(progress);
-                    } catch (RemoteException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    return TeaVMProgressFeedback.CONTINUE;
-                }
+                writer.progressReached(progress);
+                return TeaVMProgressFeedback.CONTINUE;
             }
         };
     }
 
-    public static DaemonInfo start(boolean incremental, int daemonMemory, DaemonLog log,
-            String... classPathEntries) throws IOException {
-        return start(0, incremental, daemonMemory, log, classPathEntries);
+    private static URLClassLoader configureTool(TeaVMTool tool, CommandLine commandLine) {
+        var classPathEntries = getValues(commandLine, "classpath");
+        var classLoader = buildClassLoader(classPathEntries);
+        tool.setClassLoader(classLoader);
+        tool.setClassPath(classPathEntries.stream().map(File::new).collect(Collectors.toList()));
+
+        if (commandLine.hasOption("target-type")) {
+            tool.setTargetType(TeaVMTargetType.valueOf(commandLine.getOptionValue("target-type")));
+        }
+        tool.setTargetDirectory(new File(commandLine.getOptionValue("target-dir")));
+        if (commandLine.hasOption("target-file")) {
+            tool.setTargetFileName(commandLine.getOptionValue("target-file"));
+        }
+        tool.setMainClass(commandLine.getOptionValue("main-class"));
+        if (commandLine.hasOption("entry-point-name")) {
+            tool.setEntryPointName(commandLine.getOptionValue("entry-point-name"));
+        }
+
+        for (var directory : getValues(commandLine, "source-directory")) {
+            tool.addSourceFileProvider(new DirectorySourceFileProvider(new File(directory)));
+        }
+        for (var jarFile : getValues(commandLine, "source-jar")) {
+            tool.addSourceFileProvider(new JarSourceFileProvider(new File(jarFile)));
+        }
+
+        tool.setSourceMapsFileGenerated(commandLine.hasOption("source-maps"));
+        tool.setDebugInformationGenerated(commandLine.hasOption("debug-info"));
+        if (commandLine.hasOption("source-file-policy")) {
+            tool.setSourceFilePolicy(TeaVMSourceFilePolicy.valueOf(commandLine.getOptionValue("source-file-policy")));
+        }
+
+        tool.setObfuscated(commandLine.hasOption("obfuscated"));
+        tool.setStrict(commandLine.hasOption("strict"));
+        if (commandLine.hasOption("js-module-type")) {
+            tool.setJsModuleType(JSModuleType.valueOf(commandLine.getOptionValue("js-module-type")));
+        }
+        if (commandLine.hasOption("max-top-level-names")) {
+            tool.setMaxTopLevelNames(Integer.parseInt(commandLine.getOptionValue("max-top-level-names")));
+        }
+
+        var properties = commandLine.getOptionProperties("property");
+        for (var name : properties.stringPropertyNames()) {
+            tool.getProperties().setProperty(name, properties.getProperty(name));
+        }
+
+        tool.getTransformers().addAll(getValues(commandLine, "transformer"));
+        tool.getClassesToPreserve().addAll(getValues(commandLine, "classes-to-preserve"));
+
+        if (commandLine.hasOption("optimization-level")) {
+            tool.setOptimizationLevel(TeaVMOptimizationLevel.valueOf(commandLine.getOptionValue("optimization-level")));
+        }
+        tool.setFastDependencyAnalysis(commandLine.hasOption("fast-dependency-analysis"));
+
+        if (commandLine.hasOption("wasm-version")) {
+            tool.setWasmVersion(WasmBinaryVersion.valueOf(commandLine.getOptionValue("wasm-version")));
+        }
+        if (commandLine.hasOption("wasm-debug-info-level")) {
+            tool.setWasmDebugInfoLevel(
+                    WasmDebugInfoLevel.valueOf(commandLine.getOptionValue("wasm-debug-info-level")));
+        }
+        if (commandLine.hasOption("wasm-debug-info-location")) {
+            tool.setWasmDebugInfoLocation(
+                    WasmDebugInfoLocation.valueOf(commandLine.getOptionValue("wasm-debug-info-location")));
+        }
+
+        if (commandLine.hasOption("min-heap-size")) {
+            tool.setMinHeapSize(Integer.parseInt(commandLine.getOptionValue("min-heap-size")));
+        }
+        if (commandLine.hasOption("max-heap-size")) {
+            tool.setMaxHeapSize(Integer.parseInt(commandLine.getOptionValue("max-heap-size")));
+        }
+        if (commandLine.hasOption("min-direct-buffers-size")) {
+            tool.setMinDirectBuffersSize(Integer.parseInt(commandLine.getOptionValue("min-direct-buffers-size")));
+        }
+        tool.setSharedBuffer(commandLine.hasOption("shared-buffer"));
+        tool.setHeapDump(commandLine.hasOption("heap-dump"));
+        tool.setShortFileNames(commandLine.hasOption("short-file-names"));
+        tool.setAssertionsRemoved(commandLine.hasOption("assertions-removed"));
+
+        return classLoader;
     }
 
-    public static DaemonInfo start(int debugPort, boolean incremental, int daemonMemory, DaemonLog log,
-            String... classPathEntries) throws IOException {
-        return start(debugPort, incremental, daemonMemory, null, log, classPathEntries);
+    private static List<String> getValues(CommandLine commandLine, String option) {
+        var values = commandLine.getOptionValues(option);
+        return values != null ? Arrays.asList(values) : List.of();
     }
 
-    public static DaemonInfo start(int debugPort, boolean incremental, int daemonMemory, String javaCommand,
-            DaemonLog log, String... classPathEntries) throws IOException {
-        if (javaCommand == null || javaCommand.isEmpty()) {
-            String javaHome = System.getProperty("java.home");
-            javaCommand = javaHome + "/bin/java";
-        }
-        String classPath = String.join(File.pathSeparator, classPathEntries);
-        List<String> arguments = new ArrayList<>();
-
-        arguments.addAll(Arrays.asList(javaCommand, "-cp", classPath,
-                "-D" + INCREMENTAL_PROPERTY + "=" + incremental,
-                "-Xmx" + daemonMemory + "m"));
-
-        if (debugPort != 0) {
-            arguments.add("-agentlib:jdwp=transport=dt_socket,quiet=y,server=y,address=" + debugPort + ",suspend=y");
-        }
-        arguments.add("-XX:+HeapDumpOnOutOfMemoryError");
-
-        arguments.add(BuildDaemon.class.getName());
-
-        ProcessBuilder builder = new ProcessBuilder(arguments.toArray(new String[0]));
-        Process process = builder.start();
-        BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(process.getInputStream(),
-                StandardCharsets.UTF_8));
-        BufferedReader stderrReader = new BufferedReader(new InputStreamReader(process.getErrorStream(),
-                StandardCharsets.UTF_8));
-        String line = stdoutReader.readLine();
-        if (line == null || !line.startsWith(DAEMON_MESSAGE_PREFIX)) {
-            StringBuilder sb = new StringBuilder();
-            while (true) {
-                line = stderrReader.readLine();
-                if (line == null) {
-                    break;
-                }
-                sb.append(line).append('\n');
-            }
+    private static URLClassLoader buildClassLoader(List<String> classPathEntries) {
+        var urls = classPathEntries.stream().map(entry -> {
             try {
-                stderrReader.close();
-            } catch (IOException e) {
-                // Ignore
+                return new File(entry).toURI().toURL();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(entry, e);
             }
-            try {
-                stdoutReader.close();
-            } catch (IOException e) {
-                // Ignore
-            }
-            process.destroy();
-            throw new IllegalStateException("Could not start daemon. Stderr: " + sb);
-        }
-        int port = Integer.parseInt(line.substring(DAEMON_MESSAGE_PREFIX.length()));
+        }).toArray(URL[]::new);
 
-        daemonThread(new DaemonProcessOutputWatcher(log, stdoutReader, "stdout", false)).start();
-        daemonThread(new DaemonProcessOutputWatcher(log, stderrReader, "stderr", true)).start();
-
-        return new DaemonInfo(port, process);
+        return new URLClassLoader(urls, BuildDaemon.class.getClassLoader());
     }
 
-    private static Thread daemonThread(Runnable runnable) {
-        Thread thread = new Thread(runnable);
-        thread.setDaemon(true);
-        return thread;
-    }
-
-    static class DaemonProcessOutputWatcher implements Runnable {
-        private DaemonLog log;
-        private BufferedReader reader;
-        private String name;
-        private boolean isError;
-
-        DaemonProcessOutputWatcher(DaemonLog log, BufferedReader reader, String name, boolean isError) {
-            this.log = log;
-            this.reader = reader;
-            this.name = name;
-            this.isError = isError;
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (true) {
-                    String line = reader.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    if (isError) {
-                        log.error("Build daemon [" + name + "]: " + line);
-                    } else {
-                        log.info("Build daemon [" + name + "]: " + line);
-                    }
-                }
-            } catch (IOException e) {
-                log.error("Error reading build daemon output", e);
-            }
-        }
+    private static Options createOptions() {
+        var options = new Options();
+        options.addOption(Option.builder().longOpt("target-type").hasArg().get());
+        options.addOption(Option.builder().longOpt("target-dir").hasArg().required().get());
+        options.addOption(Option.builder().longOpt("target-file").hasArg().get());
+        options.addOption(Option.builder().longOpt("main-class").hasArg().required().get());
+        options.addOption(Option.builder().longOpt("entry-point-name").hasArg().get());
+        options.addOption(Option.builder().longOpt("classpath").hasArgs().get());
+        options.addOption(Option.builder().longOpt("source-directory").hasArgs().get());
+        options.addOption(Option.builder().longOpt("source-jar").hasArgs().get());
+        options.addOption(Option.builder().longOpt("source-maps").get());
+        options.addOption(Option.builder().longOpt("debug-info").get());
+        options.addOption(Option.builder().longOpt("source-file-policy").hasArg().get());
+        options.addOption(Option.builder().longOpt("obfuscated").get());
+        options.addOption(Option.builder().longOpt("strict").get());
+        options.addOption(Option.builder().longOpt("js-module-type").hasArg().get());
+        options.addOption(Option.builder().longOpt("max-top-level-names").hasArg().get());
+        options.addOption(Option.builder().valueSeparator().hasArgs().longOpt("property").get());
+        options.addOption(Option.builder().longOpt("transformer").hasArgs().get());
+        options.addOption(Option.builder().longOpt("optimization-level").hasArg().get());
+        options.addOption(Option.builder().longOpt("fast-dependency-analysis").get());
+        options.addOption(Option.builder().longOpt("classes-to-preserve").hasArgs().get());
+        options.addOption(Option.builder().longOpt("wasm-version").hasArg().get());
+        options.addOption(Option.builder().longOpt("wasm-debug-info-level").hasArg().get());
+        options.addOption(Option.builder().longOpt("wasm-debug-info-location").hasArg().get());
+        options.addOption(Option.builder().longOpt("min-heap-size").hasArg().get());
+        options.addOption(Option.builder().longOpt("max-heap-size").hasArg().get());
+        options.addOption(Option.builder().longOpt("min-direct-buffers-size").hasArg().get());
+        options.addOption(Option.builder().longOpt("shared-buffer").get());
+        options.addOption(Option.builder().longOpt("heap-dump").get());
+        options.addOption(Option.builder().longOpt("short-file-names").get());
+        options.addOption(Option.builder().longOpt("assertions-removed").get());
+        return options;
     }
 }

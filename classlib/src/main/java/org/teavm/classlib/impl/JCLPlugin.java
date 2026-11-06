@@ -26,6 +26,7 @@ import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.record.ObjectMethodsSubstitutor;
 import org.teavm.classlib.impl.reflection.ReflectionTransformer;
+import org.teavm.classlib.impl.regex.PatternCompileTransformer;
 import org.teavm.classlib.impl.string.DefaultStringTransformer;
 import org.teavm.classlib.impl.string.JSStringConstructorGenerator;
 import org.teavm.classlib.impl.string.JSStringInjector;
@@ -68,15 +69,16 @@ public class JCLPlugin implements TeaVMPlugin {
     public void install(TeaVMHost host) {
         host.add(new ObfuscationHacks());
         host.add(new BuffersTransformer());
+        host.add(new ResourceBundleTransformer(host.getResourceProvider()));
+
+        ServiceLoaderSupport serviceLoaderSupport = new ServiceLoaderSupport(host.getClassLoader(),
+                host.getResourceProvider());
+        host.add(serviceLoaderSupport);
+        host.registerService(ServiceLoaderInformation.class, serviceLoaderSupport);
+        MethodReference loadServicesMethod = new MethodReference(ServiceLoader.class, "loadServices",
+                ClassInfo.class, Object[].class);
 
         if (!isBootstrap()) {
-            ServiceLoaderSupport serviceLoaderSupport = new ServiceLoaderSupport(host.getClassLoader(),
-                    host.getResourceProvider());
-            host.add(serviceLoaderSupport);
-            host.registerService(ServiceLoaderInformation.class, serviceLoaderSupport);
-            MethodReference loadServicesMethod = new MethodReference(ServiceLoader.class, "loadServices",
-                    ClassInfo.class, Object[].class);
-
             TeaVMJavaScriptHost jsExtension = host.getExtension(TeaVMJavaScriptHost.class);
             if (jsExtension != null) {
                 jsExtension.add(loadServicesMethod, new ServiceLoaderJSSupport());
@@ -87,22 +89,21 @@ public class JCLPlugin implements TeaVMPlugin {
             if (cHost != null) {
                 cHost.addGenerator(new ServiceLoaderCSupport());
             }
+        }
 
-            var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
-            if (wasmGCHost != null) {
-                wasmGCHost.contributeToCodeGen((ctx, reg) -> {
-                    reg.bodyIntrinsics().registerIntrinsic(ServiceLoader.class, new ServiceLoaderWasmGCSupport(
-                            serviceLoaderSupport, ctx.classInfoProvider(), ctx.functions(), ctx.functionTypes(),
-                            ctx.names(), ctx.typeMapper(), ctx.module()));
-                });
-            }
+        var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
+        if (wasmGCHost != null) {
+            wasmGCHost.contributeToCodeGen((ctx, reg) -> {
+                reg.bodyIntrinsics().registerIntrinsic(ServiceLoader.class, new ServiceLoaderWasmGCSupport(
+                        serviceLoaderSupport, ctx.classInfoProvider(), ctx.functions(), ctx.functionTypes(),
+                        ctx.names(), ctx.typeMapper(), ctx.module()));
+            });
         }
 
         host.registerService(CLDRReader.class, CLDRReader.getInstance(host.getProperties(),
                 host.getResourceProvider()));
-        if (!isBootstrap()) {
-            host.add(new ReflectionTransformer());
-        }
+        host.add(new ReflectionTransformer());
+        host.add(new PatternCompileTransformer());
 
         LambdaMetafactorySubstitutor lms = new LambdaMetafactorySubstitutor();
         host.add(new MethodReference("java.lang.invoke.LambdaMetafactory", "metafactory",
@@ -151,10 +152,8 @@ public class JCLPlugin implements TeaVMPlugin {
                         ValueType.object("java.lang.invoke.CallSite")),
                 switchBootstrapSubstitutor);
 
-        if (!isBootstrap()) {
-            host.add(new ScalaHacks());
-            host.add(new KotlinHacks());
-        }
+        host.add(new ScalaHacks());
+        host.add(new KotlinHacks());
 
         host.add(new NumericClassTransformer());
         host.add(new SystemClassTransformer());
@@ -168,13 +167,13 @@ public class JCLPlugin implements TeaVMPlugin {
             }
         }
 
-        if (!isBootstrap()) {
-            TeaVMPluginUtil.handleNatives(host, Class.class);
-            TeaVMPluginUtil.handleNatives(host, ClassLoader.class);
-            TeaVMPluginUtil.handleNatives(host, System.class);
-            TeaVMPluginUtil.handleNatives(host, Array.class);
-            TeaVMPluginUtil.handleNatives(host, Math.class);
-        }
+        TeaVMPluginUtil.handleNatives(host, Object.class);
+        TeaVMPluginUtil.handleNatives(host, Class.class);
+        TeaVMPluginUtil.handleNatives(host, ClassLoader.class);
+        TeaVMPluginUtil.handleNatives(host, System.class);
+        TeaVMPluginUtil.handleNatives(host, Array.class);
+        TeaVMPluginUtil.handleNatives(host, Math.class);
+        TeaVMPluginUtil.handleNatives(host, String.class);
 
         installMetadata(host.getService(MetadataRegistration.class));
         host.add(new DeclaringClassDependencyListener());

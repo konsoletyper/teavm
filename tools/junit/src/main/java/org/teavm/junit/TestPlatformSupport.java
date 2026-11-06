@@ -52,7 +52,17 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
     abstract TestRunStrategy createRunStrategy(File outputDir);
 
-    abstract TestPlatform getPlatform();
+    /**
+     * Built-in platform which artifacts this platform produces, see {@link TestPlatform}.
+     */
+    abstract String getPlatform();
+
+    /**
+     * Identifier of this particular platform. Same as {@link #getPlatform()} for built-in platforms.
+     */
+    String getId() {
+        return getPlatform();
+    }
 
     abstract String getPath();
 
@@ -60,7 +70,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
     abstract List<TeaVMTestConfiguration<T>> getConfigurations();
 
-    abstract CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
+    abstract CompileResult compile(TestEntryPointSpec entryPoint, String baseName,
             TeaVMTestConfiguration<T> configuration, File path, AnnotatedElement element);
 
     abstract boolean usesFileName();
@@ -73,7 +83,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
         File outputFile = getOutputFile(path, baseName, configuration.getSuffix(), extension);
         result.file = outputFile;
 
-        ClassLoader classLoader = TeaVMTestRunner.class.getClassLoader();
+        ClassLoader classLoader = TeaVMTestInfrastructure.classLoader;
 
         var target = targetSupplier.get();
         configuration.apply(target);

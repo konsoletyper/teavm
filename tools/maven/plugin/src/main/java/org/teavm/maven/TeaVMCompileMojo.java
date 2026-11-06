@@ -16,10 +16,6 @@
 package org.teavm.maven;
 
 import java.io.File;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,18 +40,14 @@ import org.apache.maven.toolchain.ToolchainManager;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
-import org.teavm.tooling.TeaVMProblemRenderer;
+import org.teavm.diagnostics.ProblemSeverity;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildException;
 import org.teavm.tooling.builder.BuildResult;
 import org.teavm.tooling.builder.BuildStrategy;
+import org.teavm.tooling.builder.DaemonBuildStrategy;
 import org.teavm.tooling.builder.InProcessBuildStrategy;
-import org.teavm.tooling.builder.RemoteBuildStrategy;
-import org.teavm.tooling.daemon.BuildDaemon;
-import org.teavm.tooling.daemon.DaemonInfo;
-import org.teavm.tooling.daemon.DaemonLog;
-import org.teavm.tooling.daemon.RemoteBuildService;
 import org.teavm.vm.TeaVMOptimizationLevel;
 
 @Mojo(name = "compile", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,
@@ -324,28 +316,8 @@ public class TeaVMCompileMojo extends AbstractMojo {
     }
 
     private void executeInSeparateProcess(String javaCommand) throws MojoExecutionException {
-        DaemonInfo daemon;
-        try {
-            daemon = BuildDaemon.start(0, false, processMemory, javaCommand, new DaemonLogImpl(),
-                    createDaemonClassPath());
-        } catch (Throwable e) {
-            throw new MojoExecutionException("Error starting TeaVM process", e);
-        }
-
-        try {
-            RemoteBuildService buildService;
-            try {
-                Registry registry = LocateRegistry.getRegistry("localhost", daemon.getPort());
-                buildService = (RemoteBuildService) registry.lookup(RemoteBuildService.ID);
-            } catch (RemoteException | NotBoundException e) {
-                throw new MojoExecutionException("Error connecting TeaVM process", e);
-            }
-
-            RemoteBuildStrategy builder = new RemoteBuildStrategy(buildService);
-            executeWithBuilder(builder);
-        } finally {
-            daemon.getProcess().destroy();
-        }
+        BuildStrategy builder = new DaemonBuildStrategy(javaCommand, processMemory, createDaemonClassPath());
+        executeWithBuilder(builder);
     }
 
     private void executeWithBuilder(BuildStrategy builder) throws MojoExecutionException {
@@ -371,8 +343,17 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setHeapDump(heapDump);
             BuildResult result;
             result = builder.build();
-            TeaVMProblemRenderer.describeProblems(result.getCallGraph(), result.getProblems(), toolLog);
-            if (stopOnErrors && !result.getProblems().getSevereProblems().isEmpty()) {
+            var hasErrors = false;
+            for (var problem : result.getProblems()) {
+                var text = problem.getText() + problem.getStackTrace();
+                if (problem.getSeverity() == ProblemSeverity.ERROR) {
+                    hasErrors = true;
+                    toolLog.error(text);
+                } else {
+                    toolLog.warning(text);
+                }
+            }
+            if (stopOnErrors && hasErrors) {
                 throw new MojoExecutionException("Build error");
             }
         } catch (BuildException e) {
@@ -406,22 +387,5 @@ public class TeaVMCompileMojo extends AbstractMojo {
         return resolutionResult.getArtifacts().stream()
                 .map(artifact -> artifact.getFile().getAbsolutePath())
                 .toArray(String[]::new);
-    }
-
-    class DaemonLogImpl implements DaemonLog {
-        @Override
-        public void error(String message) {
-            getLog().error(message);
-        }
-
-        @Override
-        public void error(String message, Throwable e) {
-            getLog().error(message, e);
-        }
-
-        @Override
-        public void info(String message) {
-            getLog().info(message);
-        }
     }
 }

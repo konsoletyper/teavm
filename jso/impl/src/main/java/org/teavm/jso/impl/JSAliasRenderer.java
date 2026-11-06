@@ -105,7 +105,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
                 continue;
             }
             appendMethodAlias(aliasEntry.getKey());
-            writer.ws().append("=").ws().appendFunction("$rt_callWithReceiver").append("(")
+            writer.ws().append("=").ws().appendFunction("$rt_exportInstanceMethod").append("(")
                     .appendMethod(aliasEntry.getValue()).append(");").softNewLine();
         }
         for (var aliasEntry : members.properties.entrySet()) {
@@ -114,11 +114,11 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
                 continue;
             }
             appendPropertyAlias(aliasEntry.getKey());
-            writer.append("get:").ws().appendFunction("$rt_callWithReceiver").append("(")
+            writer.append("get:").ws().appendFunction("$rt_exportInstanceGetter").append("(")
                     .appendMethod(propInfo.getter).append(")");
             if (propInfo.setter != null && classReader.getMethod(propInfo.setter.getDescriptor()) != null) {
                 writer.append(",").softNewLine();
-                writer.append("set:").ws().appendFunction("$rt_callWithReceiver").append("(")
+                writer.append("set:").ws().appendFunction("$rt_exportInstanceSetter").append("(")
                         .appendMethod(propInfo.setter).append(")");
             }
             writer.softNewLine().outdent().append("});").softNewLine();
@@ -144,7 +144,8 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         for (var aliasEntry : members.methods.entrySet()) {
             appendMethodAlias(aliasEntry.getKey());
             var fullRef = aliasEntry.getValue();
-            writer.ws().append("=").ws().appendMethod(fullRef).append(";").softNewLine();
+            writer.ws().append("=").ws().appendFunction("$rt_exportStaticMethod").append("(")
+                    .appendMethod(fullRef).append(");").softNewLine();
         }
         for (var aliasEntry : members.properties.entrySet()) {
             var propInfo = aliasEntry.getValue();
@@ -153,11 +154,13 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
             }
             appendPropertyAlias(aliasEntry.getKey());
             var fullGetter = propInfo.getter;
-            writer.append("get:").ws().appendMethod(fullGetter);
+            writer.append("get:").ws().appendFunction("$rt_exportStaticGetter").append("(")
+                    .appendMethod(fullGetter).append(")");
             if (propInfo.setter != null) {
                 writer.append(",").softNewLine();
                 var fullSetter = propInfo.setter;
-                writer.append("set:").ws().appendMethod(fullSetter);
+                writer.append("set:").ws().appendFunction("$rt_exportStaticSetter").append("(")
+                        .appendMethod(fullSetter).append(")");
             }
             writer.softNewLine().outdent().append("});").softNewLine();
         }
@@ -187,7 +190,11 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
             }
             var methodAlias = getPublicAlias(method);
             if (methodAlias != null && methodAlias.kind == AliasCollector.AliasKind.METHOD) {
-                context.exportMethod(method.getReference(), methodAlias.name);
+                var name = "$rt_export_function_" + lastExportIndex++;
+                writer.startVariableDeclaration().appendFunction(name)
+                        .appendFunction("$rt_exportStaticMethod").append("(").appendMethod(method.getReference())
+                        .append(")").endDeclaration();
+                context.exportFunction(name, methodAlias.name);
             }
         }
     }
@@ -208,6 +215,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         }
         writer.append(")").ws().appendBlockStart();
         if (method != null) {
+            writer.appendFunction("$rt_checkAlive").append("();").softNewLine();
             writer.append("return ").appendMethod(method).append("(");
             for (var i = 0; i < method.parameterCount(); ++i) {
                 if (i > 0) {
@@ -297,6 +305,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         writer.append("this.").appendField(functorField).ws().append('=').ws().append("function(");
         appendArguments(functorMethod.parameterCount());
         writer.append(")").ws().append('{').indent().softNewLine();
+        writer.appendFunction("$rt_checkAlive").append("();").softNewLine();
         writer.append("return self.").appendVirtualMethod(functorMethod).append('(');
         appendArguments(functorMethod.parameterCount());
         writer.append(");").softNewLine();

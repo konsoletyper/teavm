@@ -15,12 +15,12 @@
  */
 package org.teavm.classlib.java.util.stream;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.teavm.classlib.java.util.stream.Helper.appendNumbersTo;
 import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
@@ -38,11 +38,10 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class StreamTest {
     @Test
     public void forEachWorks() {
@@ -205,6 +204,37 @@ public class StreamTest {
         assertArrayEquals(new Integer[] { 2, 3 }, Stream.of(2, 3, 2, 3).limit(2).distinct().toArray(Integer[]::new));
         assertArrayEquals(new Integer[] { 2, 3, 4, 1 }, Stream.of(2, 2, 3, 2, 4, 3, 1).distinct()
                 .toArray(Integer[]::new));
+    }
+
+    @Test
+    public void distinctAcrossConcat() {
+        assertArrayEquals(new String[] { "first", "second", "third" },
+                Stream.concat(Stream.of("first", "second"),
+                        Stream.of("first", "second", "third"))
+                        .distinct().toArray(String[]::new));
+    }
+
+    @Test
+    public void distinctAcrossFlatMap() {
+        assertArrayEquals(new String[] { "first", "second" },
+                Stream.of(Stream.of("first"), Stream.of("first", "second"))
+                        .flatMap(stream -> stream).distinct().toArray(String[]::new));
+    }
+
+    @Test
+    public void distinctAcrossIteratorAdvances() {
+        Iterator<String> iterator = Stream.of("first", "first", "second").distinct().iterator();
+        assertEquals("first", iterator.next());
+        assertEquals("second", iterator.next());
+    }
+
+    @Test
+    public void distinctIsLazyAndShortCircuits() {
+        StringBuilder sb = new StringBuilder();
+        Stream<Integer> stream = Stream.of(1, 1, 2, 3).peek(appendNumbersTo(sb)).distinct();
+        assertEquals("", sb.toString());
+        assertArrayEquals(new Integer[] { 1, 2 }, stream.limit(2).toArray(Integer[]::new));
+        assertEquals("1;1;2;", sb.toString());
     }
 
     @Test

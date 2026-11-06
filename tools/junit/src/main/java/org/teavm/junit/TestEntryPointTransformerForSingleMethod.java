@@ -15,6 +15,7 @@
  */
 package org.teavm.junit;
 
+import java.util.Map;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
@@ -23,8 +24,9 @@ import org.teavm.model.emit.ProgramEmitter;
 class TestEntryPointTransformerForSingleMethod extends TestEntryPointTransformer {
     private MethodReference testMethod;
 
-    TestEntryPointTransformerForSingleMethod(MethodReference testMethod, String testClassName) {
-        super(testClassName);
+    TestEntryPointTransformerForSingleMethod(MethodReference testMethod, String testClassName,
+            Map<MethodReference, JupiterArgumentsPlan> parameterizedPlans) {
+        super(testClassName, parameterizedPlans);
         this.testMethod = testMethod;
     }
 

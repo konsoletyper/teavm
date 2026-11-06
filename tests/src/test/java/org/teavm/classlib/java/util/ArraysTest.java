@@ -15,21 +15,21 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.classlib.java.lang.DoubleTest;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class ArraysTest {
     @Test
     public void arraySorted() {
@@ -52,11 +52,9 @@ public class ArraysTest {
                 Double.MIN_VALUE, Double.MAX_VALUE, Double.POSITIVE_INFINITY,
                 Double.NaN };
         Arrays.sort(dSpecials1);
-        assertTrue("specials sort incorrectly 1: " + Arrays.toString(dSpecials1),
-                Arrays.equals(dSpecials1, dSorted));
+        assertTrue(Arrays.equals(dSpecials1, dSorted), "specials sort incorrectly 1: " + Arrays.toString(dSpecials1));
         Arrays.sort(dSpecials2);
-        assertTrue("specials sort incorrectly 2: " + Arrays.toString(dSpecials2),
-                Arrays.equals(dSpecials2, dSorted));
+        assertTrue(Arrays.equals(dSpecials2, dSorted), "specials sort incorrectly 2: " + Arrays.toString(dSpecials2));
         float[] fSpecials1 = new float[] { Float.NaN, Float.MAX_VALUE,
                 Float.MIN_VALUE, 0f, -0f, Float.POSITIVE_INFINITY,
                 Float.NEGATIVE_INFINITY };
@@ -67,11 +65,9 @@ public class ArraysTest {
                 Float.MIN_VALUE, Float.MAX_VALUE, Float.POSITIVE_INFINITY,
                 Float.NaN };
         Arrays.sort(fSpecials1);
-        assertTrue("specials sort incorrectly 1: " + Arrays.toString(fSpecials1),
-                Arrays.equals(fSpecials1, fSorted));
+        assertTrue(Arrays.equals(fSpecials1, fSorted), "specials sort incorrectly 1: " + Arrays.toString(fSpecials1));
         Arrays.sort(fSpecials2);
-        assertTrue("specials sort incorrectly 2: " + Arrays.toString(fSpecials2),
-                Arrays.equals(fSpecials2, fSorted));
+        assertTrue(Arrays.equals(fSpecials2, fSorted), "specials sort incorrectly 2: " + Arrays.toString(fSpecials2));
     }
 
     @Test
@@ -93,7 +89,7 @@ public class ArraysTest {
                 Float.NaN };
         for (int i = 0; i < floatSpecials.length; i++) {
             int result = Arrays.binarySearch(floatSpecials, floatSpecials[i]);
-            assertEquals(floatSpecials[i] + " invalid: " + result, result, i);
+            assertEquals(result, i, floatSpecials[i] + " invalid: " + result);
         }
         double[] doubleSpecials = new double[] { Double.NEGATIVE_INFINITY,
                 -Double.MAX_VALUE, -2d, -Double.MIN_VALUE, -0d, 0d,
@@ -101,7 +97,7 @@ public class ArraysTest {
                 Double.POSITIVE_INFINITY, Double.NaN };
         for (int i = 0; i < doubleSpecials.length; i++) {
             int result = Arrays.binarySearch(doubleSpecials, doubleSpecials[i]);
-            assertEquals(doubleSpecials[i] + " invalid: " + result, result, i);
+            assertEquals(result, i, doubleSpecials[i] + " invalid: " + result);
         }
     }
 
@@ -276,13 +272,13 @@ public class ArraysTest {
         assertEquals(0, ints[2]);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void copyOfRangeWithFromGreaterThanToFails() {
-        Arrays.copyOfRange(new String[] { "a", "b" }, 2, 1);
+        assertThrows(IllegalArgumentException.class, () -> Arrays.copyOfRange(new String[] { "a", "b" }, 2, 1));
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    @Test
     public void copyOfRangeWithFromPastEndFails() {
-        Arrays.copyOfRange(new String[] { "a", "b" }, 3, 4);
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> Arrays.copyOfRange(new String[] { "a", "b" }, 3, 4));
     }
 }

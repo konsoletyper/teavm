@@ -21,6 +21,7 @@ import java.util.Queue;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmArrayConstructor;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -61,6 +62,10 @@ class WasmGCNewArrayFunctionGenerator {
             var function = new WasmFunction(functionType);
             function.setName(names.topLevel("Array<" + names.suggestForType(itemType) + ">@new"));
             module.functions.add(function);
+            function.setArrayConstructor(new WasmArrayConstructor(classInfo.getStructure(), builder -> builder
+                    .drop()
+                    .getGlobal(classInfo.getVirtualTablePointer())
+                    .nullConst(WasmType.EQ)));
 
             queue.add(() -> {
                 var clsLocal = new WasmLocal(classInfoType.structure().getReference(), "this");
@@ -108,6 +113,10 @@ class WasmGCNewArrayFunctionGenerator {
         var function = new WasmFunction(functionType);
         function.setName(names.topLevel("Array<" + names.suggestForClass("java.lang.Object") + ">@new"));
         module.functions.add(function);
+        function.setArrayConstructor(new WasmArrayConstructor(classInfo.getStructure(), builder -> builder
+                .call(classInfoProvider.getGetArrayClassFunction())
+                .structGet(classInfoType.structure(), classInfoType.vtableIndex())
+                .nullConst(WasmType.EQ)));
 
         queue.add(() -> {
             var clsLocal = new WasmLocal(classInfoType.structure().getReference(), "this");

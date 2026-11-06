@@ -125,29 +125,26 @@ public final class DoubleAnalyzer {
         return pos;
     }
 
-    // Multiply two longs and shift result right by 64-shift bits.
+    // Multiply two unsigned longs and shift 128-bit result right by 64-shift bits (0 <= shift < 64).
+    // Uses 32-bit limbs, since there's no 64x64->128 multiplication available in all backends.
     public static long mulAndShiftRight(long a, long b, int shift) {
-        long a1 = a & 0xFFFF;
-        long a2 = (a >>> 16) & 0xFFFF;
-        long a3 = (a >>> 32) & 0xFFFF;
-        long a4 = (a >>> 48) & 0xFFFF;
+        long a0 = a & 0xFFFFFFFFL;
+        long a1 = a >>> 32;
+        long b0 = b & 0xFFFFFFFFL;
+        long b1 = b >>> 32;
 
-        long b1 = b & 0xFFFF;
-        long b2 = (b >>> 16) & 0xFFFF;
-        long b3 = (b >>> 32) & 0xFFFF;
-        long b4 = (b >>> 48) & 0xFFFF;
+        long p00 = a0 * b0;
+        long p01 = a0 * b1;
+        long p10 = a1 * b0;
+        long p11 = a1 * b1;
 
-        long cm = b3 * a1 + b2 * a2 + b1 * a3;
-        long c0 = b4 * a1 + b3 * a2 + b2 * a3 + b1 * a4;
-        long c1 = b4 * a2 + b3 * a3 + b2 * a4;
-        long c2 = b4 * a3 + b3 * a4;
-        long c3 = b4 * a4;
-
-        long c = (c3 << (32 + shift)) + (c2 << (16 + shift)) + (c1 << shift);
-        cm += c0 << 16;
-        c += cm >>> (32 - shift);
-
-        return c;
+        long mid = (p00 >>> 32) + (p01 & 0xFFFFFFFFL) + (p10 & 0xFFFFFFFFL);
+        long hi = p11 + (p01 >>> 32) + (p10 >>> 32) + (mid >>> 32);
+        if (shift == 0) {
+            return hi;
+        }
+        long lo = (mid << 32) | (p00 & 0xFFFFFFFFL);
+        return (hi << shift) | (lo >>> (64 - shift));
     }
 
     public static class Result {

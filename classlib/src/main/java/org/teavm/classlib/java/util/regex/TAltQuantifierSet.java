@@ -58,4 +58,12 @@ class TAltQuantifierSet extends TLeafQuantifierSet {
         super.setNext(next);
         innerSet.setNext(next);
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TAltQuantifierSet.class, "altQuantifierSet", leaf, type);
+    }
 }

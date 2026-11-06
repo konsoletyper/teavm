@@ -15,10 +15,10 @@
  */
 package org.teavm.vm;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Map;
@@ -26,12 +26,11 @@ import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @EachTestCompiledSeparately
 public class LambdaTest {
     @Test
@@ -39,7 +38,7 @@ public class LambdaTest {
         Supplier<String> supplier = (Supplier<String> & A) () -> "OK";
 
         assertEquals("OK", supplier.get());
-        assertTrue("Supplier is expected to implement A", supplier instanceof A);
+        assertTrue(supplier instanceof A, "Supplier is expected to implement A");
     }
 
     @Test
@@ -47,7 +46,7 @@ public class LambdaTest {
         Supplier<String> supplier = (Supplier<String> & Serializable) () -> "OK";
 
         assertEquals("OK", supplier.get());
-        assertTrue("Supplier is expected to implement Serializable", supplier instanceof Serializable);
+        assertTrue(supplier instanceof Serializable, "Supplier is expected to implement Serializable");
     }
 
     @Test

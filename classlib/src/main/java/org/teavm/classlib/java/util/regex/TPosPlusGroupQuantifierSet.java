@@ -62,4 +62,9 @@ class TPosPlusGroupQuantifierSet extends TGroupQuantifierSet {
 
         return next.matches(stringIndex, testString, matchResult);
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TPosPlusGroupQuantifierSet.class, "posPlusGroupQuantifierSet", innerSet, type);
+    }
 }

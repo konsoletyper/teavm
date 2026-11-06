@@ -1,0 +1,10 @@
+var @this as this
+
+$start
+    @a_1 := invokeStatic `Foo.get()I`
+    @e := new java.lang.RuntimeException
+    throw @e
+    catch java.lang.RuntimeException goto $handle
+$handle
+    @a_join := phi @a_1 from $start
+    return @a_join

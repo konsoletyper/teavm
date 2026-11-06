@@ -75,4 +75,15 @@ class TNegativeLookAhead extends TAtomicJointSet {
     protected String getName() {
         return "NegLookaheadJointSet";
     }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (!(fSet instanceof TFSet) || ((TFSet) fSet).getGroupIndex() != groupIndex) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TNegativeLookAhead.class, "negativeLookAhead", fSet);
+        for (var child : children) {
+            writer.callLater("addChild", this, child);
+        }
+    }
 }

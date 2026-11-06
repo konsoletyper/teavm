@@ -17,27 +17,40 @@ package org.teavm.common;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
-import java.util.ArrayList;
+import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 public class GraphBuilder {
+    private static final int[] EMPTY = new int[0];
     private GraphImpl builtGraph;
-    private List<IntSet> addedEdges = new ArrayList<>();
+    private int[] firstEdges = EMPTY;
+    private IntSet[] otherEdges = new IntSet[0];
     private int sz;
 
     public GraphBuilder() {
     }
 
     public GraphBuilder(int sz) {
-        addedEdges.addAll(Collections.nCopies(sz, null));
+        ensureCapacity(sz);
         this.sz = sz;
     }
 
     public void clear() {
-        addedEdges.clear();
+        Arrays.fill(firstEdges, -1);
+        Arrays.fill(otherEdges, null);
         sz = 0;
+        builtGraph = null;
+    }
+
+    private void ensureCapacity(int capacity) {
+        if (capacity <= firstEdges.length) {
+            return;
+        }
+        int oldCapacity = firstEdges.length;
+        int newCapacity = Math.max(capacity, oldCapacity * 3 / 2 + 1);
+        firstEdges = Arrays.copyOf(firstEdges, newCapacity);
+        Arrays.fill(firstEdges, oldCapacity, newCapacity, -1);
+        otherEdges = Arrays.copyOf(otherEdges, newCapacity);
     }
 
     public void addEdge(int from, int to) {
@@ -46,15 +59,14 @@ public class GraphBuilder {
         }
         sz = Math.max(sz, Math.max(from, to) + 1);
         builtGraph = null;
-        if (addedEdges.size() == from) {
-            addedEdges.add(IntHashSet.from(to));
-        } else if (addedEdges.size() <= from) {
-            addedEdges.addAll(Collections.nCopies(from - addedEdges.size(), null));
-            addedEdges.add(IntHashSet.from(to));
-        } else {
-            IntSet set = addedEdges.get(from);
+        ensureCapacity(from + 1);
+        int first = firstEdges[from];
+        if (first < 0) {
+            firstEdges[from] = to;
+        } else if (first != to) {
+            IntSet set = otherEdges[from];
             if (set == null) {
-                addedEdges.set(from, IntHashSet.from(to));
+                otherEdges[from] = IntHashSet.from(to);
             } else {
                 set.add(to);
             }
@@ -65,34 +77,65 @@ public class GraphBuilder {
         if (to < 0 || from < 0) {
             throw new IllegalArgumentException();
         }
-        if (from >= addedEdges.size() || to >= addedEdges.size()) {
+        if (from >= firstEdges.length) {
             return;
         }
-        addedEdges.get(from).removeAll(to);
+        IntSet set = otherEdges[from];
+        if (firstEdges[from] == to) {
+            if (set == null || set.isEmpty()) {
+                firstEdges[from] = -1;
+            } else {
+                int replacement = set.iterator().next().value;
+                set.removeAll(replacement);
+                firstEdges[from] = replacement;
+            }
+            builtGraph = null;
+        } else if (set != null && set.removeAll(to) > 0) {
+            builtGraph = null;
+        }
     }
 
     public Graph build() {
         if (builtGraph == null) {
-            IntSet[] incomingEdges = new IntSet[sz];
-            for (int i = 0; i < sz; ++i) {
-                incomingEdges[i] = new IntHashSet();
-            }
             int[][] outgoingEdgeList = new int[sz][];
-            for (int i = 0; i < addedEdges.size(); ++i) {
-                IntSet edgeList = addedEdges.get(i);
-                outgoingEdgeList[i] = edgeList != null ? edgeList.toArray() : new int[0];
-                Arrays.sort(outgoingEdgeList[i]);
-                for (int j : outgoingEdgeList[i]) {
-                    incomingEdges[j].add(i);
+            int[] incomingCount = new int[sz];
+            int nodesWithEdges = Math.min(sz, firstEdges.length);
+            for (int i = 0; i < nodesWithEdges; ++i) {
+                int first = firstEdges[i];
+                if (first < 0) {
+                    outgoingEdgeList[i] = EMPTY;
+                    continue;
+                }
+                IntSet set = otherEdges[i];
+                int[] edges;
+                if (set == null || set.isEmpty()) {
+                    edges = new int[] { first };
+                } else {
+                    edges = new int[set.size() + 1];
+                    edges[0] = first;
+                    int index = 1;
+                    for (IntCursor cursor : set) {
+                        edges[index++] = cursor.value;
+                    }
+                    Arrays.sort(edges);
+                }
+                outgoingEdgeList[i] = edges;
+                for (int j : edges) {
+                    incomingCount[j]++;
                 }
             }
-            for (int i = addedEdges.size(); i < sz; ++i) {
-                outgoingEdgeList[i] = new int[0];
+            for (int i = nodesWithEdges; i < sz; ++i) {
+                outgoingEdgeList[i] = EMPTY;
             }
             int[][] incomingEdgeList = new int[sz][];
             for (int i = 0; i < sz; ++i) {
-                incomingEdgeList[i] = incomingEdges[i].toArray();
-                Arrays.sort(incomingEdgeList[i]);
+                int count = incomingCount[i];
+                incomingEdgeList[i] = count == 0 ? EMPTY : new int[count];
+            }
+            for (int i = sz - 1; i >= 0; --i) {
+                for (int j : outgoingEdgeList[i]) {
+                    incomingEdgeList[j][--incomingCount[j]] = i;
+                }
             }
             builtGraph = new GraphImpl(incomingEdgeList, outgoingEdgeList);
         }

@@ -15,12 +15,21 @@
  */
 package org.teavm.junit;
 
-public enum TestPlatform {
-    JAVASCRIPT,
+/**
+ * Identifiers of built-in test platforms, to use with {@link SkipPlatform} and {@link OnlyPlatform}.
+ * Platform identifiers are plain strings, so that additional platforms, contributed via
+ * {@link org.teavm.junit.spi.TestPlatformProvider}, can define their own identifiers
+ * (see {@link org.teavm.junit.spi.ExternalTestPlatform#getName()}).
+ */
+public final class TestPlatform {
+    public static final String JAVASCRIPT = "JAVASCRIPT";
     @Deprecated
-    WEBASSEMBLY,
+    public static final String WEBASSEMBLY = "WEBASSEMBLY";
     @Deprecated
-    WASI,
-    WEBASSEMBLY_GC,
-    C
+    public static final String WASI = "WASI";
+    public static final String WEBASSEMBLY_GC = "WEBASSEMBLY_GC";
+    public static final String C = "C";
+
+    private TestPlatform() {
+    }
 }

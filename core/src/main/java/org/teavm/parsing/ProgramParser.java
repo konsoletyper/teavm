@@ -341,6 +341,9 @@ public class ProgramParser {
                 if (basicBlock != null && !hasProperLastInstruction(basicBlock)) {
                     JumpInstruction insn = new JumpInstruction();
                     insn.setTarget(newBasicBlock);
+                    if (basicBlock.getLastInstruction() != null) {
+                        insn.setLocation(basicBlock.getLastInstruction().getLocation());
+                    }
                     basicBlock.add(insn);
                 }
                 basicBlock = newBasicBlock;

@@ -228,17 +228,24 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     expr.getSecondOperand().acceptVisitor(this);
                     writer.print(")");
                     return;
+                case LEFT_SHIFT:
                 case UNSIGNED_RIGHT_SHIFT: {
+                    // Shift in unsigned type, since left shift of negative number is undefined behaviour in C
                     String type = expr.getType() == OperationType.LONG ? "int64_t" : "int32_t";
                     writer.print("((" + type + ") ((u" + type + ") ");
-
                     expr.getFirstOperand().acceptVisitor(this);
-                    writer.print(" >> ");
-                    expr.getSecondOperand().acceptVisitor(this);
-
+                    writer.print(expr.getOperation() == BinaryOperation.LEFT_SHIFT ? " << " : " >> ");
+                    writeShiftAmount(expr);
                     writer.print("))");
                     return;
                 }
+                case RIGHT_SHIFT:
+                    writer.print("(");
+                    expr.getFirstOperand().acceptVisitor(this);
+                    writer.print(" >> ");
+                    writeShiftAmount(expr);
+                    writer.print(")");
+                    return;
 
                 case MODULO: {
                     switch (expr.getType()) {
@@ -295,12 +302,6 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 case BITWISE_XOR:
                     op = "^";
                     break;
-                case LEFT_SHIFT:
-                    op = "<<";
-                    break;
-                case RIGHT_SHIFT:
-                    op = ">>";
-                    break;
                 case EQUALS:
                     op = "==";
                     break;
@@ -334,6 +335,22 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             writer.print(")");
         } finally {
             popLocation(expr.getLocation());
+        }
+    }
+
+    /**
+     * Java takes only lower 5 or 6 bits of shift amount, while in C shift by amount greater than or equal
+     * to bit width is undefined behaviour.
+     */
+    private void writeShiftAmount(BinaryExpr expr) {
+        int mask = expr.getType() == OperationType.LONG ? 63 : 31;
+        var amount = expr.getSecondOperand();
+        if (amount instanceof ConstantExpr && ((ConstantExpr) amount).getValue() instanceof Integer) {
+            writer.print(String.valueOf((Integer) ((ConstantExpr) amount).getValue() & mask));
+        } else {
+            writer.print("(");
+            amount.acceptVisitor(this);
+            writer.print(" & " + mask + ")");
         }
     }
 
@@ -1108,6 +1125,15 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(PrimitiveCastExpr expr) {
         pushLocation(expr.getLocation());
+        if ((expr.getSource() == OperationType.FLOAT || expr.getSource() == OperationType.DOUBLE)
+                && (expr.getTarget() == OperationType.INT || expr.getTarget() == OperationType.LONG)) {
+            writer.print(expr.getSource() == OperationType.FLOAT ? "teavm_float" : "teavm_double");
+            writer.print(expr.getTarget() == OperationType.INT ? "ToInt(" : "ToLong(");
+            expr.getValue().acceptVisitor(this);
+            writer.print(")");
+            popLocation(expr.getLocation());
+            return;
+        }
         writer.print("((");
         switch (expr.getTarget()) {
             case INT:
@@ -1138,13 +1164,18 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 QualificationExpr qualification = (QualificationExpr) statement.getLeftValue();
                 FieldReference field = qualification.getField();
                 if (isMonitorField(field)) {
-                    writer.print("TEAVM_FIELD(");
+                    String instance = allocTemporaryVariable(CVariableType.PTR);
+                    writer.print(instance + " = ");
                     qualification.getQualified().acceptVisitor(this);
+                    writer.println(";");
                     field = new FieldReference(RuntimeObject.class.getName(), "hashCode");
-                    writer.print(", ").print(names.forClass(field.getClassName()) + ", "
+                    writer.print("TEAVM_FIELD(" + instance + ", ").print(names.forClass(field.getClassName()) + ", "
                             + names.forMemberField(field) + ") = TEAVM_PACK_MONITOR(");
                     statement.getRightValue().acceptVisitor(this);
                     writer.println(");");
+                    // Barrier goes after the store: evaluating the value may trigger GC, which resets cards
+                    writer.println("teavm_gc_writeBarrierChecked(" + instance + ");");
+                    freeTemporaryVariable(CVariableType.PTR);
                     popLocation(statement.getLocation());
                     return;
                 }

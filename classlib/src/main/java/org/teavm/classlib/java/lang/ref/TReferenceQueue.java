@@ -15,13 +15,10 @@
  */
 package org.teavm.classlib.java.lang.ref;
 
-import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TThread;
 import org.teavm.classlib.java.lang.TThreadInterruptHandler;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
-import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformRunnable;
 import org.teavm.runtime.EventQueue;
 
 public class TReferenceQueue<T> {
@@ -46,9 +43,7 @@ public class TReferenceQueue<T> {
         } else {
             var callbackWrapper = new RemoveCallback(callback);
             if (timeout != 0) {
-                callbackWrapper.id = PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()
-                        ? EventQueue.offer(callbackWrapper, timeout + System.currentTimeMillis())
-                        : Platform.schedule(callbackWrapper, (int) timeout);
+                callbackWrapper.id = EventQueue.offer(callbackWrapper, timeout + System.currentTimeMillis());
             }
             TThread.currentThread().interruptHandler = callbackWrapper;
             registerCallback(callbackWrapper);
@@ -74,7 +69,7 @@ public class TReferenceQueue<T> {
         return true;
     }
 
-    private class RemoveCallback implements EventQueue.Event, PlatformRunnable, AsyncCallback<TReference<T>>,
+    private class RemoveCallback implements EventQueue.Event, AsyncCallback<TReference<T>>,
             TThreadInterruptHandler {
         RemoveCallback next;
         RemoveCallback prev;
@@ -87,11 +82,7 @@ public class TReferenceQueue<T> {
 
         @Override
         public void run() {
-            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
-                EventQueue.kill(id);
-            } else {
-                Platform.killSchedule(id);
-            }
+            EventQueue.kill(id);
             complete(null);
         }
 

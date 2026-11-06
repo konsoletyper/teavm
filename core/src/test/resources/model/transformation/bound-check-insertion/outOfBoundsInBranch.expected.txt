@@ -1,0 +1,18 @@
+var @this as this
+
+$start
+    @size := 2
+    @array := newArray I[@size]
+    @cond := invokeStatic `Cond.invoke()I`
+    if @cond == 0 then goto $bad else goto $good
+$bad
+    @index := 2
+    @8 := new java.lang.ArrayIndexOutOfBoundsException
+    invoke `java.lang.ArrayIndexOutOfBoundsException.<init>()V` @8
+    throw @8
+$good
+    @zero := 0
+    goto $join
+$join
+    @result := phi @zero from $good
+    return @result

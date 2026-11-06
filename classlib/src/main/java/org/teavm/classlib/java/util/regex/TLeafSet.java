@@ -37,8 +37,10 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Base class for nodes representing leaf tokens of the RE, those who consumes
- * fixed number of characters.
+ * Base class for nodes representing leaf tokens of the RE, those who consume
+ * characters without passing control to other nodes. Most of them consume
+ * fixed number of characters, but some consume either one char or a surrogate pair;
+ * such nodes override {@link #stepBack(int, int, CharSequence)}.
  *
  * @author Nikolay A. Kuznetsov
  */
@@ -54,7 +56,43 @@ abstract class TLeafSet extends TAbstractSet {
     public TLeafSet() {
     }
 
-    public abstract int accepts(int stringIndex, CharSequence testString);
+    /**
+     * Checks whether this node matches at given index, without passing control to the next node.
+     * Returns number of consumed characters or negative value if match fails. Leaves that look at
+     * neighbouring characters (to tell a surrogate pair from a lone surrogate) take bounds of
+     * the matched region from {@code matchResult}.
+     */
+    public abstract int accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult);
+
+    /**
+     * Given that consecutive matches of this leaf started at {@code leftLimit} and ended at
+     * {@code stringIndex}, returns the index where the last of these matches started.
+     * Quantifiers use it to backtrack.
+     */
+    public int stepBack(int stringIndex, int leftLimit, CharSequence testString) {
+        return stringIndex - charCount();
+    }
+
+    /**
+     * Checks whether given index points to the low surrogate of a surrogate pair. Character classes
+     * never match there, so that a match never starts in the middle of a code point.
+     */
+    static boolean isInsidePair(int stringIndex, CharSequence testString, int leftBound) {
+        return stringIndex > leftBound && Character.isLowSurrogate(testString.charAt(stringIndex))
+                && Character.isHighSurrogate(testString.charAt(stringIndex - 1));
+    }
+
+    /**
+     * Implementation of {@link #stepBack(int, int, CharSequence)} for leaves that consume
+     * either a single char or a surrogate pair, and never consume a part of a surrogate pair.
+     */
+    static int stepBackCodePoint(int stringIndex, int leftLimit, CharSequence testString) {
+        if (stringIndex - 2 >= leftLimit && Character.isLowSurrogate(testString.charAt(stringIndex - 1))
+                && Character.isHighSurrogate(testString.charAt(stringIndex - 2))) {
+            return stringIndex - 2;
+        }
+        return stringIndex - 1;
+    }
 
     /**
      * Checks if we can enter this state and pass the control to the next one.
@@ -68,7 +106,7 @@ abstract class TLeafSet extends TAbstractSet {
             return -1;
         }
 
-        int shift = accepts(stringIndex, testString);
+        int shift = accepts(stringIndex, testString, matchResult);
         if (shift < 0) {
             return -1;
         }

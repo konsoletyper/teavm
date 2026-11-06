@@ -48,7 +48,7 @@ class TEmptySet extends TLeafSet {
     }
 
     @Override
-    public int accepts(int stringIndex, CharSequence testString) {
+    public int accepts(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         return 0;
     }
 
@@ -124,5 +124,10 @@ class TEmptySet extends TLeafSet {
     @Override
     public boolean hasConsumed(TMatchResultImpl mr) {
         return false;
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        writer.create(this, TEmptySet.class, "emptySet");
     }
 }

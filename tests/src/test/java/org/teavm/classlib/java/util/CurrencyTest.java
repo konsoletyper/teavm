@@ -15,18 +15,20 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Currency;
 import java.util.Locale;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
-import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @TeaVMProperties(@TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US, en_GB, ru, ru_RU"))
 @EachTestCompiledSeparately
 public class CurrencyTest {
@@ -52,6 +54,7 @@ public class CurrencyTest {
 
     @Test
     @SkipJVM
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void getsDisplayName() {
         Locale russian = new Locale("ru");
         Locale english = new Locale("en");
@@ -69,6 +72,7 @@ public class CurrencyTest {
 
     @Test
     @SkipJVM
+    @SkipPlatform(BootstrapWasmGCTestPlatform.ID)
     public void getsSymbol() {
         Locale russian = new Locale("ru");
         Locale english = new Locale("en");
@@ -82,8 +86,8 @@ public class CurrencyTest {
         assertEquals("\u20BD", currency.getSymbol(russian));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void rejectsWrongCode() {
-        Currency.getInstance("WWW");
+        assertThrows(IllegalArgumentException.class, () -> Currency.getInstance("WWW"));
     }
 }

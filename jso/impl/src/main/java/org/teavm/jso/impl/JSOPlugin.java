@@ -73,9 +73,7 @@ public class JSOPlugin implements TeaVMPlugin {
         var wrapperDependency = new JSWrapperDependency();
         host.add(wrapperDependency);
 
-        if (!isBootstrap()) {
-            TeaVMPluginUtil.handleNatives(host, JS.class);
-        }
+        TeaVMPluginUtil.handleNatives(host, JS.class);
 
         if (jsHost != null) {
             installForJS(jsHost);

@@ -108,7 +108,7 @@ class DependencyClassSource implements ClassHolderSource {
         generatedClasses.put(cls.getName(), cls);
         for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
-                new UnreachableBasicBlockEliminator().optimize(method.getProgram());
+                new UnreachableBasicBlockEliminator().optimize(method.getProgram(), method.parameterCount());
             }
         }
         cache.remove(cls.getName());

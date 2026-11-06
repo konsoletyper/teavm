@@ -15,13 +15,12 @@
  */
 package org.teavm.model.optimization;
 
-import java.util.List;
 import org.teavm.common.IntegerStack;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
-import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.TransitionExtractor;
 
 public class UnreachableBasicBlockEliminator {
@@ -39,12 +38,14 @@ public class UnreachableBasicBlockEliminator {
         }
     }
 
-    public void optimize(Program program) {
+    public void optimize(Program program, int paramCount) {
         if (program.basicBlockCount() == 0) {
             return;
         }
         TransitionExtractor transitionExtractor = new TransitionExtractor();
-        boolean[] reachable = new boolean[program.basicBlockCount()];
+        var reachable = new boolean[program.basicBlockCount()];
+        var hasExceptionHandlers = false;
+        var terminating = new boolean[program.basicBlockCount()];
         IntegerStack stack = new IntegerStack(program.basicBlockCount());
         stack.push(0);
         while (!stack.isEmpty()) {
@@ -53,6 +54,7 @@ public class UnreachableBasicBlockEliminator {
                 continue;
             }
             reachable[i] = true;
+
             BasicBlock block = program.basicBlockAt(i);
             block.getLastInstruction().acceptVisitor(transitionExtractor);
             for (BasicBlock successor : transitionExtractor.getTargets()) {
@@ -60,8 +62,12 @@ public class UnreachableBasicBlockEliminator {
                     stack.push(successor.getIndex());
                 }
             }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            if (transitionExtractor.getTargets().length == 0) {
+                terminating[i] = true;
+            }
+            for (var tryCatch : block.getTryCatchBlocks()) {
                 stack.push(tryCatch.getHandler().getIndex());
+                hasExceptionHandlers = true;
             }
         }
 
@@ -81,18 +87,63 @@ public class UnreachableBasicBlockEliminator {
             }
         }
 
+        boolean[] definedVars = null;
+        if (hasExceptionHandlers) {
+            definedVars = new boolean[program.variableCount()];
+            for (var i = 0; i <= paramCount; ++i) {
+                definedVars[i] = true;
+            }
+            var defs = new DefinitionExtractor();
+            for (var i = 0; i < program.basicBlockCount(); ++i) {
+                if (!reachable[i]) {
+                    continue;
+                }
+                var block = program.basicBlockAt(i);
+                for (var insn : block) {
+                    insn.acceptVisitor(defs);
+                    var vars = defs.getDefinedVariables();
+                    if (vars != null) {
+                        for (var v : vars) {
+                            definedVars[v.getIndex()] = true;
+                        }
+                    }
+                }
+                for (var phi : block.getPhis()) {
+                    definedVars[phi.getReceiver().getIndex()] = true;
+                }
+                if (block.getExceptionVariable() != null) {
+                    definedVars[block.getExceptionVariable().getIndex()] = true;
+                }
+            }
+        }
+
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             if (block == null) {
                 continue;
             }
-            for (Phi phi : block.getPhis()) {
-                List<Incoming> incomingList = phi.getIncomings();
+            for (var iter = block.getPhis().iterator(); iter.hasNext();) {
+                var phi = iter.next();
+                var incomingList = phi.getIncomings();
                 for (int j = 0; j < incomingList.size(); ++j) {
                     Incoming incoming = incomingList.get(j);
                     if (!reachable[incoming.getSource().getIndex()]) {
                         incomingList.remove(j--);
+                    } else if (terminating[incoming.getSource().getIndex()]) {
+                        var isExceptionPredecessor = false;
+                        for (var tryCatch : incoming.getSource().getTryCatchBlocks()) {
+                            if (tryCatch.getHandler() == block) {
+                                isExceptionPredecessor = true;
+                                break;
+                            }
+                        }
+                        if (!isExceptionPredecessor || !definedVars[incoming.getValue().getIndex()]) {
+                            incomingList.remove(j--);
+                        }
                     }
+                }
+                if (incomingList.isEmpty()) {
+                    iter.remove();
                 }
             }
         }

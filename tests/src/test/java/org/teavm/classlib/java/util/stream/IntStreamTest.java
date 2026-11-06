@@ -15,10 +15,10 @@
  */
 package org.teavm.classlib.java.util.stream;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.teavm.classlib.java.util.stream.Helper.appendIntNumbersTo;
 import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
@@ -29,11 +29,10 @@ import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class IntStreamTest {
     @Test
     public void forEachWorks() {
@@ -189,6 +188,16 @@ public class IntStreamTest {
         assertArrayEquals(new int[] { 3, 2 }, IntStream.of(2, 3, 2, 3).skip(1).distinct().toArray());
         assertArrayEquals(new int[] { 2, 3 }, IntStream.of(2, 3, 2, 3).limit(2).distinct().toArray());
         assertArrayEquals(new int[] { 2, 3, 4, 1 }, IntStream.of(2, 2, 3, 2, 4, 3, 1).distinct().toArray());
+    }
+
+    @Test
+    public void distinctAcrossConcat() {
+        testIntStream(() -> IntStream.concat(IntStream.of(2, 3), IntStream.of(2, 3, 1)).distinct(), 2, 3, 1);
+    }
+
+    @Test
+    public void distinctAcrossIteratorAdvances() {
+        testIntStream(() -> IntStream.of(2, 2, 3, 2, 1, 1).distinct(), 2, 3, 1);
     }
 
     @Test

@@ -69,10 +69,12 @@ public class StringConcatFactorySubstitutor implements BootstrapMethodSubstituto
                     break;
                 }
                 case CONST_ARGUMENT: {
+                    // A constant comes from the bootstrap arguments. It does not consume a parameter of the
+                    // call site, so its type comes from the constant itself.
                     sb = flushAcc(sb, acc);
-                    ValueType type = callSite.getCalledMethod().parameterType(paramIndex++);
                     RuntimeConstant poolConstant = callSite.getBootstrapArguments().get(1 + constantIndex++);
-                    sb = appendArgument(sb, type, constant(sb.getProgramEmitter(), poolConstant));
+                    sb = appendArgument(sb, constantType(poolConstant), constant(sb.getProgramEmitter(),
+                            poolConstant));
                     break;
                 }
                 default:
@@ -119,6 +121,21 @@ public class StringConcatFactorySubstitutor implements BootstrapMethodSubstituto
         MethodReference method = referenceCache.getCached(new MethodReference(STRING_BUILDER, "append", type,
                 ValueType.object(STRING_BUILDER)));
         return sb.invokeSpecial(method, argument);
+    }
+
+    private static ValueType constantType(RuntimeConstant value) {
+        switch (value.getKind()) {
+            case RuntimeConstant.INT:
+                return ValueType.INTEGER;
+            case RuntimeConstant.LONG:
+                return ValueType.LONG;
+            case RuntimeConstant.FLOAT:
+                return ValueType.FLOAT;
+            case RuntimeConstant.DOUBLE:
+                return ValueType.DOUBLE;
+            default:
+                return ValueType.object("java.lang.Object");
+        }
     }
 
     private ValueEmitter constant(ProgramEmitter pe, RuntimeConstant value) {

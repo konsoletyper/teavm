@@ -129,7 +129,7 @@ public class WasmBinaryReader {
             var digit = data[ptr++];
             result |= (digit & 0x7F) << shift;
             if ((digit & 0x80) == 0) {
-                if ((digit & 0x40) != 0) {
+                if ((digit & 0x40) != 0 && shift + 7 < 32) {
                     result |= -1 << (shift + 7);
                 }
                 break;
@@ -160,7 +160,7 @@ public class WasmBinaryReader {
             var digit = data[ptr++];
             result |= (digit & 0x7FL) << shift;
             if ((digit & 0x80) == 0) {
-                if ((digit & 0x40) != 0) {
+                if ((digit & 0x40) != 0 && shift + 7 < 64) {
                     result |= -1L << (shift + 7);
                 }
                 break;
@@ -192,21 +192,13 @@ public class WasmBinaryReader {
     }
 
     public int readFixedInt() {
-        return ((data[ptr++] & 0xFF) << 24)
-                | ((data[ptr++] & 0xFF) << 16)
-                | ((data[ptr++] & 0xFF) << 8)
-                | (data[ptr++] & 0xFF);
+        return readInt32();
     }
 
     public long readFixedLong() {
-        return ((data[ptr++] & 0xFFL) << 56)
-                | ((data[ptr++] & 0xFFL) << 48)
-                | ((data[ptr++] & 0xFFL) << 40)
-                | ((data[ptr++] & 0xFFL) << 32)
-                | ((data[ptr++] & 0xFFL) << 24)
-                | ((data[ptr++] & 0xFF) << 16)
-                | ((data[ptr++] & 0xFF) << 8)
-                | (data[ptr++] & 0xFF);
+        var low = readInt32() & 0xFFFFFFFFL;
+        var high = readInt32() & 0xFFFFFFFFL;
+        return low | (high << 32);
     }
 
     public String readString() {

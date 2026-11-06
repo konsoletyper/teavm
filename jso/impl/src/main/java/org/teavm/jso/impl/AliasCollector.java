@@ -15,7 +15,7 @@
  */
 package org.teavm.jso.impl;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 import org.teavm.model.ClassReader;
@@ -35,8 +35,8 @@ public class AliasCollector {
     }
 
     public static Members collectMembers(ClassReader classReader, Predicate<MethodReader> filter) {
-        var methods = new HashMap<String, MethodReference>();
-        var properties = new HashMap<String, PropertyInfo>();
+        var methods = new LinkedHashMap<String, MethodReference>();
+        var properties = new LinkedHashMap<String, PropertyInfo>();
         MethodReference constructor = null;
         for (var method : classReader.getMethods()) {
             if (!filter.test(method)) {

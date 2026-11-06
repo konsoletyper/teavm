@@ -51,12 +51,22 @@ class TPossessiveAltQuantifierSet extends TAltQuantifierSet {
         int shift = 0;
 
         if (stringIndex + leaf.charCount() <= matchResult.getRightBound()) {
-            shift = leaf.accepts(stringIndex, testString);
+            shift = leaf.accepts(stringIndex, testString, matchResult);
             if (shift >= 1) {
                 stringIndex += shift;
             }
+        } else {
+            matchResult.hitEnd = true;
         }
 
         return next.matches(stringIndex, testString, matchResult);
+    }
+
+    @Override
+    void describe(TPatternWriter writer) {
+        if (leaf != innerSet) {
+            throw TPatternWriter.unsupported();
+        }
+        writer.create(this, TPossessiveAltQuantifierSet.class, "possessiveAltQuantifierSet", leaf, type);
     }
 }

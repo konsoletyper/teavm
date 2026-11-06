@@ -46,24 +46,23 @@
  */
 package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestDateTimesImplementation {
 
     //-----------------------------------------------------------------------
     // safeAdd()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "safeAddIntProvider")
-    Object[][] safeAddIntProvider() {
+    static Object[][] safeAddIntProvider() {
         return new Object[][] {
             {Integer.MIN_VALUE, 1, Integer.MIN_VALUE + 1},
             {-1, 1, 0},
@@ -73,13 +72,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeAddIntProvider")
+    @ParameterizedTest
+    @MethodSource("safeAddIntProvider")
     public void test_safeAddInt(int a, int b, int expected) {
-        assertEquals(Math.addExact(a, b), expected);
+        assertEquals(expected, Math.addExact(a, b));
     }
 
-    @DataProvider(name = "safeAddIntProviderOverflow")
-    Object[][] safeAddIntProviderOverflow() {
+    static Object[][] safeAddIntProviderOverflow() {
         return new Object[][] {
             {Integer.MIN_VALUE, -1},
             {Integer.MIN_VALUE + 1, -2},
@@ -88,13 +87,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeAddIntProviderOverflow", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("safeAddIntProviderOverflow")
     public void test_safeAddInt_overflow(int a, int b) {
-        Math.addExact(a, b);
+        assertThrows(ArithmeticException.class, () -> Math.addExact(a, b));
     }
 
-    @DataProvider(name = "safeAddLongProvider")
-    Object[][] safeAddLongProvider() {
+    static Object[][] safeAddLongProvider() {
         return new Object[][] {
             {Long.MIN_VALUE, 1, Long.MIN_VALUE + 1},
             {-1, 1, 0},
@@ -104,13 +103,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeAddLongProvider")
+    @ParameterizedTest
+    @MethodSource("safeAddLongProvider")
     public void test_safeAddLong(long a, long b, long expected) {
-        assertEquals(Math.addExact(a, b), expected);
+        assertEquals(expected, Math.addExact(a, b));
     }
 
-    @DataProvider(name = "safeAddLongProviderOverflow")
-    Object[][] safeAddLongProviderOverflow() {
+    static Object[][] safeAddLongProviderOverflow() {
         return new Object[][] {
             {Long.MIN_VALUE, -1},
             {Long.MIN_VALUE + 1, -2},
@@ -119,16 +118,16 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeAddLongProviderOverflow", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("safeAddLongProviderOverflow")
     public void test_safeAddLong_overflow(long a, long b) {
-        Math.addExact(a, b);
+        assertThrows(ArithmeticException.class, () -> Math.addExact(a, b));
     }
 
     //-----------------------------------------------------------------------
     // safeSubtract()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "safeSubtractIntProvider")
-    Object[][] safeSubtractIntProvider() {
+    static Object[][] safeSubtractIntProvider() {
         return new Object[][] {
             {Integer.MIN_VALUE, -1, Integer.MIN_VALUE + 1},
             {-1, -1, 0},
@@ -138,13 +137,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeSubtractIntProvider")
+    @ParameterizedTest
+    @MethodSource("safeSubtractIntProvider")
     public void test_safeSubtractInt(int a, int b, int expected) {
-        assertEquals(Math.subtractExact(a, b), expected);
+        assertEquals(expected, Math.subtractExact(a, b));
     }
 
-    @DataProvider(name = "safeSubtractIntProviderOverflow")
-    Object[][] safeSubtractIntProviderOverflow() {
+    static Object[][] safeSubtractIntProviderOverflow() {
         return new Object[][] {
             {Integer.MIN_VALUE,  1},
             {Integer.MIN_VALUE + 1, 2},
@@ -153,13 +152,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeSubtractIntProviderOverflow", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("safeSubtractIntProviderOverflow")
     public void test_safeSubtractInt_overflow(int a, int b) {
-        Math.subtractExact(a, b);
+        assertThrows(ArithmeticException.class, () -> Math.subtractExact(a, b));
     }
 
-    @DataProvider(name = "safeSubtractLongProvider")
-    Object[][] safeSubtractLongProvider() {
+    static Object[][] safeSubtractLongProvider() {
         return new Object[][] {
             {Long.MIN_VALUE, -1, Long.MIN_VALUE + 1},
             {-1, -1, 0},
@@ -169,13 +168,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeSubtractLongProvider")
+    @ParameterizedTest
+    @MethodSource("safeSubtractLongProvider")
     public void test_safeSubtractLong(long a, long b, long expected) {
-        assertEquals(Math.subtractExact(a, b), expected);
+        assertEquals(expected, Math.subtractExact(a, b));
     }
 
-    @DataProvider(name = "safeSubtractLongProviderOverflow")
-    Object[][] safeSubtractLongProviderOverflow() {
+    static Object[][] safeSubtractLongProviderOverflow() {
         return new Object[][] {
             {Long.MIN_VALUE, 1},
             {Long.MIN_VALUE + 1, 2},
@@ -184,16 +183,16 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeSubtractLongProviderOverflow", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("safeSubtractLongProviderOverflow")
     public void test_safeSubtractLong_overflow(long a, long b) {
-        Math.subtractExact(a, b);
+        assertThrows(ArithmeticException.class, () -> Math.subtractExact(a, b));
     }
 
     //-----------------------------------------------------------------------
     // safeMultiply()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "safeMultiplyIntProvider")
-    Object[][] safeMultiplyIntProvider() {
+    static Object[][] safeMultiplyIntProvider() {
         return new Object[][] {
             {Integer.MIN_VALUE, 1, Integer.MIN_VALUE},
             {Integer.MIN_VALUE / 2, 2, Integer.MIN_VALUE},
@@ -209,13 +208,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeMultiplyIntProvider")
+    @ParameterizedTest
+    @MethodSource("safeMultiplyIntProvider")
     public void test_safeMultiplyInt(int a, int b, int expected) {
-        assertEquals(Math.multiplyExact(a, b), expected);
+        assertEquals(expected, Math.multiplyExact(a, b));
     }
 
-    @DataProvider(name = "safeMultiplyIntProviderOverflow")
-    Object[][] safeMultiplyIntProviderOverflow() {
+    static Object[][] safeMultiplyIntProviderOverflow() {
         return new Object[][] {
             {Integer.MIN_VALUE, 2},
             {Integer.MIN_VALUE / 2 - 1, 2},
@@ -226,14 +225,14 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeMultiplyIntProviderOverflow", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("safeMultiplyIntProviderOverflow")
     public void test_safeMultiplyInt_overflow(int a, int b) {
-        Math.multiplyExact(a, b);
+        assertThrows(ArithmeticException.class, () -> Math.multiplyExact(a, b));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "safeMultiplyLongProvider")
-    Object[][] safeMultiplyLongProvider() {
+    static Object[][] safeMultiplyLongProvider() {
         return new Object[][] {
             {Long.MIN_VALUE, 1, Long.MIN_VALUE},
             {Long.MIN_VALUE / 2, 2, Long.MIN_VALUE},
@@ -250,13 +249,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeMultiplyLongProvider")
+    @ParameterizedTest
+    @MethodSource("safeMultiplyLongProvider")
     public void test_safeMultiplyLong(long a, int b, long expected) {
-        assertEquals(Math.multiplyExact(a, b), expected);
+        assertEquals(expected, Math.multiplyExact(a, b));
     }
 
-    @DataProvider(name = "safeMultiplyLongProviderOverflow")
-    Object[][] safeMultiplyLongProviderOverflow() {
+    static Object[][] safeMultiplyLongProviderOverflow() {
         return new Object[][] {
             {Long.MIN_VALUE, 2},
             {Long.MIN_VALUE / 2 - 1, 2},
@@ -266,14 +265,14 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeMultiplyLongProviderOverflow", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("safeMultiplyLongProviderOverflow")
     public void test_safeMultiplyLong_overflow(long a, int b) {
-        Math.multiplyExact(a, b);
+        assertThrows(ArithmeticException.class, () -> Math.multiplyExact(a, b));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "safeMultiplyLongLongProvider")
-    Object[][] safeMultiplyLongLongProvider() {
+    static Object[][] safeMultiplyLongLongProvider() {
         return new Object[][] {
             {Long.MIN_VALUE, 1, Long.MIN_VALUE},
             {Long.MIN_VALUE / 2, 2, Long.MIN_VALUE},
@@ -289,13 +288,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeMultiplyLongLongProvider")
+    @ParameterizedTest
+    @MethodSource("safeMultiplyLongLongProvider")
     public void test_safeMultiplyLongLong(long a, long b, long expected) {
-        assertEquals(Math.multiplyExact(a, b), expected);
+        assertEquals(expected, Math.multiplyExact(a, b));
     }
 
-    @DataProvider(name = "safeMultiplyLongLongProviderOverflow")
-    Object[][] safeMultiplyLongLongProviderOverflow() {
+    static Object[][] safeMultiplyLongLongProviderOverflow() {
         return new Object[][] {
             {Long.MIN_VALUE, 2},
             {Long.MIN_VALUE / 2 - 1, 2},
@@ -306,16 +305,16 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeMultiplyLongLongProviderOverflow", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("safeMultiplyLongLongProviderOverflow")
     public void test_safeMultiplyLongLong_overflow(long a, long b) {
-        Math.multiplyExact(a, b);
+        assertThrows(ArithmeticException.class, () -> Math.multiplyExact(a, b));
     }
 
     //-----------------------------------------------------------------------
     // safeToInt()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "safeToIntProvider")
-    Object[][] safeToIntProvider() {
+    static Object[][] safeToIntProvider() {
         return new Object[][] {
             {Integer.MIN_VALUE},
             {Integer.MIN_VALUE + 1},
@@ -327,13 +326,13 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeToIntProvider")
+    @ParameterizedTest
+    @MethodSource("safeToIntProvider")
     public void test_safeToInt(long l) {
-        assertEquals(Math.toIntExact(l), l);
+        assertEquals(l, Math.toIntExact(l));
     }
 
-    @DataProvider(name = "safeToIntProviderOverflow")
-    Object[][] safeToIntProviderOverflow() {
+    static Object[][] safeToIntProviderOverflow() {
         return new Object[][] {
             {Long.MIN_VALUE},
             {Integer.MIN_VALUE - 1L},
@@ -342,14 +341,16 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "safeToIntProviderOverflow", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("safeToIntProviderOverflow")
     public void test_safeToInt_overflow(long l) {
-        Math.toIntExact(l);
+        assertThrows(ArithmeticException.class, () -> Math.toIntExact(l));
     }
 
     //-----------------------------------------------------------------------
     // safeCompare()
     //-----------------------------------------------------------------------
+    @Test
     public void test_safeCompare_int() {
         doTest_safeCompare_int(
             Integer.MIN_VALUE,
@@ -371,11 +372,12 @@ public class TestDateTimesImplementation {
             int a = values[i];
             for (int j = 0; j < values.length; j++) {
                 int b = values[j];
-                assertEquals(Integer.compare(a, b), a < b ? -1 : (a > b ? 1 : 0), a + " <=> " + b);
+                assertEquals(a < b ? -1 : (a > b ? 1 : 0), Integer.compare(a, b), a + " <=> " + b);
             }
         }
     }
 
+    @Test
     public void test_safeCompare_long() {
         doTest_safeCompare_long(
             Long.MIN_VALUE,
@@ -403,14 +405,13 @@ public class TestDateTimesImplementation {
             long a = values[i];
             for (int j = 0; j < values.length; j++) {
                 long b = values[j];
-                assertEquals(Long.compare(a, b), a < b ? -1 : (a > b ? 1 : 0), a + " <=> " + b);
+                assertEquals(a < b ? -1 : (a > b ? 1 : 0), Long.compare(a, b), a + " <=> " + b);
             }
         }
     }
 
     //-------------------------------------------------------------------------
-    @DataProvider(name = "FloorDiv")
-    Object[][] data_floorDiv() {
+    static Object[][] data_floorDiv() {
         return new Object[][] {
             {5L, 4, 1L},
             {4L, 4, 1L},
@@ -426,21 +427,22 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "FloorDiv")
+    @ParameterizedTest
+    @MethodSource("data_floorDiv")
     public void test_floorDiv_long(long a, int b, long expected) {
-        assertEquals(Math.floorDiv(a, b), expected);
+        assertEquals(expected, Math.floorDiv(a, b));
     }
 
-    @Test(dataProvider = "FloorDiv")
+    @ParameterizedTest
+    @MethodSource("data_floorDiv")
     public void test_floorDiv_int(long a, int b, long expected) {
         if (a <= Integer.MAX_VALUE && a >= Integer.MIN_VALUE) {
-            assertEquals(Math.floorDiv((int) a, b), (int) expected);
+            assertEquals((int) expected, Math.floorDiv((int) a, b));
         }
     }
 
     //-------------------------------------------------------------------------
-    @DataProvider(name = "FloorMod")
-    Object[][] data_floorMod() {
+    static Object[][] data_floorMod() {
         return new Object[][] {
             {5L, 4, 1},
             {4L, 4, 0},
@@ -456,20 +458,23 @@ public class TestDateTimesImplementation {
         };
     }
 
-    @Test(dataProvider = "FloorMod")
+    @ParameterizedTest
+    @MethodSource("data_floorMod")
     public void test_floorMod_long(long a, long b, int expected) {
-        assertEquals(Math.floorMod(a, b), expected);
+        assertEquals(expected, Math.floorMod(a, b));
     }
 
-    @Test(dataProvider = "FloorMod")
+    @ParameterizedTest
+    @MethodSource("data_floorMod")
     public void test_floorMod_long(long a, int b, int expected) {
-        assertEquals(Math.floorMod(a, b), expected);
+        assertEquals(expected, Math.floorMod(a, b));
     }
 
-    @Test(dataProvider = "FloorMod")
+    @ParameterizedTest
+    @MethodSource("data_floorMod")
     public void test_floorMod_int(long a, int b, int expected) {
         if (a <= Integer.MAX_VALUE && a >= Integer.MIN_VALUE) {
-            assertEquals(Math.floorMod((int) a, b), expected);
+            assertEquals(expected, Math.floorMod((int) a, b));
         }
     }
 

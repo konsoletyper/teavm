@@ -32,19 +32,18 @@
 
 package org.teavm.classlib.java.util.regex;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 @SuppressWarnings("nls")
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class MatcherTest {
     String[] testPatterns = {
             "(a|b)*abb",
@@ -229,8 +228,7 @@ public class MatcherTest {
             Matcher mat = test.matcher(positiveTestString);
             mat.matches();
             for (int j = 0; j < groupResults[i].length; j++) {
-                assertEquals("i: " + i + " j: " + j, groupResults[i][j], mat
-                        .group(j + 1));
+                assertEquals(groupResults[i][j], mat.group(j + 1), "i: " + i + " j: " + j);
             }
         }
     }
@@ -312,8 +310,7 @@ public class MatcherTest {
             Pattern pat = Pattern.compile(testPatterns[i]);
             for (int j = 0; j < posSeq[i].length; j++) {
                 Matcher mat = pat.matcher(posSeq[i][j]);
-                assertTrue("Incorrect match: " + testPatterns[i] + " vs "
-                        + posSeq[i][j], mat.matches());
+                assertTrue(mat.matches(), "Incorrect match: " + testPatterns[i] + " vs " + posSeq[i][j]);
             }
         }
     }
@@ -335,26 +332,23 @@ public class MatcherTest {
         for (int i = 0; i < testPatternsSingles.length; i++) {
             Pattern pat = Pattern.compile(testPatternsSingles[i]);
             for (int j = 0; j < stringSingles.length / 2; j++) {
-                assertTrue("Match expected, but failed: " + pat.pattern()
-                        + " : " + stringSingles[i][j], pat.matcher(
-                        stringSingles[i][j * 2]).matches());
-                assertFalse("Match failure expected, but match succeed: "
-                                + pat.pattern() + " : " + stringSingles[i][j * 2 + 1],
-                        pat.matcher(stringSingles[i][j * 2 + 1]).matches());
+                assertTrue(pat.matcher(stringSingles[i][j * 2]).matches(),
+                        "Match expected, but failed: " + pat.pattern() + " : " + stringSingles[i][j]);
+                assertFalse(pat.matcher(stringSingles[i][j * 2 + 1]).matches(),
+                        "Match failure expected, but match succeed: " + pat.pattern() + " : "
+                                + stringSingles[i][j * 2 + 1]);
             }
         }
 
         for (int i = 0; i < testPatternsMultiple.length; i++) {
             Pattern pat = Pattern.compile(testPatternsMultiple[i]);
             for (int j = 0; j < stringMultiples.length / 2; j++) {
-                assertTrue("Match expected, but failed: " + pat.pattern()
-                        + " : " + stringMultiples[i][j], pat.matcher(
-                        stringMultiples[i][j * 2]).matches());
-                assertFalse(
+                assertTrue(pat.matcher(stringMultiples[i][j * 2]).matches(),
+                        "Match expected, but failed: " + pat.pattern() + " : " + stringMultiples[i][j]);
+                assertFalse(pat.matcher(stringMultiples[i][j * 2 + 1]).matches(),
                         "Match failure expected, but match succeed: "
                                 + pat.pattern() + " : "
-                                + stringMultiples[i][j * 2 + 1], pat.matcher(
-                                stringMultiples[i][j * 2 + 1]).matches());
+                                + stringMultiples[i][j * 2 + 1]);
             }
         }
     }
@@ -489,7 +483,7 @@ public class MatcherTest {
         Matcher mat;
         for (String element : posExamples) {
             mat = posPat.matcher(element);
-            assertTrue(posPat.toString() + " vs: " + element, mat.matches());
+            assertTrue(mat.matches(), posPat.toString() + " vs: " + element);
         }
 
         for (String element : negExamples) {
@@ -509,7 +503,7 @@ public class MatcherTest {
         for (int i = 0; i < 4; i++) {
             pat = Pattern.compile("((aa|bb){" + i + ",3}?).*cc");
             mat = pat.matcher("aaaaaacc");
-            assertTrue(pat.toString() + " vs: " + "aaaaaacc", mat.matches());
+            assertTrue(mat.matches(), pat.toString() + " vs: " + "aaaaaacc");
             assertEquals(res, mat.group(1));
             res += "aa";
         }
@@ -523,12 +517,12 @@ public class MatcherTest {
 
         pat = Pattern.compile("((aa|bb)??).*cc");
         mat = pat.matcher("aacc");
-        assertTrue(pat.toString() + " vs: " + "aacc", mat.matches());
+        assertTrue(mat.matches(), pat.toString() + " vs: " + "aacc");
         assertEquals("", mat.group(1));
 
         pat = Pattern.compile("((aa|bb)??)cc");
         mat = pat.matcher("aacc");
-        assertTrue(pat.toString() + " vs: " + "aacc", mat.matches());
+        assertTrue(mat.matches(), pat.toString() + " vs: " + "aacc");
         assertEquals("aa", mat.group(1));
     }
 
@@ -725,7 +719,7 @@ public class MatcherTest {
     @Test
     public void testToString() {
         String result = Pattern.compile("(\\d{1,3})").matcher("aaaa123456789045").toString();
-        assertTrue("The result doesn't contain pattern info", result.contains("(\\d{1,3})"));
+        assertTrue(result.contains("(\\d{1,3})"), "The result doesn't contain pattern info");
     }
 
     @Test
@@ -748,7 +742,7 @@ public class MatcherTest {
         }
         boolean h = matcher.hitEnd();
 
-        assertTrue(testNo, h == hit);
+        assertTrue(h == hit, testNo);
     }
 
     private String getHexFloatRegex() {

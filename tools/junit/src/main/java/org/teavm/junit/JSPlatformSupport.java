@@ -31,7 +31,6 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
@@ -41,7 +40,6 @@ import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ReferenceCache;
-import org.teavm.vm.TeaVM;
 
 class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
     JSPlatformSupport(ClassHolderSource classSource, ReferenceCache referenceCache) {
@@ -57,7 +55,7 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
     }
 
     @Override
-    TestPlatform getPlatform() {
+    String getPlatform() {
         return TestPlatform.JAVASCRIPT;
     }
 
@@ -90,7 +88,7 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
     }
 
     @Override
-    CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
+    CompileResult compile(TestEntryPointSpec entryPoint, String baseName,
             TeaVMTestConfiguration<JavaScriptTarget> configuration, File path, AnnotatedElement element) {
         boolean decodeStack = Boolean.parseBoolean(System.getProperty(JS_DECODE_STACK, "true"));
         var debugEmitter = new DebugInformationBuilder(new ReferenceCache());
@@ -131,7 +129,7 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
             };
         }
         return compile(configuration, targetSupplier, TestJsEntryPoint.class.getName(), path, ".js",
-                postBuild, additionalProcessing, baseName);
+                postBuild, entryPoint::install, baseName);
     }
 
     private boolean isModule(AnnotatedElement element) {

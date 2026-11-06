@@ -46,74 +46,74 @@
  */
 package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.format.DecimalStyle;
 import java.util.Locale;
 import java.util.Set;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test DecimalStyle.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 @TeaVMProperties(@TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US"))
 public class TestDecimalStyle {
 
     @Test
     public void test_getAvailableLocales() {
         Set<Locale> locales = DecimalStyle.getAvailableLocales();
-        assertEquals(locales.size() > 0, true);
-        assertEquals(locales.contains(Locale.US), true);
+        assertTrue(locales.size() > 0);
+        assertTrue(locales.contains(Locale.US));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_of_Locale() {
         DecimalStyle loc1 = DecimalStyle.of(Locale.CANADA);
-        assertEquals(loc1.getZeroDigit(), '0');
-        assertEquals(loc1.getPositiveSign(), '+');
-        assertEquals(loc1.getNegativeSign(), '-');
-        assertEquals(loc1.getDecimalSeparator(), '.');
+        assertEquals('0', loc1.getZeroDigit());
+        assertEquals('+', loc1.getPositiveSign());
+        assertEquals('-', loc1.getNegativeSign());
+        assertEquals('.', loc1.getDecimalSeparator());
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_STANDARD() {
         DecimalStyle loc1 = DecimalStyle.STANDARD;
-        assertEquals(loc1.getZeroDigit(), '0');
-        assertEquals(loc1.getPositiveSign(), '+');
-        assertEquals(loc1.getNegativeSign(), '-');
-        assertEquals(loc1.getDecimalSeparator(), '.');
+        assertEquals('0', loc1.getZeroDigit());
+        assertEquals('+', loc1.getPositiveSign());
+        assertEquals('-', loc1.getNegativeSign());
+        assertEquals('.', loc1.getDecimalSeparator());
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_zeroDigit() {
         DecimalStyle base = DecimalStyle.STANDARD;
-        assertEquals(base.withZeroDigit('A').getZeroDigit(), 'A');
+        assertEquals('A', base.withZeroDigit('A').getZeroDigit());
     }
 
     @Test
     public void test_positiveSign() {
         DecimalStyle base = DecimalStyle.STANDARD;
-        assertEquals(base.withPositiveSign('A').getPositiveSign(), 'A');
+        assertEquals('A', base.withPositiveSign('A').getPositiveSign());
     }
 
     @Test
     public void test_negativeSign() {
         DecimalStyle base = DecimalStyle.STANDARD;
-        assertEquals(base.withNegativeSign('A').getNegativeSign(), 'A');
+        assertEquals('A', base.withNegativeSign('A').getNegativeSign());
     }
 
     @Test
     public void test_decimalSeparator() {
         DecimalStyle base = DecimalStyle.STANDARD;
-        assertEquals(base.withDecimalSeparator('A').getDecimalSeparator(), 'A');
+        assertEquals('A', base.withDecimalSeparator('A').getDecimalSeparator());
     }
 
     //-----------------------------------------------------------------------
@@ -121,46 +121,46 @@ public class TestDecimalStyle {
     public void test_equalsHashCode1() {
         DecimalStyle a = DecimalStyle.STANDARD;
         DecimalStyle b = DecimalStyle.STANDARD;
-        assertEquals(a.equals(b), true);
-        assertEquals(b.equals(a), true);
-        assertEquals(a.hashCode(), b.hashCode());
+        assertTrue(a.equals(b));
+        assertTrue(b.equals(a));
+        assertEquals(b.hashCode(), a.hashCode());
     }
 
     @Test
     public void test_equalsHashCode2() {
         DecimalStyle a = DecimalStyle.STANDARD.withZeroDigit('A');
         DecimalStyle b = DecimalStyle.STANDARD.withZeroDigit('A');
-        assertEquals(a.equals(b), true);
-        assertEquals(b.equals(a), true);
-        assertEquals(a.hashCode(), b.hashCode());
+        assertTrue(a.equals(b));
+        assertTrue(b.equals(a));
+        assertEquals(b.hashCode(), a.hashCode());
     }
 
     @Test
     public void test_equalsHashCode3() {
         DecimalStyle a = DecimalStyle.STANDARD.withZeroDigit('A');
         DecimalStyle b = DecimalStyle.STANDARD.withDecimalSeparator('A');
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
     }
 
     @Test
     public void test_equalsHashCode_bad() {
         DecimalStyle a = DecimalStyle.STANDARD;
-        assertEquals(a.equals(""), false);
-        assertEquals(a.equals(null), false);
+        assertFalse(a.equals(""));
+        assertFalse(a.equals(null));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_toString_base() {
         DecimalStyle base = DecimalStyle.STANDARD;
-        assertEquals(base.toString(), "DecimalStyle[0+-.]");
+        assertEquals("DecimalStyle[0+-.]", base.toString());
     }
 
     @Test
     public void test_toString_altered() {
         DecimalStyle base = DecimalStyle.of(Locale.US).withZeroDigit('A').withDecimalSeparator('@');
-        assertEquals(base.toString(), "DecimalStyle[A+-@]");
+        assertEquals("DecimalStyle[A+-@]", base.toString());
     }
 
 }

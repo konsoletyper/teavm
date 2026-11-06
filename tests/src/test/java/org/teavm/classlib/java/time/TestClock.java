@@ -46,19 +46,17 @@
  */
 package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test Clock.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestClock {
 
     static class MockInstantClock extends Clock {
@@ -101,18 +99,18 @@ public class TestClock {
     //-----------------------------------------------------------------------
     @Test
     public void test_mockInstantClock_get() {
-        assertEquals(MOCK_INSTANT.instant(), INSTANT);
-        assertEquals(MOCK_INSTANT.millis(), INSTANT.toEpochMilli());
-        assertEquals(MOCK_INSTANT.getZone(), ZONE);
+        assertEquals(INSTANT, MOCK_INSTANT.instant());
+        assertEquals(INSTANT.toEpochMilli(), MOCK_INSTANT.millis());
+        assertEquals(ZONE, MOCK_INSTANT.getZone());
     }
 
     @Test
     public void test_mockInstantClock_withZone() {
         ZoneId london = ZoneId.of("Europe/London");
         Clock changed = MOCK_INSTANT.withZone(london);
-        assertEquals(MOCK_INSTANT.instant(), INSTANT);
-        assertEquals(MOCK_INSTANT.millis(), INSTANT.toEpochMilli());
-        assertEquals(changed.getZone(), london);
+        assertEquals(INSTANT, MOCK_INSTANT.instant());
+        assertEquals(INSTANT.toEpochMilli(), MOCK_INSTANT.millis());
+        assertEquals(london, changed.getZone());
     }
 
 }

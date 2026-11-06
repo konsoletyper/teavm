@@ -15,8 +15,6 @@
  */
 package org.teavm.backend.wasm.model.instruction;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmBlockType;
 import org.teavm.backend.wasm.model.WasmCompositeType;
@@ -31,26 +29,24 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.model.TextLocation;
 
 public class WasmInstructionBuilder {
-    public final WasmTypeInference typeInference = new WasmTypeInference();
     public final WasmInstructionList list;
-    private List<TextLocation> locationStack = new ArrayList<>();
     private TextLocation currentLocation;
 
     public WasmInstructionBuilder(WasmInstructionList list) {
         this.list = list;
     }
 
-    public WasmInstructionBuilder pushLocation(TextLocation location) {
-        locationStack.add(currentLocation);
-        if (location != null) {
-            currentLocation = location;
-        }
+    public WasmInstructionBuilder inheritLocation() {
+        currentLocation = list.getBreakTarget().getLocation();
         return this;
     }
 
-    public WasmInstructionBuilder popLocation() {
-        currentLocation = locationStack.remove(locationStack.size() - 1);
-        return this;
+    public TextLocation getCurrentLocation() {
+        return currentLocation;
+    }
+
+    public void setCurrentLocation(TextLocation currentLocation) {
+        this.currentLocation = currentLocation;
     }
 
     public WasmInstructionBuilder unreachable() {
@@ -86,9 +82,6 @@ public class WasmInstructionBuilder {
         block.setType(type);
         add(block);
         var inner = new WasmInstructionBuilder(block.getBody());
-        if (type != null) {
-            inner.typeInference.typeStack.addAll(type.getInputTypes());
-        }
         inner.currentLocation = currentLocation;
         return inner;
     }
@@ -181,14 +174,12 @@ public class WasmInstructionBuilder {
     }
 
     public WasmInstructionBuilder getLocal(WasmLocal local) {
-        if (list.getLast() instanceof WasmSetLocal) {
-            var setLocal = (WasmSetLocal) list.getLast();
+        if (list.getLast() instanceof WasmSetLocal setLocal) {
             if (setLocal.getLocal() == local) {
                 var tee = new WasmTeeLocal(local);
                 tee.setLocation(list.getLast().getLocation());
                 list.getLast().delete();
                 list.add(tee);
-                typeInference.typeStack.add(local.getType());
                 return this;
             }
         }
@@ -270,15 +261,12 @@ public class WasmInstructionBuilder {
     public WasmInstructionBuilder drop() {
         if (list.getLast() instanceof WasmGetLocal) {
             list.getLast().delete();
-            typeInference.typeStack.remove(typeInference.typeStack.size() - 1);
             return this;
-        } else if (list.getLast() instanceof WasmTeeLocal) {
-            var teeLocal = (WasmTeeLocal) list.getLast();
+        } else if (list.getLast() instanceof WasmTeeLocal teeLocal) {
             var setLocal = new WasmSetLocal(teeLocal.getLocal());
             setLocal.setLocation(teeLocal.getLocation());
             list.getLast().delete();
             list.add(setLocal);
-            typeInference.typeStack.remove(typeInference.typeStack.size() - 1);
             return this;
         } else {
             return add(new WasmDrop());
@@ -449,7 +437,6 @@ public class WasmInstructionBuilder {
         if (!isTerminating()) {
             instruction.setLocation(currentLocation);
             list.add(instruction);
-            instruction.acceptVisitor(typeInference);
         }
         return this;
     }
@@ -466,9 +453,6 @@ public class WasmInstructionBuilder {
     public WasmInstructionBuilder transferFrom(WasmInstructionList src) {
         if (isTerminating()) {
             return this;
-        }
-        for (var insn : src) {
-            insn.acceptVisitor(typeInference);
         }
         list.transferFrom(src);
         return this;

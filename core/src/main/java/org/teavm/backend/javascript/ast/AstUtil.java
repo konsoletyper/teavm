@@ -29,7 +29,7 @@ public final class AstUtil {
     public static AstNode parse(String string) {
         var env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
-        env.setLanguageVersion(Context.VERSION_1_8);
+        env.setLanguageVersion(Context.VERSION_ES6);
         env.setIdeMode(true);
         var factory = new JSParser(env);
 

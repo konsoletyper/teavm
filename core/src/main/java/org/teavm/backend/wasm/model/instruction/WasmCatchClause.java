@@ -22,6 +22,7 @@ public class WasmCatchClause {
     private WasmTag tag;
     private boolean ref;
     private WasmInstructionList target;
+    WasmTry owner;
 
     public WasmCatchClause(WasmTag tag, boolean ref, WasmInstructionList target) {
         this.tag = tag;
@@ -47,6 +48,10 @@ public class WasmCatchClause {
 
     public WasmInstructionList getTarget() {
         return target;
+    }
+
+    public WasmTry getOwner() {
+        return owner;
     }
 
     public void setTarget(WasmInstructionList target) {

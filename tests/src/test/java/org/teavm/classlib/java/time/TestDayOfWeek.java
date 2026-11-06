@@ -50,8 +50,9 @@ import static java.time.DayOfWeek.MONDAY;
 import static java.time.DayOfWeek.SUNDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -68,20 +69,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test DayOfWeek.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestDayOfWeek extends AbstractDateTimeTest {
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
     }
 
@@ -115,35 +115,35 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     public void test_factory_int_singleton() {
         for (int i = 1; i <= 7; i++) {
             DayOfWeek test = DayOfWeek.of(i);
-            assertEquals(test.getValue(), i);
-            assertSame(DayOfWeek.of(i), test);
+            assertEquals(i, test.getValue());
+            assertSame(test, DayOfWeek.of(i));
         }
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_int_valueTooLow() {
-        DayOfWeek.of(0);
+        assertThrows(DateTimeException.class, () -> DayOfWeek.of(0));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_int_valueTooHigh() {
-        DayOfWeek.of(8);
+        assertThrows(DateTimeException.class, () -> DayOfWeek.of(8));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_CalendricalObject() {
-        assertEquals(DayOfWeek.from(LocalDate.of(2011, 6, 6)), DayOfWeek.MONDAY);
+        assertEquals(DayOfWeek.MONDAY, DayOfWeek.from(LocalDate.of(2011, 6, 6)));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        DayOfWeek.from(LocalTime.of(12, 30));
+        assertThrows(DateTimeException.class, () -> DayOfWeek.from(LocalTime.of(12, 30)));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_CalendricalObject_null() {
-        DayOfWeek.from((TemporalAccessor) null);
+        assertThrows(NullPointerException.class, () -> DayOfWeek.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -151,12 +151,12 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_get_TemporalField() {
-        assertEquals(DayOfWeek.WEDNESDAY.getLong(ChronoField.DAY_OF_WEEK), 3);
+        assertEquals(3, DayOfWeek.WEDNESDAY.getLong(ChronoField.DAY_OF_WEEK));
     }
 
     @Test
     public void test_getLong_TemporalField() {
-        assertEquals(DayOfWeek.WEDNESDAY.getLong(ChronoField.DAY_OF_WEEK), 3);
+        assertEquals(3, DayOfWeek.WEDNESDAY.getLong(ChronoField.DAY_OF_WEEK));
     }
 
     //-----------------------------------------------------------------------
@@ -164,18 +164,18 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_query() {
-        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.chronology()), null);
-        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.localDate()), null);
-        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.localTime()), null);
-        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.offset()), null);
-        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.precision()), ChronoUnit.DAYS);
-        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.zone()), null);
-        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.zoneId()), null);
+        assertEquals(null, DayOfWeek.FRIDAY.query(TemporalQueries.chronology()));
+        assertEquals(null, DayOfWeek.FRIDAY.query(TemporalQueries.localDate()));
+        assertEquals(null, DayOfWeek.FRIDAY.query(TemporalQueries.localTime()));
+        assertEquals(null, DayOfWeek.FRIDAY.query(TemporalQueries.offset()));
+        assertEquals(ChronoUnit.DAYS, DayOfWeek.FRIDAY.query(TemporalQueries.precision()));
+        assertEquals(null, DayOfWeek.FRIDAY.query(TemporalQueries.zone()));
+        assertEquals(null, DayOfWeek.FRIDAY.query(TemporalQueries.zoneId()));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_query_null() {
-        DayOfWeek.FRIDAY.query(null);
+        assertThrows(NullPointerException.class, () -> DayOfWeek.FRIDAY.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -183,24 +183,23 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_getDisplayName() {
-        assertEquals(DayOfWeek.MONDAY.getDisplayName(TextStyle.SHORT, Locale.US), "Mon");
+        assertEquals("Mon", DayOfWeek.MONDAY.getDisplayName(TextStyle.SHORT, Locale.US));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_getDisplayName_nullStyle() {
-        DayOfWeek.MONDAY.getDisplayName(null, Locale.US);
+        assertThrows(NullPointerException.class, () -> DayOfWeek.MONDAY.getDisplayName(null, Locale.US));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_getDisplayName_nullLocale() {
-        DayOfWeek.MONDAY.getDisplayName(TextStyle.FULL, null);
+        assertThrows(NullPointerException.class, () -> DayOfWeek.MONDAY.getDisplayName(TextStyle.FULL, null));
     }
 
     //-----------------------------------------------------------------------
     // plus(long), plus(long,unit)
     //-----------------------------------------------------------------------
-    @DataProvider(name = "plus")
-    Object[][] data_plus() {
+    static Object[][] data_plus() {
         return new Object[][] {
             {1, -8, 7},
             {1, -7, 1},
@@ -238,16 +237,16 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "plus")
+    @ParameterizedTest
+    @MethodSource("data_plus")
     public void test_plus_long(int base, long amount, int expected) {
-        assertEquals(DayOfWeek.of(base).plus(amount), DayOfWeek.of(expected));
+        assertEquals(DayOfWeek.of(expected), DayOfWeek.of(base).plus(amount));
     }
 
     //-----------------------------------------------------------------------
     // minus(long), minus(long,unit)
     //-----------------------------------------------------------------------
-    @DataProvider(name = "minus")
-    Object[][] data_minus() {
+    static Object[][] data_minus() {
         return new Object[][] {
             {1, -8, 2},
             {1, -7, 1},
@@ -269,9 +268,10 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "minus")
+    @ParameterizedTest
+    @MethodSource("data_minus")
     public void test_minus_long(int base, long amount, int expected) {
-        assertEquals(DayOfWeek.of(base).minus(amount), DayOfWeek.of(expected));
+        assertEquals(DayOfWeek.of(expected), DayOfWeek.of(base).minus(amount));
     }
 
     //-----------------------------------------------------------------------
@@ -279,16 +279,16 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_adjustInto() {
-        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 2)), LocalDate.of(2012, 8, 27));
-        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 3)), LocalDate.of(2012, 9, 3));
-        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 4)), LocalDate.of(2012, 9, 3));
-        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 10)), LocalDate.of(2012, 9, 10));
-        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 11)), LocalDate.of(2012, 9, 10));
+        assertEquals(LocalDate.of(2012, 8, 27), DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 2)));
+        assertEquals(LocalDate.of(2012, 9, 3), DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 3)));
+        assertEquals(LocalDate.of(2012, 9, 3), DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 4)));
+        assertEquals(LocalDate.of(2012, 9, 10), DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 10)));
+        assertEquals(LocalDate.of(2012, 9, 10), DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 11)));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_adjustInto_null() {
-        DayOfWeek.MONDAY.adjustInto((Temporal) null);
+        assertThrows(NullPointerException.class, () -> DayOfWeek.MONDAY.adjustInto((Temporal) null));
     }
 
     //-----------------------------------------------------------------------
@@ -296,13 +296,13 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_toString() {
-        assertEquals(DayOfWeek.MONDAY.toString(), "MONDAY");
-        assertEquals(DayOfWeek.TUESDAY.toString(), "TUESDAY");
-        assertEquals(DayOfWeek.WEDNESDAY.toString(), "WEDNESDAY");
-        assertEquals(DayOfWeek.THURSDAY.toString(), "THURSDAY");
-        assertEquals(DayOfWeek.FRIDAY.toString(), "FRIDAY");
-        assertEquals(DayOfWeek.SATURDAY.toString(), "SATURDAY");
-        assertEquals(DayOfWeek.SUNDAY.toString(), "SUNDAY");
+        assertEquals("MONDAY", DayOfWeek.MONDAY.toString());
+        assertEquals("TUESDAY", DayOfWeek.TUESDAY.toString());
+        assertEquals("WEDNESDAY", DayOfWeek.WEDNESDAY.toString());
+        assertEquals("THURSDAY", DayOfWeek.THURSDAY.toString());
+        assertEquals("FRIDAY", DayOfWeek.FRIDAY.toString());
+        assertEquals("SATURDAY", DayOfWeek.SATURDAY.toString());
+        assertEquals("SUNDAY", DayOfWeek.SUNDAY.toString());
     }
 
     //-----------------------------------------------------------------------
@@ -310,8 +310,8 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_enum() {
-        assertEquals(DayOfWeek.valueOf("MONDAY"), DayOfWeek.MONDAY);
-        assertEquals(DayOfWeek.values()[0], DayOfWeek.MONDAY);
+        assertEquals(DayOfWeek.MONDAY, DayOfWeek.valueOf("MONDAY"));
+        assertEquals(DayOfWeek.MONDAY, DayOfWeek.values()[0]);
     }
 
 }

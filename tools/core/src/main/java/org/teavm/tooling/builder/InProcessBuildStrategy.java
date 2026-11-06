@@ -29,9 +29,8 @@ import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
-import org.teavm.callgraph.CallGraph;
-import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.tooling.EmptyTeaVMToolLog;
+import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
@@ -317,8 +316,8 @@ public class InProcessBuildStrategy implements BuildStrategy {
             throw new BuildException(e);
         }
 
-        return new InProcessBuildResult(tool.getDependencyInfo().getCallGraph(),
-                tool.getProblemProvider());
+        return new InProcessBuildResult(TeaVMProblemRenderer.render(tool.getDependencyInfo().getCallGraph(),
+                tool.getProblemProvider()));
     }
 
     private URLClassLoader buildClassLoader() {
@@ -334,22 +333,15 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     static class InProcessBuildResult implements BuildResult {
-        private CallGraph callGraph;
-        private ProblemProvider problemProvider;
+        private final List<RenderedProblem> problems;
 
-        InProcessBuildResult(CallGraph callGraph, ProblemProvider problemProvider) {
-            this.callGraph = callGraph;
-            this.problemProvider = problemProvider;
+        InProcessBuildResult(List<RenderedProblem> problems) {
+            this.problems = problems;
         }
 
         @Override
-        public CallGraph getCallGraph() {
-            return callGraph;
-        }
-
-        @Override
-        public ProblemProvider getProblems() {
-            return problemProvider;
+        public List<RenderedProblem> getProblems() {
+            return problems;
         }
     }
 }

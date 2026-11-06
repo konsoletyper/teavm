@@ -29,9 +29,10 @@ public class NameSectionParser extends BaseSectionParser {
             var sectionLength = readLEB();
             var next = reader.ptr + sectionLength;
             switch (sectionType) {
-                case 1:
+                case 1: {
                     parseNameMapSubsection(listener.functions());
                     break;
+                }
                 case 2:
                     parseIndirectNameMap(listener.locals());
                     break;
@@ -57,6 +58,9 @@ public class NameSectionParser extends BaseSectionParser {
     }
 
     private void parseNameMap(NameMapListener subsectionListener) {
+        if (subsectionListener == null) {
+            return;
+        }
         var count = readLEB();
         for (var i = 0; i < count; ++i) {
             var index = readLEB();
@@ -68,6 +72,9 @@ public class NameSectionParser extends BaseSectionParser {
     }
 
     private void parseIndirectNameMap(NameIndirectMapListener subsectionListener) {
+        if (subsectionListener == null) {
+            return;
+        }
         var count = readLEB();
         for (var i = 0; i < count; ++i) {
             var index = readLEB();

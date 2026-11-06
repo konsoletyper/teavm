@@ -36,16 +36,15 @@
 
 package org.teavm.classlib.java.math;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMTestRunner;
+import org.junit.jupiter.api.Test;
+import org.teavm.junit.TeaVMTest;
 
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class BigDecimalConvertTest {
     /**
      * Double value of a negative BigDecimal
@@ -55,7 +54,7 @@ public class BigDecimalConvertTest {
         String a = "-123809648392384754573567356745735.63567890295784902768787678287E+21";
         BigDecimal aNumber = new BigDecimal(a);
         double result = -1.2380964839238476E53;
-        assertEquals("incorrect value", result, aNumber.doubleValue(), 0);
+        assertEquals(result, aNumber.doubleValue(), 0, "incorrect value");
     }
 
     /**
@@ -66,7 +65,7 @@ public class BigDecimalConvertTest {
         String a = "123809648392384754573567356745735.63567890295784902768787678287E+21";
         BigDecimal aNumber = new BigDecimal(a);
         double result = 1.2380964839238476E53;
-        assertEquals("incorrect value", result, aNumber.doubleValue(), 0);
+        assertEquals(result, aNumber.doubleValue(), 0, "incorrect value");
     }
 
     /**
@@ -77,7 +76,7 @@ public class BigDecimalConvertTest {
         String a = "123809648392384754573567356745735.63567890295784902768787678287E+400";
         BigDecimal aNumber = new BigDecimal(a);
         double result = Double.POSITIVE_INFINITY;
-        assertEquals("incorrect value", result, aNumber.doubleValue(), 0);
+        assertEquals(result, aNumber.doubleValue(), 0, "incorrect value");
     }
 
     /**
@@ -88,7 +87,7 @@ public class BigDecimalConvertTest {
         String a = "-123809648392384754573567356745735.63567890295784902768787678287E+400";
         BigDecimal aNumber = new BigDecimal(a);
         double result = Double.NEGATIVE_INFINITY;
-        assertEquals("incorrect value", result, aNumber.doubleValue(), 0);
+        assertEquals(result, aNumber.doubleValue(), 0, "incorrect value");
     }
 
     /**
@@ -112,7 +111,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         long zero = 0;
         double result = aNumber.doubleValue();
-        assertTrue("incorrect value", Double.doubleToLongBits(result) == zero);
+        assertTrue(Double.doubleToLongBits(result) == zero, "incorrect value");
     }
 
     /**
@@ -123,7 +122,7 @@ public class BigDecimalConvertTest {
         String a = "-1238096483923847.6356789029578E+21";
         BigDecimal aNumber = new BigDecimal(a);
         float result = -1.2380965E36F;
-        assertEquals("incorrect value", result, aNumber.floatValue(), 1E30);
+        assertEquals(result, aNumber.floatValue(), 1E30, "incorrect value");
     }
 
     /**
@@ -134,7 +133,7 @@ public class BigDecimalConvertTest {
         String a = "1238096483923847.6356789029578E+21";
         BigDecimal aNumber = new BigDecimal(a);
         float result = 1.2380965E36F;
-        assertEquals("incorrect value", result, aNumber.floatValue(), 1E30);
+        assertEquals(result, aNumber.floatValue(), 1E30, "incorrect value");
     }
 
     /**
@@ -145,7 +144,7 @@ public class BigDecimalConvertTest {
         String a = "123809648373567356745735.6356789787678287E+200";
         BigDecimal aNumber = new BigDecimal(a);
         float result = Float.POSITIVE_INFINITY;
-        assertTrue("incorrect value", aNumber.floatValue() == result);
+        assertTrue(aNumber.floatValue() == result, "incorrect value");
     }
 
     /**
@@ -156,7 +155,7 @@ public class BigDecimalConvertTest {
         String a = "-123809648392384755735.63567887678287E+200";
         BigDecimal aNumber = new BigDecimal(a);
         float result = Float.NEGATIVE_INFINITY;
-        assertTrue("incorrect value", aNumber.floatValue() == result);
+        assertTrue(aNumber.floatValue() == result, "incorrect value");
     }
 
     /**
@@ -168,7 +167,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         int minusZero = -2147483648;
         float result = aNumber.floatValue();
-        assertEquals("incorrect value", Float.floatToIntBits(result), minusZero);
+        assertEquals(Float.floatToIntBits(result), minusZero, "incorrect value");
     }
 
     /**
@@ -180,7 +179,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         int zero = 0;
         float result = aNumber.floatValue();
-        assertTrue("incorrect value", Float.floatToIntBits(result) == zero);
+        assertTrue(Float.floatToIntBits(result) == zero, "incorrect value");
     }
 
     /**
@@ -191,7 +190,7 @@ public class BigDecimalConvertTest {
         String a = "-123809648392384754573567356745735.63567890295784902768787678287E+21";
         BigDecimal aNumber = new BigDecimal(a);
         int result = 218520473;
-        assertTrue("incorrect value", aNumber.intValue() == result);
+        assertTrue(aNumber.intValue() == result, "incorrect value");
     }
 
     /**
@@ -202,7 +201,7 @@ public class BigDecimalConvertTest {
         String a = "123809648392384754573567356745735.63567890295784902768787678287E+21";
         BigDecimal aNumber = new BigDecimal(a);
         int result = -218520473;
-        assertTrue("incorrect value", aNumber.intValue() == result);
+        assertTrue(aNumber.intValue() == result, "incorrect value");
     }
 
     /**
@@ -213,7 +212,7 @@ public class BigDecimalConvertTest {
         String a = "-123809648392384754573567356745735.63567890295784902768787678287E+21";
         BigDecimal aNumber = new BigDecimal(a);
         long result = -1246043477766677607L;
-        assertTrue("incorrect value", aNumber.longValue() == result);
+        assertTrue(aNumber.longValue() == result, "incorrect value");
     }
 
     /**
@@ -224,7 +223,7 @@ public class BigDecimalConvertTest {
         String a = "123809648392384754573567356745735.63567890295784902768787678287E+21";
         BigDecimal aNumber = new BigDecimal(a);
         long result = 1246043477766677607L;
-        assertTrue("incorrect value", aNumber.longValue() == result);
+        assertTrue(aNumber.longValue() == result, "incorrect value");
     }
 
     /**
@@ -238,8 +237,8 @@ public class BigDecimalConvertTest {
         BigDecimal result = aNumber.scaleByPowerOfTen(10);
         String res = "1231212478987482988429808779810457634781384756794.987";
         int resScale = 3;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -253,8 +252,8 @@ public class BigDecimalConvertTest {
         BigDecimal result = aNumber.scaleByPowerOfTen(10);
         String res = "1.231212478987482988429808779810457634781384756794987E+74";
         int resScale = -23;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
+        assertEquals(res, result.toString(), "incorrect value");
+        assertEquals(resScale, result.scale(), "incorrect scale");
     }
 
     /**
@@ -266,7 +265,7 @@ public class BigDecimalConvertTest {
         BigInteger bNumber = new BigInteger("123809648392384754573567356745735635678902957849027687");
         BigDecimal aNumber = new BigDecimal(a);
         BigInteger result = aNumber.toBigInteger();
-        assertTrue("incorrect value", result.equals(bNumber));
+        assertTrue(result.equals(bNumber), "incorrect value");
     }
 
     /**
@@ -278,7 +277,7 @@ public class BigDecimalConvertTest {
         BigInteger bNumber = new BigInteger("123809648392384754573567356745735635678902957849");
         BigDecimal aNumber = new BigDecimal(a);
         BigInteger result = aNumber.toBigInteger();
-        assertTrue("incorrect value", result.equals(bNumber));
+        assertTrue(result.equals(bNumber), "incorrect value");
     }
 
     /**
@@ -291,7 +290,7 @@ public class BigDecimalConvertTest {
                 + "0000000000000000");
         BigDecimal aNumber = new BigDecimal(a);
         BigInteger result = aNumber.toBigInteger();
-        assertTrue("incorrect value", result.equals(bNumber));
+        assertTrue(result.equals(bNumber), "incorrect value");
     }
 
     /**
@@ -303,7 +302,7 @@ public class BigDecimalConvertTest {
         BigInteger bNumber = new BigInteger("-123809648392384754573567356745735635678902957849027687");
         BigDecimal aNumber = new BigDecimal(a);
         BigInteger result = aNumber.toBigInteger();
-        assertTrue("incorrect value", result.equals(bNumber));
+        assertTrue(result.equals(bNumber), "incorrect value");
     }
 
     /**
@@ -315,7 +314,7 @@ public class BigDecimalConvertTest {
         BigInteger bNumber = new BigInteger("-123809648392384754573567356745735635678902957849");
         BigDecimal aNumber = new BigDecimal(a);
         BigInteger result = aNumber.toBigInteger();
-        assertTrue("incorrect value", result.equals(bNumber));
+        assertTrue(result.equals(bNumber), "incorrect value");
     }
 
     /**
@@ -328,7 +327,7 @@ public class BigDecimalConvertTest {
                 + "0000000000000000");
         BigDecimal aNumber = new BigDecimal(a);
         BigInteger result = aNumber.toBigInteger();
-        assertTrue("incorrect value", result.equals(bNumber));
+        assertTrue(result.equals(bNumber), "incorrect value");
     }
 
     /**
@@ -340,7 +339,7 @@ public class BigDecimalConvertTest {
         BigInteger bNumber = new BigInteger("0");
         BigDecimal aNumber = new BigDecimal(a);
         BigInteger result = aNumber.toBigInteger();
-        assertTrue("incorrect value", result.equals(bNumber));
+        assertTrue(result.equals(bNumber), "incorrect value");
     }
 
     /**
@@ -352,7 +351,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         String res = "-123809648392384754573567356745735635678902957849027687876782870000000000000000";
         BigInteger result = aNumber.toBigIntegerExact();
-        assertEquals("incorrect value", res, result.toString());
+        assertEquals(res, result.toString(), "incorrect value");
     }
 
     /**
@@ -378,7 +377,7 @@ public class BigDecimalConvertTest {
         String a = "123809648392384754573567356745735.63567890295784902768787678287E-501";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "123.80964839238475457356735674573563567890295784902768787678287E-471";
-        assertEquals("incorrect value", result, aNumber.toEngineeringString());
+        assertEquals(result, aNumber.toEngineeringString(), "incorrect value");
     }
 
     /**
@@ -389,7 +388,7 @@ public class BigDecimalConvertTest {
         String a = "-123809648392384754573567356745735.63567890295784902768787678287E-501";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "-123.80964839238475457356735674573563567890295784902768787678287E-471";
-        assertEquals("incorrect value", result, aNumber.toEngineeringString());
+        assertEquals(result, aNumber.toEngineeringString(), "incorrect value");
     }
 
     /**
@@ -400,7 +399,7 @@ public class BigDecimalConvertTest {
         String a = "0.0E+16";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "0E+15";
-        assertEquals("incorrect value", result, aNumber.toEngineeringString());
+        assertEquals(result, aNumber.toEngineeringString(), "incorrect value");
     }
 
     /**
@@ -411,7 +410,7 @@ public class BigDecimalConvertTest {
         String a = "0.0E-16";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "0.00E-15";
-        assertEquals("incorrect value", result, aNumber.toEngineeringString());
+        assertEquals(result, aNumber.toEngineeringString(), "incorrect value");
     }
 
     /**
@@ -424,7 +423,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         String result = "-0.0000000000000000000000000000000000000000000000000000000000000000000123809648392"
                 + "38475457356735674573563567890295784902768787678287";
-        assertTrue("incorrect value", aNumber.toPlainString().equals(result));
+        assertTrue(aNumber.toPlainString().equals(result), "incorrect value");
     }
 
     /**
@@ -438,7 +437,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         String result = "-1238096483923847545735673567457356356789029578490276878767828"
                 + "700000000000000000000000000000000000000000000000000000000000000000000000";
-        assertTrue("incorrect value", aNumber.toPlainString().equals(result));
+        assertTrue(aNumber.toPlainString().equals(result), "incorrect value");
     }
 
     /**
@@ -452,7 +451,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         String result = "0.00000000000000000000000000000000000000000000000000000000"
                 + "0000000000012380964839238475457356735674573563567890295784902768787678287";
-        assertTrue("incorrect value", aNumber.toPlainString().equals(result));
+        assertTrue(aNumber.toPlainString().equals(result), "incorrect value");
     }
 
     /**
@@ -466,7 +465,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         String result = "123809648392384754573567356745735635678902957849027687876782870000000000"
                 + "0000000000000000000000000000000000000000000000000000000000000";
-        assertTrue("incorrect value", aNumber.toPlainString().equals(result));
+        assertTrue(aNumber.toPlainString().equals(result), "incorrect value");
     }
 
     /**
@@ -478,7 +477,7 @@ public class BigDecimalConvertTest {
         String a = "-123809648392384754573567356745735635678902957849027687876782870";
         BigDecimal aNumber = new BigDecimal(new BigInteger(a));
         String result = "-123809648392384754573567356745735635678902957849027687876782870";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertTrue(aNumber.toString().equals(result), "incorrect value");
     }
 
     /**
@@ -489,7 +488,7 @@ public class BigDecimalConvertTest {
         String a = "123809648392384754573567356745735.63567890295784902768787678287E-500";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "1.2380964839238475457356735674573563567890295784902768787678287E-468";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertTrue(aNumber.toString().equals(result), "incorrect value");
     }
 
     /**
@@ -500,7 +499,7 @@ public class BigDecimalConvertTest {
         String a = "-123.4564563673567380964839238475457356735674573563567890295784902768787678287E-5";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "-0.001234564563673567380964839238475457356735674573563567890295784902768787678287";
-        assertEquals("incorrect value", result, aNumber.toString());
+        assertEquals(result, aNumber.toString(), "incorrect value");
     }
 
     /**
@@ -511,7 +510,7 @@ public class BigDecimalConvertTest {
         long a = 98374823947823578L;
         BigDecimal aNumber = BigDecimal.valueOf(a);
         String result = "98374823947823578";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertTrue(aNumber.toString().equals(result), "incorrect value");
     }
 
     /**
@@ -522,7 +521,7 @@ public class BigDecimalConvertTest {
         long a = -98374823947823578L;
         BigDecimal aNumber = BigDecimal.valueOf(a);
         String result = "-98374823947823578";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertTrue(aNumber.toString().equals(result), "incorrect value");
     }
 
     /**
@@ -534,7 +533,7 @@ public class BigDecimalConvertTest {
         int scale = 12;
         BigDecimal aNumber = BigDecimal.valueOf(a, scale);
         String result = "-98374.823947823578";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertTrue(aNumber.toString().equals(result), "incorrect value");
     }
 
     /**
@@ -546,7 +545,7 @@ public class BigDecimalConvertTest {
         int scale = -12;
         BigDecimal aNumber = BigDecimal.valueOf(a, scale);
         String result = "-9.8374823947823578E+28";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertTrue(aNumber.toString().equals(result), "incorrect value");
     }
 
     /**
@@ -558,7 +557,7 @@ public class BigDecimalConvertTest {
         int scale = 12;
         BigDecimal aNumber = BigDecimal.valueOf(a, scale);
         String result = "98374.823947823578";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertTrue(aNumber.toString().equals(result), "incorrect value");
     }
 
     /**
@@ -570,7 +569,7 @@ public class BigDecimalConvertTest {
         int scale = -12;
         BigDecimal aNumber = BigDecimal.valueOf(a, scale);
         String result = "9.8374823947823578E+28";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertTrue(aNumber.toString().equals(result), "incorrect value");
     }
 
     /**

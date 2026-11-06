@@ -38,8 +38,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "clone":
                 method.getVariable(1).connect(method.getResult());
                 break;
-            case "startThread":
-            case "schedule": {
+            case "startThread": {
                 MethodDependency launchMethod = agent.linkMethod(new MethodReference(Platform.class,
                         "launchThread", PlatformRunnable.class, void.class));
                 method.getVariable(1).connect(launchMethod.getVariable(1));

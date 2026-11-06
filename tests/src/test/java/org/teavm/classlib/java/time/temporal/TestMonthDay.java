@@ -48,9 +48,11 @@ package org.teavm.classlib.java.time.temporal;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -75,23 +77,22 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.teavm.classlib.java.time.AbstractDateTimeTest;
-import org.teavm.junit.TeaVMTestRunner;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.teavm.junit.TeaVMTest;
 
 /**
  * Test MonthDay.
  */
-@Test
-@RunWith(TeaVMTestRunner.class)
+@TeaVMTest
 public class TestMonthDay extends AbstractDateTimeTest {
 
     private MonthDay test07x15;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         test07x15 = MonthDay.of(7, 15);
     }
@@ -124,8 +125,8 @@ public class TestMonthDay extends AbstractDateTimeTest {
 
     //-----------------------------------------------------------------------
     void check(MonthDay test, int m, int d) {
-        assertEquals(test.getMonth().getValue(), m);
-        assertEquals(test.getDayOfMonth(), d);
+        assertEquals(m, test.getMonth().getValue());
+        assertEquals(d, test.getDayOfMonth());
     }
 
     //-----------------------------------------------------------------------
@@ -142,15 +143,15 @@ public class TestMonthDay extends AbstractDateTimeTest {
             expected = MonthDay.now(Clock.systemDefaultZone());
             test = MonthDay.now();
         }
-        assertEquals(test, expected);
+        assertEquals(expected, test);
     }
 
     //-----------------------------------------------------------------------
     // now(ZoneId)
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void now_ZoneId_nullZoneId() {
-        MonthDay.now((ZoneId) null);
+        assertThrows(NullPointerException.class, () -> MonthDay.now((ZoneId) null));
     }
 
     @Test
@@ -165,7 +166,7 @@ public class TestMonthDay extends AbstractDateTimeTest {
             expected = MonthDay.now(Clock.system(zone));
             test = MonthDay.now(zone);
         }
-        assertEquals(test, expected);
+        assertEquals(expected, test);
     }
 
     //-----------------------------------------------------------------------
@@ -176,34 +177,34 @@ public class TestMonthDay extends AbstractDateTimeTest {
         Instant instant = LocalDateTime.of(2010, 12, 31, 0, 0).toInstant(ZoneOffset.UTC);
         Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
         MonthDay test = MonthDay.now(clock);
-        assertEquals(test.getMonth(), Month.DECEMBER);
-        assertEquals(test.getDayOfMonth(), 31);
+        assertEquals(Month.DECEMBER, test.getMonth());
+        assertEquals(31, test.getDayOfMonth());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void now_Clock_nullClock() {
-        MonthDay.now((Clock) null);
+        assertThrows(NullPointerException.class, () -> MonthDay.now((Clock) null));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void factory_intMonth() {
-        assertEquals(test07x15, MonthDay.of(Month.JULY, 15));
+        assertEquals(MonthDay.of(Month.JULY, 15), test07x15);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_intMonth_dayTooLow() {
-        MonthDay.of(Month.JANUARY, 0);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(Month.JANUARY, 0));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_intMonth_dayTooHigh() {
-        MonthDay.of(Month.JANUARY, 32);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(Month.JANUARY, 32));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_intMonth_nullMonth() {
-        MonthDay.of(null, 15);
+        assertThrows(NullPointerException.class, () -> MonthDay.of(null, 15));
     }
 
     //-----------------------------------------------------------------------
@@ -212,48 +213,47 @@ public class TestMonthDay extends AbstractDateTimeTest {
         check(test07x15, 7, 15);
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_ints_dayTooLow() {
-        MonthDay.of(1, 0);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(1, 0));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_ints_dayTooHigh() {
-        MonthDay.of(1, 32);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(1, 32));
     }
 
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_ints_monthTooLow() {
-        MonthDay.of(0, 1);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(0, 1));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_ints_monthTooHigh() {
-        MonthDay.of(13, 1);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(13, 1));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_CalendricalObject() {
-        assertEquals(MonthDay.from(LocalDate.of(2007, 7, 15)), test07x15);
+        assertEquals(test07x15, MonthDay.from(LocalDate.of(2007, 7, 15)));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        MonthDay.from(LocalTime.of(12, 30));
+        assertThrows(DateTimeException.class, () -> MonthDay.from(LocalTime.of(12, 30)));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_factory_CalendricalObject_null() {
-        MonthDay.from((TemporalAccessor) null);
+        assertThrows(NullPointerException.class, () -> MonthDay.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
     // parse()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "goodParseData")
-    Object[][] provider_goodParseData() {
+    static Object[][] provider_goodParseData() {
         return new Object[][] {
                 {"--01-01", MonthDay.of(1, 1)},
                 {"--01-31", MonthDay.of(1, 31)},
@@ -282,15 +282,15 @@ public class TestMonthDay extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "goodParseData")
+    @ParameterizedTest
+    @MethodSource("provider_goodParseData")
     public void factory_parse_success(String text, MonthDay expected) {
         MonthDay monthDay = MonthDay.parse(text);
-        assertEquals(monthDay, expected);
+        assertEquals(expected, monthDay);
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "badParseData")
-    Object[][] provider_badParseData() {
+    static Object[][] provider_badParseData() {
         return new Object[][] {
                 {"", 0},
                 {"-00", 0},
@@ -300,37 +300,40 @@ public class TestMonthDay extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "badParseData", expectedExceptions = DateTimeParseException.class)
+    @ParameterizedTest
+    @MethodSource("provider_badParseData")
     public void factory_parse_fail(String text, int pos) {
-        try {
-            MonthDay.parse(text);
-            fail(String.format("Parse should have failed for %s at position %d", text, pos));
-        } catch (DateTimeParseException ex) {
-            assertEquals(ex.getParsedString(), text);
-            assertEquals(ex.getErrorIndex(), pos);
-            throw ex;
-        }
+        assertThrows(DateTimeParseException.class, () -> {
+            try {
+                MonthDay.parse(text);
+                fail(String.format("Parse should have failed for %s at position %d", text, pos));
+            } catch (DateTimeParseException ex) {
+                assertEquals(text, ex.getParsedString());
+                assertEquals(pos, ex.getErrorIndex());
+                throw ex;
+            }
+        });
     }
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void factory_parse_illegalValue_Day() {
-        MonthDay.parse("--06-32");
+        assertThrows(DateTimeParseException.class, () -> MonthDay.parse("--06-32"));
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void factory_parse_invalidValue_Day() {
-        MonthDay.parse("--06-31");
+        assertThrows(DateTimeParseException.class, () -> MonthDay.parse("--06-31"));
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void factory_parse_illegalValue_Month() {
-        MonthDay.parse("--13-25");
+        assertThrows(DateTimeParseException.class, () -> MonthDay.parse("--13-25"));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_parse_nullText() {
-        MonthDay.parse(null);
+        assertThrows(NullPointerException.class, () -> MonthDay.parse(null));
     }
 
     //-----------------------------------------------------------------------
@@ -340,18 +343,18 @@ public class TestMonthDay extends AbstractDateTimeTest {
     public void factory_parse_formatter() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("M d");
         MonthDay test = MonthDay.parse("12 3", f);
-        assertEquals(test, MonthDay.of(12, 3));
+        assertEquals(MonthDay.of(12, 3), test);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_parse_formatter_nullText() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("M d");
-        MonthDay.parse((String) null, f);
+        assertThrows(NullPointerException.class, () -> MonthDay.parse((String) null, f));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void factory_parse_formatter_nullFormatter() {
-        MonthDay.parse("ANY", null);
+        assertThrows(NullPointerException.class, () -> MonthDay.parse("ANY", null));
     }
 
     //-----------------------------------------------------------------------
@@ -359,30 +362,29 @@ public class TestMonthDay extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_get_DateTimeField() {
-        assertEquals(test07x15.getLong(ChronoField.DAY_OF_MONTH), 15);
-        assertEquals(test07x15.getLong(ChronoField.MONTH_OF_YEAR), 7);
+        assertEquals(15, test07x15.getLong(ChronoField.DAY_OF_MONTH));
+        assertEquals(7, test07x15.getLong(ChronoField.MONTH_OF_YEAR));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_get_DateTimeField_null() {
-        test07x15.getLong((TemporalField) null);
+        assertThrows(NullPointerException.class, () -> test07x15.getLong((TemporalField) null));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_get_DateTimeField_invalidField() {
-        test07x15.getLong(MockFieldNoValue.INSTANCE);
+        assertThrows(DateTimeException.class, () -> test07x15.getLong(MockFieldNoValue.INSTANCE));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_get_DateTimeField_timeField() {
-        test07x15.getLong(ChronoField.AMPM_OF_DAY);
+        assertThrows(DateTimeException.class, () -> test07x15.getLong(ChronoField.AMPM_OF_DAY));
     }
 
     //-----------------------------------------------------------------------
     // get*()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sampleDates")
-    Object[][] provider_sampleDates() {
+    static Object[][] provider_sampleDates() {
         return new Object[][] {
             {1, 1},
             {1, 31},
@@ -394,11 +396,12 @@ public class TestMonthDay extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "sampleDates")
+    @ParameterizedTest
+    @MethodSource("provider_sampleDates")
     public void test_get(int m, int d) {
         MonthDay a = MonthDay.of(m, d);
-        assertEquals(a.getMonth(), Month.of(m));
-        assertEquals(a.getDayOfMonth(), d);
+        assertEquals(Month.of(m), a.getMonth());
+        assertEquals(d, a.getDayOfMonth());
     }
 
     //-----------------------------------------------------------------------
@@ -406,28 +409,28 @@ public class TestMonthDay extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_with_Month() {
-        assertEquals(MonthDay.of(6, 30).with(Month.JANUARY), MonthDay.of(1, 30));
+        assertEquals(MonthDay.of(1, 30), MonthDay.of(6, 30).with(Month.JANUARY));
     }
 
     @Test
     public void test_with_Month_adjustToValid() {
-        assertEquals(MonthDay.of(7, 31).with(Month.JUNE), MonthDay.of(6, 30));
+        assertEquals(MonthDay.of(6, 30), MonthDay.of(7, 31).with(Month.JUNE));
     }
 
     @Test
     public void test_with_Month_adjustToValidFeb() {
-        assertEquals(MonthDay.of(7, 31).with(Month.FEBRUARY), MonthDay.of(2, 29));
+        assertEquals(MonthDay.of(2, 29), MonthDay.of(7, 31).with(Month.FEBRUARY));
     }
 
     @Test
     public void test_with_Month_noChangeEqual() {
         MonthDay test = MonthDay.of(6, 30);
-        assertEquals(test.with(Month.JUNE), test);
+        assertEquals(test, test.with(Month.JUNE));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_with_Month_null() {
-        MonthDay.of(6, 30).with((Month) null);
+        assertThrows(NullPointerException.class, () -> MonthDay.of(6, 30).with((Month) null));
     }
 
     //-----------------------------------------------------------------------
@@ -435,33 +438,33 @@ public class TestMonthDay extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withMonth() {
-        assertEquals(MonthDay.of(6, 30).withMonth(1), MonthDay.of(1, 30));
+        assertEquals(MonthDay.of(1, 30), MonthDay.of(6, 30).withMonth(1));
     }
 
     @Test
     public void test_withMonth_adjustToValid() {
-        assertEquals(MonthDay.of(7, 31).withMonth(6), MonthDay.of(6, 30));
+        assertEquals(MonthDay.of(6, 30), MonthDay.of(7, 31).withMonth(6));
     }
 
     @Test
     public void test_withMonth_adjustToValidFeb() {
-        assertEquals(MonthDay.of(7, 31).withMonth(2), MonthDay.of(2, 29));
+        assertEquals(MonthDay.of(2, 29), MonthDay.of(7, 31).withMonth(2));
     }
 
     @Test
     public void test_withMonth_int_noChangeEqual() {
         MonthDay test = MonthDay.of(6, 30);
-        assertEquals(test.withMonth(6), test);
+        assertEquals(test, test.withMonth(6));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withMonth_tooLow() {
-        MonthDay.of(6, 30).withMonth(0);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withMonth(0));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withMonth_tooHigh() {
-        MonthDay.of(6, 30).withMonth(13);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withMonth(13));
     }
 
     //-----------------------------------------------------------------------
@@ -469,33 +472,33 @@ public class TestMonthDay extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withDayOfMonth() {
-        assertEquals(MonthDay.of(6, 30).withDayOfMonth(1), MonthDay.of(6, 1));
+        assertEquals(MonthDay.of(6, 1), MonthDay.of(6, 30).withDayOfMonth(1));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withDayOfMonth_invalid() {
-        MonthDay.of(6, 30).withDayOfMonth(31);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withDayOfMonth(31));
     }
 
     @Test
     public void test_withDayOfMonth_adjustToValidFeb() {
-        assertEquals(MonthDay.of(2, 1).withDayOfMonth(29), MonthDay.of(2, 29));
+        assertEquals(MonthDay.of(2, 29), MonthDay.of(2, 1).withDayOfMonth(29));
     }
 
     @Test
     public void test_withDayOfMonth_noChangeEqual() {
         MonthDay test = MonthDay.of(6, 30);
-        assertEquals(test.withDayOfMonth(30), test);
+        assertEquals(test, test.withDayOfMonth(30));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withDayOfMonth_tooLow() {
-        MonthDay.of(6, 30).withDayOfMonth(0);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withDayOfMonth(0));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_withDayOfMonth_tooHigh() {
-        MonthDay.of(6, 30).withDayOfMonth(32);
+        assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withDayOfMonth(32));
     }
 
     //-----------------------------------------------------------------------
@@ -505,26 +508,26 @@ public class TestMonthDay extends AbstractDateTimeTest {
     public void test_adjustDate() {
         MonthDay test = MonthDay.of(6, 30);
         LocalDate date = LocalDate.of(2007, 1, 1);
-        assertEquals(test.adjustInto(date), LocalDate.of(2007, 6, 30));
+        assertEquals(LocalDate.of(2007, 6, 30), test.adjustInto(date));
     }
 
     @Test
     public void test_adjustDate_resolve() {
         MonthDay test = MonthDay.of(2, 29);
         LocalDate date = LocalDate.of(2007, 6, 30);
-        assertEquals(test.adjustInto(date), LocalDate.of(2007, 2, 28));
+        assertEquals(LocalDate.of(2007, 2, 28), test.adjustInto(date));
     }
 
     @Test
     public void test_adjustDate_equal() {
         MonthDay test = MonthDay.of(6, 30);
         LocalDate date = LocalDate.of(2007, 6, 30);
-        assertEquals(test.adjustInto(date), date);
+        assertEquals(date, test.adjustInto(date));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_adjustDate_null() {
-        test07x15.adjustInto((LocalDate) null);
+        assertThrows(NullPointerException.class, () -> test07x15.adjustInto((LocalDate) null));
     }
 
     //-----------------------------------------------------------------------
@@ -533,19 +536,19 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test
     public void test_isValidYear_june() {
         MonthDay test = MonthDay.of(6, 30);
-        assertEquals(test.isValidYear(2007), true);
+        assertTrue(test.isValidYear(2007));
     }
 
     @Test
     public void test_isValidYear_febNonLeap() {
         MonthDay test = MonthDay.of(2, 29);
-        assertEquals(test.isValidYear(2007), false);
+        assertFalse(test.isValidYear(2007));
     }
 
     @Test
     public void test_isValidYear_febLeap() {
         MonthDay test = MonthDay.of(2, 29);
-        assertEquals(test.isValidYear(2008), true);
+        assertTrue(test.isValidYear(2008));
     }
 
     //-----------------------------------------------------------------------
@@ -554,19 +557,19 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test
     public void test_atYear_int() {
         MonthDay test = MonthDay.of(6, 30);
-        assertEquals(test.atYear(2008), LocalDate.of(2008, 6, 30));
+        assertEquals(LocalDate.of(2008, 6, 30), test.atYear(2008));
     }
 
     @Test
     public void test_atYear_int_leapYearAdjust() {
         MonthDay test = MonthDay.of(2, 29);
-        assertEquals(test.atYear(2005), LocalDate.of(2005, 2, 28));
+        assertEquals(LocalDate.of(2005, 2, 28), test.atYear(2005));
     }
 
-    @Test(expectedExceptions = DateTimeException.class)
+    @Test
     public void test_atYear_int_invalidYear() {
         MonthDay test = MonthDay.of(6, 30);
-        test.atYear(Integer.MIN_VALUE);
+        assertThrows(DateTimeException.class, () -> test.atYear(Integer.MIN_VALUE));
     }
 
     //-----------------------------------------------------------------------
@@ -574,18 +577,18 @@ public class TestMonthDay extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_query() {
-        assertEquals(test07x15.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
-        assertEquals(test07x15.query(TemporalQueries.localDate()), null);
-        assertEquals(test07x15.query(TemporalQueries.localTime()), null);
-        assertEquals(test07x15.query(TemporalQueries.offset()), null);
-        assertEquals(test07x15.query(TemporalQueries.precision()), null);
-        assertEquals(test07x15.query(TemporalQueries.zone()), null);
-        assertEquals(test07x15.query(TemporalQueries.zoneId()), null);
+        assertEquals(IsoChronology.INSTANCE, test07x15.query(TemporalQueries.chronology()));
+        assertEquals(null, test07x15.query(TemporalQueries.localDate()));
+        assertEquals(null, test07x15.query(TemporalQueries.localTime()));
+        assertEquals(null, test07x15.query(TemporalQueries.offset()));
+        assertEquals(null, test07x15.query(TemporalQueries.precision()));
+        assertEquals(null, test07x15.query(TemporalQueries.zone()));
+        assertEquals(null, test07x15.query(TemporalQueries.zoneId()));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_query_null() {
-        test07x15.query(null);
+        assertThrows(NullPointerException.class, () -> test07x15.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -610,37 +613,37 @@ public class TestMonthDay extends AbstractDateTimeTest {
                 MonthDay b = localDates[j];
                 if (i < j) {
                     assertTrue(a.compareTo(b) < 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), true, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertTrue(a.isBefore(b), a + " <=> " + b);
+                    assertFalse(a.isAfter(b), a + " <=> " + b);
+                    assertFalse(a.equals(b), a + " <=> " + b);
                 } else if (i > j) {
                     assertTrue(a.compareTo(b) > 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), true, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertFalse(a.isBefore(b), a + " <=> " + b);
+                    assertTrue(a.isAfter(b), a + " <=> " + b);
+                    assertFalse(a.equals(b), a + " <=> " + b);
                 } else {
-                    assertEquals(a.compareTo(b), 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), true, a + " <=> " + b);
+                    assertEquals(0, a.compareTo(b), a + " <=> " + b);
+                    assertFalse(a.isBefore(b), a + " <=> " + b);
+                    assertFalse(a.isAfter(b), a + " <=> " + b);
+                    assertTrue(a.equals(b), a + " <=> " + b);
                 }
             }
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_compareTo_ObjectNull() {
-        test07x15.compareTo(null);
+        assertThrows(NullPointerException.class, () -> test07x15.compareTo(null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_isBefore_ObjectNull() {
-        test07x15.isBefore(null);
+        assertThrows(NullPointerException.class, () -> test07x15.isBefore(null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_isAfter_ObjectNull() {
-        test07x15.isAfter(null);
+        assertThrows(NullPointerException.class, () -> test07x15.isAfter(null));
     }
 
     //-----------------------------------------------------------------------
@@ -653,51 +656,52 @@ public class TestMonthDay extends AbstractDateTimeTest {
         MonthDay c = MonthDay.of(2, 1);
         MonthDay d = MonthDay.of(1, 2);
 
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), true);
-        assertEquals(a.equals(c), false);
-        assertEquals(a.equals(d), false);
+        assertTrue(a.equals(a));
+        assertTrue(a.equals(b));
+        assertFalse(a.equals(c));
+        assertFalse(a.equals(d));
 
-        assertEquals(b.equals(a), true);
-        assertEquals(b.equals(b), true);
-        assertEquals(b.equals(c), false);
-        assertEquals(b.equals(d), false);
+        assertTrue(b.equals(a));
+        assertTrue(b.equals(b));
+        assertFalse(b.equals(c));
+        assertFalse(b.equals(d));
 
-        assertEquals(c.equals(a), false);
-        assertEquals(c.equals(b), false);
-        assertEquals(c.equals(c), true);
-        assertEquals(c.equals(d), false);
+        assertFalse(c.equals(a));
+        assertFalse(c.equals(b));
+        assertTrue(c.equals(c));
+        assertFalse(c.equals(d));
 
-        assertEquals(d.equals(a), false);
-        assertEquals(d.equals(b), false);
-        assertEquals(d.equals(c), false);
-        assertEquals(d.equals(d), true);
+        assertFalse(d.equals(a));
+        assertFalse(d.equals(b));
+        assertFalse(d.equals(c));
+        assertTrue(d.equals(d));
     }
 
     @Test
     public void test_equals_itself_true() {
-        assertEquals(test07x15.equals(test07x15), true);
+        assertTrue(test07x15.equals(test07x15));
     }
 
     @Test
     public void test_equals_string_false() {
-        assertEquals(test07x15.equals("2007-07-15"), false);
+        assertFalse(test07x15.equals("2007-07-15"));
     }
 
     @Test
     public void test_equals_null_false() {
-        assertEquals(test07x15.equals(null), false);
+        assertFalse(test07x15.equals(null));
     }
 
     //-----------------------------------------------------------------------
     // hashCode()
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "sampleDates")
+    @ParameterizedTest
+    @MethodSource("provider_sampleDates")
     public void test_hashCode(int m, int d) {
         MonthDay a = MonthDay.of(m, d);
         assertEquals(a.hashCode(), a.hashCode());
         MonthDay b = MonthDay.of(m, d);
-        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(b.hashCode(), a.hashCode());
     }
 
     @Test
@@ -716,8 +720,7 @@ public class TestMonthDay extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name = "sampleToString")
-    Object[][] provider_sampleToString() {
+    static Object[][] provider_sampleToString() {
         return new Object[][] {
             {7, 5, "--07-05"},
             {12, 31, "--12-31"},
@@ -725,11 +728,12 @@ public class TestMonthDay extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "sampleToString")
+    @ParameterizedTest
+    @MethodSource("provider_sampleToString")
     public void test_toString(int m, int d, String expected) {
         MonthDay test = MonthDay.of(m, d);
         String str = test.toString();
-        assertEquals(str, expected);
+        assertEquals(expected, str);
     }
 
     //-----------------------------------------------------------------------
@@ -739,12 +743,12 @@ public class TestMonthDay extends AbstractDateTimeTest {
     public void test_format_formatter() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("M d");
         String t = MonthDay.of(12, 3).format(f);
-        assertEquals(t, "12 3");
+        assertEquals("12 3", t);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test_format_formatter_null() {
-        MonthDay.of(12, 3).format(null);
+        assertThrows(NullPointerException.class, () -> MonthDay.of(12, 3).format(null));
     }
 
 }

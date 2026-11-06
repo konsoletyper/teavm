@@ -33,6 +33,7 @@ public class WasmFunction extends WasmEntity {
     private List<WasmLocal> readonlyLocalVariables = Collections.unmodifiableList(localVariables);
     private WasmInstructionList body = new WasmInstructionList();
     private MethodReference javaMethod;
+    private WasmArrayConstructor arrayConstructor;
 
     public WasmFunction(WasmFunctionType type) {
         this.type = Objects.requireNonNull(type);
@@ -111,11 +112,33 @@ public class WasmFunction extends WasmEntity {
         localVariables.add(local);
     }
 
+    /**
+     * Replaces all locals of the function with given ones. Given list may include locals that
+     * are currently registered in this function.
+     */
+    public void replaceLocals(List<WasmLocal> locals) {
+        for (var local : localVariables) {
+            local.function = null;
+        }
+        localVariables.clear();
+        for (var local : locals) {
+            add(local);
+        }
+    }
+
     public MethodReference getJavaMethod() {
         return javaMethod;
     }
 
     public void setJavaMethod(MethodReference javaMethod) {
         this.javaMethod = javaMethod;
+    }
+
+    public WasmArrayConstructor getArrayConstructor() {
+        return arrayConstructor;
+    }
+
+    public void setArrayConstructor(WasmArrayConstructor arrayConstructor) {
+        this.arrayConstructor = arrayConstructor;
     }
 }

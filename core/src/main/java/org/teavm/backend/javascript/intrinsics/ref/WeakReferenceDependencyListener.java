@@ -45,6 +45,7 @@ public class WeakReferenceDependencyListener extends AbstractDependencyListener 
                     var field = agent.linkField(new FieldReference(method.getMethod().getOwnerName(), "value"));
                     method.getVariable(1).connect(field.getValue());
                     method.getVariable(2).connect(initRef);
+                    agent.linkField(new FieldReference(method.getMethod().getOwnerName(), "registry"));
                 }
                 break;
             }
