@@ -30,6 +30,11 @@ public final class PlatformApiContract {
     }
 
     public static void main(String[] args) {
+        Package applicationPackage = PlatformApiContract.class.getPackage();
+        check("repro".equals(applicationPackage.getName()), "application package name");
+        check(applicationPackage.getSpecificationVersion() == null, "unspecified package version");
+        check(int.class.getPackage() == null && void.class.getPackage() == null, "primitives have no package");
+        check(String[].class.getPackage() == null, "arrays have no package");
         ConnectException connection = new ConnectException("refused");
         check(connection instanceof SocketException && connection instanceof IOException, "connection hierarchy");
         check("refused".equals(connection.getMessage()), "connection message");

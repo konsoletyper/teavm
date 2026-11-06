@@ -32,6 +32,11 @@ public class TPackage implements AnnotatedElement {
         return name;
     }
 
+    public String getSpecificationVersion() {
+        // TeaVM packages do not carry JAR manifest specification metadata.
+        return null;
+    }
+
     public static TPackage getPackage(String name) {
         TPackage pkg = packages.get(name);
         if (pkg == null) {
