@@ -66,7 +66,7 @@ public class AsyncDisabledTest {
     private void checkErrorReported(Supplier<TeaVMTarget> target) {
         var problems = compile(target, SleepingProgram.class, false);
         assertTrue(!problems.isEmpty(), "Expected error for async method");
-        assertTrue(problems.stream().allMatch(p -> p.getText().contains("coroutine transformation is disabled")),
+        assertTrue(problems.stream().allMatch(p -> p.getText().contains("async support is disabled")),
                 problems::toString);
     }
 
