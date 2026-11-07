@@ -407,6 +407,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         task.getDebugInformation().convention(configuration.getDebugInformation());
         task.getFastGlobalAnalysis().convention(configuration.getFastGlobalAnalysis());
         task.getAsyncEnabled().convention(configuration.getAsyncEnabled());
+        task.getAssertionsRemoved().convention(configuration.getAssertionsRemoved());
         task.getOptimization().convention(configuration.getOptimization());
         task.getOutOfProcess().convention(configuration.getOutOfProcess());
         task.getProcessMemory().convention(configuration.getProcessMemory());

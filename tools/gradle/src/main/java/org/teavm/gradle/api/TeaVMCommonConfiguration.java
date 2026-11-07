@@ -33,6 +33,13 @@ public interface TeaVMCommonConfiguration {
      */
     Property<Boolean> getAsyncEnabled();
 
+    /**
+     * Whether Java assertions ({@code assert} statements) should be removed from generated code.
+     * When enabled, classes and methods reachable only from assertions are not included into
+     * the output either.
+     */
+    Property<Boolean> getAssertionsRemoved();
+
     Property<OptimizationLevel> getOptimization();
 
     MapProperty<String, String> getProperties();
