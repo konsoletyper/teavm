@@ -175,7 +175,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         this.currentProgram = program;
         this.currentWasmFunction = function;
         targetPhis.addAll(Collections.nCopies(program.variableCount(), null));
-        typeInference = new PreciseTypeInference(program, currentMethod, context.hierarchy());
+        typeInference = new PreciseTypeInference(program, currentMethod, context.hierarchy(), context.typeMapper());
         typeInference.setPhisSkipped(false);
         typeInference.setBackPropagation(true);
         typeInference.ensure();
