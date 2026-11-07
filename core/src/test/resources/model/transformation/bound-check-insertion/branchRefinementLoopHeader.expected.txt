@@ -1,0 +1,18 @@
+var @this as this
+
+$start
+    @size := invokeStatic `Cond.size()I`
+    @array := newArray I[@size]
+    @i := invokeStatic `Cond.index()I`
+    @zero := 0
+    @c := @i compareTo @zero as int
+    if @c >= 0 then goto $loop else goto $exit
+$loop
+    @i_1 := phi @i from $start, @i_2 from $loop
+    @i_2 := boundCheck @i_1 upper @array lower
+    @v := @array[@i_2] as int
+    invokeStatic `Cond.consume(I)V` @v
+    @f := invokeStatic `Cond.invoke()I`
+    if @f == 0 then goto $exit else goto $loop
+$exit
+    return @zero

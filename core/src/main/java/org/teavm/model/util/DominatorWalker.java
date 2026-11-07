@@ -20,6 +20,7 @@ import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.Instruction;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
 
@@ -80,7 +81,7 @@ public class DominatorWalker {
         int[] stack = new int[cfg.size() * 2];
         Object[] stateStack = new Object[stack.length];
         boolean[] backward = new boolean[stack.length];
-        ContextImpl context = new ContextImpl(cfg, findExceptionHandlers());
+        ContextImpl context = new ContextImpl(program, cfg, findExceptionHandlers());
         callback.setContext(context);
 
         int head = 1;
@@ -148,11 +149,14 @@ public class DominatorWalker {
     }
 
     static class ContextImpl implements DominatorWalkerContext {
+        private Program program;
         private boolean[] visited;
         private boolean[] isExceptionHandler;
         private Graph cfg;
+        private TransitionExtractor transitionExtractor = new TransitionExtractor();
 
-        ContextImpl(Graph cfg, boolean[] isExceptionHandler) {
+        ContextImpl(Program program, Graph cfg, boolean[] isExceptionHandler) {
+            this.program = program;
             this.cfg = cfg;
             this.isExceptionHandler = isExceptionHandler;
             visited = new boolean[cfg.size() / 2];
@@ -171,6 +175,28 @@ public class DominatorWalker {
         @Override
         public boolean isExceptionHandler(int blockIndex) {
             return isExceptionHandler[blockIndex];
+        }
+
+        @Override
+        public int getSinglePredecessor(int blockIndex) {
+            // Exception edges come from entry nodes (even), normal edges come from body nodes (odd)
+            int[] predecessors = cfg.incomingEdges(blockIndex * 2);
+            if (predecessors.length != 1 || predecessors[0] % 2 == 0) {
+                return -1;
+            }
+
+            // CFG does not keep parallel edges, e.g. a branching instruction with consequent equal
+            // to alternative, so count them explicitly
+            int predecessor = predecessors[0] / 2;
+            Instruction last = program.basicBlockAt(predecessor).getLastInstruction();
+            last.acceptVisitor(transitionExtractor);
+            int count = 0;
+            for (BasicBlock target : transitionExtractor.getTargets()) {
+                if (target.getIndex() == blockIndex) {
+                    ++count;
+                }
+            }
+            return count == 1 ? predecessor : -1;
         }
     }
 }

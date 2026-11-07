@@ -1,0 +1,17 @@
+var @this as this
+
+$start
+    @size := invokeStatic `Cond.size()I`
+    @array := newArray I[@size]
+    @i := invokeStatic `Cond.index()I`
+    @zero := 0
+    @c := @i compareTo @zero as int
+    if @c >= 0 then goto $body else goto $other
+$other
+    @f := invokeStatic `Cond.invoke()I`
+    if @f == 0 then goto $exit else goto $body
+$body
+    @v := @array[@i] as int
+    return @v
+$exit
+    return @zero

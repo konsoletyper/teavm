@@ -30,6 +30,16 @@ public interface DominatorWalkerContext {
 
     boolean isExceptionHandler(int blockIndex);
 
+    /**
+     * <p>Returns the only predecessor of the given block, if the block can be entered only by a single normal
+     * (non-exceptional) edge. Otherwise, returns {@code -1}.</p>
+     *
+     * <p>Only such blocks should be refined by facts derived from the predecessor's branch condition.
+     * Being dominated by the branching block is not sufficient, since another path can join the target
+     * block, bypassing the edge where the condition holds.</p>
+     */
+    int getSinglePredecessor(int blockIndex);
+
     default boolean allPredecessorsVisited(int blockIndex) {
         for (int predecessor : getControlFlowGraph().incomingEdges(blockIndex * 2)) {
             if (!isVisited(predecessor / 2)) {

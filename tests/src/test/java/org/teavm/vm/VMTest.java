@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
@@ -631,6 +632,28 @@ public class VMTest {
         } catch (IllegalStateException e) {
             return array[index];
         }
+    }
+
+    @Test
+    public void branchBypassChecksArrayBounds() {
+        var array = new int[] { 23 };
+        assertEquals(23, readIfNonNegativeOr(array, 0, () -> false));
+        try {
+            readIfNonNegativeOr(array, -1, () -> true);
+            fail("ArrayIndexOutOfBoundsException expected");
+        } catch (ArrayIndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    // The array access is dominated by the 'index >= 0' check, but it's also reachable through
+    // the second operand of '||', bypassing the edge where the check holds. Therefore, the lower
+    // bound check must be preserved. Condition supplier is polymorphic to prevent inlining.
+    private static int readIfNonNegativeOr(int[] array, int index, BooleanSupplier condition) {
+        if (0 <= index || condition.getAsBoolean()) {
+            return array[index];
+        }
+        return -1;
     }
 
     @Test

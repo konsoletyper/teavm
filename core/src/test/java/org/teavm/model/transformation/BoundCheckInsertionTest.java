@@ -91,6 +91,26 @@ public class BoundCheckInsertionTest {
         doTest();
     }
 
+    @Test
+    public void branchRefinement() {
+        doTest();
+    }
+
+    @Test
+    public void branchRefinementBypassed() {
+        doTest();
+    }
+
+    @Test
+    public void branchRefinementSameTargets() {
+        doTest();
+    }
+
+    @Test
+    public void branchRefinementLoopHeader() {
+        doTest();
+    }
+
     private void doTest() {
         String originalPath = PREFIX + name.getMethodName() + ".original.txt";
         String expectedPath = PREFIX + name.getMethodName() + ".expected.txt";
