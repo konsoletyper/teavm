@@ -20,7 +20,6 @@ import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
-import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
 import org.teavm.model.instructions.CastNumberInstruction;
@@ -91,9 +90,16 @@ public class LoopInvariantAnalyzer extends AbstractInstructionVisitor {
     @Override
     public void visit(BinaryInstruction insn) {
         canMove = true;
-        if (insn.getOperation() == BinaryOperation.DIVIDE) {
-            sideEffect = insn.getOperandType() == NumericOperandType.INT
-                    || insn.getOperandType() == NumericOperandType.LONG;
+        switch (insn.getOperation()) {
+            case DIVIDE:
+            case MODULO:
+            case DIVIDE_CHECKED:
+            case MODULO_CHECKED:
+                sideEffect = insn.getOperandType() == NumericOperandType.INT
+                        || insn.getOperandType() == NumericOperandType.LONG;
+                break;
+            default:
+                break;
         }
     }
 

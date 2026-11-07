@@ -943,11 +943,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
             optimizations.add(new ConstantConditionElimination());
             optimizations.add(new RedundantJumpElimination());
-            optimizations.add(new UnusedVariableElimination());
+            optimizations.add(new UnusedVariableElimination(false));
         }
         optimizations.add(new ClassInitElimination());
         optimizations.add(new UnreachableBasicBlockElimination());
-        optimizations.add(new UnusedVariableElimination());
+        optimizations.add(new UnusedVariableElimination(false));
         if (target.needsSystemArrayCopyOptimization()) {
             optimizations.add(new SystemArrayCopyOptimization());
         }

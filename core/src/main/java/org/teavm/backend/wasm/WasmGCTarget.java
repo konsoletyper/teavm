@@ -65,6 +65,7 @@ import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCResources;
+import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.backend.wasm.transformation.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.ClassLoaderResourceTransformation;
 import org.teavm.backend.wasm.transformation.EntryPointTransformation;
@@ -90,6 +91,7 @@ import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
 import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.BoundCheckInsertion;
+import org.teavm.model.transformation.DivisionCheckInsertion;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.model.util.VariableCategoryProvider;
@@ -108,6 +110,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private TeaVMTargetController controller;
     private NullCheckInsertion nullCheckInsertion;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
+    private DivisionCheckInsertion divisionCheckInsertion = new DivisionCheckInsertion();
     private boolean strict;
     private boolean obfuscated;
     private boolean debugInfo;
@@ -222,6 +225,9 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         deps.contributeStandardExports();
         if (strict) {
             BoundCheckInsertion.contributeDependencies(dependencyAnalyzer);
+            DivisionCheckInsertion.contributeDependencies(dependencyAnalyzer);
+            dependencyAnalyzer.linkMethod(new MethodReference(WasmGCSupport.class, "ae",
+                    ArithmeticException.class)).use();
         }
 
         var reflectionSuppliers = new ArrayList<ReflectionSupplier>();
@@ -248,6 +254,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     public void beforeOptimizations(Program program, MethodReader method) {
         if (strict) {
             boundCheckInsertion.transformProgram(program, method.getReference());
+            divisionCheckInsertion.transformProgram(program, method.getReference());
         }
     }
 

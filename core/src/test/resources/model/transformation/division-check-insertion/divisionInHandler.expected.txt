@@ -1,0 +1,13 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @b := invokeStatic `Foo.b()I`
+    goto $try
+$try
+    @q := @a checkedDiv @b as int
+    return @q
+    catch java.lang.ArithmeticException goto $handle
+$handle
+    @r := @a checkedRem @b as int
+    return @r

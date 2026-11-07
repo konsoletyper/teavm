@@ -704,6 +704,12 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 case MODULO:
                     visitLongBinary(expr, "%");
                     break;
+                case DIVIDE_CHECKED:
+                    visitBinaryFunction(expr, "$rt_checkedLdiv");
+                    break;
+                case MODULO_CHECKED:
+                    visitBinaryFunction(expr, "$rt_checkedLrem");
+                    break;
                 case BITWISE_OR:
                     visitLongBinary(expr, "|");
                     break;
@@ -768,6 +774,12 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     break;
                 case MODULO:
                     visitBinary(expr, "%", expr.getType() == OperationType.INT);
+                    break;
+                case DIVIDE_CHECKED:
+                    visitBinaryFunction(expr, "$rt_checkedIdiv");
+                    break;
+                case MODULO_CHECKED:
+                    visitBinaryFunction(expr, "$rt_checkedIrem");
                     break;
                 case EQUALS:
                     if (expr.getType() == OperationType.INT) {

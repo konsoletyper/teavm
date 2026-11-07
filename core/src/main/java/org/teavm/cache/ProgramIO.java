@@ -99,13 +99,37 @@ public class ProgramIO {
     private SymbolTable variableTable;
     private ReferenceCache referenceCache;
     private AnnotationIO annotationIO;
-    private static BinaryOperation[] binaryOperations = BinaryOperation.values();
+    private static final BinaryOperation[] binaryOperations = {
+        BinaryOperation.ADD,
+        BinaryOperation.SUBTRACT,
+        BinaryOperation.MULTIPLY,
+        BinaryOperation.DIVIDE,
+        BinaryOperation.MODULO,
+        BinaryOperation.COMPARE_GREATER,
+        BinaryOperation.COMPARE_LESS,
+        BinaryOperation.AND,
+        BinaryOperation.OR,
+        BinaryOperation.XOR,
+        BinaryOperation.SHIFT_LEFT,
+        BinaryOperation.SHIFT_RIGHT,
+        BinaryOperation.SHIFT_RIGHT_UNSIGNED
+    };
     private static NumericOperandType[] numericOperandTypes = NumericOperandType.values();
     private static IntegerSubtype[] integerSubtypes = IntegerSubtype.values();
     private static CastIntegerDirection[] castIntegerDirections = CastIntegerDirection.values();
     private static BranchingCondition[] branchingConditions = BranchingCondition.values();
     private static BinaryBranchingCondition[] binaryBranchingConditions = BinaryBranchingCondition.values();
     private static ArrayElementType[] arrayElementTypes = ArrayElementType.values();
+
+    private static final int[] binaryOperationCodes = new int[BinaryOperation.values().length];
+
+    static {
+        for (int i = 0; i < binaryOperations.length; ++i) {
+            binaryOperationCodes[binaryOperations[i].ordinal()] = 11 + i;
+        }
+        binaryOperationCodes[BinaryOperation.DIVIDE_CHECKED.ordinal()] = 91;
+        binaryOperationCodes[BinaryOperation.MODULO_CHECKED.ordinal()] = 92;
+    }
 
     public ProgramIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable,
             SymbolTable variableTable) {
@@ -417,7 +441,7 @@ public class ProgramIO {
         public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
                 NumericOperandType type) {
             try {
-                output.writeUnsigned(11 + op.ordinal());
+                output.writeUnsigned(binaryOperationCodes[op.ordinal()]);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(type.ordinal());
                 output.writeUnsigned(first.getIndex());
@@ -961,9 +985,18 @@ public class ProgramIO {
             case 20:
             case 21:
             case 22:
-            case 23: {
+            case 23:
+            case 91:
+            case 92: {
                 Variable receiver = program.variableAt(input.readUnsigned());
-                BinaryOperation operation = binaryOperations[insnType - 11];
+                BinaryOperation operation;
+                if (insnType == 91) {
+                    operation = BinaryOperation.DIVIDE_CHECKED;
+                } else if (insnType == 92) {
+                    operation = BinaryOperation.MODULO_CHECKED;
+                } else {
+                    operation = binaryOperations[insnType - 11];
+                }
                 NumericOperandType operandType = numericOperandTypes[input.readUnsigned()];
                 BinaryInstruction insn = new BinaryInstruction(operation, operandType);
                 insn.setReceiver(receiver);

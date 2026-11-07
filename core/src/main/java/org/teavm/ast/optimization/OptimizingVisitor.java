@@ -1463,6 +1463,10 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
         if (expr instanceof BinaryExpr) {
             BinaryExpr binary = (BinaryExpr) expr;
+            if (binary.getOperation() == BinaryOperation.DIVIDE_CHECKED
+                    || binary.getOperation() == BinaryOperation.MODULO_CHECKED) {
+                return false;
+            }
             return isSideEffectFree(binary.getFirstOperand()) && isSideEffectFree(binary.getSecondOperand());
         }
 

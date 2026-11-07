@@ -179,9 +179,11 @@ public class Interpreter {
                             result = a * b;
                             break;
                         case DIVIDE:
-                            result = a * b;
+                        case DIVIDE_CHECKED:
+                            result = a / b;
                             break;
                         case MODULO:
+                        case MODULO_CHECKED:
                             result = a % b;
                             break;
                         case COMPARE_LESS:
@@ -218,9 +220,11 @@ public class Interpreter {
                             result = a * b;
                             break;
                         case DIVIDE:
-                            result = a * b;
+                        case DIVIDE_CHECKED:
+                            result = a / b;
                             break;
                         case MODULO:
+                        case MODULO_CHECKED:
                             result = a % b;
                             break;
                         case COMPARE_LESS:
@@ -257,7 +261,7 @@ public class Interpreter {
                             result = a * b;
                             break;
                         case DIVIDE:
-                            result = a * b;
+                            result = a / b;
                             break;
                         case MODULO:
                             result = a % b;
@@ -292,7 +296,7 @@ public class Interpreter {
                             result = a * b;
                             break;
                         case DIVIDE:
-                            result = a * b;
+                            result = a / b;
                             break;
                         case MODULO:
                             result = a % b;

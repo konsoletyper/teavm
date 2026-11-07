@@ -588,6 +588,10 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
                 }
                 return;
             }
+            case DIVIDE_CHECKED, MODULO_CHECKED -> {
+                generateCheckedDivision(insn);
+                return;
+            }
             default -> { }
         }
         emitLocals(builder, insn.getFirstOperand(), insn.getSecondOperand());
@@ -625,7 +629,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
                     case SHIFT_LEFT -> WasmIntBinaryOperation.SHL;
                     case SHIFT_RIGHT -> WasmIntBinaryOperation.SHR_SIGNED;
                     case SHIFT_RIGHT_UNSIGNED -> WasmIntBinaryOperation.SHR_UNSIGNED;
-                    case COMPARE_GREATER, COMPARE_LESS -> null;
+                    case COMPARE_GREATER, COMPARE_LESS, DIVIDE_CHECKED, MODULO_CHECKED -> null;
                 };
                 var wasmType = insn.getOperandType() == NumericOperandType.INT ? WasmIntType.INT32 : WasmIntType.INT64;
                 if (wasmType == WasmIntType.INT64) {
@@ -644,6 +648,8 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
                     case MULTIPLY -> WasmFloatBinaryOperation.MUL;
                     case DIVIDE -> WasmFloatBinaryOperation.DIV;
                     case MODULO,
+                         DIVIDE_CHECKED,
+                         MODULO_CHECKED,
                          COMPARE_GREATER,
                          COMPARE_LESS,
                          AND,
@@ -658,6 +664,49 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
                         : WasmFloatType.FLOAT64;
                 builder.floatBinary(wasmType, wasmOp);
             }
+        }
+        builder.setLocal(mapToLocal(insn.getReceiver()));
+    }
+
+    private void generateCheckedDivision(BinaryInstruction insn) {
+        var isLong = insn.getOperandType() == NumericOperandType.LONG;
+        var intType = isLong ? WasmIntType.INT64 : WasmIntType.INT32;
+        var isDivision = insn.getOperation() == BinaryOperation.DIVIDE_CHECKED;
+
+        var zeroCheckBlock = builder.block();
+        emitLocal(zeroCheckBlock, insn.getSecondOperand());
+        if (isLong) {
+            zeroCheckBlock.i64Const(0).intBinary(WasmIntType.INT64, WasmIntBinaryOperation.NE);
+        }
+        zeroCheckBlock.branch(zeroCheckBlock);
+        generateThrowAe(zeroCheckBlock);
+
+        if (isDivision) {
+            // MIN_VALUE / -1 traps in Wasm, while Java requires MIN_VALUE as a result.
+            // Note that rem_s does not trap in this case and produces 0, as required by Java.
+            var wasmType = isLong ? WasmType.INT64 : WasmType.INT32;
+            var resultBlock = builder.block(wasmType);
+            var regularBlock = resultBlock.block();
+            emitLocal(regularBlock, insn.getSecondOperand());
+            if (isLong) {
+                regularBlock.i64Const(-1);
+            } else {
+                regularBlock.i32Const(-1);
+            }
+            regularBlock.intBinary(intType, WasmIntBinaryOperation.NE).branch(regularBlock);
+            if (isLong) {
+                regularBlock.i64Const(0);
+            } else {
+                regularBlock.i32Const(0);
+            }
+            emitLocal(regularBlock, insn.getFirstOperand())
+                    .intBinary(intType, WasmIntBinaryOperation.SUB)
+                    .breakTo(resultBlock);
+            emitLocals(resultBlock, insn.getFirstOperand(), insn.getSecondOperand())
+                    .intBinary(intType, WasmIntBinaryOperation.DIV_SIGNED);
+        } else {
+            emitLocals(builder, insn.getFirstOperand(), insn.getSecondOperand())
+                    .intBinary(intType, WasmIntBinaryOperation.REM_SIGNED);
         }
         builder.setLocal(mapToLocal(insn.getReceiver()));
     }
@@ -1780,6 +1829,11 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
 
     private void generateThrowAioobe(WasmInstructionBuilder target) {
         target.call(context.aaiobeMethod());
+        target.throw_(context.getExceptionTag());
+    }
+
+    private void generateThrowAe(WasmInstructionBuilder target) {
+        target.call(context.aeMethod());
         target.throw_(context.getExceptionTag());
     }
 

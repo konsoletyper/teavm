@@ -1,0 +1,12 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @b := invokeStatic `Foo.b()I`
+    @seven := 7
+    invokeStatic `Foo.x()D`
+    invokeStatic `Foo.y()D`
+    @unknown := @a / @b as int
+    @bySeven := @a % @seven as int
+    @checked := @a checkedDiv @b as int
+    return @a

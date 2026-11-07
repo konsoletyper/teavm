@@ -17,6 +17,8 @@ package org.teavm.model.lowlevel;
 
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CloneArrayInstruction;
@@ -47,6 +49,9 @@ public final class ExceptionHandlingUtil {
             return true;
         } else if (insn instanceof CastInstruction) {
             return !((CastInstruction) insn).isWeak();
+        } else if (insn instanceof BinaryInstruction) {
+            var op = ((BinaryInstruction) insn).getOperation();
+            return op == BinaryOperation.DIVIDE_CHECKED || op == BinaryOperation.MODULO_CHECKED;
         } else if (insn instanceof InvokeInstruction) {
             return isManagedMethodCall(characteristics, ((InvokeInstruction) insn).getMethod());
         }

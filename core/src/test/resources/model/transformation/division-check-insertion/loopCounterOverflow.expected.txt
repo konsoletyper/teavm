@@ -1,0 +1,17 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @one := 1
+    goto $header
+$header
+    @i := phi @one from $start, @next from $body
+    @q := @a checkedDiv @i as int
+    invokeStatic `Foo.consume(I)V` @q
+    @f := invokeStatic `Foo.f()I`
+    if @f == 0 then goto $exit else goto $body
+$body
+    @next := @i + @one as int
+    goto $header
+$exit
+    return @q

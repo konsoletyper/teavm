@@ -32,6 +32,10 @@ public class WasmGCSupport {
         return new ArrayIndexOutOfBoundsException();
     }
 
+    public static ArithmeticException ae() {
+        return new ArithmeticException();
+    }
+
     public static ClassCastException cce() {
         return new ClassCastException();
     }

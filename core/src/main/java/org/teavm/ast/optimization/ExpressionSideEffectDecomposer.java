@@ -52,7 +52,9 @@ public class ExpressionSideEffectDecomposer extends RecursiveVisitor {
 
     @Override
     public void visit(BinaryExpr expr) {
-        if (expr.getOperation() == BinaryOperation.AND || expr.getOperation() == BinaryOperation.OR) {
+        if (expr.getOperation() == BinaryOperation.AND || expr.getOperation() == BinaryOperation.OR
+                || expr.getOperation() == BinaryOperation.DIVIDE_CHECKED
+                || expr.getOperation() == BinaryOperation.MODULO_CHECKED) {
             target.add(Statement.assign(null, expr));
         } else {
             super.visit(expr);

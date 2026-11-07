@@ -84,6 +84,51 @@
         return index;
     }
 
+    inline static int32_t teavm_checkedDiv_i32(int32_t a, int32_t b) {
+        if (b == 0) {
+            teavm_throwArithmeticException();
+            TEAVM_UNREACHABLE
+        }
+        if (b == -1) {
+            // INT32_MIN / -1 overflows, which is undefined behaviour in C and a trap on x86
+            return (int32_t) (0u - (uint32_t) a);
+        }
+        return a / b;
+    }
+
+    inline static int32_t teavm_checkedRem_i32(int32_t a, int32_t b) {
+        if (b == 0) {
+            teavm_throwArithmeticException();
+            TEAVM_UNREACHABLE
+        }
+        if (b == -1) {
+            return 0;
+        }
+        return a % b;
+    }
+
+    inline static int64_t teavm_checkedDiv_i64(int64_t a, int64_t b) {
+        if (b == 0) {
+            teavm_throwArithmeticException();
+            TEAVM_UNREACHABLE
+        }
+        if (b == -1) {
+            return (int64_t) (UINT64_C(0) - (uint64_t) a);
+        }
+        return a / b;
+    }
+
+    inline static int64_t teavm_checkedRem_i64(int64_t a, int64_t b) {
+        if (b == 0) {
+            teavm_throwArithmeticException();
+            TEAVM_UNREACHABLE
+        }
+        if (b == -1) {
+            return 0;
+        }
+        return a % b;
+    }
+
 #else
     #define TEAVM_JUMP_SUPPORTED 0
     #define TEAVM_JUMP_TO_FRAME(frame, id)

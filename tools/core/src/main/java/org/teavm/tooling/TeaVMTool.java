@@ -407,6 +407,7 @@ public class TeaVMTool {
         cTarget.setLineNumbersGenerated(debugInformationGenerated);
         cTarget.setHeapDump(heapDump);
         cTarget.setObfuscated(obfuscated);
+        cTarget.setStrict(strict);
         cTarget.setFileNames(shortFileNames
                 ? new ShorteningFileNameProvider(new SimpleFileNameProvider())
                 : new SimpleFileNameProvider());

@@ -27,6 +27,7 @@ import org.teavm.model.Instruction;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
 import org.teavm.model.instructions.*;
 
 public class ProgramIOTest {
@@ -153,6 +154,39 @@ public class ProgramIOTest {
         block.add(subInsn);
 
         assertThat(block.instructionCount(), is(4));
+    }
+
+    @Test
+    public void allBinaryOperations() {
+        Program program = new Program();
+        BasicBlock block = program.createBasicBlock();
+        Variable a = program.createVariable();
+        Variable b = program.createVariable();
+        for (BinaryOperation op : BinaryOperation.values()) {
+            for (NumericOperandType type : NumericOperandType.values()) {
+                BinaryInstruction insn = new BinaryInstruction(op, type);
+                insn.setFirstOperand(a);
+                insn.setSecondOperand(b);
+                insn.setReceiver(program.createVariable());
+                block.add(insn);
+            }
+        }
+
+        program = inputOutput(program);
+        block = program.basicBlockAt(0);
+
+        Instruction insn = block.getFirstInstruction();
+        for (BinaryOperation op : BinaryOperation.values()) {
+            for (NumericOperandType type : NumericOperandType.values()) {
+                assertThat(insn, instanceOf(BinaryInstruction.class));
+                BinaryInstruction binary = (BinaryInstruction) insn;
+                assertThat(binary.getOperation(), is(op));
+                assertThat(binary.getOperandType(), is(type));
+                assertThat(binary.getFirstOperand().getIndex(), is(0));
+                assertThat(binary.getSecondOperand().getIndex(), is(1));
+                insn = insn.getNext();
+            }
+        }
     }
 
     private Program inputOutput(Program program) {

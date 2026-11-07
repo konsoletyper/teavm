@@ -306,6 +306,12 @@ public class GlobalValueNumbering implements MethodOptimization {
                 case MODULO:
                     value = "%";
                     break;
+                case DIVIDE_CHECKED:
+                    value = "/!";
+                    break;
+                case MODULO_CHECKED:
+                    value = "%!";
+                    break;
                 case COMPARE_GREATER:
                     value = "$>";
                     break;
@@ -370,11 +376,13 @@ public class GlobalValueNumbering implements MethodOptimization {
                             evaluatedConstant = p * q;
                             break;
                         case DIVIDE:
+                        case DIVIDE_CHECKED:
                             if (q != 0) {
                                 evaluatedConstant = p / q;
                             }
                             break;
                         case MODULO:
+                        case MODULO_CHECKED:
                             if (q != 0) {
                                 evaluatedConstant = p % q;
                             }
@@ -418,11 +426,13 @@ public class GlobalValueNumbering implements MethodOptimization {
                             evaluatedConstant = p * q;
                             break;
                         case DIVIDE:
+                        case DIVIDE_CHECKED:
                             if (q != 0) {
                                 evaluatedConstant = p / q;
                             }
                             break;
                         case MODULO:
+                        case MODULO_CHECKED:
                             if (q != 0) {
                                 evaluatedConstant = p % q;
                             }

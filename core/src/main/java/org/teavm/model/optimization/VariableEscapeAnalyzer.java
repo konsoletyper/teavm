@@ -23,8 +23,17 @@ public final class VariableEscapeAnalyzer {
     }
 
     public static boolean[] findEscapingVariables(Program program) {
+        return findEscapingVariables(program, true);
+    }
+
+    /**
+     * @param allDivisionsUnsafe if {@code true}, every integer division is considered as one that may throw
+     *     exception. Otherwise, only checked divisions are, i.e. it's assumed that checks for division by zero
+     *     were already inserted (or are not needed).
+     */
+    public static boolean[] findEscapingVariables(Program program, boolean allDivisionsUnsafe) {
         boolean[] escaping = new boolean[program.variableCount()];
-        InstructionAnalyzer analyzer = new InstructionAnalyzer(escaping);
+        InstructionAnalyzer analyzer = new InstructionAnalyzer(escaping, allDivisionsUnsafe);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
@@ -36,9 +45,32 @@ public final class VariableEscapeAnalyzer {
 
     private static class InstructionAnalyzer extends AbstractInstructionVisitor {
         private boolean[] escaping;
+        private boolean allDivisionsUnsafe;
 
-        InstructionAnalyzer(boolean[] escaping) {
+        InstructionAnalyzer(boolean[] escaping, boolean allDivisionsUnsafe) {
             this.escaping = escaping;
+            this.allDivisionsUnsafe = allDivisionsUnsafe;
+        }
+
+        @Override
+        public void visit(BinaryInstruction insn) {
+            // Integer division may throw ArithmeticException (or trap), so it can't be removed
+            // even if its result is unused
+            switch (insn.getOperation()) {
+                case DIVIDE_CHECKED:
+                case MODULO_CHECKED:
+                    escaping[insn.getReceiver().getIndex()] = true;
+                    break;
+                case DIVIDE:
+                case MODULO:
+                    if (allDivisionsUnsafe && (insn.getOperandType() == NumericOperandType.INT
+                            || insn.getOperandType() == NumericOperandType.LONG)) {
+                        escaping[insn.getReceiver().getIndex()] = true;
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
 
         @Override

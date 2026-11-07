@@ -106,6 +106,8 @@ public class DominatorWalker {
                 head++;
             }
 
+            // Visit children in reverse postorder. This guarantees that when visiting a block, all of its
+            // predecessors are already visited, except for ones connected by back edges.
             int[] successors = domGraph.outgoingEdges(node);
             sort(successors);
             for (int i = successors.length - 1; i >= 0; --i) {
@@ -135,7 +137,7 @@ public class DominatorWalker {
             for (int j = i + 1; j < nodes.length; ++j) {
                 int b = nodes[j];
                 int score = order[b];
-                if (score < best) {
+                if (score > best) {
                     best = score;
                     a = b;
                     bestIndex = j;

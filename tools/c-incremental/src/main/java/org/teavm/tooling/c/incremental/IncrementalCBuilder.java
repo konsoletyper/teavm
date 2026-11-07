@@ -322,6 +322,7 @@ public class IncrementalCBuilder {
         long startTime = System.currentTimeMillis();
         CTarget cTarget = new CTarget(nameProvider);
         cTarget.setAstCache(astCache);
+        cTarget.setStrict(true);
 
         TeaVM vm = new TeaVMBuilder(cTarget)
                 .setReferenceCache(referenceCache)

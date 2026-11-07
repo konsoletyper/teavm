@@ -1,0 +1,19 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @n := invokeStatic `Foo.n()I`
+    @one := 1
+    goto $header
+$header
+    @i := phi @one from $start, @next from $body
+    @c := @i compareTo @n as int
+    if @c < 0 then goto $body else goto $exit
+$body
+    @q := @a / @i as int
+    invokeStatic `Foo.consume(I)V` @q
+    @next := @i + @one as int
+    goto $header
+$exit
+    @r := @a / @i as int
+    return @r

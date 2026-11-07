@@ -1,0 +1,17 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @cond := invokeStatic `Foo.cond()I`
+    if @cond == 0 then goto $left else goto $right
+$left
+    @x := 2
+    goto $join
+$right
+    @y := 5
+    @z := - @y as int
+    goto $join
+$join
+    @b := phi @x from $left, @z from $right
+    @q := @a / @b as int
+    return @q

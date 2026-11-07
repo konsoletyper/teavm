@@ -34,6 +34,31 @@ let $rt_checkLowerBound = index => {
     return index;
 }
 
+let $rt_checkedIdiv = (a, b) => {
+    if (b === 0) {
+        $rt_throwAE();
+    }
+    return (a / b) | 0;
+}
+let $rt_checkedIrem = (a, b) => {
+    if (b === 0) {
+        $rt_throwAE();
+    }
+    return (a % b) | 0;
+}
+let $rt_checkedLdiv = (a, b) => {
+    if (b === 0n) {
+        $rt_throwAE();
+    }
+    return Long_asIntN(64, a / b);
+}
+let $rt_checkedLrem = (a, b) => {
+    if (b === 0n) {
+        $rt_throwAE();
+    }
+    return a % b;
+}
+
 let $rt_nullCheck = val => {
     if (val === null) {
         $rt_throw(teavm_javaConstructor("java.lang.NullPointerException", "()V")());

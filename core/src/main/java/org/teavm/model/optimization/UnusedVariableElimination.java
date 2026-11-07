@@ -49,6 +49,24 @@ import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class UnusedVariableElimination implements MethodOptimization {
+    private final boolean allDivisionsUnsafe;
+
+    /**
+     * Creates conservative instance, which keeps every integer division, since it may throw exception.
+     */
+    public UnusedVariableElimination() {
+        this(true);
+    }
+
+    /**
+     * @param allDivisionsUnsafe if {@code false}, only checked divisions are considered to throw exceptions,
+     *     i.e. it's assumed that checks for division by zero were already inserted (or are not needed),
+     *     so unused unchecked divisions can be eliminated.
+     */
+    public UnusedVariableElimination(boolean allDivisionsUnsafe) {
+        this.allDivisionsUnsafe = allDivisionsUnsafe;
+    }
+
     @Override
     public boolean optimize(MethodOptimizationContext context, Program program) {
         return optimize(context.getMethod(), program);
@@ -56,7 +74,7 @@ public class UnusedVariableElimination implements MethodOptimization {
 
     public boolean optimize(MethodReader method, Program program) {
         Graph graph = VariableUsageGraphBuilder.build(program);
-        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program);
+        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program, allDivisionsUnsafe);
         boolean[] used = new boolean[escaping.length];
 
         for (int i = 0; i <= method.parameterCount(); ++i) {

@@ -1,0 +1,14 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()J`
+    @b := invokeStatic `Foo.b()J`
+    @zero := 0L
+    @c := @zero compareTo @b as long
+    if @c < 0 then goto $positive else goto $other
+$positive
+    @q := @a / @b as long
+    return @q
+$other
+    @r := @a % @b as long
+    return @r

@@ -204,6 +204,12 @@ class InstructionStringifier implements InstructionReader {
             case MODULO:
                 append("%");
                 break;
+            case DIVIDE_CHECKED:
+                append("checkedDiv");
+                break;
+            case MODULO_CHECKED:
+                append("checkedRem");
+                break;
             case MULTIPLY:
                 append("*");
                 break;

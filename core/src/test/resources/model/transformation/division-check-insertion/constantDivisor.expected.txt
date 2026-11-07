@@ -1,0 +1,9 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @b := 7
+    @q := @a / @b as int
+    @r := @a % @b as int
+    @s := @q + @r as int
+    return @s

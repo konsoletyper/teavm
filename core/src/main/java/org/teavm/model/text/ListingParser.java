@@ -533,6 +533,12 @@ public class ListingParser {
                     case "compareTo":
                         parseBinary(receiver, variable, BinaryOperation.COMPARE_GREATER);
                         break;
+                    case "checkedDiv":
+                        parseBinary(receiver, variable, BinaryOperation.DIVIDE_CHECKED);
+                        break;
+                    case "checkedRem":
+                        parseBinary(receiver, variable, BinaryOperation.MODULO_CHECKED);
+                        break;
                     case "instanceOf": {
                         lexer.nextToken();
                         ValueType type = expectValueType();

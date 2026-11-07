@@ -1,0 +1,12 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @b := invokeStatic `Foo.b()I`
+    if @b == 0 then goto $join else goto $nonZero
+$nonZero
+    invokeStatic `Foo.c()V`
+    goto $join
+$join
+    @q := @a / @b as int
+    return @q

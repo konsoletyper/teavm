@@ -36,5 +36,9 @@ public enum BinaryOperation {
     BITWISE_XOR,
     LEFT_SHIFT,
     RIGHT_SHIFT,
-    UNSIGNED_RIGHT_SHIFT
+    UNSIGNED_RIGHT_SHIFT,
+    // Integer division/remainder that throws ArithmeticException on zero divisor.
+    // Added at the end to keep ordinals of existing operations, which are serialized by AstIO.
+    DIVIDE_CHECKED,
+    MODULO_CHECKED
 }

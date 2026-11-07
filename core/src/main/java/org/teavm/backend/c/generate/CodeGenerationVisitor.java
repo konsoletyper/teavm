@@ -199,6 +199,26 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         pushLocation(expr.getLocation());
         try {
             switch (expr.getOperation()) {
+                case DIVIDE_CHECKED:
+                case MODULO_CHECKED: {
+                    boolean needParenthesis = false;
+                    if (needsCallSiteId()) {
+                        needParenthesis = true;
+                        withCallSite();
+                    }
+                    writer.print(expr.getOperation() == BinaryOperation.DIVIDE_CHECKED
+                            ? "teavm_checkedDiv_" : "teavm_checkedRem_");
+                    writer.print(expr.getType() == OperationType.LONG ? "i64" : "i32");
+                    writer.print("(");
+                    expr.getFirstOperand().acceptVisitor(this);
+                    writer.print(", ");
+                    expr.getSecondOperand().acceptVisitor(this);
+                    writer.print(")");
+                    if (needParenthesis) {
+                        writer.print(")");
+                    }
+                    return;
+                }
                 case COMPARE_LESS:
                 case COMPARE_GREATER:
                     writer.print("teavm_compare_");

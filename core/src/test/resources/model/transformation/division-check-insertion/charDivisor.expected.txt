@@ -1,0 +1,10 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @c := invokeStatic `Foo.c()C`
+    @x := cast @c from char to int
+    @one := 1
+    @b := @x + @one as int
+    @q := @a / @b as int
+    return @q

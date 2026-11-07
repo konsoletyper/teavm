@@ -1,0 +1,9 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.a()I`
+    @b := invokeStatic `Foo.b()I`
+    invokeStatic `Foo.x()D`
+    invokeStatic `Foo.y()D`
+    @checked := @a checkedDiv @b as int
+    return @a

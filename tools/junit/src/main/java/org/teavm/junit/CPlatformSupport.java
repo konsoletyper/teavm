@@ -148,6 +148,7 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
 
     private CTarget createCTarget() {
         CTarget cTarget = new CTarget(new CNameProvider());
+        cTarget.setStrict(true);
         cTarget.setLineNumbersGenerated(Boolean.parseBoolean(System.getProperty(C_LINE_NUMBERS, "false")));
         if (System.getProperty(C_SHORT_FILE_NAMES, "false").equals("true")) {
             cTarget.setFileNames(new ShorteningFileNameProvider(new SimpleFileNameProvider()));

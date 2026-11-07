@@ -165,6 +165,12 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    @Export(name = "teavm_throwArithmeticException")
+    public static void throwArithmeticException() {
+        throwException(new ArithmeticException());
+    }
+
+    @Unmanaged
     private static int callStackSize() {
         Address stackFrame = ShadowStack.getStackTop();
         int size = 0;

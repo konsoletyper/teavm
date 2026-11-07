@@ -1,0 +1,12 @@
+var @this as this
+
+$start
+    @array := invokeStatic `Foo.array()[I`
+    @a := lengthOf @array
+    @b := invokeStatic `Foo.b()I`
+    @q := @a / @b as int
+    goto $next
+$next
+    @r := @a % @b as int
+    @s := @q + @r as int
+    return @s

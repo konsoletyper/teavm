@@ -131,6 +131,10 @@ let $rt_throwAIOOBE = () => teavm_javaConstructorExists("java.lang.ArrayIndexOut
     ? $rt_throw(teavm_javaConstructor("java.lang.ArrayIndexOutOfBoundsException", "()V")())
     : $rt_throw($rt_createException($rt_str("")));
 
+let $rt_throwAE = () => teavm_javaConstructorExists("java.lang.ArithmeticException", "()V")
+    ? $rt_throw(teavm_javaConstructor("java.lang.ArithmeticException", "()V")())
+    : $rt_throw($rt_createException($rt_str("")));
+
 let $rt_throwCCE = () => teavm_javaConstructorExists("java.lang.ClassCastException", "()V")
     ? $rt_throw(teavm_javaConstructor("java.lang.ClassCastException", "()V")())
     : $rt_throw($rt_createException($rt_str("")));
