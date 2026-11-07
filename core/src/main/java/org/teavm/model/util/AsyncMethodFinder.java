@@ -27,6 +27,7 @@ import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.interop.Async;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
@@ -92,6 +93,35 @@ public class AsyncMethodFinder {
         }
         for (MethodReference method : asyncMethods) {
             addOverriddenToFamily(method);
+        }
+        // A class can implement an interface method with a method that it inherits from a superclass that does
+        // not implement the interface. The walk above starts at the superclass, so it does not reach the interface.
+        for (String clsName : classSource.getClassNames()) {
+            ClassReader cls = classSource.get(clsName);
+            if (cls.hasModifier(ElementModifier.INTERFACE)) {
+                continue;
+            }
+            for (String iface : cls.getInterfaces()) {
+                classSource.getAncestors(iface).forEach(ifaceCls -> {
+                    // The ancestors of an interface include java.lang.Object. The walk above already adds the
+                    // methods of Object that can be in the family.
+                    if (!ifaceCls.hasModifier(ElementModifier.INTERFACE)) {
+                        return;
+                    }
+                    for (MethodReader ifaceMethod : ifaceCls.getMethods()) {
+                        // addOverriddenToFamily already added the overridden methods of a method in the family.
+                        if (ifaceMethod.hasModifier(ElementModifier.STATIC)
+                                || ifaceMethod.getLevel() == AccessLevel.PRIVATE
+                                || asyncFamilyMethods.containsKey(ifaceMethod.getReference())) {
+                            continue;
+                        }
+                        MethodReader impl = classSource.resolveImplementation(clsName, ifaceMethod.getDescriptor());
+                        if (impl != null && asyncMethods.contains(impl.getReference())) {
+                            addOverriddenToFamily(ifaceMethod.getReference());
+                        }
+                    }
+                });
+            }
         }
         for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
