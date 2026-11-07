@@ -62,7 +62,6 @@ import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
-import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.parsing.resource.ResourceProvider;
@@ -461,9 +460,7 @@ public class TeaVMTool {
                 vm.setProgressListener(progressListener);
             }
 
-            if (assertionsRemoved) {
-                vm.add(new AssertionRemoval());
-            }
+            vm.setAssertionsRemoved(assertionsRemoved);
 
             vm.setProperties(properties);
             vm.setProgramCache(incremental ? programCache : EmptyProgramCache.INSTANCE);

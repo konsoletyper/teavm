@@ -98,6 +98,7 @@ import org.teavm.model.optimization.SystemArrayCopyOptimization;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
 import org.teavm.model.text.ListingBuilder;
+import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
@@ -172,6 +173,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private int compileProgressValue;
     private ClassSourcePacker classSourcePacker;
     private ClassInitializerInfo classInitializerInfo;
+    private boolean assertionsRemoved;
+    private AssertionRemoval assertionRemoval;
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
@@ -295,6 +298,19 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public TeaVMProgressListener getProgressListener() {
         return progressListener;
+    }
+
+    public boolean isAssertionsRemoved() {
+        return assertionsRemoved;
+    }
+
+    /**
+     * Specifies whether assertions should be removed from generated code. Assertions are removed
+     * after dependency analysis, so classes used only by assertions (like {@link AssertionError})
+     * are still considered reachable.
+     */
+    public void setAssertionsRemoved(boolean assertionsRemoved) {
+        this.assertionsRemoved = assertionsRemoved;
     }
 
     public void setProgressListener(TeaVMProgressListener progressListener) {
@@ -451,6 +467,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
+        if (assertionsRemoved) {
+            analyzeAssertions();
+        }
+
         boolean isLazy = optimizationLevel == TeaVMOptimizationLevel.SIMPLE;
         ListableClassHolderSource classSet;
         if (isLazy) {
@@ -522,6 +542,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             insertClassInit(classSet);
             classInitializerInfo = ClassInitializerInfo.EMPTY;
         }
+        removeAssertions(classSet);
 
         dependencyAnalyzer.cleanupTypes();
 
@@ -570,6 +591,30 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     continue;
                 }
                 clinitInsertion.apply(method, program);
+            }
+        }
+    }
+
+    private void analyzeAssertions() {
+        assertionRemoval = new AssertionRemoval(dependencyAnalyzer.getClassSource());
+        assertionRemoval.analyze(new ListableClassReaderSourceAdapter(dependencyAnalyzer.getClassSource(),
+                new LinkedHashSet<>(dependencyAnalyzer.getReachableClasses())), method -> {
+                    var methodDep = dependencyAnalyzer.getMethod(method);
+                    return methodDep != null && methodDep.isUsed();
+                });
+    }
+
+    private void removeAssertions(ListableClassHolderSource classes) {
+        if (assertionRemoval == null) {
+            return;
+        }
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                Program program = method.getProgram();
+                if (program != null) {
+                    assertionRemoval.apply(program);
+                }
             }
         }
     }
@@ -1075,6 +1120,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     if (program == null) {
                         program = ProgramUtils.copy(classReader.getMethod(method.getDescriptor()).getProgram());
                         clinitInsertion.apply(method, program);
+                        if (assertionRemoval != null) {
+                            assertionRemoval.apply(program);
+                        }
                         target.beforeInlining(program, method);
                         program = optimizeMethodCacheMiss(method, program);
                         Program finalProgram = program;
