@@ -16,8 +16,10 @@
 package org.teavm.jso.dom.xml;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.xml.mixin.ChildNode;
+import org.teavm.jso.dom.xml.mixin.ParentNode;
 
-public interface Element extends Node {
+public interface Element extends Node, ParentNode, ChildNode {
     String getAttribute(String name);
 
     void setAttribute(String name, String value);
@@ -48,10 +50,14 @@ public interface Element extends Node {
 
     boolean hasAttributeNS(String namespaceURI, String localName);
 
-    Element querySelector(String selectors);
+    boolean toggleAttribute(String name);
 
-    NodeList<? extends Element> querySelectorAll(String selectors);
-    
+    boolean toggleAttribute(String name, boolean force);
+
+    Element closest(String selectors);
+
+    boolean matches(String selectors);
+
     @JSProperty
     String getId();
 

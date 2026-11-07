@@ -15,6 +15,8 @@
  */
 package org.teavm.jso.dom.xml;
 
-public interface DocumentFragment extends Node {
+import org.teavm.jso.dom.xml.mixin.ParentNode;
+
+public interface DocumentFragment extends Node, ParentNode {
 
 }
