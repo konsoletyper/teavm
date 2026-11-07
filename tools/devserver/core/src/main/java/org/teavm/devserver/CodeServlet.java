@@ -124,6 +124,7 @@ public class CodeServlet extends JettyWebSocketServlet {
     private List<String> preservedClasses = new ArrayList<>();
     private JSModuleType jsModuleType;
     private boolean wasmSharedBuffer;
+    private boolean asyncEnabled;
     private boolean wasmModularRuntime;
 
     private Map<String, Supplier<InputStream>> sourceFileCache = new HashMap<>();
@@ -272,6 +273,10 @@ public class CodeServlet extends JettyWebSocketServlet {
 
     public Map<String, String> getProperties() {
         return properties;
+    }
+
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        this.asyncEnabled = asyncEnabled;
     }
 
     public void setWasmSharedBuffer(boolean wasmSharedBuffer) {
@@ -1055,6 +1060,7 @@ public class CodeServlet extends JettyWebSocketServlet {
         };
         backend.setup(target, astCache, referenceCache, settings);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
+        vm.setAsyncEnabled(asyncEnabled);
         vm.setCacheStatus(classSource);
         vm.addVirtualMethods(m -> true);
         vm.setProgressListener(progressListener);

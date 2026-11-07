@@ -186,6 +186,7 @@ public final class BuildDaemon {
         tool.setHeapDump(commandLine.hasOption("heap-dump"));
         tool.setShortFileNames(commandLine.hasOption("short-file-names"));
         tool.setAssertionsRemoved(commandLine.hasOption("assertions-removed"));
+        tool.setAsyncEnabled(commandLine.hasOption("async-enabled"));
 
         return classLoader;
     }
@@ -239,6 +240,7 @@ public final class BuildDaemon {
         options.addOption(Option.builder().longOpt("heap-dump").get());
         options.addOption(Option.builder().longOpt("short-file-names").get());
         options.addOption(Option.builder().longOpt("assertions-removed").get());
+        options.addOption(Option.builder().longOpt("async-enabled").get());
         return options;
     }
 }

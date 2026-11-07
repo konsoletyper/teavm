@@ -52,7 +52,9 @@ import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.extension.ExtensionEnvironment;
 import org.teavm.extension.ExtensionPolicyProvider;
 import org.teavm.extension.ExtensionPolicySource;
+import org.teavm.interop.Async;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
@@ -175,6 +177,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private ClassInitializerInfo classInitializerInfo;
     private boolean assertionsRemoved;
     private AssertionRemoval assertionRemoval;
+    private boolean asyncEnabled;
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
@@ -313,6 +316,20 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         this.assertionsRemoved = assertionsRemoved;
     }
 
+    public boolean isAsyncEnabled() {
+        return asyncEnabled;
+    }
+
+    /**
+     * Specifies whether coroutine transformation is enabled, i.e. whether methods are allowed to be
+     * async (suspend execution). When disabled (the default), TeaVM reports an error for each reachable
+     * method marked with {@link Async}, like {@link Thread#sleep(long)} or {@link Object#wait()}.
+     * Note that some targets don't support async methods at all; this flag has no effect for them.
+     */
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        this.asyncEnabled = asyncEnabled;
+    }
+
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
     }
@@ -440,7 +457,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         target.setEntryPoint(entryPoint, entryPointName);
-        dependencyAnalyzer.setAsyncSupported(target.isAsyncSupported());
+        dependencyAnalyzer.setAsyncSupported(target.isAsyncSupported() && asyncEnabled);
         dependencyAnalyzer.setInterruptor(() -> {
             int progress = dependencyAnalyzer.getReachableClasses().size();
             cancelled |= progressListener.progressReached(progress) != TeaVMProgressFeedback.CONTINUE;
@@ -453,6 +470,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             dependencyAnalyzer.addDependencyListener(new StdlibDependencyListener());
         }
         dependencyAnalyzer.processDependencies();
+        if (!asyncEnabled) {
+            reportAsyncMethods();
+        }
         if (wasCancelled() || !diagnostics.getSevereProblems().isEmpty()) {
             return;
         }
@@ -591,6 +611,21 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     continue;
                 }
                 clinitInsertion.apply(method, program);
+            }
+        }
+    }
+
+    private void reportAsyncMethods() {
+        for (var methodRef : dependencyAnalyzer.getReachableMethods()) {
+            var methodDep = dependencyAnalyzer.getMethod(methodRef);
+            if (methodDep == null || !methodDep.isUsed() || methodDep.getMethod() == null) {
+                continue;
+            }
+            if (methodDep.getMethod().getAnnotations().get(Async.class.getName()) != null) {
+                diagnostics.error(new CallLocation(methodRef), "Method {{m0}} is async, but async "
+                        + "support is disabled. Either avoid calling this method or enable "
+                        + "async support (asyncEnabled option). Note that async support has many quirks "
+                        + "and has negative impact on the performance of the whole application.", methodRef);
             }
         }
     }

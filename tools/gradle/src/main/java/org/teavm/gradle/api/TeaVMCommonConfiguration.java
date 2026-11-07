@@ -27,6 +27,12 @@ public interface TeaVMCommonConfiguration {
 
     Property<Boolean> getFastGlobalAnalysis();
 
+    /**
+     * Whether coroutine transformation is enabled, i.e. whether async methods (like {@code Thread.sleep}
+     * or {@code Object.wait}) are allowed. When disabled, TeaVM reports error for each reachable async method.
+     */
+    Property<Boolean> getAsyncEnabled();
+
     Property<OptimizationLevel> getOptimization();
 
     MapProperty<String, String> getProperties();

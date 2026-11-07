@@ -27,18 +27,21 @@ final class TestEntryPointSpec {
     final boolean wholeClass;
     final Map<MethodReference, JupiterArgumentsPlan> plans;
     final Properties properties;
+    final boolean asyncEnabled;
 
     TestEntryPointSpec(String testClassName, List<MethodReference> testMethods, boolean wholeClass,
-            Map<MethodReference, JupiterArgumentsPlan> plans, Properties properties) {
+            Map<MethodReference, JupiterArgumentsPlan> plans, Properties properties, boolean asyncEnabled) {
         this.testClassName = testClassName;
         this.testMethods = testMethods;
         this.wholeClass = wholeClass;
         this.plans = plans;
         this.properties = properties;
+        this.asyncEnabled = asyncEnabled;
     }
 
     void install(TeaVM vm) {
         vm.setProperties(properties);
+        vm.setAsyncEnabled(asyncEnabled);
         if (wholeClass) {
             new TestEntryPointTransformerForWholeClass(testMethods, testClassName, plans).install(vm);
         } else {

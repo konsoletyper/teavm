@@ -23,6 +23,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTest;
 
@@ -103,6 +104,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void available() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -129,6 +131,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void close() throws IOException {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -146,6 +149,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void connectLjava_io_PipedOutputStream() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -163,6 +167,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void test_read() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -180,6 +185,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void test_read$BII() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -201,6 +207,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void read$BII_2() throws IOException {
         PipedInputStream obj = new PipedInputStream();
         try {
@@ -213,6 +220,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void read$BII_3() throws IOException {
         PipedInputStream obj = new PipedInputStream();
         try {
@@ -226,6 +234,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void read$BII_4() throws IOException {
         PipedInputStream obj = new PipedInputStream();
         try {
@@ -365,6 +374,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @AsyncEnabled
     public void read_after_write_close() throws Exception {
         PipedInputStream in = new PipedInputStream();
         PipedOutputStream out = new PipedOutputStream();

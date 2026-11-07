@@ -101,5 +101,7 @@ public interface BuildStrategy {
 
     void setAssertionsRemoved(boolean assertionsRemoved);
 
+    void setAsyncEnabled(boolean asyncEnabled);
+
     BuildResult build() throws BuildException;
 }

@@ -95,6 +95,10 @@ public final class TeaVMDevServerRunner {
                 .desc("JS module type (umd, common-js, es2015 or none)")
                 .get());
         options.addOption(Option.builder()
+                .longOpt("async-enabled")
+                .desc("Enable coroutine transformation, i.e. allow async methods")
+                .get());
+        options.addOption(Option.builder()
                 .longOpt("wasm-shared-buffer")
                 .desc("Use shared buffer for WebAssembly module")
                 .get());
@@ -256,6 +260,9 @@ public final class TeaVMDevServerRunner {
                 type = null;
             }
             devServer.setJsModuleType(type);
+        }
+        if (commandLine.hasOption("async-enabled")) {
+            devServer.setAsyncEnabled(true);
         }
         if (commandLine.hasOption("wasm-shared-buffer")) {
             devServer.setWasmSharedBuffer(true);

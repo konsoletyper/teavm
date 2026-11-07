@@ -19,11 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.Reflectable;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.TeaVMTest;
 
 @TeaVMTest
 public class MultiThreadedFieldUpdaterTest {
     @Test
+    @AsyncEnabled
     public void getAndUpdate() {
         var updater = AtomicReferenceFieldUpdater.newUpdater(TestClass.class, String.class, "value");
         var obj = new TestClass();

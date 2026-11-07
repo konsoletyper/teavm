@@ -154,6 +154,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
                 .orElse(isDebug));
         all.getOptimization().convention(OptimizationLevel.BALANCED);
         all.getFastGlobalAnalysis().convention(property("fastGlobalAnalysis").map(Boolean::parseBoolean).orElse(false));
+        all.getAsyncEnabled().convention(property("asyncEnabled").map(Boolean::parseBoolean).orElse(false));
         all.getOutOfProcess().convention(property("outOfProcess").map(Boolean::parseBoolean).orElse(false));
         all.getProcessMemory().convention(property("processMemory").map(Integer::parseInt).orElse(512));
     }
@@ -223,6 +224,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         target.getOutputDir().convention(source.getOutputDir());
         target.getDebugInformation().convention(source.getDebugInformation());
         target.getFastGlobalAnalysis().convention(source.getFastGlobalAnalysis());
+        target.getAsyncEnabled().convention(source.getAsyncEnabled());
         target.getProperties().putAll(source.getProperties());
 
         target.getOutOfProcess().convention(source.getOutOfProcess());

@@ -389,10 +389,12 @@ final class TeaVMTestExecutionSupport {
 
         var methodReferences = new ArrayList<MethodReference>();
         var referencePlans = new HashMap<MethodReference, JupiterArgumentsPlan>();
+        var asyncEnabled = isAsyncEnabled(testClass);
         for (var method : methods) {
             if (!isPlatformPresent(method, platform) || ignored.test(method)) {
                 continue;
             }
+            asyncEnabled |= method.isAnnotationPresent(AsyncEnabled.class);
             var classHolder = TeaVMTestInfrastructure.classSource.get(method.getDeclaringClass().getName());
             var methodHolder = classHolder.getMethod(getDescriptor(method));
             methodReferences.add(methodHolder.getReference());
@@ -404,7 +406,8 @@ final class TeaVMTestExecutionSupport {
                     methodHolder.getReference().toString());
             runs.add(run);
         }
-        return new TestEntryPointSpec(testClass.getName(), methodReferences, true, referencePlans, properties);
+        return new TestEntryPointSpec(testClass.getName(), methodReferences, true, referencePlans, properties,
+                asyncEnabled);
     }
 
     static File getOutputPathForClass(Class<?> testClass, TestPlatformSupport<?> platform) {
@@ -423,8 +426,13 @@ final class TeaVMTestExecutionSupport {
                 : Map.<MethodReference, JupiterArgumentsPlan>of();
         var properties = new Properties();
         applyProperties(method.getDeclaringClass(), properties);
+        var asyncEnabled = isAsyncEnabled(testClass) || method.isAnnotationPresent(AsyncEnabled.class);
         return new TestEntryPointSpec(testClass.getName(), List.of(methodHolder.getReference()), false, plans,
-                properties);
+                properties, asyncEnabled);
+    }
+
+    private static boolean isAsyncEnabled(Class<?> cls) {
+        return cls.isAnnotationPresent(AsyncEnabled.class);
     }
 
     static void applyProperties(Class<?> cls, Properties result) {

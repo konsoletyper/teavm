@@ -37,6 +37,9 @@ public interface CompileRequest extends JSObject {
     @JSProperty
     boolean isWholeClass();
 
+    @JSProperty
+    boolean isAsyncEnabled();
+
     /**
      * Serialized arguments of Jupiter parameterized tests,
      * see {@link org.teavm.junit.spi.ExternalCompilationRequest#getParameterizedPlans()}.

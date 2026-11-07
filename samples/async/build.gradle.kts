@@ -31,6 +31,7 @@ dependencies {
 
 teavm.js {
     addedToWebApp = true
+    asyncEnabled = true
     mainClass = "org.teavm.samples.async.AsyncProgram"
 }
 

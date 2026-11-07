@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.support.GCSupport;
 import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
@@ -134,6 +135,7 @@ public class WeakReferenceTest {
     }
 
     @Test
+    @AsyncEnabled
     public void clearedRefNotEnqueued() {
         var queue = new ReferenceQueue<>();
         var refs = new WeakReference<?>[2];
@@ -148,6 +150,7 @@ public class WeakReferenceTest {
     }
 
     @Test
+    @AsyncEnabled
     public void unreachableRefNotEnqueued() {
         var queue = new ReferenceQueue<>();
         var holder = new Object[1];

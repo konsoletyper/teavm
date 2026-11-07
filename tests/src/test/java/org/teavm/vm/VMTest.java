@@ -31,6 +31,7 @@ import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSByRef;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
@@ -322,6 +323,7 @@ public class VMTest {
     }
 
     @Test
+    @AsyncEnabled
     @SkipJVM
     @SkipPlatform(TestPlatform.C)
     public void asyncClinit() {
@@ -335,12 +337,14 @@ public class VMTest {
     }
 
     @Test
+    @AsyncEnabled
     @SkipPlatform(TestPlatform.C)
     public void asyncClinitField() {
         assertEquals("ok", AsyncClinitClass.state);
     }
 
     @Test
+    @AsyncEnabled
     @SkipPlatform(TestPlatform.C)
     public void asyncClinitInstance() {
         AsyncClinitClass acl = new AsyncClinitClass();
@@ -349,6 +353,7 @@ public class VMTest {
     }
 
     @Test
+    @AsyncEnabled
     @SkipPlatform(TestPlatform.C)
     public void asyncWait() {
         AsyncClinitClass acl = new AsyncClinitClass();
@@ -375,6 +380,7 @@ public class VMTest {
     }
 
     @Test
+    @AsyncEnabled
     @SkipJVM
     public void asyncTryCatch() {
         try {
@@ -386,6 +392,7 @@ public class VMTest {
     }
 
     @Test
+    @AsyncEnabled
     @SkipJVM
     public void asyncExceptionHandler() {
         try {
@@ -562,6 +569,7 @@ public class VMTest {
     }
 
     @Test
+    @AsyncEnabled
     public void arrayMonitor() throws InterruptedException {
         int[] array = { 1, 2, 3 };
         synchronized (array) {

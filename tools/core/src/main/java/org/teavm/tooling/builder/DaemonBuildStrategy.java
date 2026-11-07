@@ -295,6 +295,13 @@ public class DaemonBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        if (asyncEnabled) {
+            args.add("--async-enabled");
+        }
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         var command = new ArrayList<String>();
         command.add(javaCommand);

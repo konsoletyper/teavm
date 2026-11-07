@@ -79,6 +79,10 @@ public abstract class DevServerTask extends DefaultTask {
 
     @Input
     @Optional
+    public abstract Property<Boolean> getAsyncEnabled();
+
+    @Input
+    @Optional
     public abstract Property<Boolean> getWasmModularRuntime();
 
     @Input
@@ -169,6 +173,7 @@ public abstract class DevServerTask extends DefaultTask {
         if (getJsModuleType().isPresent()) {
             pm.setJsModuleType(getJsModuleType().get());
         }
+        pm.setAsyncEnabled(getAsyncEnabled().isPresent() && getAsyncEnabled().get());
         if (getWasmSharedBuffer().isPresent()) {
             pm.setWasmSharedBuffer(getWasmSharedBuffer().get());
         }

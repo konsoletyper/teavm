@@ -214,6 +214,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         task.getPreservedClasses().addAll(config.getPreservedClasses());
         task.getProcessMemory().convention(devServer.getProcessMemory());
         task.getProperties().putAll(config.getProperties());
+        task.getAsyncEnabled().convention(config.getAsyncEnabled());
         task.getTargetFilePath().convention(config.getRelativePathInOutputDir());
         task.getTargetFileName().convention(config.getTargetFileName());
         task.getAutoReload().convention(devServer.getAutoReload());
@@ -405,6 +406,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         task.getPreservedClasses().addAll(configuration.getPreservedClasses());
         task.getDebugInformation().convention(configuration.getDebugInformation());
         task.getFastGlobalAnalysis().convention(configuration.getFastGlobalAnalysis());
+        task.getAsyncEnabled().convention(configuration.getAsyncEnabled());
         task.getOptimization().convention(configuration.getOptimization());
         task.getOutOfProcess().convention(configuration.getOutOfProcess());
         task.getProcessMemory().convention(configuration.getProcessMemory());

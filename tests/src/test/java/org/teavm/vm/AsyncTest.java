@@ -30,6 +30,7 @@ import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSString;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
@@ -43,6 +44,7 @@ import org.teavm.runtime.EventQueue;
 @SkipJVM
 public class AsyncTest {
     @Test
+    @AsyncEnabled
     public void primitives() {
         assertEquals(23, getPrimitive());
     }
@@ -55,6 +57,7 @@ public class AsyncTest {
     }
 
     @Test
+    @AsyncEnabled
     @SkipPlatform(TestPlatform.C)
     public void jsObjects() {
         var str = getJsString();
@@ -63,6 +66,7 @@ public class AsyncTest {
     }
 
     @Test
+    @AsyncEnabled
     public void switchAsyncArgument() {
         var sb = new StringBuilder();
         for (var i = 0; i < 4; ++i) {
@@ -82,11 +86,13 @@ public class AsyncTest {
     }
 
     @Test
+    @AsyncEnabled
     public void doublePrimitive() {
         assertEquals(2.5, returnSamePrimitive(2.5), 0.01);
     }
 
     @Test
+    @AsyncEnabled
     public void conditionalBranch() {
         var list = List.of(1, 2);
         var sb = new StringBuilder();
@@ -97,6 +103,7 @@ public class AsyncTest {
     }
 
     @Test
+    @AsyncEnabled
     public void conditionalBranchOfDistinctTypesBeforeSuspension() {
         var sb = new StringBuilder();
         for (var i = 0; i < 2; ++i) {
@@ -113,6 +120,7 @@ public class AsyncTest {
     }
 
     @Test
+    @AsyncEnabled
     public void constantBeneathSuspendingConditional() {
         var sb = new StringBuilder();
         for (var i = 0; i < 2; ++i) {
@@ -126,11 +134,13 @@ public class AsyncTest {
     }
 
     @Test
+    @AsyncEnabled
     public void passStringConstant() {
         assertEquals("foo", returnSamePrimitive("foo"));
     }
 
     @Test
+    @AsyncEnabled
     public void collectionAddAll() {
         var list = new ArrayList<>() {
             @Override
@@ -166,6 +176,7 @@ public class AsyncTest {
     }
 
     @Test
+    @AsyncEnabled
     @SkipPlatform(TestPlatform.C)
     public void awaitPromise() {
         var promise = new JSPromise<String>((resolve, _) -> {
@@ -175,6 +186,7 @@ public class AsyncTest {
     }
 
     @Test
+    @AsyncEnabled
     @OnlyPlatform({ TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID })
     public void suspendFunctionFromJs() {
         assertEquals(23, wrapWithJsCall(() -> perhapsSuspend(false, 23)));

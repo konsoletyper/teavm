@@ -31,6 +31,11 @@ public interface ExternalCompilationRequest {
     boolean isWholeClass();
 
     /**
+     * Whether coroutine transformation should be enabled, see {@link org.teavm.vm.TeaVM#setAsyncEnabled(boolean)}.
+     */
+    boolean isAsyncEnabled();
+
+    /**
      * Arguments of Jupiter parameterized tests among {@link #getTestMethods()}, serialized into an opaque string.
      * Pass it as is to {@link org.teavm.junit.TestCompilationPlugins#createEntryPointPlugin}.
      * Empty string if there are no parameterized tests.

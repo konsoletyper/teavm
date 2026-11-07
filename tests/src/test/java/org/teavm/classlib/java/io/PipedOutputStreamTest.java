@@ -24,6 +24,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTest;
 
@@ -87,12 +88,14 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @AsyncEnabled
     public void constructorLjava_io_PipedInputStream() throws Exception {
         out = new PipedOutputStream(new PipedInputStream());
         out.write('b');
     }
 
     @Test
+    @AsyncEnabled
     public void close() throws Exception {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -114,6 +117,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @AsyncEnabled
     public void connectLjava_io_PipedInputStream() {
         try {
             out = new PipedOutputStream();
@@ -128,6 +132,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @AsyncEnabled
     public void flush() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -140,6 +145,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @AsyncEnabled
     public void write$BII() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -151,6 +157,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @AsyncEnabled
     public void test_writeI() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);

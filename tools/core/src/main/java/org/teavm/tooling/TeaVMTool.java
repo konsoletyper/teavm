@@ -123,6 +123,7 @@ public class TeaVMTool {
     private boolean heapDump;
     private boolean shortFileNames;
     private boolean assertionsRemoved;
+    private boolean asyncEnabled;
     private SourceMapBuilder wasmSourceMapWriter;
 
     public File getTargetDirectory() {
@@ -316,6 +317,10 @@ public class TeaVMTool {
         this.assertionsRemoved = assertionsRemoved;
     }
 
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        this.asyncEnabled = asyncEnabled;
+    }
+
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
     }
@@ -461,6 +466,7 @@ public class TeaVMTool {
             }
 
             vm.setAssertionsRemoved(assertionsRemoved);
+            vm.setAsyncEnabled(asyncEnabled);
 
             vm.setProperties(properties);
             vm.setProgramCache(incremental ? programCache : EmptyProgramCache.INSTANCE);

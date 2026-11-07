@@ -132,24 +132,28 @@ public class ExportTest {
 
     @Test
     public void exitFromJsCall() {
-        testExport("exitFromJsCall", ModuleWithExit.class);
+        testExport("exitFromJsCall", ModuleWithExit.class, true);
     }
 
     @Test
     public void exitFromThread() {
-        testExport("exitFromThread", ModuleWithExit.class);
+        testExport("exitFromThread", ModuleWithExit.class, true);
     }
     
     private void testExport(String name, Class<?> moduleClass) {
+        testExport(name, moduleClass, false);
+    }
+
+    private void testExport(String name, Class<?> moduleClass, boolean asyncEnabled) {
         if (jsNeeded) {
-            testExportJs(name, moduleClass);
+            testExportJs(name, moduleClass, asyncEnabled);
         }
         if (wasmGCNeeded) {
-            testExportWasmGC(name, moduleClass);
+            testExportWasmGC(name, moduleClass, asyncEnabled);
         }
     }
 
-    private void testExportJs(String name, Class<?> moduleClass) {
+    private void testExportJs(String name, Class<?> moduleClass, boolean asyncEnabled) {
         try {
             var jsTarget = new JavaScriptTarget();
             jsTarget.setModuleType(JSModuleType.ES2015);
@@ -159,6 +163,7 @@ public class ExportTest {
             teavm.installPlugins();
             teavm.setEntryPoint(moduleClass.getName());
             teavm.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
+            teavm.setAsyncEnabled(asyncEnabled);
             outputDir.mkdirs();
             teavm.build(outputDir, "test.js");
             if (!teavm.getProblemProvider().getSevereProblems().isEmpty()) {
@@ -192,7 +197,7 @@ public class ExportTest {
         }
     }
 
-    private void testExportWasmGC(String name, Class<?> moduleClass) {
+    private void testExportWasmGC(String name, Class<?> moduleClass, boolean asyncEnabled) {
         try {
             var wasmGCTarget = new WasmGCTarget();
             wasmGCTarget.setObfuscated(false);
@@ -203,6 +208,7 @@ public class ExportTest {
             teavm.installPlugins();
             teavm.setEntryPoint(moduleClass.getName());
             teavm.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
+            teavm.setAsyncEnabled(asyncEnabled);
             outputDir.mkdirs();
             teavm.build(outputDir, "test.wasm");
             if (!teavm.getProblemProvider().getSevereProblems().isEmpty()) {

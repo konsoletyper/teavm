@@ -49,6 +49,7 @@ public class DevServerClient {
     private Set<String> preservedClasses = new LinkedHashSet<>();
     private JSModuleType jsModuleType;
     private boolean wasmSharedBuffer;
+    private boolean asyncEnabled;
     private boolean wasmModularRuntime;
     private String mainClass;
     private boolean stackDeobfuscated;
@@ -303,6 +304,14 @@ public class DevServerClient {
 
     public long getPid() {
         return process != null ? process.pid() : -1;
+    }
+
+    public boolean isAsyncEnabled() {
+        return asyncEnabled;
+    }
+
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        this.asyncEnabled = asyncEnabled;
     }
 
     public boolean isWasmSharedBuffer() {
@@ -668,6 +677,9 @@ public class DevServerClient {
         }
         if (wasmSharedBuffer) {
             command.add("--wasm-shared-buffer");
+        }
+        if (asyncEnabled) {
+            command.add("--async-enabled");
         }
         if (wasmModularRuntime) {
             command.add("--wasm-modular-runtime");

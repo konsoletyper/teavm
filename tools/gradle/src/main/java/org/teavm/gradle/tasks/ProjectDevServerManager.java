@@ -44,6 +44,7 @@ public class ProjectDevServerManager {
     private Set<String> runningPreservedClasses = new HashSet<>();
     private org.teavm.backend.javascript.JSModuleType runningJsModuleType;
     private boolean runningWasmSharedBuffer;
+    private boolean runningAsyncEnabled;
     private boolean runningWasmModularRuntime;
     private String runningMainClass;
     private boolean runningStackDeobfuscated;
@@ -109,6 +110,10 @@ public class ProjectDevServerManager {
 
     public void setWasmSharedBuffer(boolean wasmSharedBuffer) {
         client.setWasmSharedBuffer(wasmSharedBuffer);
+    }
+
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        client.setAsyncEnabled(asyncEnabled);
     }
 
     public void setWasmModularRuntime(boolean wasmModularRuntime) {
@@ -231,6 +236,7 @@ public class ProjectDevServerManager {
         runningPreservedClasses.addAll(client.getPreservedClasses());
         runningJsModuleType = client.getJsModuleType();
         runningWasmSharedBuffer = client.isWasmSharedBuffer();
+        runningAsyncEnabled = client.isAsyncEnabled();
         runningWasmModularRuntime = client.isWasmModularRuntime();
         runningMainClass = client.getMainClass();
         runningStackDeobfuscated = client.isStackDeobfuscated();
@@ -261,6 +267,7 @@ public class ProjectDevServerManager {
                 && Objects.equals(client.getPreservedClasses(), runningPreservedClasses)
                 && client.getJsModuleType() == runningJsModuleType
                 && client.isWasmSharedBuffer() == runningWasmSharedBuffer
+                && client.isAsyncEnabled() == runningAsyncEnabled
                 && client.isWasmModularRuntime() == runningWasmModularRuntime
                 && Objects.equals(client.getMainClass(), runningMainClass)
                 && client.isStackDeobfuscated() == runningStackDeobfuscated

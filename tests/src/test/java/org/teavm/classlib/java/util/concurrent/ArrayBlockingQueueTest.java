@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import org.junit.jupiter.api.Test;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTest;
 
@@ -86,6 +87,7 @@ public class ArrayBlockingQueueTest {
     }
 
     @Test
+    @AsyncEnabled
     public void blockingAddition() throws InterruptedException {
         BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
         assertTrue(queue.offer(1));
@@ -109,6 +111,7 @@ public class ArrayBlockingQueueTest {
     }
 
     @Test
+    @AsyncEnabled
     public void blockingRemoval() throws InterruptedException {
         BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
         assertNull(queue.poll());

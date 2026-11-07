@@ -96,6 +96,7 @@ public class BootstrapWasmGCTestPlatform implements ExternalTestPlatform {
         }
         appendProperty(json, "testMethods", methods);
         json.append(",\"wholeClass\":").append(request.isWholeClass());
+        json.append(",\"asyncEnabled\":").append(request.isAsyncEnabled());
         appendProperty(json, "parameterizedPlans", request.getParameterizedPlans());
         var properties = new ArrayList<String>();
         for (var key : request.getProperties().stringPropertyNames()) {

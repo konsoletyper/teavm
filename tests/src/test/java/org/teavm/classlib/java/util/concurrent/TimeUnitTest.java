@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.TeaVMTest;
 
 @TeaVMTest
@@ -43,12 +44,14 @@ public class TimeUnitTest {
     }
 
     @Test
+    @AsyncEnabled
     public void sleepWithNonPositiveTimeoutReturns() throws InterruptedException {
         TimeUnit.SECONDS.sleep(0);
         TimeUnit.SECONDS.sleep(-1);
     }
 
     @Test
+    @AsyncEnabled
     public void timedWaitWithZeroTimeoutReturns() throws InterruptedException {
         Object lock = new Object();
         // Wakes the wait below if it waits forever, so the test fails instead of hanging.

@@ -76,6 +76,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean shortFileNames;
     private boolean assertionsRemoved;
+    private boolean asyncEnabled;
 
     @Override
     public void init() {
@@ -265,6 +266,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        this.asyncEnabled = asyncEnabled;
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);
@@ -302,6 +308,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setHeapDump(heapDump);
         tool.setShortFileNames(shortFileNames);
         tool.setAssertionsRemoved(assertionsRemoved);
+        tool.setAsyncEnabled(asyncEnabled);
 
         tool.getProperties().putAll(properties);
 

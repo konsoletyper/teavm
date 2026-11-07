@@ -59,6 +59,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.TeaVMTest;
 
 /**
@@ -160,6 +161,7 @@ public class TestClockTick extends AbstractTest {
 
     //-----------------------------------------------------------------------
     @Test
+    @AsyncEnabled
     public void test_tickSeconds_ZoneId() throws Exception {
         Clock test = Clock.tickSeconds(PARIS);
         assertEquals(PARIS, test.getZone());

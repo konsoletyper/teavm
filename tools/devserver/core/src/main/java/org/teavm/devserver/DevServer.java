@@ -44,6 +44,7 @@ public class DevServer {
     private List<String> preservedClasses = new ArrayList<>();
     private JSModuleType jsModuleType;
     private boolean wasmSharedBuffer;
+    private boolean asyncEnabled;
     private boolean wasmModularRuntime;
     private boolean compileOnStartup;
     private boolean logBuildErrors = true;
@@ -173,6 +174,10 @@ public class DevServer {
         this.logBuildErrors = logBuildErrors;
     }
 
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        this.asyncEnabled = asyncEnabled;
+    }
+
     public void setWasmSharedBuffer(boolean wasmSharedBuffer) {
         this.wasmSharedBuffer = wasmSharedBuffer;
     }
@@ -218,6 +223,7 @@ public class DevServer {
         servlet.getPreservedClasses().addAll(preservedClasses);
         servlet.setJsModuleType(jsModuleType);
         servlet.setWasmSharedBuffer(wasmSharedBuffer);
+        servlet.setAsyncEnabled(asyncEnabled);
         servlet.setBackend(backend);
         for (DevServerListener listener : listeners) {
             servlet.addListener(listener);

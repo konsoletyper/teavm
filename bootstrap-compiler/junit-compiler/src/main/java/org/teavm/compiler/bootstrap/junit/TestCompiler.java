@@ -119,6 +119,7 @@ public final class TestCompiler {
             properties.setProperty(propertyArray[i], propertyArray[i + 1]);
         }
         compiler.setProperties(properties);
+        compiler.setAsyncEnabled(request.isAsyncEnabled());
 
         var testMethods = new ArrayList<MethodReference>();
         for (var method : request.getTestMethods()) {

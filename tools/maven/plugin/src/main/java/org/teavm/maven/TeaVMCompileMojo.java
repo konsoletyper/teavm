@@ -195,6 +195,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.assertionsRemoved", defaultValue = "false")
     private boolean assertionsRemoved;
 
+    @Parameter(property = "teavm.asyncEnabled", defaultValue = "false")
+    private boolean asyncEnabled;
+
     private void setupBuilder(BuildStrategy builder) throws MojoExecutionException {
         builder.setLog(new MavenTeaVMToolLog(getLog()));
         try {
@@ -227,6 +230,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setSharedBuffer(sharedBuffer);
             builder.setShortFileNames(shortFileNames);
             builder.setAssertionsRemoved(assertionsRemoved);
+            builder.setAsyncEnabled(asyncEnabled);
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occurred", e);
         }

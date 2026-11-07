@@ -119,6 +119,11 @@ class ExternalWasmGCPlatformSupport extends WebAssemblyGCPlatformSupport {
         }
 
         @Override
+        public boolean isAsyncEnabled() {
+            return spec.asyncEnabled;
+        }
+
+        @Override
         public String getParameterizedPlans() {
             return spec.plans.isEmpty() ? "" : JupiterArgumentsPlanCodec.encode(spec.plans);
         }
