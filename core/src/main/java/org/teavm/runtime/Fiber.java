@@ -263,9 +263,11 @@ public final class Fiber {
         }
         lastPendingCall = pendingCall;
 
-        fiber.state = STATE_SUSPENDING;
         pendingCall.callback = new AsyncCallbackImpl(pendingCall, javaThread, fiber);
+        // The call can run suspendable code that does not suspend. That code must see a running fiber,
+        // otherwise it unwinds as if it suspended.
         call.run(pendingCall.callback);
+        fiber.state = STATE_SUSPENDING;
         return null;
     }
 
