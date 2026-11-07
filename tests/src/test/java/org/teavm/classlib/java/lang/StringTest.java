@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -417,6 +419,19 @@ public class StringTest {
         assertArrayEquals(new int[] { 56178 }, String.valueOf((char) 56178).codePoints().toArray());
     }
     
+    @Test
+    public void lines() {
+        assertEquals(List.of(), "".lines().collect(Collectors.toList()));
+        assertEquals(List.of("abc"), "abc".lines().collect(Collectors.toList()));
+        assertEquals(List.of("abc"), "abc\n".lines().collect(Collectors.toList()));
+        assertEquals(List.of(""), "\n".lines().collect(Collectors.toList()));
+        assertEquals(List.of("", ""), "\n\n".lines().collect(Collectors.toList()));
+        assertEquals(List.of("a", "b", "", "c", "d"), "a\nb\r\n\rc\rd\r\n".lines().collect(Collectors.toList()));
+        assertEquals(List.of(" a ", "\t"), " a \r\t".lines().collect(Collectors.toList()));
+        assertEquals(List.of("a"), "a\nb\nc".lines().limit(1).collect(Collectors.toList()));
+        assertEquals(2, "a\n\nb".lines().filter(l -> !l.isEmpty()).count());
+    }
+
     @Test
     public void translateEscapes() {
         assertEquals("abc", "abc".translateEscapes());

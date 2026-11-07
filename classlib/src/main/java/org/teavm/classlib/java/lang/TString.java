@@ -33,6 +33,8 @@ import org.teavm.classlib.java.util.TFormatter;
 import org.teavm.classlib.java.util.TLocale;
 import org.teavm.classlib.java.util.regex.TPattern;
 import org.teavm.classlib.java.util.stream.TIntStream;
+import org.teavm.classlib.java.util.stream.TStream;
+import org.teavm.classlib.java.util.stream.impl.TStringLinesStream;
 import org.teavm.classlib.java.util.stream.intimpl.TStringCharsStream;
 import org.teavm.classlib.java.util.stream.intimpl.TStringCodePointsStream;
 import org.teavm.dependency.PluggableDependency;
@@ -688,6 +690,10 @@ public final class TString extends TObject implements TSerializable, TComparable
     @Override
     public TIntStream codePoints() {
         return new TStringCodePointsStream(this);
+    }
+
+    public TStream<TString> lines() {
+        return new TStringLinesStream(this);
     }
 
     public static String valueOf(Object obj) {
