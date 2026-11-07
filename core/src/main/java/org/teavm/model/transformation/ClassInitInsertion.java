@@ -32,7 +32,6 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.util.DominatorWalker;
 import org.teavm.model.util.DominatorWalkerCallback;
-import org.teavm.model.util.DominatorWalkerContext;
 
 public class ClassInitInsertion {
     private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
@@ -55,32 +54,18 @@ public class ClassInitInsertion {
     }
 
     class Visitor extends AbstractInstructionVisitor implements DominatorWalkerCallback<State> {
-        private String currentClass;
-        private DominatorWalkerContext context;
         Set<String> initializedClasses = new HashSet<>();
         private State state;
 
         Visitor(String currentClass) {
-            this.currentClass = currentClass;
             if (currentClass != null) {
                 initializedClasses.add(currentClass);
             }
         }
 
         @Override
-        public void setContext(DominatorWalkerContext context) {
-            this.context = context;
-        }
-
-        @Override
         public State visit(BasicBlock block) {
             state = new State();
-            if (context.isExceptionHandler(block.getIndex())) {
-                markAllClassesAsNotInitialized();
-                if (currentClass != null) {
-                    markClassAsInitialized(currentClass);
-                }
-            }
 
             for (Instruction instruction : block) {
                 instruction.acceptVisitor(this);
@@ -91,12 +76,7 @@ public class ClassInitInsertion {
 
         @Override
         public void endVisit(BasicBlock block, State state) {
-            if (state.oldInitializedClasses != null) {
-                initializedClasses.clear();
-                initializedClasses.addAll(state.oldInitializedClasses);
-            } else {
-                initializedClasses.removeAll(state.newInitializedClasses);
-            }
+            initializedClasses.removeAll(state.newInitializedClasses);
         }
 
         @Override
@@ -139,30 +119,14 @@ public class ClassInitInsertion {
 
         boolean markClassAsInitialized(String className) {
             if (initializedClasses.add(className)) {
-                if (state.newInitializedClasses != null) {
-                    state.newInitializedClasses.add(className);
-                }
+                state.newInitializedClasses.add(className);
                 return true;
             }
             return false;
-        }
-
-        private void markAllClassesAsNotInitialized() {
-            if (state.newInitializedClasses != null) {
-                state.oldInitializedClasses = new HashSet<>();
-                for (String className : initializedClasses) {
-                    if (!state.newInitializedClasses.contains(className)) {
-                        state.oldInitializedClasses.add(className);
-                    }
-                }
-                state.newInitializedClasses = null;
-            }
-            initializedClasses.clear();
         }
     }
 
     static class State {
         Set<String> newInitializedClasses = new HashSet<>();
-        Set<String> oldInitializedClasses;
     }
 }

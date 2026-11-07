@@ -86,6 +86,11 @@ public class BoundCheckInsertionTest {
         doTest();
     }
 
+    @Test
+    public void boundsInHandler() {
+        doTest();
+    }
+
     private void doTest() {
         String originalPath = PREFIX + name.getMethodName() + ".original.txt";
         String expectedPath = PREFIX + name.getMethodName() + ".expected.txt";

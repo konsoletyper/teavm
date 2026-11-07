@@ -75,6 +75,11 @@ public class NullnessAnalysisTest {
     }
 
     @Test
+    public void dereferenceInHandler() {
+        test();
+    }
+
+    @Test
     public void loop() {
         test();
     }

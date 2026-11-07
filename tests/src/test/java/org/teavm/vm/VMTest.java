@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.PlatformDetector;
@@ -602,6 +603,33 @@ public class VMTest {
 
         void clear() {
             value = null;
+        }
+    }
+
+    @Test
+    public void exceptionHandlerChecksArrayBounds() {
+        var array = new int[] { 23 };
+        assertEquals(24, readOrDefault(array, 0, () -> 1));
+        try {
+            readOrDefault(array, -1, () -> {
+                throw new IllegalStateException();
+            });
+            fail("ArrayIndexOutOfBoundsException expected");
+        } catch (ArrayIndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    // Offset supplier is polymorphic, so the call isn't inlined and the array access stays
+    // in the same basic block, which is protected by the exception handler. The handler must not
+    // rely on 'index >= 0' proven by the array access in the protected block, since the exception
+    // leaves the block before the access runs. A negative index reveals a missing lower bound check.
+    private static int readOrDefault(int[] array, int index, IntSupplier offset) {
+        try {
+            int n = offset.getAsInt();
+            return array[index] + n;
+        } catch (IllegalStateException e) {
+            return array[index];
         }
     }
 

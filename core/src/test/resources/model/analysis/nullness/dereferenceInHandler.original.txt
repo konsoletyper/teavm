@@ -1,0 +1,12 @@
+var @this as this
+
+$start
+    @bar := invokeVirtual `Foo.bar()LBar;` @this
+    goto $try
+$try
+    invokeVirtual `Bar.baz()LBar;` @bar
+    return @bar
+    catch java.lang.RuntimeException goto $handle
+$handle
+    invokeVirtual `Bar.baz2()LBar;` @bar
+    return @bar
