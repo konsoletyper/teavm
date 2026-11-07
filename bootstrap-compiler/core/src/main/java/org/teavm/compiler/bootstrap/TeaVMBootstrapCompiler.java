@@ -62,6 +62,7 @@ public class TeaVMBootstrapCompiler {
     private String outputName = "app";
     private boolean strictMode;
     private boolean asyncEnabled;
+    private boolean assertionsRemoved;
     private boolean obfuscated;
     private boolean debugInfo;
     private boolean sourceMap;
@@ -105,6 +106,10 @@ public class TeaVMBootstrapCompiler {
 
     public void setAsyncEnabled(boolean asyncEnabled) {
         this.asyncEnabled = asyncEnabled;
+    }
+
+    public void setAssertionsRemoved(boolean assertionsRemoved) {
+        this.assertionsRemoved = assertionsRemoved;
     }
 
     public void setObfuscated(boolean obfuscated) {
@@ -269,6 +274,7 @@ public class TeaVMBootstrapCompiler {
         teavm.setOptimizationLevel(optimizationLevel);
         teavm.setProperties(properties);
         teavm.setAsyncEnabled(asyncEnabled);
+        teavm.setAssertionsRemoved(assertionsRemoved);
         if (policyProvider != null) {
             teavm.addExtensionPolicyProvider(policyProvider);
         }
