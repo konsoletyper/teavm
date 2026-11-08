@@ -98,6 +98,13 @@ val defaultCRunWrapper = if (isWindowsOs) "" else "bash run-process-unix-gdb.sh"
 // script; a custom teavm.tests.c.compiler is expected to set up whatever environment it needs itself.
 val defaultCEnvScript = if (isWindowsOs && !cCompilerOverridden) "setup-msvc-env.bat" else ""
 
+// Blank values are treated as absent by localProperties, so `none` is used to explicitly disable
+// a wrapper or a script that is enabled by default.
+fun optionalCommand(name: String, defaultValue: String): String {
+    val value = localProperties.get(name).orElse(defaultValue).get()
+    return if (value == "none") "" else value
+}
+
 tasks.withType<Test>().configureEach {
     systemProperty("teavm.junit.target", layout.buildDirectory.dir("teavm-tests").get().asFile.absolutePath)
     val browser = localProperties.get("teavm.tests.browser").orElse("browser-chrome").get()
@@ -132,10 +139,8 @@ tasks.withType<Test>().configureEach {
     systemProperty("teavm.junit.c", localProperties.get("teavm.tests.c").orElse("true").get())
     systemProperty("teavm.junit.c.compiler", localProperties.get("teavm.tests.c.compiler")
             .orElse(defaultCCompiler).get())
-    systemProperty("teavm.junit.c.runWrapper", localProperties.get("teavm.tests.c.runWrapper")
-        .orElse(defaultCRunWrapper).get())
-    systemProperty("teavm.junit.c.envScript", localProperties.get("teavm.tests.c.envScript")
-        .orElse(defaultCEnvScript).get())
+    systemProperty("teavm.junit.c.runWrapper", optionalCommand("teavm.tests.c.runWrapper", defaultCRunWrapper))
+    systemProperty("teavm.junit.c.envScript", optionalCommand("teavm.tests.c.envScript", defaultCEnvScript))
     systemProperty("teavm.junit.c.shortFileNames", localProperties.get("teavm.tests.c.shortFileNames")
         .getOrElse(isWindowsOs.toString()))
 
