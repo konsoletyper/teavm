@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify-and-release:
-    if: github.repository_owner == 'haimlm'
+    if: github.repository_owner == 'YosefLm'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
