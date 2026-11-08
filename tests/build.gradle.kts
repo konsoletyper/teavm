@@ -23,6 +23,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     scala
     id("mac-remote-test")
+    id("local-properties")
 }
 
 description = "Tests"
@@ -76,9 +77,9 @@ dependencies {
  * in which case compiler is not built at all; note that it's your responsibility to keep it in sync
  * with the rest of the code in this case.
  */
-val bootstrapWasmGCEnabled = providers.gradleProperty("teavm.tests.bootstrap-wasm-gc").orElse("false").get()
+val bootstrapWasmGCEnabled = localProperties.get("teavm.tests.bootstrap-wasm-gc").orElse("false").get()
         .toBoolean()
-val bootstrapWasmGCPrebuiltCompiler = providers.gradleProperty("teavm.tests.bootstrap-wasm-gc.compiler").orNull
+val bootstrapWasmGCPrebuiltCompiler = localProperties.get("teavm.tests.bootstrap-wasm-gc.compiler").orNull
 val bootstrapCompiler = configurations.create("bootstrapCompiler") {
     isCanBeConsumed = false
     isTransitive = false
@@ -90,7 +91,7 @@ if (bootstrapWasmGCEnabled && bootstrapWasmGCPrebuiltCompiler == null) {
 }
 
 val isWindowsOs = System.getProperty("os.name").lowercase().contains("win")
-val cCompilerOverridden = providers.gradleProperty("teavm.tests.c.compiler").isPresent
+val cCompilerOverridden = localProperties.get("teavm.tests.c.compiler").isPresent
 val defaultCCompiler = if (isWindowsOs) "compile-c-windows-fast.bat" else "compile-c-unix-fast.sh"
 val defaultCRunWrapper = if (isWindowsOs) "" else "bash run-process-unix-gdb.sh"
 // only run our own env setup script when we're compiling with our own default Windows compiler
@@ -99,18 +100,18 @@ val defaultCEnvScript = if (isWindowsOs && !cCompilerOverridden) "setup-msvc-env
 
 tasks.withType<Test>().configureEach {
     systemProperty("teavm.junit.target", layout.buildDirectory.dir("teavm-tests").get().asFile.absolutePath)
-    val browser = providers.gradleProperty("teavm.tests.browser").orElse("browser-chrome").get()
+    val browser = localProperties.get("teavm.tests.browser").orElse("browser-chrome").get()
 
-    systemProperty("teavm.junit.js", providers.gradleProperty("teavm.tests.js").orElse("true").get())
+    systemProperty("teavm.junit.js", localProperties.get("teavm.tests.js").orElse("true").get())
     systemProperty("teavm.junit.js.runner", browser)
-    systemProperty("teavm.junit.minified", providers.gradleProperty("teavm.tests.minified").orElse("true").get())
-    systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized").orElse("true").get())
-    systemProperty("teavm.junit.js.decodeStack", providers.gradleProperty("teavm.tests.decodeStack")
+    systemProperty("teavm.junit.minified", localProperties.get("teavm.tests.minified").orElse("true").get())
+    systemProperty("teavm.junit.optimized", localProperties.get("teavm.tests.optimized").orElse("true").get())
+    systemProperty("teavm.junit.js.decodeStack", localProperties.get("teavm.tests.decodeStack")
             .orElse("false").get())
 
-    systemProperty("teavm.junit.wasm-gc", providers.gradleProperty("teavm.tests.wasm-gc").orElse("true").get())
+    systemProperty("teavm.junit.wasm-gc", localProperties.get("teavm.tests.wasm-gc").orElse("true").get())
     systemProperty("teavm.junit.wasm-gc.runner", browser)
-    systemProperty("teavm.junit.wasm-gc.disasm", providers.gradleProperty("teavm.tests.wasm-gc.disasm")
+    systemProperty("teavm.junit.wasm-gc.disasm", localProperties.get("teavm.tests.wasm-gc.disasm")
         .orElse("false").get())
 
     systemProperty("teavm.junit.bootstrap-wasm-gc", bootstrapWasmGCEnabled.toString())
@@ -128,14 +129,14 @@ tasks.withType<Test>().configureEach {
         }
     }
 
-    systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("true").get())
-    systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")
+    systemProperty("teavm.junit.c", localProperties.get("teavm.tests.c").orElse("true").get())
+    systemProperty("teavm.junit.c.compiler", localProperties.get("teavm.tests.c.compiler")
             .orElse(defaultCCompiler).get())
-    systemProperty("teavm.junit.c.runWrapper", providers.gradleProperty("teavm.tests.c.runWrapper")
+    systemProperty("teavm.junit.c.runWrapper", localProperties.get("teavm.tests.c.runWrapper")
         .orElse(defaultCRunWrapper).get())
-    systemProperty("teavm.junit.c.envScript", providers.gradleProperty("teavm.tests.c.envScript")
+    systemProperty("teavm.junit.c.envScript", localProperties.get("teavm.tests.c.envScript")
         .orElse(defaultCEnvScript).get())
-    systemProperty("teavm.junit.c.shortFileNames", providers.gradleProperty("teavm.tests.c.shortFileNames")
+    systemProperty("teavm.junit.c.shortFileNames", localProperties.get("teavm.tests.c.shortFileNames")
         .getOrElse(isWindowsOs.toString()))
 
     val dependencies = configurations.testRuntimeClasspath.get()
