@@ -17,7 +17,6 @@ package org.teavm.model.optimization;
 
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.analysis.NullnessInformation;
@@ -29,20 +28,16 @@ import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.util.TransitionExtractor;
 
-public class ConstantConditionElimination implements MethodOptimization {
+public class ConstantConditionElimination implements NullnessAwareOptimization {
     private int[] constants;
     private boolean[] constantDefined;
     private NullnessInformation nullness;
 
     @Override
-    public boolean optimize(MethodOptimizationContext context, Program program) {
-        return optimize(context.getMethod().getDescriptor(), program);
-    }
-
-    public boolean optimize(MethodDescriptor descriptor, Program program) {
+    public boolean optimize(NullnessInformation nullness, MethodOptimizationContext context, Program program) {
         constants = new int[program.variableCount()];
         constantDefined = new boolean[program.variableCount()];
-        nullness = NullnessInformation.build(program, descriptor);
+        this.nullness = nullness;
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -86,14 +81,9 @@ public class ConstantConditionElimination implements MethodOptimization {
             }
         }
 
-        nullness.dispose();
-        nullness = null;
+        this.nullness = null;
         constantDefined = null;
         constants = null;
-
-        if (changed) {
-            new UnreachableBasicBlockEliminator().optimize(program, descriptor.parameterCount());
-        }
 
         return changed;
     }

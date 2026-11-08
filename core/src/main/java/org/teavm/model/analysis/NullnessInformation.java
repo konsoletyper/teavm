@@ -45,15 +45,15 @@ public class NullnessInformation {
     }
 
     public boolean isNotNull(Variable variable) {
-        return nullnessArray[variable.getIndex()] == Nullness.NOT_NULL;
+        return variable.getIndex() < nullnessArray.length && nullnessArray[variable.getIndex()] == Nullness.NOT_NULL;
     }
 
     public boolean isNull(Variable variable) {
-        return nullnessArray[variable.getIndex()] == Nullness.NULL;
+        return variable.getIndex() < nullnessArray.length && nullnessArray[variable.getIndex()] == Nullness.NULL;
     }
 
     public boolean isSynthesized(Variable variable) {
-        return synthesizedVariables.get(variable.getIndex());
+        return variable.getIndex() < synthesizedVariables.size() && synthesizedVariables.get(variable.getIndex());
     }
 
     public void dispose() {

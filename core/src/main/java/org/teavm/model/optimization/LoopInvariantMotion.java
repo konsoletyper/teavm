@@ -47,16 +47,14 @@ import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
 
-public class LoopInvariantMotion implements MethodOptimization {
+public class LoopInvariantMotion implements NullnessAwareOptimization {
     private int[] preheaders;
     private LoopGraph graph;
     private DominatorTree dom;
     private Program program;
 
     @Override
-    public boolean optimize(MethodOptimizationContext context, Program program) {
-        NullnessInformation nullness = NullnessInformation.build(program, context.getMethod().getDescriptor());
-
+    public boolean optimize(NullnessInformation nullness, MethodOptimizationContext context, Program program) {
         boolean affected = false;
         this.program = program;
         graph = new LoopGraph(ProgramUtils.buildControlFlowGraph(program));
@@ -145,6 +143,7 @@ public class LoopInvariantMotion implements MethodOptimization {
                     Instruction constInsn = constantInstructions[use.getIndex()];
                     if (constInsn != null) {
                         constInsn.acceptVisitor(constantCopier);
+                        constantCopier.copy.setLocation(constInsn.getLocation());
                         newInstructions.add(constantCopier.copy);
                         if (variableMap == null) {
                             variableMap = new Variable[program.variableCount()];
@@ -169,7 +168,6 @@ public class LoopInvariantMotion implements MethodOptimization {
             }
         }
 
-        nullness.dispose();
         return affected;
     }
 

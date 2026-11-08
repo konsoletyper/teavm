@@ -91,6 +91,8 @@ import org.teavm.model.optimization.InliningStrategy;
 import org.teavm.model.optimization.LoopInvariantMotion;
 import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.MethodOptimizationContext;
+import org.teavm.model.optimization.NullnessAwareOptimization;
+import org.teavm.model.optimization.NullnessBasedOptimizations;
 import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.optimization.RedundantNullCheckElimination;
 import org.teavm.model.optimization.RedundantPhiElimination;
@@ -930,21 +932,23 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         List<MethodOptimization> optimizations = new ArrayList<>();
         optimizations.add(new RedundantJumpElimination());
         optimizations.add(new ArrayUnwrapMotion());
+        var nullnessAwareOptimizations = new ArrayList<NullnessAwareOptimization>();
         if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
             optimizations.add(new ScalarReplacement());
             //optimizations.add(new LoopInversion());
-            optimizations.add(new LoopInvariantMotion());
+            nullnessAwareOptimizations.add(new LoopInvariantMotion());
         }
         if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
             optimizations.add(new RepeatedFieldReadElimination());
         }
         optimizations.add(new GlobalValueNumbering(optimizationLevel == TeaVMOptimizationLevel.SIMPLE));
-        optimizations.add(new RedundantNullCheckElimination());
+        nullnessAwareOptimizations.add(new RedundantNullCheckElimination());
         if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
-            optimizations.add(new ConstantConditionElimination());
+            nullnessAwareOptimizations.add(new ConstantConditionElimination());
             optimizations.add(new RedundantJumpElimination());
             optimizations.add(new UnusedVariableElimination(false));
         }
+        optimizations.add(new NullnessBasedOptimizations(nullnessAwareOptimizations));
         optimizations.add(new ClassInitElimination());
         optimizations.add(new UnreachableBasicBlockElimination());
         optimizations.add(new UnusedVariableElimination(false));

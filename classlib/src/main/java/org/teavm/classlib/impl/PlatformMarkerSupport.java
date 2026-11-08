@@ -39,7 +39,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
-import org.teavm.model.optimization.ConstantConditionElimination;
+import org.teavm.model.optimization.FastConstantConditionElimination;
 import org.teavm.model.optimization.GlobalValueNumbering;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 
@@ -136,8 +136,9 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
         if (hasChanges) {
             boolean changed;
             do {
+                var constantConditionElimination = new FastConstantConditionElimination();
                 changed = new GlobalValueNumbering(true).optimize(program)
-                        | new ConstantConditionElimination().optimize(containingMethod.getDescriptor(), program);
+                        | constantConditionElimination.optimize(program);
                 new UnreachableBasicBlockEliminator().optimize(program, containingMethod.parameterCount());
             } while (changed);
         }

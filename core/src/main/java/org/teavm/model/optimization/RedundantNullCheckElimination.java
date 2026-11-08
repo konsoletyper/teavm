@@ -23,19 +23,16 @@ import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.util.ProgramUtils;
 
-public class RedundantNullCheckElimination implements MethodOptimization {
+public class RedundantNullCheckElimination implements NullnessAwareOptimization {
     @Override
-    public boolean optimize(MethodOptimizationContext context, Program program) {
-        NullnessInformation nullness = NullnessInformation.build(program, context.getMethod().getDescriptor());
-
+    public boolean optimize(NullnessInformation nullness, MethodOptimizationContext context, Program program) {
         boolean hasChanges = false;
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Instruction instruction : block) {
-                if (!(instruction instanceof NullCheckInstruction)) {
+                if (!(instruction instanceof NullCheckInstruction nullCheck)) {
                     continue;
                 }
 
-                NullCheckInstruction nullCheck = (NullCheckInstruction) instruction;
                 if (nullness.isSynthesized(nullCheck.getReceiver())) {
                     continue;
                 }
@@ -61,11 +58,6 @@ public class RedundantNullCheckElimination implements MethodOptimization {
             }
         }
 
-        if (hasChanges) {
-            new UnreachableBasicBlockEliminator().optimize(program, context.getMethod().parameterCount());
-        }
-
-        nullness.dispose();
         return hasChanges;
     }
 }
