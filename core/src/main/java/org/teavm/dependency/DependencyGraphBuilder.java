@@ -40,6 +40,8 @@ import org.teavm.model.TryCatchBlockReader;
 import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
 import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.text.ListingBuilder;
 
 class DependencyGraphBuilder {
@@ -346,6 +348,30 @@ class DependencyGraphBuilder {
         private void consumeArrayIndexOutOfBounds() {
             currentExceptionConsumer.consume(dependencyAnalyzer.getClassType(
                     ArrayIndexOutOfBoundsException.class.getName()));
+        }
+
+        @Override
+        public void binary(BinaryOperation op, VariableReader receiver, VariableReader first,
+                VariableReader second, NumericOperandType type) {
+            super.binary(op, receiver, first, second, type);
+            if (isCheckedDivision(op, type)) {
+                currentExceptionConsumer.consume(dependencyAnalyzer.getClassType(
+                        ArithmeticException.class.getName()));
+            }
+        }
+
+        private boolean isCheckedDivision(BinaryOperation op, NumericOperandType type) {
+            switch (op) {
+                case DIVIDE_CHECKED:
+                case MODULO_CHECKED:
+                    return true;
+                case DIVIDE:
+                case MODULO:
+                    return dependencyAnalyzer.divisionChecked
+                            && (type == NumericOperandType.INT || type == NumericOperandType.LONG);
+                default:
+                    return false;
+            }
         }
 
         private boolean isPrimitive(ArrayElementType type) {

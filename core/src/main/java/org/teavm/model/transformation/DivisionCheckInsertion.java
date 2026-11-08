@@ -70,6 +70,7 @@ public class DivisionCheckInsertion {
             "<init>", void.class);
 
     public static void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
+        dependencyAnalyzer.setDivisionChecked(true);
         dependencyAnalyzer.linkMethod(AE_CONSTRUCTOR)
                 .propagateClass(0, ArithmeticException.class.getName())
                 .use();

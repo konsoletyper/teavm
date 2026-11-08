@@ -326,6 +326,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     @Override
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         BoundCheckInsertion.contributeDependencies(dependencyAnalyzer);
+        if (strict) {
+            DivisionCheckInsertion.contributeDependencies(dependencyAnalyzer);
+        }
         dependencyAnalyzer.linkMethod(new MethodReference(Class.class, "createClass", ClassInfo.class, Class.class))
                 .use();
 
