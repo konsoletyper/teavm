@@ -15,9 +15,10 @@
  */
 package org.teavm.extension.bridge;
 
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.typedarrays.Int8Array;
 
 public interface BridgeResource extends JSObject {
-    Int8Array read();
+    @JSByRef(optional = true)
+    byte[] read();
 }

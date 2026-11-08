@@ -15,19 +15,13 @@
  */
 package org.teavm.extension.bridge;
 
-import org.teavm.jso.JSObject;
-
 /**
  * Exposes compiler's {@link org.teavm.extension.ExtensionEnvironment} to guest.
  */
-public interface BridgeHost extends JSObject {
+public interface BridgeHost extends BridgeResourceHost {
     BridgeClass findClass(String name);
 
     BridgeClass findClassByDesc(String desc);
-
-    String property(String name);
-
-    BridgeResource[] resources(String name);
 
     /**
      * Reports diagnostic message.

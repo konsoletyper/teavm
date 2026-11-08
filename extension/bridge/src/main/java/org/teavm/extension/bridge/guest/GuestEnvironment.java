@@ -97,7 +97,7 @@ public class GuestEnvironment implements ExtensionEnvironment {
         var remoteResources = host.resources(name);
         var result = new ArrayList<Resource>(remoteResources.length);
         for (var remoteResource : remoteResources) {
-            result.add(() -> new ByteArrayInputStream(remoteResource.read().copyToJavaArray()));
+            result.add(() -> new ByteArrayInputStream(remoteResource.read()));
         }
         return result.iterator();
     }

@@ -33,11 +33,15 @@ import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.backend.wasm.debug.sourcemap.SourceMapBuilder;
 import org.teavm.classlib.impl.JCLPlugin;
 import org.teavm.compiler.bootstrap.extension.GuestPolicyProvider;
+import org.teavm.compiler.bootstrap.extension.GuestResourceTransformer;
+import org.teavm.compiler.bootstrap.extension.GuestSubstitutionPolicy;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.extension.bridge.BridgeGuestModule;
 import org.teavm.extension.bridge.guest.ExtensionGuest;
 import org.teavm.extension.spi.reflection.ReflectionPolicy;
 import org.teavm.extension.spi.resources.ResourcesPolicy;
+import org.teavm.extension.spi.substitution.SubstitutionPolicy;
+import org.teavm.extension.spi.transformation.ResourceTransformer;
 import org.teavm.jso.impl.JSOPlugin;
 import org.teavm.metaprogramming.impl.MetaprogrammingPlugin;
 import org.teavm.model.ClassHolderSource;
@@ -47,6 +51,7 @@ import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.CompositeClassHolderSource;
 import org.teavm.parsing.resource.CompositeResourceProvider;
 import org.teavm.parsing.resource.ResourceProvider;
+import org.teavm.parsing.resource.SPITransformingResourceProvider;
 import org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping;
 import org.teavm.platform.plugin.PlatformPlugin;
 import org.teavm.vm.BuildTarget;
@@ -76,11 +81,11 @@ public class TeaVMBootstrapCompiler {
     private ExtensionModuleLoader extensionModuleLoader;
 
     private ReferenceCache refCache = new ReferenceCache();
-    private ResourceProvider resourceProvider;
     private ClassHolderSource classlibSource;
     private ProblemProvider problemProvider;
     private boolean extensionsResolved;
     private BridgeGuestModule extensionModule;
+    private GuestSubstitutionPolicy extensionSubstitutionPolicy;
 
     public static ByteArrayResourceProvider loadClasslib() throws IOException {
         var input = TeaVMBootstrapCompiler.class.getClassLoader().getResourceAsStream(CLASSLIB_RESOURCE);
@@ -156,8 +161,9 @@ public class TeaVMBootstrapCompiler {
      * Compiles application. Compilation is performed in two phases:
      *
      * <ol>
-     *   <li>Extensions (like {@link ReflectionPolicy}), registered in the class path, are compiled into a separate
-     *     module, which is then loaded via {@link ExtensionModuleLoader}. If class path does not contain
+     *   <li>Extensions (like {@link ReflectionPolicy} or {@link SubstitutionPolicy}), registered in the class path,
+     *     are compiled into a separate module, which is then loaded via {@link ExtensionModuleLoader}.
+     *     If class path does not contain
      *     extensions, this phase is skipped. The result of this phase is cached, so subsequent compilations
      *     reuse already loaded module.</li>
      *   <li>Application itself is compiled, with extensions running in the module, loaded in previous phase.</li>
@@ -186,7 +192,7 @@ public class TeaVMBootstrapCompiler {
     private void compileWithExtensions(CompileCallback callback) {
         var moduleFiles = new LinkedHashMap<String, ByteArrayOutputStream>();
         doCompile(ExtensionGuest.class.getName(), EXTENSIONS_MODULE_NAME, new MemoryBuildTarget(moduleFiles),
-                List.of(), null, false);
+                List.of(), null, null, false);
         if (!problemProvider.getSevereProblems().isEmpty()) {
             callback.complete();
             return;
@@ -195,9 +201,10 @@ public class TeaVMBootstrapCompiler {
                 new ExtensionModuleLoader.Callback() {
                     @Override
                     public void loaded(BridgeGuestModule module) {
-                        extensionModule = module;
-                        extensionsResolved = true;
                         try {
+                            extensionModule = module;
+                            extensionSubstitutionPolicy = GuestSubstitutionPolicy.create(module);
+                            extensionsResolved = true;
                             compileApplication();
                         } catch (Throwable e) {
                             callback.error(e);
@@ -214,10 +221,13 @@ public class TeaVMBootstrapCompiler {
     }
 
     private void compileApplication() {
-        var policyProvider = extensionModule != null
-                ? new GuestPolicyProvider(extensionModule)
-                : null;
-        doCompile(mainClass, outputName, buildTarget, plugins, policyProvider, sourceMap);
+        GuestPolicyProvider policyProvider = null;
+        GuestResourceTransformer resourceTransformer = null;
+        if (extensionModule != null) {
+            policyProvider = new GuestPolicyProvider(extensionModule);
+            resourceTransformer = GuestResourceTransformer.create(extensionModule);
+        }
+        doCompile(mainClass, outputName, buildTarget, plugins, policyProvider, resourceTransformer, sourceMap);
     }
 
     /**
@@ -225,7 +235,8 @@ public class TeaVMBootstrapCompiler {
      * a separate module can be skipped.
      */
     private boolean hasExtensionProviders() throws IOException {
-        return hasProviders(ReflectionPolicy.class) || hasProviders(ResourcesPolicy.class);
+        return hasProviders(ReflectionPolicy.class) || hasProviders(ResourcesPolicy.class)
+                || hasProviders(SubstitutionPolicy.class) || hasProviders(ResourceTransformer.class);
     }
 
     private boolean hasProviders(Class<?> type) throws IOException {
@@ -252,18 +263,32 @@ public class TeaVMBootstrapCompiler {
     }
 
     private void doCompile(String mainClass, String outputName, BuildTarget buildTarget, List<TeaVMPlugin> plugins,
-            GuestPolicyProvider policyProvider, boolean sourceMap) {
+            GuestPolicyProvider policyProvider, ResourceTransformer resourceTransformer, boolean sourceMap) {
         var target = new WasmGCTarget();
-        var substitute = DefaultSubstituteClassNameMapping.createWithPolicies(List.of(
-                new ClasslibSubstitutionPolicy()));
         if (classlibSource == null) {
-            resourceProvider = new CompositeResourceProvider(classlibResourceProvider, classesResourceProvider);
+            var classlibSubstitute = DefaultSubstituteClassNameMapping.createWithPolicies(List.of(
+                    new ClasslibSubstitutionPolicy()));
             classlibSource = new PreOptimizingClassHolderSource(
-                    new ClasspathClassHolderSource(classlibResourceProvider, refCache, substitute));
+                    new ClasspathClassHolderSource(classlibResourceProvider, refCache, classlibSubstitute));
         }
+
+        // Class library is parsed only once and reused across compilations, so extensions
+        // (substitution policies and resource transformers) only affect classes from class path.
+        var substitutionPolicies = new ArrayList<SubstitutionPolicy>();
+        substitutionPolicies.add(new ClasslibSubstitutionPolicy());
+        if (extensionSubstitutionPolicy != null) {
+            substitutionPolicies.add(extensionSubstitutionPolicy);
+        }
+        var substitute = DefaultSubstituteClassNameMapping.createWithPolicies(substitutionPolicies);
+        var classesProvider = classesResourceProvider;
+        if (resourceTransformer != null) {
+            classesProvider = new SPITransformingResourceProvider(classesProvider, null,
+                    List.of(resourceTransformer), properties);
+        }
+        var resourceProvider = new CompositeResourceProvider(classlibResourceProvider, classesProvider);
         var currentClassSource = new CompositeClassHolderSource(List.of(classlibSource,
                 new PreOptimizingClassHolderSource(
-                        new ClasspathClassHolderSource(classesResourceProvider, refCache, substitute))));
+                        new ClasspathClassHolderSource(classesProvider, refCache, substitute))));
         var teavm = new TeaVMBuilder(target)
                 .setClassSource(currentClassSource)
                 .setResourceProvider(resourceProvider)

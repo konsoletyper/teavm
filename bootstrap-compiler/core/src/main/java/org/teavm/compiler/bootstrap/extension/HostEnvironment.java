@@ -15,9 +15,6 @@
  */
 package org.teavm.compiler.bootstrap.extension;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +35,6 @@ import org.teavm.extension.introspect.IntrospectParameterizedType;
 import org.teavm.extension.introspect.IntrospectType;
 import org.teavm.extension.introspect.IntrospectTypeArgument;
 import org.teavm.extension.introspect.IntrospectTypeVariable;
-import org.teavm.jso.typedarrays.Int8Array;
 
 /**
  * Exposes {@link ExtensionEnvironment} to guest. Every introspected element is represented by exactly one
@@ -97,12 +93,7 @@ public class HostEnvironment implements BridgeHost {
 
     @Override
     public BridgeResource[] resources(String name) {
-        var result = new ArrayList<HostResource>();
-        var iterator = env.resources(name);
-        while (iterator.hasNext()) {
-            result.add(new HostResource(iterator.next()));
-        }
-        return result.toArray(new HostResource[0]);
+        return HostResource.toArray(env.resources(name));
     }
 
     @Override
@@ -265,24 +256,5 @@ public class HostEnvironment implements BridgeHost {
             result[i] = unwrapClass(classes[i]);
         }
         return result;
-    }
-
-    private static class HostResource implements BridgeResource {
-        private org.teavm.extension.resource.Resource resource;
-
-        HostResource(org.teavm.extension.resource.Resource resource) {
-            this.resource = resource;
-        }
-
-        @Override
-        public Int8Array read() {
-            try (var input = resource.open()) {
-                var output = new ByteArrayOutputStream();
-                input.transferTo(output);
-                return Int8Array.copyFromJavaArray(output.toByteArray());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 }

@@ -25,4 +25,19 @@ public interface BridgeGuestModule extends JSObject {
      * Instantiates extensions. Should be called once per compilation, since extensions may have state.
      */
     BridgeGuest create(BridgeHost host);
+
+    /**
+     * Collects rules from all {@link org.teavm.extension.spi.substitution.SubstitutionPolicy}s. Unlike
+     * {@link #create(BridgeHost)}, does not require compilation to be started, since substitution is applied
+     * while parsing classes.
+     */
+    BridgeSubstitutionRule[] substitutionRules();
+
+    /**
+     * Instantiates {@link org.teavm.extension.spi.transformation.ResourceTransformer}s. Should be called once
+     * per compilation.
+     *
+     * @return combined transformer or {@code null} if there are no transformers.
+     */
+    BridgeResourceTransformer createResourceTransformer(BridgeResourceHost host);
 }

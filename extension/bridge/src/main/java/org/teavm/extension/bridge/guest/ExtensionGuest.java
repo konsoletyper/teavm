@@ -18,10 +18,18 @@ package org.teavm.extension.bridge.guest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.function.Predicate;
 import org.teavm.extension.bridge.BridgeGuest;
 import org.teavm.extension.bridge.BridgeHost;
+import org.teavm.extension.bridge.BridgeResourceHost;
+import org.teavm.extension.bridge.BridgeResourceTransformer;
+import org.teavm.extension.bridge.BridgeSubstitutionRule;
 import org.teavm.extension.spi.reflection.ReflectionPolicy;
 import org.teavm.extension.spi.resources.ResourcesPolicy;
+import org.teavm.extension.spi.substitution.ClassSubstitutionPolicy;
+import org.teavm.extension.spi.substitution.SubstitutionPolicy;
+import org.teavm.extension.spi.substitution.SubstitutionSink;
+import org.teavm.extension.spi.transformation.ResourceTransformer;
 import org.teavm.jso.JSExport;
 
 /**
@@ -39,6 +47,29 @@ public final class ExtensionGuest {
     public static BridgeGuest create(BridgeHost host) {
         var env = new GuestEnvironment(host);
         return new GuestBridge(env, load(ReflectionPolicy.class), load(ResourcesPolicy.class));
+    }
+
+    @JSExport
+    public static BridgeSubstitutionRule[] substitutionRules() {
+        var rules = new ArrayList<GuestSubstitutionRule>();
+        var sink = new SubstitutionSink() {
+            @Override
+            public ClassSubstitutionPolicy selectClasses(Predicate<String> predicate) {
+                var rule = new GuestSubstitutionRule(predicate);
+                rules.add(rule);
+                return rule;
+            }
+        };
+        for (var policy : load(SubstitutionPolicy.class)) {
+            policy.contribute(sink);
+        }
+        return rules.toArray(new BridgeSubstitutionRule[0]);
+    }
+
+    @JSExport
+    public static BridgeResourceTransformer createResourceTransformer(BridgeResourceHost host) {
+        var transformers = load(ResourceTransformer.class);
+        return !transformers.isEmpty() ? new GuestResourceTransformer(host, transformers) : null;
     }
 
     private static <T> List<T> load(Class<T> type) {
