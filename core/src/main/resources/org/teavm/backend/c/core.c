@@ -13,6 +13,7 @@
 
 #if TEAVM_INCREMENTAL
     #include "virtcall.h"
+    #define TEAVM_ALLOC_STACK(sz) TEAVM_ALLOC_STACK_DEF(sz, NULL)
 #endif
 
 #if TEAVM_UNIX
@@ -41,11 +42,17 @@ void teavm_beforeInit() {
 }
 
 TeaVM_Array* teavm_parseArguments(int argc, char** argv) {
+    // Converting an argument may collect garbage, so the array is a GC root while it is filled
+    TEAVM_ALLOC_STACK(1);
+    TEAVM_CALL_SITE(-1);
     TeaVM_Array* array = teavm_allocateStringArray(argc > 0 ? argc - 1 : 0);
-    TeaVM_String** arrayData = TEAVM_ARRAY_DATA(array, TeaVM_String*);
+    TEAVM_GC_ROOT(0, array);
     for (int i = 1; i < argc; ++i) {
-        arrayData[i - 1] = teavm_cToString(argv[i]);
+        TeaVM_String* arg = teavm_cToString(argv[i]);
+        teavm_gc_writeBarrier(array);
+        TEAVM_ARRAY_DATA(array, TeaVM_String*)[i - 1] = arg;
     }
+    TEAVM_RELEASE_STACK;
     return array;
 }
 

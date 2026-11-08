@@ -52,13 +52,21 @@ public final class Allocator {
         int size = dimensions.getInt();
         RuntimeArray array = allocateArray(tag, dimensions.getInt()).toStructure();
         if (dimensionCount > 1) {
+            // Inner allocations may collect: a stack root keeps the outer array alive and unmoved.
+            // Call site -1 makes exception unwinding and stack traces skip this frame.
+            ShadowStack.allocStack(1);
+            ShadowStack.registerCallSite(-1);
+            ShadowStack.registerGCRoot(0, array);
             Address arrayData = Structure.add(RuntimeArray.class, array, 1).toAddress();
             arrayData = Address.align(arrayData, Address.sizeOf());
             for (int i = 0; i < size; ++i) {
                 RuntimeArray innerArray = allocateMultiArray(tag.itemType, dimensions.add(4), dimensionCount - 1);
+                // A collection may have promoted the outer array, so the store needs the barrier.
+                GC.writeBarrier(array);
                 arrayData.putAddress(innerArray.toAddress());
                 arrayData = arrayData.add(Address.sizeOf());
             }
+            ShadowStack.releaseStack(1);
         }
         return array;
     }
