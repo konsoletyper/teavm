@@ -110,6 +110,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     boolean asyncSupported;
     boolean arrayBoundsChecked;
     boolean nullChecked;
+    boolean divisionChecked;
     private ReferenceCache referenceCache;
     private Set<String> generatedClassNames = new HashSet<>();
     DependencyType classType;
@@ -180,6 +181,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
      */
     public void setNullChecked(boolean nullChecked) {
         this.nullChecked = nullChecked;
+    }
+
+    public void setDivisionChecked(boolean divisionChecked) {
+        this.divisionChecked = divisionChecked;
     }
 
     public DependencyAgent getAgent() {

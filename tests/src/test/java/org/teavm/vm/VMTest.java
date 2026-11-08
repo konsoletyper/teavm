@@ -843,6 +843,42 @@ public class VMTest {
     }
 
     @Test
+    public void arithmeticExceptionDeliveredToHandler() {
+        var handled = false;
+        try {
+            divisionResult = 23 / divisor(0);
+        } catch (ArithmeticException e) {
+            // A virtual method that the test harness itself does not call,
+            // so that only the type of the caught exception makes it reachable
+            e.getLocalizedMessage();
+            handled = true;
+        }
+        assertTrue(handled);
+    }
+
+    @Test
+    public void arithmeticExceptionPropagatesToCaller() {
+        var handled = false;
+        try {
+            divisionResult = remainder(23L, divisor(0));
+        } catch (ArithmeticException e) {
+            e.getLocalizedMessage();
+            handled = true;
+        }
+        assertTrue(handled);
+    }
+
+    private static long divisionResult;
+
+    private static int divisor(int value) {
+        return value;
+    }
+
+    private static long remainder(long a, long b) {
+        return a % b;
+    }
+
+    @Test
     public void arrayIndexOutOfBoundsDeliveredToHandler() {
         var array = new int[2];
         var handled = false;
