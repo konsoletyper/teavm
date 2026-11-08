@@ -32,5 +32,3 @@ public final class RuntimeResources implements ResourceSupplier, ReflectionSuppl
         return new String[] { "fixtures/shared.txt", "fixtures/odd name #.txt" };
     }
 }
-
-

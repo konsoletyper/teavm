@@ -154,4 +154,3 @@ public final class RuntimeApiContract {
         }
     }
 }
-

@@ -30,4 +30,3 @@ tasks.register<Exec>("runJavaScriptRepro") {
     workingDir = projectDir
     commandLine("node", "run.cjs")
 }
-

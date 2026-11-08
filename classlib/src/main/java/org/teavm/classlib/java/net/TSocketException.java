@@ -27,4 +27,3 @@ public class TSocketException extends IOException {
         super(detailMessage);
     }
 }
-

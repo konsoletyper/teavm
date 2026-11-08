@@ -41,4 +41,3 @@ tasks.register<Exec>("runJavaScriptContract") {
     workingDir = projectDir
     commandLine("node", "run.cjs")
 }
-

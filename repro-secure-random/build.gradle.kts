@@ -52,4 +52,3 @@ tasks.register<Exec>("runRealCryptoContract") {
     workingDir = projectDir
     commandLine("node", "run.cjs", "real")
 }
-
