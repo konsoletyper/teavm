@@ -17,6 +17,8 @@ package org.teavm.jso.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSByRef;
@@ -79,6 +81,17 @@ public class ByRefConversionTest {
         assertEquals(99, first[0]);
     }
 
+    @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
+    public void passesNullByRef() {
+        assertTrue(isNull((int[]) null));
+        assertTrue(isNull((long[]) null));
+        assertNull(nullIntArrayByRef());
+        assertNull(nullLongArrayByRef());
+        assertNull(rewrap((int[]) null));
+        assertNull(rewrap((long[]) null));
+    }
+
 
     @JSBody(params = "array", script = ""
             + "for (var i = 0; i < array.length; ++i) {"
@@ -121,6 +134,20 @@ public class ByRefConversionTest {
             + "}"
             + "};")
     private static native ByRefLongMutator createByRefLongMutator();
+
+    @JSBody(params = "array", script = "return array === null;")
+    private static native boolean isNull(@JSByRef int[] array);
+
+    @JSBody(params = "array", script = "return array === null;")
+    private static native boolean isNull(@JSByRef long[] array);
+
+    @JSByRef
+    @JSBody(script = "return null;")
+    private static native int[] nullIntArrayByRef();
+
+    @JSByRef
+    @JSBody(script = "return null;")
+    private static native long[] nullLongArrayByRef();
 
     @JSByRef
     @JSBody(params = "array", script = "return array;")
