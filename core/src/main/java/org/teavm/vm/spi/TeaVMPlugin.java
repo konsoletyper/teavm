@@ -15,6 +15,14 @@
  */
 package org.teavm.vm.spi;
 
+/**
+ * <p><strong>Warning!</strong> It's an INTERNAL API. It's intended mainly for TeaVM internal needs.
+ * You are not supposed to implement this class. Use on your own risk. TeaVM internals are the subject of change.
+ * Any changes to this interface are not considered as breaking changes and never
+ * mentioned in release notes.</p>
+ *
+ * <p>Instead, you should consider official stable SPI (see {@code teavm-extension-spi} artifact)</p>
+ */
 public interface TeaVMPlugin {
     void install(TeaVMHost host);
 }
