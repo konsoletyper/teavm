@@ -409,6 +409,16 @@ public class FileInputStreamTest {
         }
     }
 
+    @Test
+    public void skipZeroDoesNotMove() throws IOException {
+        try (var input = new FileInputStream(fileName)) {
+            assertEquals(0, input.skip(0));
+            assertEquals(fileString.charAt(0), input.read());
+            assertEquals(0, input.skip(0));
+            assertEquals(fileString.charAt(1), input.read());
+        }
+    }
+
     @AfterEach
     public void tearDown() {
         new File(fileName).delete();

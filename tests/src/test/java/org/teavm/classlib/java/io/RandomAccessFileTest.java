@@ -43,4 +43,27 @@ public class RandomAccessFileTest {
             file.delete();
         }
     }
+
+    @Test
+    public void skipBytes() throws IOException {
+        var file = new File("test-randomAccess-skip.bin");
+        try {
+            try (var writer = new FileOutputStream(file)) {
+                writer.write(new byte[] { 10, 11, 12, 13, 14, 15 });
+            }
+            try (var raf = new RandomAccessFile(file, "r")) {
+                assertEquals(0, raf.skipBytes(0));
+                assertEquals(10, raf.read());
+                assertEquals(2, raf.skipBytes(2));
+                assertEquals(13, raf.read());
+                assertEquals(0, raf.skipBytes(0));
+                assertEquals(0, raf.skipBytes(-1));
+                assertEquals(14, raf.read());
+                assertEquals(1, raf.skipBytes(5));
+                assertEquals(-1, raf.read());
+            }
+        } finally {
+            file.delete();
+        }
+    }
 }

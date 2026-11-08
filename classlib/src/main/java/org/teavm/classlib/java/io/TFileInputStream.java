@@ -66,6 +66,9 @@ public class TFileInputStream extends InputStream {
             throw new IOException("Value must be positive: " + n);
         }
         ensureOpened();
+        if (n == 0) {
+            return 0;
+        }
         int last = accessor.tell();
         accessor.skip((int) n - 1);
         if (accessor.read(ONE_BYTE_BUFFER, 0, 1) < 1) {
