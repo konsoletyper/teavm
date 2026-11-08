@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceLoader;
 import org.teavm.junit.spi.TestPlatformProvider;
 import org.teavm.model.ClassHolderSource;
@@ -27,6 +28,7 @@ import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
+import org.teavm.parsing.resource.SPITransformingResourceProvider;
 
 /**
  * Holds the state that's shared between every test-framework front end (JUnit 4/TestNG's
@@ -92,7 +94,8 @@ final class TeaVMTestInfrastructure {
     }
 
     private static ClassHolderSource getClassSource(ClassLoader classLoader) {
-        var resourceProvider = new ClasspathResourceProvider(classLoader);
+        var resourceProvider = SPITransformingResourceProvider.wrap(classLoader, new Properties(),
+                new ClasspathResourceProvider(classLoader));
         return new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(resourceProvider, referenceCache,
                 classLoader));
     }

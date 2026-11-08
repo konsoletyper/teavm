@@ -36,6 +36,7 @@ public class SPIAnnotationProcessor extends AbstractProcessor {
         "org.teavm.extension.spi.reflection.ReflectionPolicy",
         "org.teavm.extension.spi.resources.ResourcesPolicy",
         "org.teavm.extension.spi.substitution.SubstitutionPolicy",
+        "org.teavm.extension.spi.transformation.ResourceTransformer",
         "org.teavm.metaprogramming.MetaprogrammingProvider"
     };
 

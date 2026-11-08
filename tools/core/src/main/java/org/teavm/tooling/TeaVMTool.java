@@ -65,6 +65,7 @@ import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.parsing.resource.ResourceProvider;
+import org.teavm.parsing.resource.SPITransformingResourceProvider;
 import org.teavm.tooling.sources.DefaultSourceFileResolver;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.vm.BuildTarget;
@@ -415,7 +416,7 @@ public class TeaVMTool {
     }
 
     public void generate() throws TeaVMToolException {
-        try (var resourceProvider = createResourceProvider()) {
+        try (var resourceProvider = wrapResourceProvider(createResourceProvider())) {
             cancelled = false;
             log.info("Running TeaVM");
             referenceCache = new ReferenceCache();
@@ -548,6 +549,10 @@ public class TeaVMTool {
         return classPath != null
                 ? ResourceProvider.ofClassPath(classPath)
                 : new ClasspathResourceProvider(classLoader);
+    }
+
+    private ResourceProvider wrapResourceProvider(ResourceProvider resourceProvider) {
+        return SPITransformingResourceProvider.wrap(classLoader, properties, resourceProvider);
     }
 
     private String getResolvedTargetFileName() {

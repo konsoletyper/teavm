@@ -29,6 +29,7 @@ dependencies {
     implementation(libs.commons.cli)
 
     testImplementation(libs.junit)
+    testImplementation(project(":extension:spi"))
     testRuntimeOnly(project(":classlib"))
 }
 
