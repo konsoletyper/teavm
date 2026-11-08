@@ -326,6 +326,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     @Override
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         BoundCheckInsertion.contributeDependencies(dependencyAnalyzer);
+        NullCheckInsertion.contributeDependencies(dependencyAnalyzer);
         dependencyAnalyzer.linkMethod(new MethodReference(Class.class, "createClass", ClassInfo.class, Class.class))
                 .use();
 
@@ -352,9 +353,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 "throwArrayIndexOutOfBoundsException", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class,
                 "throwArithmeticException", void.class)).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class))
-                .propagateClass(0, NullPointerException.class.getName())
-                .use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "catchException",
                 Throwable.class)).use();

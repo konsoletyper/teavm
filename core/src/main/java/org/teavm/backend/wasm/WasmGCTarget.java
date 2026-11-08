@@ -226,6 +226,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         if (strict) {
             BoundCheckInsertion.contributeDependencies(dependencyAnalyzer);
             DivisionCheckInsertion.contributeDependencies(dependencyAnalyzer);
+            NullCheckInsertion.contributeDependencies(dependencyAnalyzer);
             dependencyAnalyzer.linkMethod(new MethodReference(WasmGCSupport.class, "ae",
                     ArithmeticException.class)).use();
         }

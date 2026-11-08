@@ -293,12 +293,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         if (strict) {
             BoundCheckInsertion.contributeDependencies(dependencyAnalyzer);
             DivisionCheckInsertion.contributeDependencies(dependencyAnalyzer);
-
-            exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
-                    NullPointerException.class, "<init>", void.class));
-            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getClassType(
-                    NullPointerException.class.getName()));
-            exceptionCons.use();
+            NullCheckInsertion.contributeDependencies(dependencyAnalyzer);
 
             exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                     ClassCastException.class, "<init>", void.class));

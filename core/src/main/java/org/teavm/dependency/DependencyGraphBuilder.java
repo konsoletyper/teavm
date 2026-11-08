@@ -29,6 +29,7 @@ import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
 import org.teavm.model.IncomingReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
@@ -40,6 +41,7 @@ import org.teavm.model.TryCatchBlockReader;
 import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
 import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.text.ListingBuilder;
 
 class DependencyGraphBuilder {
@@ -275,10 +277,54 @@ class DependencyGraphBuilder {
         @Override
         public void raise(VariableReader exception) {
             nodes[exception.getIndex()].addConsumer(currentExceptionConsumer);
+            consumeNullPointer(exception);
+        }
+
+        @Override
+        public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
+                ValueType fieldType) {
+            super.getField(receiver, instance, field, fieldType);
+            consumeNullPointer(instance);
+        }
+
+        @Override
+        public void putField(VariableReader instance, FieldReference field, VariableReader value,
+                ValueType fieldType) {
+            super.putField(instance, field, value, fieldType);
+            consumeNullPointer(instance);
+        }
+
+        @Override
+        public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
+                List<? extends VariableReader> arguments, InvocationType type) {
+            super.invoke(receiver, instance, method, arguments, type);
+            consumeNullPointer(instance);
+        }
+
+        @Override
+        public void monitorEnter(VariableReader objectRef) {
+            super.monitorEnter(objectRef);
+            consumeNullPointer(objectRef);
+        }
+
+        @Override
+        public void monitorExit(VariableReader objectRef) {
+            super.monitorExit(objectRef);
+            consumeNullPointer(objectRef);
+        }
+
+        // Covers the instructions NullCheckInsertion guards, so their exceptions reach handlers and callers.
+        // NullCheckInsertion treats variable 0, the receiver, as non-null.
+        private void consumeNullPointer(VariableReader value) {
+            if (dependencyAnalyzer.nullChecked && value != null && value.getIndex() != 0) {
+                currentExceptionConsumer.consume(dependencyAnalyzer.getClassType(
+                        NullPointerException.class.getName()));
+            }
         }
 
         @Override
         public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
+            consumeNullPointer(array);
             DependencyNode arrayNode = nodes[array.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             if (arrayNode != null && receiverNode != null) {
@@ -288,6 +334,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void cloneArray(VariableReader receiver, VariableReader array) {
+            consumeNullPointer(array);
             DependencyNode arrayNode = getNode(array);
             DependencyNode receiverNode = getNode(receiver);
             if (arrayNode != null && receiverNode != null) {
