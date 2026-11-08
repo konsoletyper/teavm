@@ -15,14 +15,10 @@
  */
 package org.teavm.parsing;
 
-import com.carrotsearch.hppc.IntIntHashMap;
-import com.carrotsearch.hppc.IntIntMap;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
@@ -37,7 +33,6 @@ import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationContainer;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationValue;
-import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ElementHolder;
 import org.teavm.model.ElementModifier;
@@ -48,14 +43,12 @@ import org.teavm.model.GenericValueType;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
-import org.teavm.model.Phi;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
-import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.PhiUpdater;
 import org.teavm.model.util.ProgramNodeSplittingBackend;
 import org.teavm.model.util.ProgramUtils;
@@ -108,12 +101,11 @@ public class Parser {
 
             PhiUpdater phiUpdater = new PhiUpdater();
             Variable[] argumentMapping = applySignature(program, method.getParameterTypes());
+            var debugNameCollector = new DebugNameCollector(phiUpdater, programParser);
+            phiUpdater.setRenamingListener(debugNameCollector);
             phiUpdater.updatePhis(program, argumentMapping);
+            debugNameCollector.apply(program);
             method.setProgram(program);
-            applyDebugNames(program, phiUpdater, programParser, argumentMapping);
-
-            applyDebugNames(program, phiUpdater, programParser,
-                    applySignature(program, method.getDescriptor().getParameterTypes()));
 
             while (program.variableCount() <= method.parameterCount()) {
                 program.createVariable();
@@ -178,103 +170,52 @@ public class Parser {
         method.setGenericSignature(returnType, parameters.toArray(new GenericValueType[0]));
     }
 
-    private static void applyDebugNames(Program program, PhiUpdater phiUpdater, ProgramParser parser,
-            Variable[] argumentMapping) {
-        if (program.basicBlockCount() == 0) {
-            return;
+    /*
+     * Assigns debug names, defined by local variable tables, to SSA variables.
+     * Debug names are attached to some instructions as mappings from original (JVM local) variable
+     * to name. We collect them during PhiUpdater's renaming phase, when current version of
+     * each original variable is known. Names are applied only after renaming, since PhiUpdater
+     * copies debug names from original variables to their new versions.
+     */
+    private static class DebugNameCollector implements PhiUpdater.RenamingListener {
+        private PhiUpdater phiUpdater;
+        private ProgramParser parser;
+        private String[] names = new String[16];
+
+        DebugNameCollector(PhiUpdater phiUpdater, ProgramParser parser) {
+            this.phiUpdater = phiUpdater;
+            this.parser = parser;
         }
 
-        IntIntMap[] blockEntryVariableMappings = getBlockEntryVariableMappings(program, phiUpdater, argumentMapping);
-
-        DefinitionExtractor defExtractor = new DefinitionExtractor();
-        Map<Integer, String> debugNames = new HashMap<>();
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            IntIntMap varMap = blockEntryVariableMappings[i];
-            for (Instruction insn : block) {
-                insn.acceptVisitor(defExtractor);
-                Map<Integer, String> newDebugNames = parser.getDebugNames(insn);
-                if (newDebugNames != null) {
-                    debugNames = newDebugNames;
-                }
-                for (Variable definedVar : defExtractor.getDefinedVariables()) {
-                    int sourceVar = phiUpdater.getSourceVariable(definedVar.getIndex());
-                    if (sourceVar >= 0) {
-                        varMap.put(sourceVar, definedVar.getIndex());
+        @Override
+        public void instructionRenamed(Instruction instruction) {
+            var debugNames = parser.getDebugNames(instruction);
+            if (debugNames == null) {
+                return;
+            }
+            for (var entry : debugNames.entrySet()) {
+                var receiver = phiUpdater.getCurrentVersion(entry.getKey());
+                if (receiver != null) {
+                    int index = receiver.getIndex();
+                    if (index >= names.length) {
+                        names = Arrays.copyOf(names, Math.max(index + 1, names.length * 2));
                     }
-                }
-                for (Map.Entry<Integer, String> debugName : debugNames.entrySet()) {
-                    int receiver = varMap.getOrDefault(debugName.getKey(), -1);
-                    if (receiver >= 0) {
-                        Variable receiverVar = program.variableAt(receiver);
-                        receiverVar.setDebugName(debugName.getValue());
-                        receiverVar.setLabel(debugName.getValue());
-                    }
+                    names[index] = entry.getValue();
                 }
             }
         }
-    }
 
-    private static IntIntMap[] getBlockEntryVariableMappings(Program program, PhiUpdater phiUpdater,
-            Variable[] argumentMapping) {
-        class Step {
-            int node;
-            IntIntMap varMap;
-
-            Step(int node, IntIntMap varMap) {
-                this.node = node;
-                this.varMap = varMap;
-            }
-        }
-
-        IntIntMap[] result = new IntIntMap[program.basicBlockCount()];
-        DefinitionExtractor defExtractor = new DefinitionExtractor();
-        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
-        Graph dom = GraphUtils.buildDominatorGraph(GraphUtils.buildDominatorTree(cfg), cfg.size());
-        Step[] stack = new Step[program.basicBlockCount()];
-        int top = 0;
-
-        IntIntHashMap entryVarMap = new IntIntHashMap();
-        for (int i = 0; i < argumentMapping.length; ++i) {
-            Variable arg = argumentMapping[i];
-            if (arg != null) {
-                entryVarMap.put(i, arg.getIndex());
-            }
-        }
-        stack[top++] = new Step(0, entryVarMap);
-
-        while (top > 0) {
-            Step step = stack[--top];
-            int node = step.node;
-            IntIntMap varMap = new IntIntHashMap(step.varMap);
-            BasicBlock block = program.basicBlockAt(node);
-
-            for (Phi phi : block.getPhis()) {
-                int receiver = phi.getReceiver().getIndex();
-                int sourceVar = phiUpdater.getSourceVariable(receiver);
-                if (sourceVar >= 0) {
-                    varMap.put(sourceVar, receiver);
+        void apply(Program program) {
+            int count = Math.min(names.length, program.variableCount());
+            for (int i = 0; i < count; ++i) {
+                var name = names[i];
+                if (name != null) {
+                    var variable = program.variableAt(i);
+                    variable.setDebugName(name);
+                    variable.setLabel(name);
                 }
             }
-
-            result[node] = new IntIntHashMap(varMap);
-
-            for (Instruction insn : block) {
-                insn.acceptVisitor(defExtractor);
-                for (Variable definedVar : defExtractor.getDefinedVariables()) {
-                    int sourceVar = phiUpdater.getSourceVariable(definedVar.getIndex());
-                    if (sourceVar >= 0) {
-                        varMap.put(sourceVar, definedVar.getIndex());
-                    }
-                }
-            }
-
-            for (int successor : dom.outgoingEdges(node)) {
-                stack[top++] = new Step(successor, new IntIntHashMap(varMap));
-            }
         }
-
-        return result;
     }
 
     private Variable[] applySignature(Program program, ValueType[] arguments) {

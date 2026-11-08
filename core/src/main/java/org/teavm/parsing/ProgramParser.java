@@ -231,8 +231,7 @@ public class ProgramParser {
     }
 
     public Map<Integer, String> getDebugNames(Instruction insn) {
-        Map<Integer, String> map = variableDebugNames.get(insn);
-        return map != null ? Collections.unmodifiableMap(map) : Collections.emptyMap();
+        return variableDebugNames.get(insn);
     }
 
     private void prepare(MethodNode method) {

@@ -102,6 +102,34 @@ public class PhiUpdater {
     private Predicate<Instruction> sigmaPredicate = instruction -> false;
     private int[][][] frontierVariableCache;
     private Variable[][] pendingVariableMap;
+    private RenamingListener renamingListener;
+
+    /**
+     * Receives notifications during variable renaming, which walks the dominator tree, so blocks are not
+     * visited in index order. Each basic block is visited once.
+     */
+    public interface RenamingListener {
+        /**
+         * Called right after the instruction has been renamed, i.e. after its definitions are applied.
+         * At this point {@link #getCurrentVersion(int)} gives the version of each original variable
+         * that is visible after the instruction.
+         */
+        void instructionRenamed(Instruction instruction);
+    }
+
+    public void setRenamingListener(RenamingListener renamingListener) {
+        this.renamingListener = renamingListener;
+    }
+
+    /**
+     * Returns current version of the given original variable. Only valid inside
+     * {@link RenamingListener} callbacks.
+     *
+     * @return current version or {@code null} if the variable is not defined at this point.
+     */
+    public Variable getCurrentVersion(int sourceVariable) {
+        return sourceVariable < variableMap.length ? variableMap[sourceVariable] : null;
+    }
 
     public int getSourceVariable(int var) {
         if (var >= variableToSourceMap.size()) {
@@ -327,8 +355,15 @@ public class PhiUpdater {
                 phi.setReceiver(define(phi.getReceiver()));
             }
 
-            for (Instruction insn : currentBlock) {
-                insn.acceptVisitor(consumer);
+            if (renamingListener != null) {
+                for (var insn : currentBlock) {
+                    insn.acceptVisitor(consumer);
+                    renamingListener.instructionRenamed(insn);
+                }
+            } else {
+                for (var insn : currentBlock) {
+                    insn.acceptVisitor(consumer);
+                }
             }
 
             int[] successors = domGraph.outgoingEdges(index);
