@@ -109,6 +109,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     IncrementalCache incrementalCache = new IncrementalCache();
     boolean asyncSupported;
     boolean arrayBoundsChecked;
+    boolean nullChecked;
     private ReferenceCache referenceCache;
     private Set<String> generatedClassNames = new HashSet<>();
     DependencyType classType;
@@ -171,6 +172,14 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     public void setArrayBoundsChecked(boolean arrayBoundsChecked) {
         this.arrayBoundsChecked = arrayBoundsChecked;
+    }
+
+    /**
+     * Specifies that null checks will be inserted after the analysis, so instructions that dereference
+     * a value can throw {@link NullPointerException}.
+     */
+    public void setNullChecked(boolean nullChecked) {
+        this.nullChecked = nullChecked;
     }
 
     public DependencyAgent getAgent() {

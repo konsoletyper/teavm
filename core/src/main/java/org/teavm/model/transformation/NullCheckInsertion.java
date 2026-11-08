@@ -19,6 +19,7 @@ import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
@@ -39,7 +40,16 @@ import org.teavm.model.util.DominatorWalkerCallback;
 import org.teavm.model.util.PhiUpdater;
 
 public class NullCheckInsertion {
+    private static final MethodReference NPE_CONSTRUCTOR = new MethodReference(
+            NullPointerException.class, "<init>", void.class);
     private NullCheckFilter filter;
+
+    public static void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
+        dependencyAnalyzer.setNullChecked(true);
+        dependencyAnalyzer.linkMethod(NPE_CONSTRUCTOR)
+                .propagateClass(0, NullPointerException.class.getName())
+                .use();
+    }
 
     public NullCheckInsertion(NullCheckFilter filter) {
         this.filter = filter;

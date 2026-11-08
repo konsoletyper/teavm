@@ -877,6 +877,40 @@ public class VMTest {
         array[index] = 1;
     }
 
+    @Test
+    public void nullPointerExceptionDeliveredToHandler() {
+        var handled = false;
+        try {
+            nullableCell(true).set("x");
+        } catch (NullPointerException e) {
+            // A virtual method that the test harness itself does not call,
+            // so that only the type of the caught exception makes it reachable
+            e.getLocalizedMessage();
+            handled = true;
+        }
+        assertTrue(handled);
+    }
+
+    @Test
+    public void nullPointerExceptionPropagatesToCaller() {
+        var handled = false;
+        try {
+            setOn(nullableCell(true), "x");
+        } catch (NullPointerException e) {
+            e.getLocalizedMessage();
+            handled = true;
+        }
+        assertTrue(handled);
+    }
+
+    private static Cell nullableCell(boolean isNull) {
+        return isNull ? null : new Cell();
+    }
+
+    private static void setOn(Cell cell, Object value) {
+        cell.set(value);
+    }
+
     enum InitInHandler {
         A,
         B
