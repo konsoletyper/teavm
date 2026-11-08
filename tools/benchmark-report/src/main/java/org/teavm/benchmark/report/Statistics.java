@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.perf;
+package org.teavm.benchmark.report;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -137,8 +137,37 @@ public final class Statistics {
         return (low + high) / 2;
     }
 
-    static double studentTCdf(double t, int degreesOfFreedom) {
-        double v = degreesOfFreedom;
+    /**
+     * Performs Welch's t-test, i.e. checks whether means of two samples differ, without assuming
+     * that samples have equal variances.
+     *
+     * @param scale factor to multiply values of the second sample by, e.g. to convert them to the same unit.
+     * @return two-sided p-value, i.e. probability to observe such difference when means are actually equal,
+     *     or NaN if any of samples contains less than two values.
+     */
+    public static double welchTTest(Statistics a, Statistics b, double scale) {
+        if (a.getCount() < 2 || b.getCount() < 2 || Double.isNaN(scale)) {
+            return Double.NaN;
+        }
+        var varianceA = square(a.getStandardDeviation()) / a.getCount();
+        var varianceB = square(b.getStandardDeviation() * scale) / b.getCount();
+        var variance = varianceA + varianceB;
+        var difference = a.getMean() - b.getMean() * scale;
+        if (variance == 0) {
+            return difference == 0 ? 1 : 0;
+        }
+        var t = difference / Math.sqrt(variance);
+        var degreesOfFreedom = square(variance) / (square(varianceA) / (a.getCount() - 1)
+                + square(varianceB) / (b.getCount() - 1));
+        return 2 * (1 - studentTCdf(Math.abs(t), degreesOfFreedom));
+    }
+
+    private static double square(double value) {
+        return value * value;
+    }
+
+    static double studentTCdf(double t, double degreesOfFreedom) {
+        var v = degreesOfFreedom;
         var x = v / (v + t * t);
         var tail = 0.5 * regularizedIncompleteBeta(x, v / 2, 0.5);
         return t >= 0 ? 1 - tail : tail;

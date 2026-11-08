@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.teavm.benchmark.report.BenchmarkResult;
+import org.teavm.benchmark.report.ScoreUnits;
 import org.teavm.perf.runtime.BenchmarkEntryPoint;
 
 /**

@@ -20,7 +20,7 @@
 # and produces report that compares both runs.
 #
 # Usage: benchmarks/compare-stash.sh [gradle arguments...]
-# Example: benchmarks/compare-stash.sh -Pbenchmark.backends=js,wasm-gc -Pbenchmark.args="-wi 3 -i 5 String"
+# Example: benchmarks/compare-stash.sh -Pbenchmark.backends=js,wasm-gc -Pbenchmark.include=String
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/compare-lib.sh"

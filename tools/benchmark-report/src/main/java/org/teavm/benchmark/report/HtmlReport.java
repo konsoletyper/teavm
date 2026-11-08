@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.perf.report;
+package org.teavm.benchmark.report;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,8 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import org.teavm.perf.BenchmarkResult;
-import org.teavm.perf.ScoreUnits;
 
 /**
  * Produces self-contained human-readable HTML report that compares results from different sources.
@@ -37,33 +35,39 @@ public final class HtmlReport {
     private HtmlReport() {
     }
 
-    public static void write(List<BenchmarkResult> results, File file) throws IOException {
+    /**
+     * Writes report.
+     *
+     * @param title title of the report, e.g. {@code TeaVM benchmarks}
+     * @param version version of the tool that produced results, mentioned in report, or {@code null}
+     */
+    public static void write(List<BenchmarkResult> results, File file, String title, String version)
+            throws IOException {
         file.getAbsoluteFile().getParentFile().mkdirs();
         try (var writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(file.toPath()),
                 StandardCharsets.UTF_8))) {
-            write(results, writer);
+            write(results, writer, title, version);
         }
     }
 
-    private static void write(List<BenchmarkResult> results, PrintWriter out) {
+    private static void write(List<BenchmarkResult> results, PrintWriter out, String title, String version) {
         var table = new ComparisonTable(results);
-        var version = JmhJsonFormat.teavmVersion();
         out.println("<!DOCTYPE html>");
         out.println("<html lang=\"en\">");
         out.println("<head>");
         out.println("<meta charset=\"utf-8\">");
         out.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-        out.println("<title>TeaVM benchmarks</title>");
+        out.println("<title>" + escape(title) + "</title>");
         out.println("<style>");
         out.println(STYLE);
         out.println("</style>");
         out.println("</head>");
         out.println("<body>");
         out.println("<main>");
-        out.println("<h1>TeaVM benchmarks</h1>");
+        out.println("<h1>" + escape(title) + "</h1>");
         out.println("<p class=\"meta\">Generated " + escape(ZonedDateTime.now().format(
                 DateTimeFormatter.RFC_1123_DATE_TIME))
-                + (version.equals("unknown") ? "" : " &middot; TeaVM " + escape(version)) + "</p>");
+                + (version == null ? "" : " &middot; " + escape(version)) + "</p>");
 
         out.println("<dl class=\"sources\">");
         for (var source : table.getSources()) {
@@ -149,22 +153,25 @@ public final class HtmlReport {
                 var width = max > 0 && !Double.isNaN(value) ? Math.max(0.5, value / max * 100) : 0;
                 var sb = new StringBuilder();
                 sb.append("<td title=\"").append(escape(rawDataTitle(result))).append("\">");
+                var display = ScoreUnits.display(result);
                 sb.append("<div class=\"score\"><span class=\"value\">")
-                        .append(escape(ScoreUnits.format(result.getScore()))).append("</span>");
-                if (!Double.isNaN(result.getError())) {
-                    sb.append(" <span class=\"error\">&plusmn; ").append(escape(ScoreUnits.format(result.getError())))
+                        .append(escape(display.score)).append("</span>");
+                if (display.error != null) {
+                    sb.append(" <span class=\"error\">&plusmn; ").append(escape(display.error))
                             .append("</span>");
                 }
-                sb.append(" <span class=\"unit\">").append(escape(result.getUnit())).append("</span></div>");
+                sb.append(" <span class=\"unit\">").append(escape(display.unit)).append("</span></div>");
                 sb.append("<div class=\"bar\"><div style=\"width: ")
                         .append(String.format(Locale.ROOT, "%.1f", width)).append("%\"></div></div>");
                 var referenceResult = table.referenceFor(row, result);
                 if (referenceResult != null) {
                     var slowdown = ComparisonTable.slowdown(result, referenceResult);
                     if (!Double.isNaN(slowdown)) {
-                        sb.append("<div class=\"ratio ").append(slowdown >= 1 ? "slower" : "faster").append("\">")
-                                .append(escape(ComparisonTable.formatSlowdown(slowdown) + " than "
-                                        + referenceResult.getSource())).append("</div>");
+                        var cssClass = !ComparisonTable.isSignificant(result, referenceResult) ? "same"
+                                : slowdown >= 1 ? "slower" : "faster";
+                        sb.append("<div class=\"ratio ").append(cssClass).append("\">")
+                                .append(escape(ComparisonTable.describe(result, referenceResult)))
+                                .append("</div>");
                     }
                 }
                 sb.append("</td>");
@@ -255,6 +262,7 @@ public final class HtmlReport {
             ".ratio { font-size: 12px; }",
             ".ratio.slower { color: var(--slower); }",
             ".ratio.faster { color: var(--faster); }",
+            ".ratio.same { color: var(--muted); }",
             ".missing { color: var(--muted); }"
     );
 }

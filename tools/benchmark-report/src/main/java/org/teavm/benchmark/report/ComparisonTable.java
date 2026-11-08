@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.perf.report;
+package org.teavm.benchmark.report;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,13 +22,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.teavm.perf.BenchmarkResult;
-import org.teavm.perf.ScoreUnits;
 
 /**
  * Groups results from different sources (backends, baseline files) by benchmark, mode and parameters.
  */
 public final class ComparisonTable {
+    /**
+     * Differences with p-value of Welch's t-test above this level are reported as not significant.
+     */
+    public static final double SIGNIFICANCE_LEVEL = 0.01;
+
     private final List<String> sources;
     private final Map<String, String> sourceDescriptions;
     private final List<Row> rows = new ArrayList<>();
@@ -84,6 +87,10 @@ public final class ComparisonTable {
         String prefix = null;
         for (var row : rows) {
             var name = row.benchmark;
+            var metricSeparator = name.indexOf(':');
+            if (metricSeparator >= 0) {
+                name = name.substring(0, metricSeparator);
+            }
             var packageEnd = name.lastIndexOf('.');
             packageEnd = packageEnd > 0 ? name.lastIndexOf('.', packageEnd - 1) : -1;
             var pkg = packageEnd >= 0 ? name.substring(0, packageEnd + 1) : "";
@@ -163,14 +170,51 @@ public final class ComparisonTable {
                 : result.getScore() / referenceScore;
     }
 
-    public static String formatSlowdown(double slowdown) {
+    /**
+     * Computes p-value of the difference between results using Welch's t-test on raw data.
+     *
+     * @return p-value or NaN if there's not enough raw data.
+     */
+    public static double pValue(BenchmarkResult result, BenchmarkResult referenceResult) {
+        var scale = ScoreUnits.convert(1, referenceResult.getUnit(), result.getUnit());
+        return Statistics.welchTTest(result.getStatistics(), referenceResult.getStatistics(), scale);
+    }
+
+    /**
+     * Tells whether difference between results is statistically significant. When there's not enough data
+     * to decide, difference is considered significant.
+     */
+    public static boolean isSignificant(BenchmarkResult result, BenchmarkResult referenceResult) {
+        var p = pValue(result, referenceResult);
+        return Double.isNaN(p) || p < SIGNIFICANCE_LEVEL;
+    }
+
+    /**
+     * Describes result relative to reference result, e.g. {@code 1.25x slower than baseline}.
+     *
+     * @return description or empty string if results can't be compared.
+     */
+    public static String describe(BenchmarkResult result, BenchmarkResult referenceResult) {
+        var slowdown = slowdown(result, referenceResult);
         if (Double.isNaN(slowdown)) {
             return "";
         }
+        var text = formatSlowdown(slowdown, result.getUnit()) + " than " + referenceResult.getSource();
+        if (!isSignificant(result, referenceResult)) {
+            text += " (not significant)";
+        }
+        return text;
+    }
+
+    public static String formatSlowdown(double slowdown, String unit) {
+        if (Double.isNaN(slowdown)) {
+            return "";
+        }
+        var timeBased = ScoreUnits.isTimeBased(unit);
         if (slowdown >= 1) {
-            return String.format(Locale.ROOT, "%.2fx slower", slowdown);
+            return String.format(Locale.ROOT, "%.2fx ", slowdown) + (timeBased ? "slower" : "more");
         } else {
-            return String.format(Locale.ROOT, "%.2fx faster", 1 / slowdown);
+            return String.format(Locale.ROOT, "%.2fx ", 1 / slowdown) + (timeBased ? "faster" : "less");
         }
     }
 

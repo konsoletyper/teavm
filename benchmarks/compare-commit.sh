@@ -21,7 +21,7 @@
 # and produces report that compares both runs. Current working tree is left untouched.
 #
 # Usage: benchmarks/compare-commit.sh <commit> [gradle arguments...]
-# Example: benchmarks/compare-commit.sh HEAD~3 -Pbenchmark.backends=js -Pbenchmark.args="-wi 3 -i 5 String"
+# Example: benchmarks/compare-commit.sh HEAD~3 -Pbenchmark.backends=js -Pbenchmark.include=String
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/compare-lib.sh"
@@ -51,6 +51,19 @@ tar -C "$ROOT_DIR" --exclude=benchmarks/build -cf - benchmarks | tar -C "$WORKTR
 if ! grep -q '"benchmarks"' "$WORKTREE/settings.gradle.kts"; then
     echo "Commit $COMMIT_ID does not include benchmarks module into build, can't compare" >&2
     exit 1
+fi
+
+# Benchmarks build script uses local-properties plugin, which older commits don't have.
+# Add it to their build-logic, registering via plugin descriptor rather than editing build-logic build script.
+BUILD_UTIL=build-logic/src/main/java/org/teavm/buildutil
+if [ ! -e "$WORKTREE/$BUILD_UTIL/LocalPropertiesPlugin.java" ]; then
+    for name in LocalPropertiesPlugin LocalPropertiesExtension JmhArguments; do
+        cp "$ROOT_DIR/$BUILD_UTIL/$name.java" "$WORKTREE/$BUILD_UTIL/"
+    done
+    DESCRIPTOR_DIR="$WORKTREE/build-logic/src/main/resources/META-INF/gradle-plugins"
+    mkdir -p "$DESCRIPTOR_DIR"
+    echo "implementation-class=org.teavm.buildutil.LocalPropertiesPlugin" \
+        > "$DESCRIPTOR_DIR/local-properties.properties"
 fi
 
 echo "Running baseline benchmarks at $COMMIT_ID"

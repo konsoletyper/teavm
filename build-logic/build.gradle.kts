@@ -62,6 +62,10 @@ gradlePlugin {
             id = "javaVersion"
             implementationClass = "org.teavm.buildutil.JavaVersionPlugin"
         }
+        create("local-properties") {
+            id = "local-properties"
+            implementationClass = "org.teavm.buildutil.LocalPropertiesPlugin"
+        }
         create("mac-remote-test") {
             id = "mac-remote-test"
             implementationClass = "org.teavm.buildutil.MacRemoteTestPlugin"

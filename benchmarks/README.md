@@ -13,48 +13,46 @@ The same benchmarks can be run with JMH on the JVM, so results can be compared.
 
 Reports go to `benchmarks/build/reports/teavm-perf`:
 
-* `results.txt`: JMH-like table (also printed to stdout);
+* `report.txt`: JMH-like table (also printed to stdout);
 * `results-<backend>.json`: results in JMH JSON format (same as `-rf json` in JMH);
-* `report.html`: human-readable report comparing all backends and baselines.
+* `report.html`: human-readable report comparing all backends and baselines;
+* `report.md`: comparison table in Markdown, convenient to paste into issues and pull requests.
+
+Differences that are not statistically significant (Welch's t-test on per-iteration scores, p ≥ 0.01) are
+marked as such. Reports are produced by `:tools:benchmark-report` module, which can also be run standalone
+(`org.teavm.benchmark.report.ReportCli`) to compare any JMH JSON files.
 
 To run benchmarks on JVM with JMH, use `./gradlew :benchmarks:jmh`. Results go to
 `benchmarks/build/reports/jmh/jvm.json`.
 
-### Gradle properties
+### Settings
 
-| Property                 | Description                                                                                   |
-|--------------------------|-----------------------------------------------------------------------------------------------|
-| `benchmark.args`         | JMH-style arguments, used by both `teavmBenchmark` and `jmh` tasks (see below)                |
-| `benchmark.backends`     | Comma-separated list of `js`, `wasm-gc`, `c`. Default is `js`                                 |
-| `benchmark.browser`      | `browser-chrome` (default), `browser-firefox` or `browser` (prints URL to open manually)       |
-| `benchmark.optimization` | TeaVM optimization level: `simple`, `advanced` (default), `full`                              |
-| `benchmark.formats`      | Comma-separated list of report formats: `text`, `json`, `html`. Default is all of them        |
-| `benchmark.profiler`     | Profilers, same as `-prof` option. Only `cpu` is supported, see [Profiling](#profiling)       |
-| `benchmark.c.compiler`   | Script that compiles generated C code. Default is selected by OS, see below                   |
-| `benchmark.c.envScript`  | Script that sets up C compiler environment. Default is `setup-msvc-env.bat` on Windows        |
-| `benchmark.compareJvm`   | When `true`, runs `jmh` task first and includes JVM results into the report                   |
-| `benchmark.baseline`     | Comma-separated list of JMH JSON files to compare with, optionally labeled: `label=file.json` |
+Benchmarks are controlled by `benchmark.*` Gradle properties. Instead of passing them with `-P` every time,
+copy [`gradle-local-template.properties`](gradle-local-template.properties) to `gradle-local.properties`
+(ignored by git) and uncomment the properties you need. The template lists all supported properties with
+descriptions. `-P` options passed in command line still take priority over `gradle-local.properties`.
 
-Supported options in `benchmark.args` (the same as in JMH):
+Most important properties:
 
-* positional arguments: regular expressions that select benchmarks (matched against any part
-  of the fully qualified `Class.method` name);
-* `-e <regexp>`: exclude benchmarks;
-* `-wi <n>`, `-w <time>`: number and duration of warmup iterations, e.g. `-w 500ms`;
-* `-i <n>`, `-r <time>`: number and duration of measurement iterations;
-* `-f <n>`: number of forks; in browser every fork runs in a new frame, for C in a new process;
-* `-bm <modes>`: `thrpt`, `avgt`, `ss`, `all`;
-* `-tu <unit>`: `ns`, `us`, `ms`, `s`, `min`;
-* `-p <param>=<v1>,<v2>`: override values of `@Param` fields;
-* `-opi <n>`, `-bs <n>`, `-wbs <n>`: operations per invocation, batch sizes;
-* `-prof cpu`: record CPU profiles of measurement iterations, see [Profiling](#profiling);
-* `-l`: list benchmarks.
+| Property                                       | Description                                                            |
+|------------------------------------------------|------------------------------------------------------------------------|
+| `benchmark.include`, `benchmark.exclude`       | Comma-separated regular expressions that select benchmarks             |
+| `benchmark.params`                             | `@Param` values, e.g. `digits=100;kind=random,sorted`                  |
+| `benchmark.warmupIterations`, `.warmupTime`    | Warmup iterations (`-wi`, `-w` in JMH)                                 |
+| `benchmark.iterations`, `benchmark.time`       | Measurement iterations (`-i`, `-r` in JMH)                             |
+| `benchmark.forks`                              | Number of forks                                                        |
+| `benchmark.backends`                           | Comma-separated list of `js`, `wasm-gc`, `c`. Default is `js`          |
+| `benchmark.compareJvm`                         | When `true`, runs `jmh` task first and includes JVM results            |
+| `benchmark.baseline`                           | Comma-separated list of JMH JSON files to compare with: `label=file`   |
+| `benchmark.profiler`                           | `cpu` to record CPU profiles, see [Profiling](#profiling)              |
+| `benchmark.extraArgs`                          | Raw JMH-style arguments for anything else                              |
 
 Example:
 
 ```shell
-./gradlew :benchmarks:teavmBenchmark -Pbenchmark.backends=js,wasm-gc,c \
-    -Pbenchmark.compareJvm=true -Pbenchmark.args="-wi 2 -i 3 -p digits=100 StringSplit|Pi"
+./gradlew :benchmarks:teavmBenchmark -Pbenchmark.backends=js,wasm-gc,c -Pbenchmark.compareJvm=true \
+    -Pbenchmark.warmupIterations=2 -Pbenchmark.iterations=3 -Pbenchmark.params=digits=100 \
+    -Pbenchmark.include=StringSplit,Pi
 ```
 
 Browser backends need Chrome (`google-chrome-stable`) or Firefox.
@@ -76,10 +74,10 @@ included). It's supported for `js` and `wasm-gc` backends running in Chrome; oth
 
 ```shell
 ./gradlew :benchmarks:teavmBenchmark -Pbenchmark.backends=js,wasm-gc -Pbenchmark.profiler=cpu \
-    -Pbenchmark.args="-p kind=random StringBuilderBenchmark"
+    -Pbenchmark.params=kind=random -Pbenchmark.include=StringBuilderBenchmark
 ```
 
-`-Pbenchmark.profiler=cpu` is the same as passing `-prof cpu` in `benchmark.args`.
+`-Pbenchmark.profiler=cpu` is the same as passing `-prof cpu` to JMH.
 
 For every benchmark (and every combination of parameters and every fork), the run log shows functions that take
 most of the time, and the full profile is written to
@@ -108,7 +106,7 @@ In both cases baseline and current runs use the same benchmark code. The baselin
 contain `:tools:perf` and `:benchmarks` modules.
 
 ```shell
-benchmarks/compare-commit.sh HEAD~1 -Pbenchmark.backends=js,wasm-gc -Pbenchmark.args="String"
+benchmarks/compare-commit.sh HEAD~1 -Pbenchmark.backends=js,wasm-gc -Pbenchmark.include=String
 ```
 
 ## Supported subset of JMH

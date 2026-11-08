@@ -14,8 +14,11 @@
  *  limitations under the License.
  */
 
+import org.teavm.buildutil.JmhArguments
+
 plugins {
     java
+    id("local-properties")
 }
 
 description = "Benchmarks that measure performance of TeaVM compiler itself"
@@ -23,6 +26,7 @@ description = "Benchmarks that measure performance of TeaVM compiler itself"
 // Classpath of the program compiled by BootstrapCompilerBenchmark. It's loaded by a separate class loader,
 // so it is not a part of benchmark's own classpath.
 val bootstrapCompilerClasspath = configurations.create("bootstrapCompilerClasspath")
+val benchmarkReport = configurations.create("benchmarkReport")
 
 dependencies {
     implementation(project(":core"))
@@ -36,26 +40,42 @@ dependencies {
     bootstrapCompilerClasspath(project(":bootstrap-compiler:junit-compiler"))
     bootstrapCompilerClasspath(project(":tools:core"))
     bootstrapCompilerClasspath(project(":classlib"))
+
+    benchmarkReport(project(":tools:benchmark-report"))
 }
 
-/*
- * Properties:
- *
- * - benchmark.args: JMH arguments, e.g. "-wi 5 -i 10 -f 1 -prof gc WasmGC"
- * - benchmark.jvmArgs: additional arguments for forked JVM, e.g. "-Xmx4g"
- * - benchmark.profile: when true, records JFR profile of measurement iterations into
- *   build/reports/jmh/profile/<benchmark>-<params>/profile.jfr (readable by IDEA and VisualVM)
- *
- * Example:
- * ./gradlew :compiler-benchmarks:jmh -Pbenchmark.args="-wi 5 -i 10 -f 2"
- * ./gradlew :compiler-benchmarks:jmh -Pbenchmark.profile=true -Pbenchmark.args="-f 1 bufferedInputStream"
- * ./gradlew :compiler-benchmarks:jmh -Pbenchmark.args="-p reuseParsedClasses=true,false BootstrapCompiler"
- */
-fun splitArgs(text: String?) = text?.trim()?.split(Regex("\\s+"))?.filter { it.isNotEmpty() } ?: emptyList()
+// All properties are described in gradle-local-template.properties
+val reportsDir = layout.buildDirectory.dir("reports/jmh")
+val resultFile = reportsDir.map { it.file("results.json") }
+val baselinesDir = layout.buildDirectory.dir("baselines")
 
-tasks.register<JavaExec>("jmh") {
+fun isBaselinePath(spec: String) = spec.endsWith(".json") || spec.contains('/') || spec.contains('\\')
+
+fun baselineFile(spec: String): File =
+    if (isBaselinePath(spec)) file(spec) else baselinesDir.get().file("$spec.json").asFile
+
+fun baselineLabel(spec: String): String = if (isBaselinePath(spec)) file(spec).nameWithoutExtension else spec
+
+val saveBaseline = localProperties.string("benchmark.saveBaseline")
+val baseline = localProperties.string("benchmark.baseline")
+
+val jmhCompare by tasks.registering(JavaExec::class) {
     group = "benchmark"
-    description = "Runs compiler benchmarks using JMH"
+    description = "Compares results of the last jmh run with baseline (benchmark.baseline property)"
+    classpath = benchmarkReport
+    mainClass = "org.teavm.benchmark.report.ReportCli"
+    val hasBaseline = baseline != null
+    onlyIf("benchmark.baseline is set") { hasBaseline }
+    if (baseline != null) {
+        args("--title", "TeaVM compiler benchmarks", "--name", "comparison",
+            "-o", reportsDir.get().asFile.absolutePath,
+            baselineLabel(baseline) + "=" + baselineFile(baseline).absolutePath,
+            "current=" + resultFile.get().asFile.absolutePath)
+    }
+    outputs.upToDateWhen { false }
+}
+
+fun JavaExec.configureJmh() {
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass = "org.openjdk.jmh.Main"
     // Forked JVMs inherit system properties of the host JVM
@@ -64,19 +84,46 @@ tasks.register<JavaExec>("jmh") {
     jvmArgumentProviders.add {
         listOf("-Dteavm.compilerBenchmarks.bootstrapCompilerClasspath=" + bootstrapClasspath.asPath)
     }
-    val resultFile = layout.buildDirectory.file("reports/jmh/results.json").get().asFile
+    outputs.upToDateWhen { false }
+}
+
+tasks.register<JavaExec>("jmh") {
+    group = "benchmark"
+    description = "Runs compiler benchmarks using JMH"
+    configureJmh()
+    val result = resultFile.get().asFile
+    val savedBaseline = saveBaseline?.let { baselineFile(it) }
     doFirst {
-        resultFile.parentFile.mkdirs()
+        result.parentFile.mkdirs()
     }
-    val jvmArgs = providers.gradleProperty("benchmark.jvmArgs").orNull
-    if (jvmArgs != null) {
-        args("-jvmArgsAppend", jvmArgs)
+    localProperties.string("benchmark.jvmArgs")?.let { args("-jvmArgsAppend", it) }
+    if (localProperties.flag("benchmark.gc")) {
+        args("-prof", "gc")
     }
-    if (providers.gradleProperty("benchmark.profile").orNull == "true") {
+    if (localProperties.flag("benchmark.profile")) {
         val profileDir = layout.buildDirectory.dir("reports/jmh/profile").get().asFile
         args("-prof", "jfr:dir=${profileDir.absolutePath};configName=profile;stackDepth=256")
     }
-    args(splitArgs(providers.gradleProperty("benchmark.args").orNull))
-    args("-rf", "json", "-rff", resultFile.absolutePath)
-    outputs.upToDateWhen { false }
+    // Fail the build when benchmark throws exception instead of silently skipping it
+    args("-foe", "true")
+    args(JmhArguments.fromProperties(localProperties))
+    args("-rf", "json", "-rff", result.absolutePath)
+    if (savedBaseline != null) {
+        doLast {
+            savedBaseline.parentFile.mkdirs()
+            result.copyTo(savedBaseline, overwrite = true)
+            println("Results saved as baseline to $savedBaseline")
+        }
+    }
+    if (baseline != null) {
+        finalizedBy(jmhCompare)
+    }
+}
+
+tasks.register<JavaExec>("jmhList") {
+    group = "benchmark"
+    description = "Lists benchmarks selected by benchmark.include/benchmark.exclude, with their parameters"
+    configureJmh()
+    args("-lp")
+    args(JmhArguments.fromProperties(localProperties))
 }

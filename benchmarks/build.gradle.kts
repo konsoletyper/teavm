@@ -14,8 +14,11 @@
  *  limitations under the License.
  */
 
+import org.teavm.buildutil.JmhArguments
+
 plugins {
     java
+    id("local-properties")
 }
 
 description = "Benchmarks that measure performance of code produced by TeaVM"
@@ -28,35 +31,12 @@ dependencies {
     perf(project(":tools:perf"))
 }
 
-/*
- * Properties that control both `jmh` and `teavmBenchmark` tasks:
- *
- * - benchmark.args: JMH-style arguments, e.g. "-wi 3 -i 5 -f 1 -p digits=100 String"
- *
- * Properties that control `teavmBenchmark` task:
- *
- * - benchmark.backends: comma-separated list of js, wasm-gc, c (default is js)
- * - benchmark.browser: browser-chrome (default), browser-firefox or browser (open URL manually)
- * - benchmark.optimization: simple, advanced (default), full
- * - benchmark.formats: comma-separated list of text, json, html (default is all of them)
- * - benchmark.profiler: comma-separated list of profilers, same as -prof option. Only cpu is supported, which
- *   records CPU profiles of measurement iterations for js and wasm-gc backends in Chrome
- * - benchmark.c.compiler: script that compiles generated C code (default depends on OS, see compile-c-*.sh/bat)
- * - benchmark.c.envScript: script that sets up environment for C compiler (on Windows defaults to
- *   setup-msvc-env.bat, unless benchmark.c.compiler is overridden)
- * - benchmark.compareJvm: when true, runs benchmarks with JMH on JVM first and includes results in the report
- * - benchmark.baseline: comma-separated list of JMH JSON result files to compare with, each optionally
- *   prefixed with label, e.g. jvm=build/reports/jmh/jvm.json
- *
- * Example:
- * ./gradlew :benchmarks:teavmBenchmark -Pbenchmark.backends=js,wasm-gc -Pbenchmark.args="-wi 1 -i 3 StringSplit"
- */
-fun splitArgs(text: String?) = text?.trim()?.split(Regex("\\s+"))?.filter { it.isNotEmpty() } ?: emptyList()
+// All properties are described in gradle-local-template.properties
 
 val osName = System.getProperty("os.name").lowercase()
 val isWindowsOs = osName.contains("win")
 val isMacOs = osName.startsWith("mac")
-val cCompilerOverridden = providers.gradleProperty("benchmark.c.compiler").isPresent
+val cCompilerOverridden = localProperties["benchmark.c.compiler"].isPresent
 val defaultCCompiler = when {
     isWindowsOs -> "compile-c-windows.bat"
     isMacOs -> "compile-c-macos.sh"
@@ -66,9 +46,9 @@ val defaultCCompiler = when {
 // script; a custom benchmark.c.compiler is expected to set up whatever environment it needs itself.
 val defaultCEnvScript = if (isWindowsOs && !cCompilerOverridden) "setup-msvc-env.bat" else ""
 
-val benchmarkArgs = splitArgs(providers.gradleProperty("benchmark.args").orNull)
+val benchmarkArgs = JmhArguments.fromProperties(localProperties)
 val jvmResultFile = layout.buildDirectory.file("reports/jmh/jvm.json")
-val compareJvm = providers.gradleProperty("benchmark.compareJvm").map { it.toBoolean() }.getOrElse(false)
+val compareJvm = localProperties.flag("benchmark.compareJvm")
 
 val jmh by tasks.registering(JavaExec::class) {
     group = "benchmark"
@@ -93,22 +73,22 @@ tasks.register<JavaExec>("teavmBenchmark") {
         args("--scan", dir.absolutePath)
     }
     args("-o", layout.buildDirectory.dir("reports/teavm-perf").get().asFile.absolutePath)
-    args("-b", providers.gradleProperty("benchmark.backends").getOrElse("js"))
-    args("--browser", providers.gradleProperty("benchmark.browser").getOrElse("browser-chrome"))
-    args("--optimization", providers.gradleProperty("benchmark.optimization").getOrElse("advanced"))
-    args("--c-build-script", file(providers.gradleProperty("benchmark.c.compiler").getOrElse(defaultCCompiler))
+    args("-b", localProperties["benchmark.backends"].getOrElse("js"))
+    args("--browser", localProperties["benchmark.browser"].getOrElse("browser-chrome"))
+    args("--optimization", localProperties["benchmark.optimization"].getOrElse("advanced"))
+    args("--c-build-script", file(localProperties["benchmark.c.compiler"].getOrElse(defaultCCompiler))
             .absolutePath)
-    val cEnvScript = providers.gradleProperty("benchmark.c.envScript").getOrElse(defaultCEnvScript)
+    val cEnvScript = localProperties["benchmark.c.envScript"].getOrElse(defaultCEnvScript)
     if (cEnvScript.isNotEmpty()) {
         args("--c-env-script", file(cEnvScript).absolutePath)
     }
-    args("-rf", providers.gradleProperty("benchmark.formats").getOrElse("text,json,html"))
-    for (profiler in providers.gradleProperty("benchmark.profiler").getOrElse("").split(",")) {
+    args("-rf", localProperties["benchmark.formats"].getOrElse("text,json,html,markdown"))
+    for (profiler in localProperties["benchmark.profiler"].getOrElse("").split(",")) {
         if (profiler.isNotBlank()) {
             args("-prof", profiler.trim())
         }
     }
-    for (baseline in providers.gradleProperty("benchmark.baseline").getOrElse("").split(",")) {
+    for (baseline in localProperties["benchmark.baseline"].getOrElse("").split(",")) {
         val spec = baseline.trim()
         if (spec.isEmpty()) {
             continue

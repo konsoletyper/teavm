@@ -58,5 +58,5 @@ run_current() {
     done
     (cd "$ROOT_DIR" && ./gradlew :benchmarks:teavmBenchmark -Pbenchmark.baseline="$spec" "$@")
     echo
-    echo "Comparison report: $REPORT_DIR/report.html"
+    echo "Comparison report: $REPORT_DIR/report.html, $REPORT_DIR/report.md"
 }

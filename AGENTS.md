@@ -30,6 +30,7 @@ Currently, three backends are supported:
   - `./core` - basic tool intergration API, used by Gradle and Maven plugins
   - `./idea`
   - `./perf` - runner of JMH-compatible benchmarks compiled by TeaVM
+  - `./benchmark-report` - compares JMH JSON results, produces text/HTML/Markdown reports (used by `perf` and `/compiler-benchmarks`)
 * `/test` - test suite
 * `/benchmarks` - performance benchmarks (JMH-style) for code produced by TeaVM, see `benchmarks/README.md`
 * `/samples` - samples for end users
@@ -70,6 +71,12 @@ with real JMH for comparison. When changing code that may affect performance (cl
 code generators), consider measuring the effect with `benchmarks/compare-stash.sh` (uncommitted changes vs
 `HEAD`) or `benchmarks/compare-commit.sh <commit>`. See `benchmarks/README.md` for Gradle tasks, properties
 and the supported subset of JMH.
+
+Performance of the compiler itself is measured by `/compiler-benchmarks` module (JMH on JVM).
+
+Both modules are configured with `benchmark.*` properties, listed with descriptions in
+`gradle-local-template.properties` of each module. Users keep their settings in `gradle-local.properties`
+(gitignored, read by `local-properties` plugin from `build-logic`); `-P` options override it.
 
 
 # Checking code style

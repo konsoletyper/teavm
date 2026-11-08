@@ -16,11 +16,8 @@
 package org.teavm.perf;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -36,9 +33,10 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.commons.cli.help.TextHelpAppendable;
-import org.teavm.perf.report.HtmlReport;
-import org.teavm.perf.report.JmhJsonFormat;
-import org.teavm.perf.report.TextReport;
+import org.teavm.benchmark.report.BenchmarkResult;
+import org.teavm.benchmark.report.JmhJsonFormat;
+import org.teavm.benchmark.report.ReportFormat;
+import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMOptimizationLevel;
 
 /**
@@ -46,8 +44,6 @@ import org.teavm.vm.TeaVMOptimizationLevel;
  * mimic JMH command line options, so the same set of options can be passed to both JMH and this runner.
  */
 public final class PerfCli {
-    private static final Set<String> FORMATS = Set.of("text", "json", "html");
-
     private PerfCli() {
     }
 
@@ -123,7 +119,7 @@ public final class PerfCli {
                         + "in Chrome DevTools format (.cpuprofile). Only supported for JS and Wasm GC backends "
                         + "running in Chrome").get());
         options.addOption(Option.builder("rf").argName("formats").hasArg()
-                .desc("Comma-separated list of report formats to produce: text, json, html. "
+                .desc("Comma-separated list of report formats to produce: text, json, html, markdown. "
                         + "Default is text,json,html").get());
         options.addOption(Option.builder("o").longOpt("output-dir").argName("dir").hasArg()
                 .desc("Directory to write reports and compiled benchmarks to. Default is teavm-perf").get());
@@ -180,12 +176,7 @@ public final class PerfCli {
         int run() throws IOException {
             parseBenchmarkOptions();
             outputDir = new File(commandLine.getOptionValue("o", "teavm-perf"));
-            formats = new LinkedHashSet<>(splitList(commandLine.getOptionValue("rf", "text,json,html")));
-            for (var format : formats) {
-                if (!FORMATS.contains(format)) {
-                    throw new IllegalArgumentException("Unknown report format: " + format);
-                }
-            }
+            formats = ReportFormat.parse(commandLine.getOptionValue("rf", "text,json,html"), "json");
 
             var baselines = new ArrayList<BenchmarkResult>();
             for (var baseline : nullToEmpty(commandLine.getOptionValues("baseline"))) {
@@ -384,21 +375,7 @@ public final class PerfCli {
         }
 
         private List<BenchmarkResult> readBaseline(String spec) throws IOException {
-            String label = null;
-            var path = spec;
-            var eq = spec.indexOf('=');
-            if (eq > 0) {
-                var prefix = spec.substring(0, eq);
-                if (prefix.indexOf('/') < 0 && prefix.indexOf('\\') < 0) {
-                    label = prefix;
-                    path = spec.substring(eq + 1);
-                }
-            }
-            var file = new File(path);
-            if (!file.isFile()) {
-                throw new IllegalArgumentException("Baseline file not found: " + file);
-            }
-            return JmhJsonFormat.read(file, label);
+            return JmhJsonFormat.read(spec);
         }
 
         private void writeReports(List<BenchmarkResult> baselines, List<BenchmarkResult> results) throws IOException {
@@ -407,20 +384,8 @@ public final class PerfCli {
             }
             var all = new ArrayList<>(baselines);
             all.addAll(results);
-            outputDir.mkdirs();
-
-            System.out.println();
-            System.out.println();
-            TextReport.write(all, System.out);
-
-            if (formats.contains("text")) {
-                var file = new File(outputDir, "results.txt");
-                try (var out = new PrintStream(new FileOutputStream(file), false, StandardCharsets.UTF_8)) {
-                    TextReport.write(all, out);
-                }
-                System.out.println();
-                System.out.println("Text report written to " + file.getAbsolutePath());
-            }
+            var version = teavmVersion();
+            ReportFormat.write(all, formats, outputDir, "report", "TeaVM benchmarks", version);
             if (formats.contains("json") && !results.isEmpty()) {
                 var sources = new LinkedHashSet<String>();
                 for (var result : results) {
@@ -434,15 +399,15 @@ public final class PerfCli {
                             sourceResults.add(result);
                         }
                     }
-                    JmhJsonFormat.write(sourceResults, file);
+                    JmhJsonFormat.write(sourceResults, file, version);
                     System.out.println("JMH-compatible JSON results written to " + file.getAbsolutePath());
                 }
             }
-            if (formats.contains("html")) {
-                var file = new File(outputDir, "report.html");
-                HtmlReport.write(all, file);
-                System.out.println("HTML report written to " + file.getAbsolutePath());
-            }
+        }
+
+        private static String teavmVersion() {
+            var version = TeaVM.class.getPackage().getImplementationVersion();
+            return version != null ? "TeaVM " + version : null;
         }
 
         private static List<String> splitList(String text) {

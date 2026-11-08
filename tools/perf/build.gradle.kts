@@ -28,6 +28,7 @@ dependencies {
     implementation(project(":extension:spi"))
     implementation(project(":classlib"))
     implementation(project(":jso:core"))
+    api(project(":tools:benchmark-report"))
     implementation(libs.commons.cli)
     implementation(libs.jackson.databind)
     annotationProcessor(project(":extension:processor"))

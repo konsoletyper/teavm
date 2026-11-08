@@ -16,6 +16,7 @@
 package org.teavm.perf;
 
 import java.util.concurrent.TimeUnit;
+import org.teavm.benchmark.report.ScoreUnits;
 
 /**
  * Subset of JMH benchmark modes supported by TeaVM benchmark runner.
@@ -66,32 +67,10 @@ public enum BenchmarkMode {
     }
 
     public static String timeUnitLabel(TimeUnit timeUnit) {
-        switch (timeUnit) {
-            case NANOSECONDS:
-                return "ns";
-            case MICROSECONDS:
-                return "us";
-            case MILLISECONDS:
-                return "ms";
-            case SECONDS:
-                return "s";
-            case MINUTES:
-                return "min";
-            case HOURS:
-                return "hr";
-            case DAYS:
-                return "day";
-            default:
-                throw new IllegalArgumentException();
-        }
+        return ScoreUnits.timeUnitLabel(timeUnit);
     }
 
     public static TimeUnit parseTimeUnit(String text) {
-        for (var unit : TimeUnit.values()) {
-            if (timeUnitLabel(unit).equalsIgnoreCase(text) || unit.name().equalsIgnoreCase(text)) {
-                return unit;
-            }
-        }
-        throw new IllegalArgumentException("Unknown time unit: " + text);
+        return ScoreUnits.parseTimeUnit(text);
     }
 }

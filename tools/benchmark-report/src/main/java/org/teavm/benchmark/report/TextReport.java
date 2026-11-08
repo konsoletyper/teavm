@@ -13,13 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.perf.report;
+package org.teavm.benchmark.report;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.perf.BenchmarkResult;
-import org.teavm.perf.ScoreUnits;
 
 /**
  * Prints results as a table, similar to the one JMH prints after running benchmarks.
@@ -63,18 +61,14 @@ public final class TextReport {
                 line.add(source);
                 line.add(row.getMode());
                 line.add(String.valueOf(result.getStatistics().getCount()));
-                line.add(ScoreUnits.format(result.getScore()));
-                var hasError = !Double.isNaN(result.getError());
-                line.add(hasError ? "±" : "");
-                line.add(hasError ? ScoreUnits.format(result.getError()) : "");
-                line.add(result.getUnit());
+                var display = ScoreUnits.display(result);
+                line.add(display.score);
+                line.add(display.error != null ? "±" : "");
+                line.add(display.error != null ? display.error : "");
+                line.add(display.unit);
                 if (compare) {
                     var referenceResult = table.referenceFor(row, result);
-                    var slowdown = referenceResult != null
-                            ? ComparisonTable.slowdown(result, referenceResult)
-                            : Double.NaN;
-                    line.add(Double.isNaN(slowdown) ? ""
-                            : ComparisonTable.formatSlowdown(slowdown) + " than " + referenceResult.getSource());
+                    line.add(referenceResult != null ? ComparisonTable.describe(result, referenceResult) : "");
                 }
                 lines.add(line);
             }

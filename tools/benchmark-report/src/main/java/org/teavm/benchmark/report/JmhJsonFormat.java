@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.perf.report;
+package org.teavm.benchmark.report;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,9 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.teavm.perf.BenchmarkResult;
-import org.teavm.perf.Statistics;
-import org.teavm.vm.TeaVM;
+import java.util.Set;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -39,14 +37,31 @@ public final class JmhJsonFormat {
     public static final String GENERATOR = "teavm-perf";
     private static final String BACKEND_FIELD = "teavmBackend";
 
+    /**
+     * Secondary metrics that are read by default. {@code gc.alloc.rate.norm} is bytes allocated per operation,
+     * reported by JMH with {@code -prof gc}. Other metrics of this profiler are either derived from it
+     * or too noisy to compare.
+     */
+    public static final Set<String> DEFAULT_SECONDARY_METRICS = Set.of("gc.alloc.rate.norm");
+
     private JmhJsonFormat() {
     }
 
-    public static void write(List<BenchmarkResult> results, File file) throws IOException {
+    /**
+     * Writes results. Results that represent secondary metrics are skipped.
+     *
+     * @param version version of the tool that produced results, written to version fields of JMH format.
+     */
+    public static void write(List<BenchmarkResult> results, File file, String version) throws IOException {
         var mapper = new ObjectMapper();
         var root = mapper.createArrayNode();
-        var version = teavmVersion();
+        if (version == null) {
+            version = "unknown";
+        }
         for (var result : results) {
+            if (result.getSecondaryMetric() != null) {
+                continue;
+            }
             var node = root.addObject();
             node.put("jmhVersion", GENERATOR);
             node.put("benchmark", result.getBenchmark());
@@ -124,12 +139,42 @@ public final class JmhJsonFormat {
     }
 
     /**
+     * Reads results from file given in {@code [label=]path} form.
+     *
+     * @see #read(File, String)
+     */
+    public static List<BenchmarkResult> read(String spec) throws IOException {
+        String label = null;
+        var path = spec;
+        var eq = spec.indexOf('=');
+        if (eq > 0) {
+            var prefix = spec.substring(0, eq);
+            if (prefix.indexOf('/') < 0 && prefix.indexOf('\\') < 0) {
+                label = prefix;
+                path = spec.substring(eq + 1);
+            }
+        }
+        var file = new File(path);
+        if (!file.isFile()) {
+            throw new IllegalArgumentException("Result file not found: " + file);
+        }
+        return read(file, label);
+    }
+
+    public static List<BenchmarkResult> read(File file, String label) throws IOException {
+        return read(file, label, DEFAULT_SECONDARY_METRICS);
+    }
+
+    /**
      * Reads results from JSON file produced either by JMH or by TeaVM benchmark runner.
      *
      * @param label name of the source of results. If {@code null}, results produced by TeaVM get name of
      *              the backend, other results get name of the file without extension.
+     * @param secondaryMetrics names of secondary metrics to read. Each secondary metric is represented by
+     *              separate result, see {@link BenchmarkResult#getSecondaryMetric()}.
      */
-    public static List<BenchmarkResult> read(File file, String label) throws IOException {
+    public static List<BenchmarkResult> read(File file, String label, Set<String> secondaryMetrics)
+            throws IOException {
         JsonNode root;
         try {
             root = new ObjectMapper().readTree(file);
@@ -160,34 +205,56 @@ public final class JmhJsonFormat {
                     params.put(entry.getKey(), entry.getValue().asString());
                 }
             }
-            var metric = node.get("primaryMetric");
-            var rawData = new ArrayList<List<Double>>();
-            var rawDataNode = metric.get("rawData");
-            if (rawDataNode != null) {
-                for (var forkNode : rawDataNode.values()) {
-                    var fork = new ArrayList<Double>();
-                    for (var valueNode : forkNode.values()) {
-                        fork.add(readDouble(valueNode));
+            var benchmark = node.get("benchmark").asString();
+            var mode = node.get("mode").asString();
+            var nodeResults = new ArrayList<BenchmarkResult>();
+            nodeResults.add(readMetric(node.get("primaryMetric"), source, description, benchmark, mode, params));
+            var secondary = node.get("secondaryMetrics");
+            if (secondary != null) {
+                for (var entry : secondary.properties()) {
+                    if (secondaryMetrics.contains(entry.getKey())) {
+                        var metricResult = readMetric(entry.getValue(), source, description,
+                                benchmark + ":" + entry.getKey(), mode, params);
+                        metricResult.setSecondaryMetric(entry.getKey());
+                        nodeResults.add(metricResult);
                     }
-                    rawData.add(fork);
                 }
             }
-            var result = new BenchmarkResult(source, description, node.get("benchmark").asString(),
-                    node.get("mode").asString(), params, metric.get("scoreUnit").asString(), rawData,
-                    readDouble(metric.get("score")), readDouble(metric.get("scoreError")));
             for (var key : List.of("forks", "warmupIterations", "warmupTime", "warmupBatchSize",
                     "measurementIterations", "measurementTime", "measurementBatchSize")) {
                 var value = node.get(key);
                 if (value != null) {
-                    result.getMetadata().put(key, value.isNumber() ? (Object) value.asInt() : value.asString());
+                    for (var r : nodeResults) {
+                        r.getMetadata().put(key, value.isNumber() ? (Object) value.asInt() : value.asString());
+                    }
                 }
             }
             if (node.has(BACKEND_FIELD)) {
-                result.setBackend(node.get(BACKEND_FIELD).asString());
+                for (var r : nodeResults) {
+                    r.setBackend(node.get(BACKEND_FIELD).asString());
+                }
             }
-            results.add(result);
+            results.addAll(nodeResults);
         }
         return results;
+    }
+
+    private static BenchmarkResult readMetric(JsonNode metric, String source, String description,
+            String benchmark, String mode, Map<String, String> params) {
+        var rawData = new ArrayList<List<Double>>();
+        var rawDataNode = metric.get("rawData");
+        if (rawDataNode != null) {
+            for (var forkNode : rawDataNode.values()) {
+                var fork = new ArrayList<Double>();
+                for (var valueNode : forkNode.values()) {
+                    fork.add(readDouble(valueNode));
+                }
+                rawData.add(fork);
+            }
+        }
+        return new BenchmarkResult(source, description, benchmark, mode, params,
+                metric.get("scoreUnit").asString(), rawData, readDouble(metric.get("score")),
+                readDouble(metric.get("scoreError")));
     }
 
     private static double readDouble(JsonNode node) {
@@ -202,14 +269,6 @@ public final class JmhJsonFormat {
         } catch (NumberFormatException e) {
             return Double.NaN;
         }
-    }
-
-    static String teavmVersion() {
-        var version = JmhJsonFormat.class.getPackage().getImplementationVersion();
-        if (version == null) {
-            version = TeaVM.class.getPackage().getImplementationVersion();
-        }
-        return version != null ? version : "unknown";
     }
 
     static Map<String, String> describeSources(List<BenchmarkResult> results) {

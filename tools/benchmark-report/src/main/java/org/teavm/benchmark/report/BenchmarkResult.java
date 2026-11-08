@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.perf;
+package org.teavm.benchmark.report;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -38,6 +38,7 @@ public final class BenchmarkResult {
     private final Statistics statistics;
     private final Map<String, Object> metadata = new LinkedHashMap<>();
     private String backend;
+    private String secondaryMetric;
 
     /**
      * Creates result and computes score and error from raw data.
@@ -134,6 +135,19 @@ public final class BenchmarkResult {
 
     public void setBackend(String backend) {
         this.backend = backend;
+    }
+
+    /**
+     * Name of JMH secondary metric (e.g. {@code gc.alloc.rate.norm}) when result represents secondary metric
+     * of benchmark rather than its primary score, {@code null} otherwise. In this case {@link #getBenchmark()}
+     * returns name of benchmark followed by colon and metric name, like JMH does in its text report.
+     */
+    public String getSecondaryMetric() {
+        return secondaryMetric;
+    }
+
+    public void setSecondaryMetric(String secondaryMetric) {
+        this.secondaryMetric = secondaryMetric;
     }
 
     /**
