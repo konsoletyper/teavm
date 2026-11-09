@@ -15,11 +15,11 @@
  */
 package org.teavm.model;
 
-import com.carrotsearch.hppc.ObjectByteHashMap;
-import com.carrotsearch.hppc.ObjectByteMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.teavm.common.OptionalPredicate;
 
 public class ClassHierarchy {
@@ -163,7 +163,6 @@ public class ClassHierarchy {
 
     private class SuperclassPredicate implements OptionalPredicate<ValueType> {
         private final String superclass;
-        private final ObjectByteMap<String> cache = new ObjectByteHashMap<>(100, 0.5);
 
         SuperclassPredicate(String superclass) {
             this.superclass = superclass;
@@ -175,51 +174,49 @@ public class ClassHierarchy {
                 return false;
             }
             var className = ((ValueType.Object) value).getClassName();
-            switch (test(className)) {
-                case 1:
-                    return true;
-                case 2:
-                    return false;
-                default:
-                    return defaultResult;
-            }
+            return className.equals(superclass) || ancestorsOf(className).contains(superclass);
         }
+    }
 
-        byte test(String value) {
-            if (value.equals(superclass)) {
-                return 1;
-            }
-            byte result = cache.get(value);
-            if (result == 0) {
-                result = testCacheMiss(value);
-                cache.put(value, result);
-            }
+    // Per class, the set of the class itself and all its superclasses and interfaces.
+    // One shared index instead of a per-superclass cache keeps memory linear in the number of classes.
+    private final Map<String, Set<String>> ancestors = new HashMap<>();
+    private boolean ancestorsIncomplete;
+
+    private Set<String> ancestorsOf(String className) {
+        ancestorsIncomplete = false;
+        return computeAncestors(className);
+    }
+
+    // Classes can appear in the class source later (e.g. generated during dependency analysis), so ancestor
+    // sets that depended on a missing class are returned but not memoized.
+    private Set<String> computeAncestors(String className) {
+        var result = ancestors.get(className);
+        if (result != null) {
             return result;
         }
-
-        byte testCacheMiss(String value) {
-            if (value.equals(superclass)) {
-                return 1;
-            }
-
-            ClassReader cls = classSource.get(value);
-            if (cls == null) {
-                return 2;
-            }
-
-            if (cls.getParent() != null) {
-                if (test(cls.getParent()) == 1) {
-                    return 1;
-                }
-            }
-
-            for (String itf : cls.getInterfaces()) {
-                if (test(itf) == 1) {
-                    return 1;
-                }
-            }
-
-            return 2;
+        ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            ancestorsIncomplete = true;
+            return Set.of(className);
         }
+        ancestors.put(className, Set.of(className));
+        boolean outerIncomplete = ancestorsIncomplete;
+        ancestorsIncomplete = false;
+        result = new HashSet<>();
+        result.add(className);
+        if (cls.getParent() != null) {
+            result.addAll(computeAncestors(cls.getParent()));
+        }
+        for (String itf : cls.getInterfaces()) {
+            result.addAll(computeAncestors(itf));
+        }
+        if (ancestorsIncomplete) {
+            ancestors.remove(className);
+        } else {
+            ancestors.put(className, result);
+        }
+        ancestorsIncomplete |= outerIncomplete;
+        return result;
     }
 }
