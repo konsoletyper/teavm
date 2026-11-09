@@ -407,10 +407,12 @@ public class BoundCheckInsertion {
                 initInsn.setType(InvocationType.SPECIAL);
                 initInsn.setMethod(AIOOBE_CONSTRUCTOR);
                 initInsn.setInstance(constructInsn.getReceiver());
+                initInsn.setLocation(instruction.getLocation());
                 instruction.insertPrevious(initInsn);
 
                 var throwInsn = new RaiseInstruction();
                 throwInsn.setException(constructInsn.getReceiver());
+                throwInsn.setLocation(instruction.getLocation());
                 instruction.insertPrevious(throwInsn);
 
                 while (instruction.getNext() != null) {
