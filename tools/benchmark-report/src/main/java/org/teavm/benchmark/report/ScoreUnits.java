@@ -45,12 +45,13 @@ public final class ScoreUnits {
 
     /**
      * Scales score of result for display. Currently only scales units of bytes, so that, for example,
-     * {@code 186346641 B/op} is displayed as {@code 177.715 MB/op}.
+     * {@code 186346641 B/op} is displayed as {@code 177.715 MB/op} and {@code 186346641 B}
+     * as {@code 177.715 MB}.
      */
     public static Display display(BenchmarkResult result) {
         var unit = result.getUnit();
         var scale = 1.0;
-        if (unit.startsWith("B/")) {
+        if (unit.equals("B") || unit.startsWith("B/")) {
             var suffix = unit.substring(1);
             var prefixes = new String[] { "", "K", "M", "G", "T" };
             var index = 0;

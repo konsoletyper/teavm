@@ -40,9 +40,10 @@ public final class JmhJsonFormat {
     /**
      * Secondary metrics that are read by default. {@code gc.alloc.rate.norm} is bytes allocated per operation,
      * reported by JMH with {@code -prof gc}. Other metrics of this profiler are either derived from it
-     * or too noisy to compare.
+     * or too noisy to compare. {@code mem.peakLive} is peak live heap size in bytes, reported by
+     * profiler of compiler benchmarks.
      */
-    public static final Set<String> DEFAULT_SECONDARY_METRICS = Set.of("gc.alloc.rate.norm");
+    public static final Set<String> DEFAULT_SECONDARY_METRICS = Set.of("gc.alloc.rate.norm", "mem.peakLive");
 
     private JmhJsonFormat() {
     }

@@ -58,6 +58,16 @@ public class ComparisonTest {
     }
 
     @Test
+    public void displaysBytes() {
+        var perOp = ScoreUnits.display(result("a", "B/op", 3.0 * 1024 * 1024, 3.0 * 1024 * 1024));
+        assertEquals("MB/op", perOp.unit);
+        assertEquals("3.000", perOp.score);
+        var plain = ScoreUnits.display(result("a", "B", 1536.0 * 1024 * 1024, 1536.0 * 1024 * 1024));
+        assertEquals("GB", plain.unit);
+        assertEquals("1.500", plain.score);
+    }
+
+    @Test
     public void readsSecondaryMetrics() throws IOException {
         var dir = new File("build/tmp/comparison-test");
         dir.mkdirs();

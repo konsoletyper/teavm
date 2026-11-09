@@ -100,6 +100,10 @@ tasks.register<JavaExec>("jmh") {
     if (localProperties.flag("benchmark.gc")) {
         args("-prof", "gc")
     }
+    if (localProperties.flag("benchmark.memory")) {
+        val interval = localProperties.string("benchmark.memoryInterval")
+        args("-prof", "org.teavm.compilerbenchmarks.PeakMemoryProfiler" + (interval?.let { ":interval=$it" } ?: ""))
+    }
     if (localProperties.flag("benchmark.profile")) {
         val profileDir = layout.buildDirectory.dir("reports/jmh/profile").get().asFile
         args("-prof", "jfr:dir=${profileDir.absolutePath};configName=profile;stackDepth=256")
