@@ -289,7 +289,11 @@ public class DependencyNode implements ValueDependencyInfo {
                     : getTypesInternal(filter, this, node);
             if (types.length > 0) {
                 if (node.typeSet == null) {
-                    node.propagate(types);
+                    if (transition.shouldMergeDomains()) {
+                        transition.mergeDomains();
+                    } else {
+                        node.propagate(types);
+                    }
                 } else {
                     dependencyAnalyzer.schedulePropagation(transition, types);
                 }
