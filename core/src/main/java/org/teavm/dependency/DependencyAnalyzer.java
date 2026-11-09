@@ -15,8 +15,6 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntHashSet;
-import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -360,7 +358,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         } else {
             if (consumer.pendingTypes == null) {
                 pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet(50);
+                consumer.pendingTypes = new PendingTypes();
             }
             consumer.pendingTypes.add(type.index);
         }
@@ -383,9 +381,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         } else {
             if (consumer.pendingTypes == null) {
                 pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet(Math.max(50, types.length));
+                consumer.pendingTypes = new PendingTypes();
             }
-            consumer.pendingTypes.ensureCapacity(types.length + consumer.pendingTypes.size());
             for (DependencyType type : types) {
                 consumer.pendingTypes.add(type.index);
             }
@@ -719,18 +716,16 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private void processNodeToNodeTransitionQueue() {
         while (!pendingTransitions.isEmpty()) {
             Transition transition = pendingTransitions.remove();
-            IntSet pendingTypes = transition.pendingTypes;
+            PendingTypes pendingTypes = transition.pendingTypes;
             transition.pendingTypes = null;
-            if (pendingTypes.size() == 1) {
-                DependencyType type = types.get(pendingTypes.iterator().next().value);
-                transition.consume(type);
+            // PendingTypes returns indices in ascending order, which keeps analysis deterministic
+            int[] indexes = pendingTypes.toArray();
+            if (indexes.length == 1) {
+                transition.consume(types.get(indexes[0]));
             } else {
-                // IntHashSet's iteration order is unspecified, sort to keep analysis deterministic
-                int[] typeIndexes = pendingTypes.toArray();
-                Arrays.sort(typeIndexes);
-                DependencyType[] typesToPropagate = new DependencyType[typeIndexes.length];
-                for (int i = 0; i < typeIndexes.length; ++i) {
-                    typesToPropagate[i] = types.get(typeIndexes[i]);
+                DependencyType[] typesToPropagate = new DependencyType[indexes.length];
+                for (int i = 0; i < indexes.length; ++i) {
+                    typesToPropagate[i] = types.get(indexes[i]);
                 }
                 transition.consume(typesToPropagate);
             }

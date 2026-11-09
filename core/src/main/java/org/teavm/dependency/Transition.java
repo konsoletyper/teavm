@@ -15,7 +15,6 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntHashSet;
 import java.util.Arrays;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ValueType;
@@ -24,7 +23,7 @@ class Transition {
     DependencyNode source;
     DependencyNode destination;
     DependencyTypeFilter filter;
-    IntHashSet pendingTypes;
+    PendingTypes pendingTypes;
     private byte destSubsetOfSrc;
 
     Transition(DependencyNode source, DependencyNode destination, DependencyTypeFilter filter) {
