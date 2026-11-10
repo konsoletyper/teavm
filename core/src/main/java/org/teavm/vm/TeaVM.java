@@ -1136,7 +1136,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         public ClassHolder get(String name) {
             return cache.computeIfAbsent(name, className -> {
                 ClassReader classReader = dependencyAnalyzer.getClassSource().get(className);
-                if (!dependencyAnalyzer.getReachableClasses().contains(className)) {
+                if (dependencyAnalyzer.getClass(className) == null) {
                     return null;
                 }
                 if (classReader == null) {
