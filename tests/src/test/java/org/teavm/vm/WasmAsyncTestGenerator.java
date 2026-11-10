@@ -48,6 +48,9 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
             case "teeThenSuspend":
                 generateTeeThenSuspend(function);
                 break;
+            case "loopExitByFallThrough":
+                generateLoopExitByFallThrough(function, addParam(function));
+                break;
         }
     }
 
@@ -105,6 +108,24 @@ public class WasmAsyncTestGenerator implements WasmGCBodyIntrinsic {
                 .call(lengthOfFn(), false)
                 .getLocal(sum)
                 .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD);
+    }
+
+    // do { i = sum(i, 1); } while (i < n); return i;
+    // Suspending loop that exits by falling through its end rather than by branch to an enclosing block.
+    private void generateLoopExitByFallThrough(WasmFunction function, WasmLocal param) {
+        var counter = new WasmLocal(WasmType.INT32, "i");
+        function.add(counter);
+        var builder = function.getBody().builder();
+        var loop = builder.loop();
+        loop
+                .getLocal(counter)
+                .i32Const(1)
+                .call(sumFn(), true)
+                .teeLocal(counter)
+                .getLocal(param)
+                .intBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED)
+                .branch(loop);
+        builder.getLocal(counter);
     }
 
     private void escapeIfNonZero(WasmInstructionBuilder outer, WasmLocal param) {

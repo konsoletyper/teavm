@@ -67,10 +67,21 @@ public class WasmAsyncTest {
         assertEquals(54, teeThenSuspend());
     }
 
+    @Test
+    public void suspendingLoopExitsByFallThrough() {
+        assertEquals(3, loopExitByFallThrough(3));
+        assertEquals(1, loopExitByFallThrough(0));
+    }
+
     @Async
     @NativeAsync
     @Intrinsified
     private static native int generatedMethod(int n);
+
+    @Async
+    @NativeAsync
+    @Intrinsified
+    private static native int loopExitByFallThrough(int n);
 
     @Async
     @NativeAsync

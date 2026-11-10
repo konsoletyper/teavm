@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -134,6 +135,28 @@ public class ArrayBlockingQueueTest {
         assertTrue(start + 100 < end && start + 5000 > end, "Wait time " + (end - start));
         assertEquals(1, a);
         assertEquals(2, b);
+    }
+
+    @Test
+    @AsyncEnabled
+    public void pollTimesOut() throws InterruptedException {
+        var queue = new ArrayBlockingQueue<Integer>(1);
+        long start = System.currentTimeMillis();
+        assertNull(queue.poll(100, TimeUnit.MILLISECONDS));
+        long end = System.currentTimeMillis();
+        assertTrue(end - start >= 50, "Wait time " + (end - start));
+    }
+
+    @Test
+    @AsyncEnabled
+    public void offerTimesOut() throws InterruptedException {
+        var queue = new ArrayBlockingQueue<Integer>(1);
+        assertTrue(queue.offer(1));
+        long start = System.currentTimeMillis();
+        assertFalse(queue.offer(2, 100, TimeUnit.MILLISECONDS));
+        long end = System.currentTimeMillis();
+        assertTrue(end - start >= 50, "Wait time " + (end - start));
+        assertEquals(1, queue.size());
     }
 
     @Test

@@ -488,6 +488,10 @@ public class CoroutineTransformation {
         block.insertPrevious(breakLabel);
         block.delete();
         block.setLoop(false);
+        // Branches to former loop now continue new loop, but falling through end of loop body means exit from loop
+        if (block.getBody().isEmpty() || !block.getBody().getLast().isTerminating()) {
+            block.getBody().add(new WasmBreak(breakLabel.getBody()));
+        }
         newLoop.getBody().add(block);
         newLoop.getBody().add(new WasmInt32Constant(stateIndex));
         newLoop.getBody().add(new WasmSetLocal(stateLocal));

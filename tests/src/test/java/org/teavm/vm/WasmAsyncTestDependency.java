@@ -26,6 +26,7 @@ public class WasmAsyncTestDependency extends AbstractDependencyListener {
         switch (method.getMethod().getName()) {
             case "generatedMethod":
             case "loopAfterBranch":
+            case "loopExitByFallThrough":
                 agent.linkMethod(new MethodReference(WasmAsyncTest.class, "sum", int.class, int.class,
                         int.class)).use();
                 break;
