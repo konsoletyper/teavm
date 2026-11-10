@@ -26,11 +26,15 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
 public class WeakReferenceDependencyListener extends AbstractDependencyListener {
-    private DependencyNode initRef;
+    private DependencyNode referenceNode;
+
+    @Override
+    public void started(DependencyAgent agent) {
+        referenceNode = agent.createNode();
+    }
 
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        initRef = agent.createNode();
         if (method.getMethod().getOwnerName().equals(WeakReference.class.getName())) {
             referenceMethodReached(agent, method);
         } else if (method.getMethod().getOwnerName().equals(ReferenceQueue.class.getName())) {
@@ -43,8 +47,8 @@ public class WeakReferenceDependencyListener extends AbstractDependencyListener 
             case "<init>": {
                 if (method.getParameterCount() == 3) {
                     var field = agent.linkField(new FieldReference(method.getMethod().getOwnerName(), "value"));
+                    method.getVariable(0).connect(referenceNode);
                     method.getVariable(1).connect(field.getValue());
-                    method.getVariable(2).connect(initRef);
                     agent.linkField(new FieldReference(method.getMethod().getOwnerName(), "registry"));
                 }
                 break;
@@ -62,7 +66,7 @@ public class WeakReferenceDependencyListener extends AbstractDependencyListener 
             case "poll": {
                 var reportMethod = agent.linkMethod(new MethodReference(ReferenceQueue.class,
                         "reportNext", Reference.class, boolean.class));
-                initRef.connect(method.getResult());
+                referenceNode.connect(method.getResult());
                 reportMethod.use();
                 break;
             }
@@ -73,7 +77,7 @@ public class WeakReferenceDependencyListener extends AbstractDependencyListener 
             case "registerCallback": {
                 var reportMethod = agent.linkMethod(new MethodReference(ReferenceQueue.class,
                         "reportNext", Reference.class, boolean.class));
-                initRef.connect(reportMethod.getVariable(1));
+                referenceNode.connect(reportMethod.getVariable(1));
                 reportMethod.use();
                 break;
             }

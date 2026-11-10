@@ -22,6 +22,7 @@ import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.browser.TimerHandler;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLDocument;
 
@@ -36,6 +37,10 @@ public final class GCSupport {
     public static void tryToTriggerGC(Reference<?> ref) {
         if (PlatformDetector.isC()) {
             System.gc();
+            return;
+        }
+        if ((PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) && isGCExposed()) {
+            triggerAsyncGC(ref);
             return;
         }
         var weakReferences = new ArrayList<WeakReference<Object>>();
@@ -55,6 +60,33 @@ public final class GCSupport {
         }
     }
     
+    // Runs GC as a separate task, when there are no JS/Wasm frames on the stack. Synchronous gc() call scans stack
+    // conservatively, so stale stack slots may keep objects alive.
+    private static void triggerAsyncGC(Reference<?> ref) {
+        for (var i = 0; i < 5; ++i) {
+            asyncGC();
+            // ref.get() keeps the referent alive until the end of current job only, next GC runs in a new task
+            if (ref == null ? i >= 1 : ref.get() == null) {
+                break;
+            }
+        }
+    }
+
+    @Async
+    private static native void asyncGC();
+    private static void asyncGC(AsyncCallback<Void> callback) {
+        asyncGCImpl(() -> callback.complete(null));
+    }
+
+    // Old V8 versions ignore options and return undefined. Wait a tick after GC so that FinalizationRegistry
+    // callbacks have a chance to run.
+    @JSBody(params = "callback", script = "Promise.resolve(gc({ type: 'major', execution: 'async' }))"
+            + ".then(() => setTimeout(callback, 0));")
+    private static native void asyncGCImpl(TimerHandler callback);
+
+    @JSBody(script = "return typeof gc === 'function';")
+    private static native boolean isGCExposed();
+
     private static WeakReference<Object> generateGarbage() {
         return new WeakReference<>(generateTree("R"));
     }

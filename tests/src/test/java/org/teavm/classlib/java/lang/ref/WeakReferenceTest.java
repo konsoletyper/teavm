@@ -18,14 +18,13 @@ package org.teavm.classlib.java.lang.ref;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
-import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.support.GCSupport;
 import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.AsyncEnabled;
@@ -50,7 +49,7 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID, TestPlatform.JAVASCRIPT})
+    @AsyncEnabled
     public void deref() {
         var ref = createAndTestRef(null);
         GCSupport.tryToTriggerGC(ref);
@@ -58,36 +57,19 @@ public class WeakReferenceTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID, TestPlatform.JAVASCRIPT})
+    @AsyncEnabled
     public void refQueue() {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
         GCSupport.tryToTriggerGC(ref);
-        int attemptCount = 0;
-        Object value;
-        do {
-            value = queue.poll();
-            if (value != null) {
-                break;
-            }
-            waitInJVM();
-        } while (attemptCount++ < 50);
-        assertSame(ref, value);
-    }
-
-    private static void waitInJVM() {
-        if (!PlatformDetector.isTeaVM()) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                // do nothing
-            }
-        }
+        assertSame(ref, pollUntilEnqueued(queue));
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID,
-            TestPlatform.JAVASCRIPT })
+    // TODO: on C and Wasm GC ReferenceQueue.remove() is not woken up when reference gets enqueued;
+    //  also, on Wasm GC ArrayBlockingQueue.poll(timeout) never returns after timeout
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID })
+    @AsyncEnabled
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
@@ -107,11 +89,18 @@ public class WeakReferenceTest {
         assertSame(ref, result);
     }
 
-    private WeakReference<Object> createAndTestRef(ReferenceQueue<Object> queue) {
-        var obj = new Object();
-        var ref = new WeakReference<>(obj, queue);
-        assertSame(obj, ref.get());
-        return ref;
+    // Creates referent in another thread, see runInAnotherThread
+    private static WeakReference<Object> createAndTestRef(ReferenceQueue<Object> queue) {
+        var refs = new WeakReference<?>[1];
+        runInAnotherThread(() -> {
+            var obj = new Object();
+            var ref = new WeakReference<>(obj, queue);
+            assertSame(obj, ref.get());
+            refs[0] = ref;
+        });
+        @SuppressWarnings("unchecked")
+        var result = (WeakReference<Object>) refs[0];
+        return result;
     }
 
     @Test
@@ -146,7 +135,7 @@ public class WeakReferenceTest {
         });
         refs[1].clear();
         GCSupport.tryToTriggerGC(refs[0]);
-        assertEquals(List.of(refs[0]), pollUntilEnqueued(queue, refs[0]));
+        assertEquals(refs[0], pollUntilEnqueued(queue));
     }
 
     @Test
@@ -165,7 +154,35 @@ public class WeakReferenceTest {
 
         holder[0] = null;
         GCSupport.tryToTriggerGC(refs[0]);
-        assertEquals(List.of(refs[0]), pollUntilEnqueued(queue, refs[0]));
+        assertEquals(refs[0], pollUntilEnqueued(queue));
+    }
+    
+    @Test
+    @AsyncEnabled
+    public void typeOfEnqueuedReference() {
+        class TestReference extends WeakReference<Object> {
+            String tag;
+
+            TestReference(Object referent, ReferenceQueue<? super Object> q, String tag) {
+                super(referent, q);
+                this.tag = tag;
+            }
+
+            @Override
+            public String toString() {
+                return tag;
+            }
+        }
+        var refs = new Reference[1];
+        var queue = new ReferenceQueue<>();
+        runInAnotherThread(() -> {
+            refs[0] = new TestReference(new Object(), queue, "test");
+        });
+        GCSupport.tryToTriggerGC(refs[0]);
+        var ref = pollUntilEnqueued(queue);
+        // Also keeps the reference reachable: an unreachable reference is never enqueued
+        assertSame(refs[0], ref);
+        assertEquals("test", ref.toString());
     }
 
     // Objects that a test expects to be collected are created in another thread. When the optimizer inlines a helper
@@ -180,19 +197,15 @@ public class WeakReferenceTest {
         }
     }
 
-    private static List<Object> pollUntilEnqueued(ReferenceQueue<?> queue, Object expected) {
-        var result = new ArrayList<Object>();
-        for (var i = 0; i < 50 && !result.contains(expected); ++i) {
-            sleep(100);
-            for (var ref = queue.poll(); ref != null; ref = queue.poll()) {
-                result.add(ref);
+    private static Object pollUntilEnqueued(ReferenceQueue<?> queue) {
+        for (var i = 0; i < 10; ++i) {
+            var result = queue.poll();
+            if (result != null) {
+                return result;
             }
+            sleep(50);
         }
-        sleep(100);
-        for (var ref = queue.poll(); ref != null; ref = queue.poll()) {
-            result.add(ref);
-        }
-        return result;
+        return null;
     }
 
     private static void sleep(long millis) {

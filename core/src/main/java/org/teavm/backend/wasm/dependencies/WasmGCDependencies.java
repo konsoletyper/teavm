@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.dependencies;
 
 import java.util.Arrays;
 import java.util.List;
+import org.teavm.backend.lowlevel.dependency.WeakReferenceDependencyListener;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.dependency.AbstractDependencyListener;
@@ -51,6 +52,7 @@ public class WasmGCDependencies {
         analyzer.addDependencyListener(new SystemArrayCopyDependencySupport());
         analyzer.addDependencyListener(new WasmGCSignatureDependencyListener());
         analyzer.addDependencyListener(new WasmGCExportDependencyListener());
+        analyzer.addDependencyListener(new WeakReferenceDependencyListener());
     }
 
     public void contributeStandardExports() {
