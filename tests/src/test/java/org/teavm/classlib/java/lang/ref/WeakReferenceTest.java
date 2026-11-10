@@ -26,7 +26,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.GCSupport;
-import org.teavm.compiler.bootstrap.junit.platform.BootstrapWasmGCTestPlatform;
 import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipPlatform;
@@ -66,9 +65,8 @@ public class WeakReferenceTest {
     }
 
     @Test
-    // TODO: on C and Wasm GC ReferenceQueue.remove() is not woken up when reference gets enqueued;
-    //  also, on Wasm GC ArrayBlockingQueue.poll(timeout) never returns after timeout
-    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY_GC, BootstrapWasmGCTestPlatform.ID })
+    // TODO: on C ReferenceQueue.remove() is not woken up when reference gets enqueued;
+    @SkipPlatform(TestPlatform.C)
     @AsyncEnabled
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();

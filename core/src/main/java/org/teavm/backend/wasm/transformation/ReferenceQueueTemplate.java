@@ -33,7 +33,9 @@ class ReferenceQueueTemplate<T> {
         return result.reference;
     }
 
-    public void supply(Reference<T> reference) {
+    public native void supply(Reference<T> reference);
+    
+    private void supplyImpl(Reference<T> reference) {
         var entry = new ReferenceQueueEntry<>(reference);
         if (start == null) {
             start = entry;

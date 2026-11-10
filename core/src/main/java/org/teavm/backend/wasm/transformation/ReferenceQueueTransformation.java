@@ -15,13 +15,17 @@
  */
 package org.teavm.backend.wasm.transformation;
 
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
+import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.util.ModelUtils;
@@ -45,6 +49,14 @@ public class ReferenceQueueTransformation implements ClassHolderTransformer {
         for (var field : templateClass.getFields()) {
             cls.addField(ModelUtils.copyField(field));
         }
+        var supplyMethod = cls.getMethod(new MethodDescriptor("supply", Reference.class, void.class));
+        supplyMethod.getModifiers().remove(ElementModifier.NATIVE);
+        var pe = ProgramEmitter.create(supplyMethod, context.getHierarchy());
+        var thisVar = pe.var(0, ReferenceQueue.class);
+        var ref = pe.var(1, Reference.class);
+        pe.when(thisVar.invokeSpecial("reportNext", boolean.class, ref).isTrue()).thenDo(() -> pe.exit());
+        thisVar.invokeSpecial("supplyImpl", void.class, ref);
+        pe.exit();
     }
 
     private void copyMethod(ClassHolder cls, MethodReader method) {
@@ -56,15 +68,17 @@ public class ReferenceQueueTransformation implements ClassHolderTransformer {
             targetMethod.setLevel(method.getLevel());
         }
 
+        if (method.getProgram() == null) {
+            return;
+        }
+
         var targetProgram = ProgramUtils.copy(method.getProgram());
         targetMethod.setProgram(targetProgram);
         for (var block : targetProgram.getBasicBlocks()) {
             for (var instruction : block) {
-                if (instruction instanceof GetFieldInstruction) {
-                    var getField = (GetFieldInstruction) instruction;
+                if (instruction instanceof GetFieldInstruction getField) {
                     getField.setField(mapField(getField.getField()));
-                } else if (instruction instanceof PutFieldInstruction) {
-                    var putField = (PutFieldInstruction) instruction;
+                } else if (instruction instanceof PutFieldInstruction putField) {
                     putField.setField(mapField(putField.getField()));
                 }
             }

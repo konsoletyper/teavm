@@ -443,7 +443,7 @@ function extractDylinkInfo(module: WebAssembly.Module): DylinkInfo {
 }
 
 function coreImports(imports: Record<string, unknown>, context: Context): void {
-    const finalizationRegistry = new FinalizationRegistry<{ queue: unknown; ref: unknown }>(heldValue => {
+    const finalizationRegistry = new FinalizationRegistry<{ queue: unknown; ref: any }>(heldValue => {
         if (context.killedWithCode !== null) {
             return;
         }
