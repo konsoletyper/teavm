@@ -38,24 +38,59 @@ public abstract class RequestInit implements JSObject {
         return JSObjects.create();
     }
 
-    @JSProperty
-    public native void setMethod(String method);
+    public RequestInit method(String method) {
+        setMethod(method);
+        return this;
+    }
+
+    public RequestInit body(String type) {
+        setBody(type);
+        return this;
+    }
+
+    public RequestInit body(ArrayBuffer body) {
+        setBody(body);
+        return this;
+    }
+
+    public RequestInit body(TypedArray body) {
+        setBody(body);
+        return this;
+    }
+
+    public RequestInit headers(Headers headers) {
+        setHeaders(headers);
+        return this;
+    }
+
+    public RequestInit headers(JSMapLike<String> headers) {
+        setHeaders(headers);
+        return this;
+    }
+
+    public RequestInit signal(AbortSignal signal) {
+        setSignal(signal);
+        return this;
+    }
 
     @JSProperty
-    public native void setBody(String type);
+    private native void setMethod(String method);
 
     @JSProperty
-    public native void setBody(ArrayBuffer body);
+    private native void setBody(String type);
 
     @JSProperty
-    public native void setBody(TypedArray body);
+    private native void setBody(ArrayBuffer body);
 
     @JSProperty
-    public native void setHeaders(Headers headers);
+    private native void setBody(TypedArray body);
 
     @JSProperty
-    public native void setHeaders(JSMapLike<String> headers);
+    private native void setHeaders(Headers headers);
 
     @JSProperty
-    public native void setSignal(AbortSignal signal);
+    private native void setHeaders(JSMapLike<String> headers);
+
+    @JSProperty
+    private native void setSignal(AbortSignal signal);
 }
