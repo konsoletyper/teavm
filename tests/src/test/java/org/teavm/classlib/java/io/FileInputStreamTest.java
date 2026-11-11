@@ -392,6 +392,33 @@ public class FileInputStreamTest {
         }
     }
 
+    @Test
+    public void skipAdvancesFromCurrentPosition() throws IOException {
+        try (var fos = new FileOutputStream(fileName)) {
+            fos.write(new byte[] { 10, 11, 12, 13, 14, 15, 16 });
+        }
+
+        try (var input = new FileInputStream(fileName)) {
+            assertEquals(10, input.read());
+            assertEquals(2, input.skip(2));
+            assertEquals(13, input.read());
+            assertEquals(1, input.skip(1));
+            assertEquals(15, input.read());
+            assertEquals(16, input.read());
+            assertEquals(-1, input.read());
+        }
+    }
+
+    @Test
+    public void skipZeroDoesNotMove() throws IOException {
+        try (var input = new FileInputStream(fileName)) {
+            assertEquals(0, input.skip(0));
+            assertEquals(fileString.charAt(0), input.read());
+            assertEquals(0, input.skip(0));
+            assertEquals(fileString.charAt(1), input.read());
+        }
+    }
+
     @AfterEach
     public void tearDown() {
         new File(fileName).delete();

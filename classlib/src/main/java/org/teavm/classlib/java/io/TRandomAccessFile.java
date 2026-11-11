@@ -128,6 +128,9 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
     @Override
     public int skipBytes(int n) throws IOException {
         ensureOpened();
+        if (n <= 0) {
+            return 0;
+        }
 
         int last = accessor.tell();
         accessor.skip(n - 1);
