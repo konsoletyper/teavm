@@ -17,11 +17,13 @@ package org.teavm.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.ref.WeakReference;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
 
@@ -30,6 +32,8 @@ import org.teavm.junit.TestPlatform;
 @EachTestCompiledSeparately
 public class GCTest {
     private static final int GARBAGE_COUNT = 2000;
+    private static final int MULTI_ARRAY_ROWS = 4096;
+    private static final int MULTI_ARRAY_COLUMNS = 1024;
     private static Object sink;
 
     @Test
@@ -164,6 +168,29 @@ public class GCTest {
             lockRecursively(locks, hashes, index + 1);
             assertTrue(Thread.holdsLock(locks[index]));
         }
+    }
+
+    @Test
+    @SkipJVM
+    public void multiArraySurvivesGcDuringInnerAllocations() {
+        // Dead objects below the outer array, so that defragmentation has a gap to move it into
+        makeGarbage();
+        var canary = new WeakReference<>(new Object());
+        // The inner arrays need more memory than is free, so GC runs while they are being allocated
+        var array = new int[MULTI_ARRAY_ROWS][MULTI_ARRAY_COLUMNS];
+        assertNull(canary.get());
+        // Checked before any further GC, which would walk a corrupted heap
+        assertEquals(MULTI_ARRAY_ROWS, array.length);
+        for (var i = 0; i < array.length; ++i) {
+            assertEquals(MULTI_ARRAY_COLUMNS, array[i].length);
+            array[i][MULTI_ARRAY_COLUMNS - 1] = i;
+        }
+        forceGc();
+        var filler = overwriteFreeMemory();
+        for (var i = 0; i < array.length; ++i) {
+            assertEquals(i, array[i][MULTI_ARRAY_COLUMNS - 1]);
+        }
+        sink = filler;
     }
 
     static class Worker {
