@@ -378,7 +378,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                         case DIVIDE:
                         case DIVIDE_CHECKED:
                             if (q != 0) {
-                                evaluatedConstant = p / q;
+                                evaluatedConstant = p == Integer.MIN_VALUE && q == -1 ? Integer.MIN_VALUE : p / q;
                             }
                             break;
                         case MODULO:
@@ -428,7 +428,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                         case DIVIDE:
                         case DIVIDE_CHECKED:
                             if (q != 0) {
-                                evaluatedConstant = p / q;
+                                evaluatedConstant = p == Long.MIN_VALUE && q == -1 ? Long.MIN_VALUE : p / q;
                             }
                             break;
                         case MODULO:

@@ -264,7 +264,7 @@ public class BoundCheckInsertion {
                             // inside the compiler, so leave the division for the backend to emit.
                             return;
                         }
-                        r = a / b;
+                        r = a == Integer.MIN_VALUE && b == -1 ? Integer.MIN_VALUE : a / b;
                         break;
                     case MODULO:
                         if (b == 0) {
