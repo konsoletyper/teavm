@@ -51,8 +51,9 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
         SourceWriter writer = context.getWriter();
         switch (methodRef.getName()) {
             case "arrayData":
-                context.writeExpr(context.getArgument(0));
-                writer.append(".data");
+                writer.appendFunction("$rt_arrayData").append("(");
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
                 break;
             case "concatArray":
                 writer.appendFunction("$rt_concatArrays").append("(");
@@ -385,7 +386,7 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
 
     private void dataToArray(InjectorContext context, String className) {
         var writer = context.getWriter();
-        writer.appendFunction("$rt_wrapArray").append("(").appendFunction(className).append(",").ws();
+        writer.appendFunction("$rt_wrapArrayData").append("(").appendFunction(className).append(",").ws();
         context.writeExpr(context.getArgument(0), Precedence.min());
         writer.append(")");
     }
