@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
 import org.teavm.common.DominatorTree;
@@ -89,6 +90,7 @@ public class PhiUpdater {
     private boolean[] variableDefined;
     private int[] variableDefinitionCount;
     private List<List<Variable>> definedVersions = new ArrayList<>();
+    private List<Incoming> versionIncomings = new ArrayList<>();
     private BasicBlock currentBlock;
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
@@ -199,9 +201,12 @@ public class PhiUpdater {
             synthesizedPhisByBlock.add(new ArrayList<>());
         }
 
+        versionIncomings.clear();
+
         estimateSigmas();
         estimatePhis(parameters.length);
         renameVariables();
+        removeUndefinedVersions();
         propagatePhiUsageInformation();
         addSynthesizedPhis();
     }
@@ -340,7 +345,7 @@ public class PhiUpdater {
             pendingVariableMap[index] = null;
 
             if (currentBlock.getExceptionVariable() != null) {
-                currentBlock.setExceptionVariable(define(currentBlock.getExceptionVariable()));
+                currentBlock.setExceptionVariable(defineAtBlockStart(currentBlock.getExceptionVariable()));
             }
 
             for (Phi phi : synthesizedPhisByBlock.get(index)) {
@@ -352,7 +357,7 @@ public class PhiUpdater {
                 phi.setReceiver(var);
             }
             for (Phi phi : currentBlock.getPhis()) {
-                phi.setReceiver(define(phi.getReceiver()));
+                phi.setReceiver(defineAtBlockStart(phi.getReceiver()));
             }
 
             if (renamingListener != null) {
@@ -456,14 +461,8 @@ public class PhiUpdater {
             Phi phi = phis.get(j);
             Variable var = variableMap[phiIndexes[j]];
             if (var != null) {
-                List<Variable> versions = definedVersions.get(phiIndexes[j]);
-                if (versions != null && allVersions) {
-                    for (Variable version : versions) {
-                        Incoming incoming = new Incoming();
-                        incoming.setSource(currentBlock);
-                        incoming.setValue(version);
-                        phi.getIncomings().add(incoming);
-                    }
+                if (allVersions) {
+                    addVersions(phi, definedVersions.get(phiIndexes[j]));
                 }
 
                 Incoming incoming = new Incoming();
@@ -477,22 +476,18 @@ public class PhiUpdater {
         for (var phi : program.basicBlockAt(successor).getPhis()) {
             var incomings = phi.getIncomings();
             var incomingCount = incomings.size();
+            List<List<Variable>> versionLists = null;
             for (var i = 0; i < incomingCount; ++i) {
                 var incoming = incomings.get(i);
                 if (incoming.getSource() == currentBlock) {
                     var value = variableMap[incoming.getValue().getIndex()];
                     if (value != null) {
-                        // An exception can leave the block before any later version is assigned,
-                        // so the handler needs every version
                         var versions = allVersions ? definedVersions.get(incoming.getValue().getIndex()) : null;
                         if (versions != null) {
-                            for (var version : versions) {
-                                var versionIncoming = new Incoming();
-                                versionIncoming.setSource(currentBlock);
-                                versionIncoming.setValue(version);
-                                incomings.add(versionIncoming);
-                                usedPhis.set(version.getIndex());
+                            if (versionLists == null) {
+                                versionLists = new ArrayList<>();
                             }
+                            versionLists.add(versions);
                         }
                         incoming.setValue(value);
                         usedPhis.set(value.getIndex());
@@ -501,7 +496,91 @@ public class PhiUpdater {
                     }
                 }
             }
+            if (versionLists != null) {
+                for (var versions : versionLists) {
+                    addVersions(phi, versions);
+                }
+            }
         }
+    }
+
+    // An exception can leave the block before any later version is assigned, so the handler needs every version
+    private void addVersions(Phi phi, List<Variable> versions) {
+        if (versions == null) {
+            return;
+        }
+        for (var version : versions) {
+            var incoming = new Incoming();
+            incoming.setSource(currentBlock);
+            incoming.setValue(version);
+            phi.getIncomings().add(incoming);
+            versionIncomings.add(incoming);
+        }
+    }
+
+    // A version that comes from a phi without an incoming on some path is unassigned there, so a valid program
+    // does not read it in the handler, and keeping it would make the incomplete phi part of the program
+    private void removeUndefinedVersions() {
+        if (versionIncomings.isEmpty()) {
+            return;
+        }
+        var undefined = findPossiblyUndefinedPhis();
+        for (var incoming : versionIncomings) {
+            var phi = incoming.getPhi();
+            if (undefined.get(incoming.getValue().getIndex())) {
+                phi.getIncomings().remove(incoming);
+            } else if (phi.getBasicBlock() != null) {
+                // Synthesized phis are not in the program yet and propagate their usage later
+                usedPhis.set(incoming.getValue().getIndex());
+            }
+        }
+    }
+
+    private BitSet findPossiblyUndefinedPhis() {
+        var versionSet = new HashSet<>(versionIncomings);
+
+        var result = new BitSet();
+        var users = new IntObjectHashMap<List<Phi>>();
+        IntDeque worklist = new IntArrayDeque();
+        var sources = new BitSet();
+        for (var block = 0; block < synthesizedPhisByBlock.size(); ++block) {
+            for (var phi : synthesizedPhisByBlock.get(block)) {
+                sources.clear();
+                for (var incoming : phi.getIncomings()) {
+                    if (versionSet.contains(incoming)) {
+                        continue;
+                    }
+                    sources.set(incoming.getSource().getIndex());
+                    var valueUsers = users.get(incoming.getValue().getIndex());
+                    if (valueUsers == null) {
+                        valueUsers = new ArrayList<>();
+                        users.put(incoming.getValue().getIndex(), valueUsers);
+                    }
+                    valueUsers.add(phi);
+                }
+                for (var predecessor : cfg.incomingEdges(block)) {
+                    if (!sources.get(predecessor)) {
+                        worklist.addLast(phi.getReceiver().getIndex());
+                        break;
+                    }
+                }
+            }
+        }
+
+        while (!worklist.isEmpty()) {
+            var index = worklist.removeFirst();
+            if (result.get(index)) {
+                continue;
+            }
+            result.set(index);
+            var valueUsers = users.get(index);
+            if (valueUsers != null) {
+                for (var user : valueUsers) {
+                    worklist.addLast(user.getReceiver().getIndex());
+                }
+            }
+        }
+        return result;
     }
 
     private void markAssignment(Variable var, BasicBlock targetBlock) {
@@ -602,7 +681,12 @@ public class PhiUpdater {
             }
             definedVersions.get(var.getIndex()).add(old);
         }
+        return defineAtBlockStart(var);
+    }
 
+    // Phis and the exception variable are assigned before any instruction of the block runs, so an exception
+    // thrown in the block never sees the previous version
+    private Variable defineAtBlockStart(Variable var) {
         Variable original = var;
         var = introduce(var);
         mapVariable(original.getIndex(), var);

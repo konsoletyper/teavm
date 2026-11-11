@@ -1,0 +1,19 @@
+var @this as this
+
+$start
+    @bar := invokeVirtual `Foo.bar()LBar;` @this
+    goto $try
+$try
+    invokeVirtual `Bar.baz()LBar;` @bar
+    @bar_1 := nullCheck @bar
+    invokeVirtual `Bar.baz2()LBar;` @bar_1
+    goto $join
+    catch java.lang.RuntimeException goto $handler
+$handler
+    @handled := phi @bar_1 from $try, @bar from $try
+    goto $join
+$join
+    @joined := phi @bar_1 from $try, @handled from $handler
+    return @joined
+
+// NOT_NULL bar_1

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.ref.WeakReference;
 import org.junit.jupiter.api.Test;
+import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
@@ -191,6 +192,74 @@ public class GCTest {
             assertEquals(i, array[i][MULTI_ARRAY_COLUMNS - 1]);
         }
         sink = filler;
+    }
+
+    @Test
+    @AsyncEnabled
+    public void handlersInLoopKeepValidRootsAcrossSuspension() throws InterruptedException {
+        assertEquals(135, handlersInLoop(Node.list(10), Node.list(7), Node.list(5)));
+    }
+
+    // The locals assigned in the protected blocks have versions that a loop-head phi would give the handlers,
+    // and the suspension keeps those phis alive until the GC roots are stored
+    private static int handlersInLoop(Node a, Node b, Node c) throws InterruptedException {
+        var sum = 0;
+        for (var round = 0; round < 3; ++round) {
+            makeGarbage();
+            System.gc();
+            try {
+                sum += a.value;
+                a = a.next;
+                Thread.sleep(1);
+                try {
+                    sum += b.value + throwOnThree(a.value);
+                    b = b.next;
+                    try {
+                        sum += c.value + throwOnThree(b.value);
+                        c = c.next;
+                    } catch (IllegalStateException e) {
+                        sum += c.value + a.value;
+                        c = c.next;
+                    } finally {
+                        sum += b.value;
+                    }
+                } catch (IllegalStateException e) {
+                    sum += b.value + a.value + c.value;
+                    b = b.next;
+                } finally {
+                    sum += a.value + c.value;
+                }
+            } catch (RuntimeException e) {
+                sum += 1000;
+                a = a != null ? a.next : null;
+            } finally {
+                sum += b != null ? b.value : 0;
+            }
+        }
+        return sum;
+    }
+
+    private static int throwOnThree(int value) {
+        if (value == 3) {
+            throw new IllegalStateException();
+        }
+        return value;
+    }
+
+    static class Node {
+        int value;
+        Node next;
+
+        static Node list(int length) {
+            Node head = null;
+            for (var i = 0; i < length; ++i) {
+                var node = new Node();
+                node.value = i;
+                node.next = head;
+                head = node;
+            }
+            return head;
+        }
     }
 
     static class Worker {

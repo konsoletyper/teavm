@@ -1,0 +1,12 @@
+$start
+    goto $loop
+$loop
+    invokeStatic `Foo.baz()V`
+    @a := invokeStatic `Foo.bar()I`
+    invokeStatic `Foo.baz()V`
+    @a_2 := invokeStatic `Foo.boo()I`
+    goto $loop
+    catch java.lang.RuntimeException goto $catch
+$catch
+    @b := phi @a_2 from $loop, @a from $loop
+    return

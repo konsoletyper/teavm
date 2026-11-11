@@ -1,0 +1,14 @@
+$start
+    @a := invokeStatic `Foo.bar()I`
+    @c := invokeStatic `Foo.bar()I`
+    invokeStatic `Foo.baz()V`
+    @a_1 := invokeStatic `Foo.boo()I`
+    invokeStatic `Foo.baz()V`
+    @c_1 := invokeStatic `Foo.boo()I`
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+$catch
+    @b := phi @a_1 from $start, @c_1 from $start, @a from $start, @c from $start
+    return @b
+$end
+    return @a_1
