@@ -32,6 +32,13 @@ dependencies {
     runtimeOnly(project(":jso:impl"))
 }
 
+tasks.shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles()
+    manifest {
+        attributes["Main-Class"] = "org.teavm.cli.TeaVMRunner"
+    }
+}
 
 components.configureEach {
     if (name == "java") {

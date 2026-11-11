@@ -120,6 +120,7 @@ public class TeaVMTool {
     private int maxHeapSize = 128 * (1 << 20);
     private int minDirectBuffersSize = 2 * (1 << 20);
     private boolean sharedBuffer;
+    private boolean wasmStandalone;
     private ReferenceCache referenceCache;
     private boolean heapDump;
     private boolean shortFileNames;
@@ -278,6 +279,10 @@ public class TeaVMTool {
         this.sharedBuffer = sharedBuffer;
     }
 
+    public void setWasmStandalone(boolean wasmStandalone) {
+        this.wasmStandalone = wasmStandalone;
+    }
+
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -392,7 +397,9 @@ public class TeaVMTool {
         target.setDebugInfoLevel(debugInformationGenerated ? WasmDebugInfoLevel.FULL : wasmDebugInfoLevel);
         target.setDebugInfoLocation(wasmDebugInfoLocation);
         target.setBufferHeapMinSize(minDirectBuffersSize);
+        target.setBufferHeapMaxSize(maxHeapSize);
         target.setSharedBuffer(sharedBuffer);
+        target.setStandalone(wasmStandalone);
         if (sourceMapsFileGenerated) {
             wasmSourceMapWriter = new SourceMapBuilder();
             target.setSourceMapBuilder(wasmSourceMapWriter);
@@ -484,7 +491,9 @@ public class TeaVMTool {
             for (ClassHolderTransformer transformer : resolveTransformers()) {
                 vm.add(transformer);
             }
-            vm.setEntryPoint(mainClass);
+            if (mainClass != null) {
+                vm.setEntryPoint(mainClass);
+            }
             if (entryPointName != null) {
                 vm.setEntryPointName(entryPointName);
             }

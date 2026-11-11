@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -128,6 +128,10 @@ public final class TeaVMRunner {
                 .hasArg()
                 .desc("WebAssembly binary version (currently, only 1 is supported)")
                 .build());
+        options.addOption(Option.builder()
+                .longOpt("wasm-standalone")
+                .desc("Generate standalone WebAssembly module without JS runtime dependencies")
+                .build());
         options.addOption(Option.builder("e")
                 .longOpt("entry-point")
                 .argName("name")
@@ -216,6 +220,11 @@ public final class TeaVMRunner {
                 case "wasm-gc":
                 case "webassembly-gc":
                     tool.setTargetType(TeaVMTargetType.WEBASSEMBLY_GC);
+                    break;
+                case "wasm-gc-standalone":
+                case "webassembly-gc-standalone":
+                    tool.setTargetType(TeaVMTargetType.WEBASSEMBLY_GC);
+                    tool.setWasmStandalone(true);
                     break;
                 case "c":
                     tool.setTargetType(TeaVMTargetType.C);
@@ -331,6 +340,9 @@ public final class TeaVMRunner {
     }
 
     private void parseWasmOptions() {
+        if (commandLine.hasOption("wasm-standalone")) {
+            tool.setWasmStandalone(true);
+        }
         if (commandLine.hasOption("wasm-version")) {
             String value = commandLine.getOptionValue("wasm-version");
             try {
@@ -454,10 +466,10 @@ public final class TeaVMRunner {
             return;
         }
         URL[] urls = new URL[classPath.length];
-        var files = new File[classPath.length];
+        var files = new ArrayList<File>(classPath.length);
         for (int i = 0; i < classPath.length; ++i) {
             var file = new File(classPath[i]);
-            files[i] = file;
+            files.add(file);
             try {
                 urls[i] = file.toURI().toURL();
             } catch (MalformedURLException e) {
@@ -466,9 +478,17 @@ public final class TeaVMRunner {
                 return;
             }
         }
+        var sysClassPath = System.getProperty("java.class.path");
+        if (sysClassPath != null && !sysClassPath.isEmpty()) {
+            for (var entry : sysClassPath.split(File.pathSeparator)) {
+                if (!entry.isEmpty()) {
+                    files.add(new File(entry));
+                }
+            }
+        }
 
         tool.setClassLoader(new URLClassLoader(urls, TeaVMRunner.class.getClassLoader()));
-        tool.setClassPath(List.of(files));
+        tool.setClassPath(files);
     }
 
     class ProgressListenerImpl implements TeaVMProgressListener {

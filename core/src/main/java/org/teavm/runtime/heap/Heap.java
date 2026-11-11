@@ -15,6 +15,7 @@
  */
 package org.teavm.runtime.heap;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Address;
 import org.teavm.interop.Export;
 import org.teavm.interop.Import;
@@ -210,7 +211,9 @@ public final class Heap {
         }
         end = start.add(currentSize);
         maxSize = Math.max(currentSize, maxSize);
-        notifyHeapResized();
+        if (!PlatformDetector.isWebAssemblyGCStandalone()) {
+            notifyHeapResized();
+        }
         return grownBytes >= bytes;
     }
 

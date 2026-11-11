@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.render;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -546,6 +547,7 @@ public class WasmBinaryRenderer {
         WasmBinaryWriter functionsSubsection = new WasmBinaryWriter();
         var functions = module.functions.stream()
                 .filter(f -> f.getName() != null)
+                .sorted(Comparator.comparingInt(module.functions::indexOf))
                 .collect(Collectors.toList());
         functionsSubsection.writeLEB(functions.size());
 
@@ -561,6 +563,7 @@ public class WasmBinaryRenderer {
 
         var functionsWithLocalNames = module.functions.stream()
                 .filter(fn -> fn.getLocalVariables().stream().anyMatch(v -> v.getName() != null))
+                .sorted(Comparator.comparingInt(module.functions::indexOf))
                 .collect(Collectors.toList());
         if (!functionsWithLocalNames.isEmpty()) {
             var subsection = new WasmBinaryWriter();
@@ -569,6 +572,7 @@ public class WasmBinaryRenderer {
                 subsection.writeLEB(module.functions.indexOf(function));
                 var locals = function.getLocalVariables().stream()
                         .filter(t -> t.getName() != null)
+                        .sorted(Comparator.comparingInt(t -> t.getIndex()))
                         .collect(Collectors.toList());
                 subsection.writeLEB(locals.size());
                 for (var local : locals) {
@@ -585,6 +589,7 @@ public class WasmBinaryRenderer {
 
         var types = module.types.stream()
                 .filter(t -> t.getName() != null)
+                .sorted(Comparator.comparingInt(module.types::indexOf))
                 .collect(Collectors.toList());
         if (!types.isEmpty()) {
             var typesSubsection = new WasmBinaryWriter();
@@ -602,6 +607,7 @@ public class WasmBinaryRenderer {
 
         var globals = module.globals.stream()
                 .filter(g -> g.getName() != null)
+                .sorted(Comparator.comparingInt(module.globals::indexOf))
                 .collect(Collectors.toList());
         if (!globals.isEmpty()) {
             var globalsSubsection = new WasmBinaryWriter();

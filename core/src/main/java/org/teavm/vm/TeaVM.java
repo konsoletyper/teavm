@@ -358,6 +358,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private void processEntryPoint() {
+        if (entryPoint == null) {
+            return;
+        }
         dependencyAnalyzer.setEntryPoint(entryPoint);
         dependencyAnalyzer.addClassTransformer((c, context) -> {
             if (c.getName().equals(entryPoint)) {
@@ -679,7 +682,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         var initializers = target.getInitializerMethods();
         if (initializers == null) {
-            initializers = List.of(new MethodReference(entryPoint, CLINIT_DESC));
+            initializers = entryPoint != null ? List.of(new MethodReference(entryPoint, CLINIT_DESC)) : List.of();
         }
         for (var initializer : initializers) {
             addInitializersToEntryPoint(classes, initializer);

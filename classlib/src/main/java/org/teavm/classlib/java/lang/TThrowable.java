@@ -123,7 +123,7 @@ public class TThrowable extends RuntimeException {
     public Throwable fillInStackTrace() {
         if (PlatformDetector.isLowLevel()) {
             stackTrace = (TStackTraceElement[]) (Object) ExceptionHandling.fillStackTrace();
-        } else if (PlatformDetector.isWebAssemblyGC()) {
+        } else if (PlatformDetector.isWebAssemblyGC() && !PlatformDetector.isWebAssemblyGCStandalone()) {
             lazyStackTrace = takeWasmGCStack(JSString.valueOf(getClass().getName()));
             decorateException(this);
         }
@@ -143,7 +143,7 @@ public class TThrowable extends RuntimeException {
     private static native void decorateException(Object obj);
 
     private void ensureStackTrace() {
-        if (PlatformDetector.isWebAssemblyGC()) {
+        if (PlatformDetector.isWebAssemblyGC() && !PlatformDetector.isWebAssemblyGCStandalone()) {
             if (lazyStackTrace != null) {
                 var supplier = lazyStackTrace;
                 lazyStackTrace = null;
