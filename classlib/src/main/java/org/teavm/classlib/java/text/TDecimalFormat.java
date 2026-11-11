@@ -891,6 +891,10 @@ public class TDecimalFormat extends TNumberFormat {
             mantissa = BigInteger.ZERO;
         } else if (roundingPos < mantissaLength) {
             mantissa = applyRounding(mantissa, mantissaLength, roundingPos);
+            if (mantissa.abs().compareTo(pow10(BigInteger.ONE, mantissaLength)) >= 0) {
+                ++mantissaLength;
+                ++exponent;
+            }
         }
 
         // Append pattern prefix

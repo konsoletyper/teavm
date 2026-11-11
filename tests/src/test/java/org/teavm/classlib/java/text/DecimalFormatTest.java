@@ -310,6 +310,8 @@ public class DecimalFormatTest {
         format.setRoundingMode(RoundingMode.HALF_UP);
         assertEquals("2", format.format(new BigDecimal("2.3")));
         assertEquals("3", format.format(new BigDecimal("2.7")));
+        assertEquals("1", format.format(new BigDecimal("0.5")));
+        assertEquals("-1", format.format(new BigDecimal("-0.5")));
         assertEquals("3", format.format(new BigDecimal("2.5")));
         assertEquals("4", format.format(new BigDecimal("3.5")));
         assertEquals("-3", format.format(new BigDecimal("-2.5")));
