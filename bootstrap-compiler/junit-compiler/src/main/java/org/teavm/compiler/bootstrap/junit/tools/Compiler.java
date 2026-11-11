@@ -37,7 +37,8 @@ public final class Compiler {
         tool.setTargetFileName(args[2]);
         tool.setObfuscated(false);
         tool.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
-        tool.setStrict(true);
+        tool.setStrict(false);
+        tool.setAssertionsRemoved(true);
         tool.setDebugInformationGenerated(true);
         tool.setWasmDebugInfoLocation(WasmDebugInfoLocation.EMBEDDED);
 
