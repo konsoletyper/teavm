@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.transformation;
 
+import org.teavm.interop.Export;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationValue;
@@ -27,6 +28,7 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
 import org.teavm.runtime.Fiber;
@@ -36,6 +38,7 @@ public class EntryPointTransformation implements ClassHolderTransformer {
     private static final MethodDescriptor MAIN_METHOD = new MethodDescriptor("main", String[].class, void.class);
     private String entryPoint;
     private String entryPointName;
+    private boolean standalone;
 
     public void setEntryPoint(String entryPoint) {
         this.entryPoint = entryPoint;
@@ -45,8 +48,15 @@ public class EntryPointTransformation implements ClassHolderTransformer {
         this.entryPointName = entryPointName;
     }
 
+    public void setStandalone(boolean standalone) {
+        this.standalone = standalone;
+    }
+
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
+        if (entryPoint == null) {
+            return;
+        }
         if (cls.getName().equals(entryPoint)) {
             var mainMethod = getMainMethod(cls);
             if (mainMethod != null) {
@@ -81,19 +91,26 @@ public class EntryPointTransformation implements ClassHolderTransformer {
 
     private void generateMainMethodCaller(MethodReader mainMethod, ClassHolder cls,
             ClassHolderTransformerContext context) {
-        var mainMethodCaller = new MethodHolder(mainMethod.getName() + "_$caller", mainMethod.getSignature());
+        var signature = standalone ? new ValueType[] { ValueType.VOID } : mainMethod.getSignature();
+        var mainMethodCaller = new MethodHolder(mainMethod.getName() + "_$caller", signature);
         mainMethodCaller.setLevel(AccessLevel.PUBLIC);
         mainMethodCaller.getModifiers().add(ElementModifier.STATIC);
 
         cls.addMethod(mainMethodCaller);
-        mainMethodCaller.getAnnotations().add(new AnnotationHolder("org.teavm.jso.JSExport"));
+        if (standalone) {
+            var exportAnnot = new AnnotationHolder(Export.class.getName());
+            exportAnnot.getValues().put("name", new AnnotationValue(entryPointName));
+            mainMethodCaller.getAnnotations().add(exportAnnot);
+        } else {
+            mainMethodCaller.getAnnotations().add(new AnnotationHolder("org.teavm.jso.JSExport"));
 
-        var methodAnnot = new AnnotationHolder("org.teavm.jso.JSMethod");
-        methodAnnot.getValues().put("value", new AnnotationValue(entryPointName));
-        mainMethodCaller.getAnnotations().add(methodAnnot);
+            var methodAnnot = new AnnotationHolder("org.teavm.jso.JSMethod");
+            methodAnnot.getValues().put("value", new AnnotationValue(entryPointName));
+            mainMethodCaller.getAnnotations().add(methodAnnot);
+        }
 
         var pe = ProgramEmitter.create(mainMethodCaller, context.getHierarchy());
-        var arg = mainMethod.parameterCount() == 1
+        var arg = !standalone && mainMethod.parameterCount() == 1
                 ? pe.var(1, String[].class)
                 : pe.constantNull(String[].class);
         pe.invoke(Fiber.class, "startMain", arg);
@@ -101,6 +118,9 @@ public class EntryPointTransformation implements ClassHolderTransformer {
     }
 
     private MethodReader getMainMethod(ClassReader cls) {
+        if (cls == null) {
+            return null;
+        }
         var mainMethod = cls.getMethod(TeaVM.MAIN_METHOD_DESC);
         if (mainMethod != null) {
             return mainMethod;

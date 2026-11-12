@@ -40,7 +40,7 @@ public class JSOPlugin implements TeaVMPlugin {
     public void install(TeaVMHost host) {
         var jsHost = host.getExtension(TeaVMJavaScriptHost.class);
         var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
-        if (jsHost == null && wasmGCHost == null) {
+        if (jsHost == null && (wasmGCHost == null || wasmGCHost.isStandalone())) {
             return;
         }
 

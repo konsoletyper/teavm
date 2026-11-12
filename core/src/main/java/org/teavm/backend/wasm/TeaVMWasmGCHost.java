@@ -28,4 +28,8 @@ public interface TeaVMWasmGCHost extends TeaVMHostExtension {
     void addMethodsOnCallSites(Supplier<Collection<MethodReference>> methodsOnCallSites);
 
     void contributeToCodeGen(WasmGCCodeGenContributor contributor);
+
+    default boolean isStandalone() {
+        return false;
+    }
 }

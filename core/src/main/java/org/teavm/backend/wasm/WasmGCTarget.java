@@ -58,6 +58,7 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.instruction.WasmInt32Constant;
 import org.teavm.backend.wasm.optimization.WasmUsageCounter;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
@@ -120,7 +121,9 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private WasmDebugInfoLocation debugLocation = WasmDebugInfoLocation.EXTERNAL;
     private WasmDebugInfoLevel debugLevel = WasmDebugInfoLevel.FULL;
     private int bufferHeapMinSize = 1024 * 1024 * 2;
+    private int bufferHeapMaxSize = 1024 * 1024 * 128;
     private boolean sharedBuffer;
+    private boolean standalone;
     private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
     private EntryPointTransformation entryPointTransformation = new EntryPointTransformation();
     private List<Supplier<Collection<MethodReference>>> additionalMethodsOnCallSites = new ArrayList<>();
@@ -166,8 +169,22 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         this.bufferHeapMinSize = bufferHeapMinSize;
     }
 
+    public void setBufferHeapMaxSize(int bufferHeapMaxSize) {
+        this.bufferHeapMaxSize = bufferHeapMaxSize;
+    }
+
     public void setSharedBuffer(boolean sharedBuffer) {
         this.sharedBuffer = sharedBuffer;
+    }
+
+    public void setStandalone(boolean standalone) {
+        this.standalone = standalone;
+        entryPointTransformation.setStandalone(standalone);
+    }
+
+    @Override
+    public boolean isStandalone() {
+        return standalone;
     }
 
     public void setCompactMode(boolean compactMode) {
@@ -222,7 +239,9 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         var deps = new WasmGCDependencies(dependencyAnalyzer);
         deps.contribute();
-        deps.contributeStandardExports();
+        if (!standalone) {
+            deps.contributeStandardExports();
+        }
         if (strict) {
             BoundCheckInsertion.contributeDependencies(dependencyAnalyzer);
             DivisionCheckInsertion.contributeDependencies(dependencyAnalyzer);
@@ -265,7 +284,9 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     @Override
     public String[] getPlatformTags() {
-        return new String[] { Platforms.WEBASSEMBLY_GC };
+        return standalone
+                ? new String[] { Platforms.WEBASSEMBLY_GC, Platforms.WEBASSEMBLY_GC_STANDALONE }
+                : new String[] { Platforms.WEBASSEMBLY_GC };
     }
 
     @Override
@@ -292,8 +313,12 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
-        module.memoryImportName = "memory";
-        module.memoryImportModule = "env";
+        if (standalone) {
+            module.memoryExportName = "memory";
+        } else {
+            module.memoryImportName = "memory";
+            module.memoryImportModule = "env";
+        }
         addMethodsOnCallSites(reflection::getVirtualCallSites);
         var inlineIntrinsics = new DefaultIntrinsicRegistry<WasmGCInlineIntrinsic>(classes);
         var bodyIntrinsics = new DefaultIntrinsicRegistry<WasmGCBodyIntrinsic>(classes);
@@ -337,23 +362,25 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 controller.extensionEnvironment(), controller.extensionPolicies());
         inlineIntrinsics.registerIntrinsic(WasmGCResources.class, resourceGenerator);
 
-        var internMethod = controller.getDependencyInfo().getMethod(new MethodReference(String.class,
-                "intern", String.class));
-        if (internMethod != null && internMethod.isUsed()) {
-            var removeStringEntryFunction = moduleGenerator.generateReportGarbageCollectedStringFunction();
-            removeStringEntryFunction.setExportName("teavm.reportGarbageCollectedString");
-        }
+        if (!standalone) {
+            var internMethod = controller.getDependencyInfo().getMethod(new MethodReference(String.class,
+                    "intern", String.class));
+            if (internMethod != null && internMethod.isUsed()) {
+                var removeStringEntryFunction = moduleGenerator.generateReportGarbageCollectedStringFunction();
+                removeStringEntryFunction.setExportName("teavm.reportGarbageCollectedString");
+            }
 
-        var exceptionMessageRef = new MethodReference(Throwable.class, "getMessage", String.class);
-        if (controller.getDependencyInfo().getMethod(exceptionMessageRef) != null) {
-            var exceptionMessageFunction = declarationsGenerator.functions().forInstanceMethod(exceptionMessageRef);
-            exceptionMessageFunction.setExportName("teavm.exceptionMessage");
-        }
+            var exceptionMessageRef = new MethodReference(Throwable.class, "getMessage", String.class);
+            if (controller.getDependencyInfo().getMethod(exceptionMessageRef) != null) {
+                var exceptionMessageFunction = declarationsGenerator.functions().forInstanceMethod(exceptionMessageRef);
+                exceptionMessageFunction.setExportName("teavm.exceptionMessage");
+            }
 
-        var refQueueSupplyRef = new MethodReference(ReferenceQueue.class, "supply", Reference.class, void.class);
-        if (controller.getDependencyInfo().getMethod(refQueueSupplyRef) != null) {
-            var refQueueSupplyFunction = declarationsGenerator.functions().forInstanceMethod(refQueueSupplyRef);
-            refQueueSupplyFunction.setExportName("teavm.reportGarbageCollectedValue");
+            var refQueueSupplyRef = new MethodReference(ReferenceQueue.class, "supply", Reference.class, void.class);
+            if (controller.getDependencyInfo().getMethod(refQueueSupplyRef) != null) {
+                var refQueueSupplyFunction = declarationsGenerator.functions().forInstanceMethod(refQueueSupplyRef);
+                refQueueSupplyFunction.setExportName("teavm.reportGarbageCollectedValue");
+            }
         }
 
         var buffersHeap = needsBuffersHeap(controller.getDependencyInfo());
@@ -373,7 +400,15 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         }
         moduleGenerator.generate();
         resourceGenerator.writeModule(module);
-        generateExceptionExports(declarationsGenerator);
+        if (standalone) {
+            for (var tag : module.tags) {
+                if ("teavm.javaException".equals(tag.getExportName())) {
+                    tag.setExportName(null);
+                }
+            }
+        } else {
+            generateExceptionExports(declarationsGenerator);
+        }
         adjustModuleMemory(module, moduleGenerator, buffersHeap);
 
         emitWasmFile(module, buildTarget, outputName, debugInfoBuilder);
@@ -506,23 +541,42 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             memorySize = Math.max(memorySize, segment.getOffset() + segment.getLength());
         }
 
-        var heapOffset = new WasmGlobal("heapOffset", WasmType.INT32);
-        heapOffset.setImmutable(true);
-        heapOffset.setImportModule("teavmMemory");
-        heapOffset.setImportName("heapOffset");
-        module.globals.add(heapOffset);
-
-        var maxSize = new WasmGlobal("maxSize", WasmType.INT32);
-        maxSize.setImmutable(true);
-        maxSize.setImportModule("teavmMemory");
-        maxSize.setImportName("maxSize");
-        module.globals.add(maxSize);
-
         dataSize = memorySize;
-        if (buffersHeap) {
-            memorySize = ((memorySize - 1) / 256 + 1) * 256;
-            moduleGenerator.initBuffersHeap(heapOffset, bufferHeapMinSize, maxSize);
-            memorySize += bufferHeapMinSize;
+        if (standalone) {
+            if (buffersHeap) {
+                memorySize = ((memorySize - 1) / 256 + 1) * 256;
+                var heapOffset = new WasmGlobal("heapOffset", WasmType.INT32);
+                heapOffset.getInitialValue().add(new WasmInt32Constant(memorySize));
+                heapOffset.setImmutable(true);
+                module.globals.add(heapOffset);
+
+                var limit = (int) Math.min((long) memorySize + bufferHeapMaxSize, Integer.MAX_VALUE);
+                var maxSize = new WasmGlobal("maxSize", WasmType.INT32);
+                maxSize.getInitialValue().add(new WasmInt32Constant(limit));
+                maxSize.setImmutable(true);
+                module.globals.add(maxSize);
+
+                moduleGenerator.initBuffersHeap(heapOffset, bufferHeapMinSize, maxSize);
+                memorySize += bufferHeapMinSize;
+            }
+        } else {
+            var heapOffset = new WasmGlobal("heapOffset", WasmType.INT32);
+            heapOffset.setImmutable(true);
+            heapOffset.setImportModule("teavmMemory");
+            heapOffset.setImportName("heapOffset");
+            module.globals.add(heapOffset);
+
+            var maxSize = new WasmGlobal("maxSize", WasmType.INT32);
+            maxSize.setImmutable(true);
+            maxSize.setImportModule("teavmMemory");
+            maxSize.setImportName("maxSize");
+            module.globals.add(maxSize);
+
+            if (buffersHeap) {
+                memorySize = ((memorySize - 1) / 256 + 1) * 256;
+                moduleGenerator.initBuffersHeap(heapOffset, bufferHeapMinSize, maxSize);
+                memorySize += bufferHeapMinSize;
+            }
         }
 
         var pages = (memorySize - 1) / WasmGeneratorUtil.PAGE_SIZE + 1;

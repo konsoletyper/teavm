@@ -23,6 +23,7 @@ import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyAnalyzer;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.Address;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -163,14 +164,22 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class,
                 void.class)).use();
 
-        var offerMethod = analyzer.linkMethod(new MethodReference(EventQueue.class, "offer", EventQueue.Event.class,
-                long.class, int.class));
-        var runEventMethod = analyzer.linkMethod(new MethodReference(EventQueue.class, "run", EventQueue.Event.class,
-                void.class));
+        var offerMethodRef = new MethodReference(EventQueue.class, "offer", EventQueue.Event.class,
+                long.class, int.class);
+        var runEventMethodRef = new MethodReference(EventQueue.class, "run", EventQueue.Event.class,
+                void.class);
 
-        offerMethod.getVariable(1).addConsumer(type -> {
-            runEventMethod.getVariable(1).propagate(type);
-            runEventMethod.use();
+        analyzer.addDependencyListener(new AbstractDependencyListener() {
+            @Override
+            public void methodReached(DependencyAgent agent, MethodDependency method) {
+                if (method.getReference().equals(offerMethodRef)) {
+                    var runEventMethod = agent.linkMethod(runEventMethodRef);
+                    method.getVariable(1).addConsumer(type -> {
+                        runEventMethod.getVariable(1).propagate(type);
+                        runEventMethod.use();
+                    });
+                }
+            }
         });
 
         var fiberClass = analyzer.getClassSource().get(Fiber.class.getName());

@@ -24,4 +24,5 @@ public final class Platforms {
     public static final String LOW_LEVEL = "low_level";
     public static final String OWN_GC = "own_gc";
     public static final String WEBASSEMBLY_GC = "webassembly-gc";
+    public static final String WEBASSEMBLY_GC_STANDALONE = "webassembly-gc-standalone";
 }

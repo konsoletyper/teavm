@@ -32,6 +32,11 @@ public final class PlatformDetector {
         return false;
     }
 
+    @PlatformMarker(Platforms.WEBASSEMBLY_GC_STANDALONE)
+    public static boolean isWebAssemblyGCStandalone() {
+        return false;
+    }
+
     @PlatformMarker(Platforms.JAVASCRIPT)
     public static boolean isJavaScript() {
         return false;
