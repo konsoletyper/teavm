@@ -56,7 +56,10 @@ public final class Fiber {
         if (intValues == null) {
             intValues = new int[4];
         } else if (intTop + 1 == intValues.length) {
+            var savedCurrent = current;
+            current = null;
             intValues = Arrays.copyOf(intValues, intValues.length * 3 / 2);
+            current = savedCurrent;
         }
         intValues[intTop++] = value;
     }
@@ -65,7 +68,10 @@ public final class Fiber {
         if (longValues == null) {
             longValues = new long[4];
         } else if (longTop + 1 == longValues.length) {
+            var savedCurrent = current;
+            current = null;
             longValues = Arrays.copyOf(longValues, longValues.length * 3 / 2);
+            current = savedCurrent;
         }
         longValues[longTop++] = value;
     }
@@ -74,7 +80,10 @@ public final class Fiber {
         if (floatValues == null) {
             floatValues = new float[4];
         } else if (floatTop + 1 == floatValues.length) {
+            var savedCurrent = current;
+            current = null;
             floatValues = Arrays.copyOf(floatValues, floatValues.length * 3 / 2);
+            current = savedCurrent;
         }
         floatValues[floatTop++] = value;
     }
@@ -83,7 +92,10 @@ public final class Fiber {
         if (doubleValues == null) {
             doubleValues = new double[4];
         } else if (doubleTop + 1 == doubleValues.length) {
+            var savedCurrent = current;
+            current = null;
             doubleValues = Arrays.copyOf(doubleValues, doubleValues.length * 3 / 2);
+            current = savedCurrent;
         }
         doubleValues[doubleTop++] = value;
     }
@@ -92,7 +104,10 @@ public final class Fiber {
         if (objectValues == null) {
             objectValues = new Object[4];
         } else if (objectTop + 1 == objectValues.length) {
+            var savedCurrent = current;
+            current = null;
             objectValues = Arrays.copyOf(objectValues, objectValues.length * 3 / 2);
+            current = savedCurrent;
         }
         objectValues[objectTop++] = value;
     }
@@ -257,22 +272,39 @@ public final class Fiber {
             }
             return result;
         }
-        PendingCall pendingCall = new PendingCall(call, lastPendingCall);
-        if (lastPendingCall != null) {
-            lastPendingCall.next = pendingCall;
+        current = null;
+        try {
+            var pendingCall = new PendingCall(call, lastPendingCall);
+            pendingCall.callback = new AsyncCallbackImpl(pendingCall, javaThread, fiber);
+            call.run(pendingCall.callback);
+            if (pendingCall.callback.state == AsyncCallbackImpl.RESOLVED_WITH_VALUE) {
+                return pendingCall.callback.resolvedResult;
+            } else if (pendingCall.callback.state == AsyncCallbackImpl.RESOLVED_WITH_EXCEPTION) {
+                throw (Throwable) pendingCall.callback.resolvedResult;
+            } else {
+                if (lastPendingCall != null) {
+                    lastPendingCall.next = pendingCall;
+                }
+                lastPendingCall = pendingCall;
+                fiber.state = STATE_SUSPENDING;
+                pendingCall.callback.state = AsyncCallbackImpl.SUSPENDED;
+            }
+        } finally {
+            current = fiber;
         }
-        lastPendingCall = pendingCall;
-
-        fiber.state = STATE_SUSPENDING;
-        pendingCall.callback = new AsyncCallbackImpl(pendingCall, javaThread, fiber);
-        call.run(pendingCall.callback);
         return null;
     }
 
     static class AsyncCallbackImpl implements AsyncCallback<Object> {
+        static final int SUSPENDED = 1;
+        static final int RESOLVED_WITH_VALUE = 2;
+        static final int RESOLVED_WITH_EXCEPTION = 3;
+
         PendingCall pendingCall;
         Thread javaThread;
         Fiber fiber;
+        int state;
+        Object resolvedResult;
 
         AsyncCallbackImpl(PendingCall pendingCall, Thread javaThread, Fiber fiber) {
             this.pendingCall = pendingCall;
@@ -282,11 +314,7 @@ public final class Fiber {
 
         @Override
         public void complete(Object result) {
-            if (Fiber.current == this.fiber) {
-                fiber.result = result;
-                fiber.isPendingResume = true;
-                removePendingCall();
-            } else {
+            if (state == SUSPENDED) {
                 setCurrentThread(javaThread);
                 javaThread = null;
                 Fiber fiber = this.fiber;
@@ -294,16 +322,15 @@ public final class Fiber {
                 fiber.result = result;
                 removePendingCall();
                 fiber.resume();
+            } else {
+                state = RESOLVED_WITH_VALUE;
+                resolvedResult = result;
             }
         }
 
         @Override
         public void error(Throwable e) {
-            if (Fiber.current == this.fiber) {
-                fiber.exception = e;
-                fiber.isPendingResume = true;
-                removePendingCall();
-            } else {
+            if (state == SUSPENDED) {
                 setCurrentThread(javaThread);
                 javaThread = null;
                 Fiber fiber = this.fiber;
@@ -311,6 +338,9 @@ public final class Fiber {
                 fiber.exception = e;
                 removePendingCall();
                 fiber.resume();
+            } else {
+                state = RESOLVED_WITH_EXCEPTION;
+                resolvedResult = e;
             }
         }
 
