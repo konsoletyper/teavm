@@ -19,6 +19,7 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.HashSet;
 import java.util.Set;
+import org.teavm.backend.javascript.rendering.RenderingUtil;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -33,6 +34,14 @@ public class DefaultAliasProvider implements AliasProvider {
 
     public DefaultAliasProvider(int maxTopLevelNames) {
         this.maxTopLevelNames = maxTopLevelNames;
+        seedKeywords();
+    }
+
+    private void seedKeywords() {
+        for (String keyword : RenderingUtil.KEYWORDS) {
+            // 1, not 0, so the first request produces "in1" rather than the bare keyword
+            knowAliasesCounter.put(keyword, 1);
+        }
     }
 
     @Override
@@ -140,6 +149,7 @@ public class DefaultAliasProvider implements AliasProvider {
             additionalScopeStarted = true;
             knownAliases.clear();
             knowAliasesCounter.clear();
+            seedKeywords();
         }
         var alias = suggested;
         int index = knowAliasesCounter.get(alias);
