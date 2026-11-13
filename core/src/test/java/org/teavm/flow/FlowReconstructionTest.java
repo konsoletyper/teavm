@@ -1355,6 +1355,49 @@ public class FlowReconstructionTest {
         );
     }
 
+    // Loop preheader 3 (as inserted by LICM) is not covered by try/catch which covers both code before loop
+    // and the loop itself. Entering nested try/catch at 8 must not be treated as leaving the outer try/catch.
+    @Test
+    public void loopWithNestedTryCatchAndPreheaderOutsideTry() {
+        var program = buildProgram(new int[][] {
+                { 1 }, { 2, 5 }, { 3 }, { 4 }, { 6, 7 }, null, { 8 }, { 5 }, { 4 }, null
+        });
+        addExceptionHandler(program, 8, 9, "java.lang.Exception", 9);
+        addExceptionHandler(program, 1, 3, null, 9);
+        addExceptionHandler(program, 4, 9, null, 9);
+        assertFlow(
+                program,
+                """
+                0: br 1
+                block_9: block
+                  try
+                    block_5: block
+                      try
+                        1: br 2 block_5
+                        2: br 3
+                      catch null block_9
+                      3: br 4
+                      try
+                        block_7: block
+                          loop_4: loop
+                            4: br 6 block_7
+                            6: br 8
+                            try
+                              8: br loop_4
+                            catch java.lang.Exception block_9
+                          end
+                        end
+                        7: br block_5
+                      catch null block_9
+                    end
+                    5: terminate
+                  catch null block_9
+                end
+                9: terminate
+                """.stripIndent()
+        );
+    }
+
     private void assertFlow(Program program, String expected) {
         var flow = new FlowReconstruction().reconstruct(program);
         assertEquals(expected, formatFlow(flow));
