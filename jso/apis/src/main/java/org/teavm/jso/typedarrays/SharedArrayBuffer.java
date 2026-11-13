@@ -20,6 +20,13 @@ import org.teavm.jso.JSProperty;
 
 @JSClass
 public class SharedArrayBuffer extends ArrayBuffer {
+    public SharedArrayBuffer() {
+    }
+
+    public SharedArrayBuffer(int length) {
+        super(length);
+    }
+
     public native void grow(int newLength);
 
     @Override
