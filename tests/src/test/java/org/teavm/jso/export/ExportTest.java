@@ -139,12 +139,41 @@ public class ExportTest {
     public void exitFromThread() {
         testExport("exitFromThread", ModuleWithExit.class, true);
     }
-    
+
+    @Test
+    public void staticMainNoArgs() {
+        testExport("staticMainNoArgs", MainWithStaticNoArgs.class);
+    }
+
+    @Test
+    public void instanceMainArgs() {
+        testExport("instanceMainArgs", MainWithInstanceArgs.class);
+    }
+
+    @Test
+    public void instanceMainNoArgs() {
+        testExport("instanceMainNoArgs", MainWithInstanceNoArgs.class);
+    }
+
+    @Test
+    public void mainOverloads() {
+        testExport("mainOverloads", MainWithOverloads.class);
+    }
+
+    @Test
+    public void compactMain() {
+        testExport("compactMain", "ExportedCompactMain", false);
+    }
+
     private void testExport(String name, Class<?> moduleClass) {
         testExport(name, moduleClass, false);
     }
 
     private void testExport(String name, Class<?> moduleClass, boolean asyncEnabled) {
+        testExport(name, moduleClass.getName(), asyncEnabled);
+    }
+
+    private void testExport(String name, String moduleClass, boolean asyncEnabled) {
         if (jsNeeded) {
             testExportJs(name, moduleClass, asyncEnabled);
         }
@@ -153,7 +182,7 @@ public class ExportTest {
         }
     }
 
-    private void testExportJs(String name, Class<?> moduleClass, boolean asyncEnabled) {
+    private void testExportJs(String name, String moduleClass, boolean asyncEnabled) {
         try {
             var jsTarget = new JavaScriptTarget();
             jsTarget.setModuleType(JSModuleType.ES2015);
@@ -161,7 +190,7 @@ public class ExportTest {
             var teavm = new TeaVMBuilder(jsTarget).build();
             var outputDir = new File(jsTargetFile, name);
             teavm.installPlugins();
-            teavm.setEntryPoint(moduleClass.getName());
+            teavm.setEntryPoint(moduleClass);
             teavm.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
             teavm.setAsyncEnabled(asyncEnabled);
             outputDir.mkdirs();
@@ -197,7 +226,7 @@ public class ExportTest {
         }
     }
 
-    private void testExportWasmGC(String name, Class<?> moduleClass, boolean asyncEnabled) {
+    private void testExportWasmGC(String name, String moduleClass, boolean asyncEnabled) {
         try {
             var wasmGCTarget = new WasmGCTarget();
             wasmGCTarget.setObfuscated(false);
@@ -206,7 +235,7 @@ public class ExportTest {
             var teavm = new TeaVMBuilder(wasmGCTarget).build();
             var outputDir = new File(wasmGCTargetFile, name);
             teavm.installPlugins();
-            teavm.setEntryPoint(moduleClass.getName());
+            teavm.setEntryPoint(moduleClass);
             teavm.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
             teavm.setAsyncEnabled(asyncEnabled);
             outputDir.mkdirs();
