@@ -15,7 +15,16 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.io.BufferedReader;
+import java.io.IOError;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 public final class TIO {
+    private static BufferedReader input;
+
     private TIO() {
         throw new Error();
     }
@@ -30,5 +39,30 @@ public final class TIO {
 
     public static void print(Object obj) {
         System.out.print(obj);
+    }
+
+    public static String readln() {
+        if (input == null) {
+            Charset charset = StandardCharsets.UTF_8;
+            String encoding = System.getProperty("stdin.encoding");
+            if (encoding != null) {
+                try {
+                    charset = Charset.forName(encoding);
+                } catch (IllegalArgumentException e) {
+                    // An unavailable charset falls back to UTF-8.
+                }
+            }
+            input = new BufferedReader(new InputStreamReader(System.in, charset));
+        }
+        try {
+            return input.readLine();
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public static String readln(String prompt) {
+        print(prompt);
+        return readln();
     }
 }

@@ -49,6 +49,7 @@ public final class TSystem extends TObject {
     private static TPrintStream outCache;
     private static TPrintStream errCache;
     private static TInputStream inCache;
+    private static boolean inInitialized;
     private static Properties properties;
 
     private TSystem() {
@@ -77,8 +78,9 @@ public final class TSystem extends TObject {
     }
 
     public static TInputStream in() {
-        if (inCache == null) {
+        if (!inInitialized) {
             inCache = new TConsoleInputStream();
+            inInitialized = true;
         }
         return inCache;
     }
@@ -271,6 +273,11 @@ public final class TSystem extends TObject {
 
     public static void setErr(TPrintStream err) {
         errCache = err;
+    }
+
+    public static void setIn(TInputStream in) {
+        inCache = in;
+        inInitialized = true;
     }
 
     public static void setOut(TPrintStream out) {
