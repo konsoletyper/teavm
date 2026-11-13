@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -85,6 +86,87 @@ public class ObjectTest {
         }
         long end = System.currentTimeMillis();
         assertTrue(end - start > 100);
+    }
+
+    @Test
+    @AsyncEnabled
+    public void repeatedLocksPreserveIdentityAndOwnership() {
+        Object[] locks = { new Object(), new int[1], new Object[1] };
+        int[] identities = new int[locks.length];
+        for (int i = 0; i < locks.length; i++) {
+            identities[i] = System.identityHashCode(locks[i]);
+        }
+        Object inner = new Object();
+        int innerIdentity = System.identityHashCode(inner);
+        for (int pass = 0; pass < 20; pass++) {
+            for (int i = 0; i < locks.length; i++) {
+                Object lock = locks[i];
+                assertFalse(Thread.holdsLock(lock));
+                synchronized (lock) {
+                    synchronized (lock) {
+                        assertTrue(Thread.holdsLock(lock));
+                        assertEquals(identities[i], System.identityHashCode(lock));
+                    }
+                    synchronized (inner) {
+                        assertTrue(Thread.holdsLock(lock));
+                        assertEquals(innerIdentity, System.identityHashCode(inner));
+                    }
+                    assertTrue(Thread.holdsLock(lock));
+                }
+                assertFalse(Thread.holdsLock(lock));
+                assertEquals(identities[i], System.identityHashCode(lock));
+                assertEquals(innerIdentity, System.identityHashCode(inner));
+            }
+            // Collect while a deleted monitor is kept for reuse.
+            System.gc();
+        }
+    }
+
+    @Test
+    @AsyncEnabled
+    public void repeatedWaitNotifyPreservesReentrantLock() throws InterruptedException {
+        Object lock = new Object();
+        Object other = new Object();
+        boolean[] ready = new boolean[2];
+        int identity = System.identityHashCode(lock);
+        int otherIdentity = System.identityHashCode(other);
+        for (int i = 0; i < 4; i++) {
+            ready[0] = false;
+            ready[1] = false;
+            boolean otherFirst = i % 2 == 1;
+            Thread notifier = new Thread(() -> {
+                // Locked while the monitor of lock has a waiter; otherwise only after it has been deleted.
+                if (otherFirst) {
+                    synchronized (other) {
+                        assertTrue(Thread.holdsLock(other));
+                    }
+                }
+                synchronized (lock) {
+                    ready[0] = true;
+                    lock.notifyAll();
+                }
+                synchronized (other) {
+                    ready[1] = true;
+                }
+            });
+            synchronized (lock) {
+                synchronized (lock) {
+                    notifier.start();
+                    while (!ready[0]) {
+                        lock.wait();
+                    }
+                    assertTrue(Thread.holdsLock(lock));
+                    assertEquals(identity, System.identityHashCode(lock));
+                }
+                assertTrue(Thread.holdsLock(lock));
+            }
+            notifier.join();
+            assertTrue(ready[1]);
+            assertFalse(Thread.holdsLock(lock));
+            assertFalse(Thread.holdsLock(other));
+            assertEquals(identity, System.identityHashCode(lock));
+            assertEquals(otherIdentity, System.identityHashCode(other));
+        }
     }
 
     @Test

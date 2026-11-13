@@ -42,6 +42,8 @@ import org.teavm.runtime.reflect.ClassInfo;
 @Superclass("")
 public class TObject {
     Monitor monitor;
+    // A deleted monitor, reused by the next lock on a low-level target.
+    private static Monitor spareMonitor;
 
     static class Monitor {
         Queue<PlatformRunnable> enteringThreads;
@@ -109,8 +111,15 @@ public class TObject {
             o.monitor.id = hashCode;
         } else if (PlatformDetector.isLowLevel()) {
             int hashCode = hashCodeLowLevel(o);
-            o.monitor = new Monitor();
-            o.monitor.id = hashCode;
+            Monitor monitor = spareMonitor;
+            if (monitor != null) {
+                spareMonitor = null;
+                monitor.owner = TThread.currentThread();
+            } else {
+                monitor = new Monitor();
+            }
+            monitor.id = hashCode;
+            o.monitor = monitor;
         } else {
             o.monitor = new Monitor();
         }
@@ -202,8 +211,12 @@ public class TObject {
 
     private void deleteMonitor() {
         if (PlatformDetector.isLowLevel()) {
-            int id = monitor.id;
+            Monitor released = monitor;
+            int id = released.id;
             setHashCodeLowLevel(this, id);
+            if (spareMonitor == null) {
+                spareMonitor = released;
+            }
         } else if (PlatformDetector.isWebAssemblyGC()) {
             setWasmGCIdentity(monitor.id);
         } else {
