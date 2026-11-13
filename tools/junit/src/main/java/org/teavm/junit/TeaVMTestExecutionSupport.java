@@ -312,6 +312,20 @@ final class TeaVMTestExecutionSupport {
                     writer.write("    \"argument\": ");
                     writeJsonString(writer, run.getArgument());
                 }
+                if (run.getEntryPoint() != null) {
+                    writer.write(",\n    \"entryPoint\": ");
+                    writeJsonString(writer, run.getEntryPoint().value());
+                    writer.write(",\n    \"arguments\": [");
+                    var arguments = run.getEntryPoint().args();
+                    for (var i = 0; i < arguments.length; ++i) {
+                        if (i > 0) {
+                            writer.write(", ");
+                        }
+                        writeJsonString(writer, arguments[i]);
+                    }
+                    writer.write("],\n    \"stdout\": ");
+                    writeJsonString(writer, run.getEntryPoint().stdout());
+                }
                 writer.write(",\n");
                 writer.write("    \"name\": ");
                 writeJsonString(writer, run.getName());
@@ -394,6 +408,9 @@ final class TeaVMTestExecutionSupport {
             if (!isPlatformPresent(method, platform) || ignored.test(method)) {
                 continue;
             }
+            if (method.isAnnotationPresent(TeaVMEntryPoint.class)) {
+                throw new IllegalArgumentException("@TeaVMEntryPoint requires @EachTestCompiledSeparately");
+            }
             asyncEnabled |= method.isAnnotationPresent(AsyncEnabled.class);
             var classHolder = TeaVMTestInfrastructure.classSource.get(method.getDeclaringClass().getName());
             var methodHolder = classHolder.getMethod(getDescriptor(method));
@@ -428,7 +445,7 @@ final class TeaVMTestExecutionSupport {
         applyProperties(method.getDeclaringClass(), properties);
         var asyncEnabled = isAsyncEnabled(testClass) || method.isAnnotationPresent(AsyncEnabled.class);
         return new TestEntryPointSpec(testClass.getName(), List.of(methodHolder.getReference()), false, plans,
-                properties, asyncEnabled);
+                properties, asyncEnabled, method.getAnnotation(TeaVMEntryPoint.class));
     }
 
     private static boolean isAsyncEnabled(Class<?> cls) {

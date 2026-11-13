@@ -33,7 +33,6 @@ import org.teavm.runtime.Fiber;
 import org.teavm.vm.TeaVM;
 
 public class EntryPointTransformation implements ClassHolderTransformer {
-    private static final MethodDescriptor MAIN_METHOD = new MethodDescriptor("main", String[].class, void.class);
     private String entryPoint;
     private String entryPointName;
 
@@ -71,7 +70,7 @@ public class EntryPointTransformation implements ClassHolderTransformer {
                     ? new ValueEmitter[] { pe.var(1, String[].class) }
                     : new ValueEmitter[0];
             if (mainMethod.hasModifier(ElementModifier.STATIC)) {
-                pe.invoke(new MethodReference(entryPoint, MAIN_METHOD), args);
+                pe.invoke(new MethodReference(entryPoint, mainMethod.getDescriptor()), args);
             } else {
                 pe.construct(entryPoint).invokeSpecial("main", args);
             }
