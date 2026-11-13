@@ -13,7 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.vm.java25.staticnodefaultconstructor;
+
+// CHECKSTYLE.OFF: HideUtilityClassConstructor
 class Main {
+    Main(int value) {
+        throw new AssertionError("Static main must not require a default constructor");
+    }
+
     static void main() {
         System.out.println("static");
     }

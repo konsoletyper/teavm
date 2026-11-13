@@ -51,16 +51,25 @@ class BrowserRunStrategy implements TestRunStrategy {
     public void runTest(TestRun run) throws IOException {
         var testFile = new File(run.getGroup().getBaseDirectory(), run.getGroup().getFileName());
         var testPath = baseDir.getAbsoluteFile().toPath().relativize(testFile.toPath()).toString();
+        var entryPoint = run.getEntryPoint();
         var descriptor = new BrowserRunDescriptor(
                 run.getGroup().getFileName(),
                 "tests/" + testPath,
                 run.getGroup().isModule(),
                 additionalJs(run).stream().map(p -> "resources/" + p).collect(Collectors.toList()),
                 run.getArgument(),
-                true
+                true,
+                entryPoint != null ? List.of(entryPoint.args()) : null
         );
 
-        runner.runTest(descriptor);
+        if (entryPoint == null) {
+            runner.runTest(descriptor);
+        } else {
+            var stdout = new StringBuffer();
+            var stderr = new StringBuffer();
+            runner.runTest(descriptor, (error, output) -> (error ? stderr : stdout).append(output));
+            run.checkOutput(stdout.toString(), stderr.toString());
+        }
     }
 
     @Override

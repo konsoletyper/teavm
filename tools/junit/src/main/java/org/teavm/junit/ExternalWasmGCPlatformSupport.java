@@ -51,6 +51,11 @@ class ExternalWasmGCPlatformSupport extends WebAssemblyGCPlatformSupport {
             TeaVMTestConfiguration<WasmGCTarget> configuration, File path, AnnotatedElement element) {
         var result = new CompileResult();
         result.file = getOutputFile(path, baseName, configuration.getSuffix(), getExtension());
+        if (entryPoint.entryPoint != null) {
+            result.success = false;
+            result.errorMessage = "@TeaVMEntryPoint is not supported by external platform " + getId();
+            return result;
+        }
         var optimizationLevel = configuration == TeaVMTestConfiguration.WASM_GC_OPTIMIZED
                 ? TeaVMOptimizationLevel.FULL
                 : TeaVMOptimizationLevel.SIMPLE;

@@ -13,27 +13,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.vm.java25.instanceargs;
+
 class Main implements Answer {
     static int constructors;
-    byte[] value = new byte[65536];
+    int value = 40;
 
-    Main() throws InterruptedException {
+    Main() {
         constructors++;
-        Thread.sleep(1);
-        System.gc();
-        value[0] = 42;
+        value += 2;
         System.out.println("constructor");
     }
 
     public int answer() {
-        return value[0];
+        return value;
     }
 
-    void main() throws InterruptedException {
-        Thread.sleep(1);
-        System.gc();
+    void main(String[] args) {
         Answer receiver = this;
-        System.out.println(constructors + ":" + receiver.answer());
+        System.out.println(constructors + ":" + receiver.answer() + ":" + String.join(",", args));
     }
 }
 

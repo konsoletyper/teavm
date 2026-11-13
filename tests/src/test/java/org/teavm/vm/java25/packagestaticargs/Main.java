@@ -13,12 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-class Main {
-    Main(int value) {
-        throw new AssertionError("Static main must not require a default constructor");
-    }
+package org.teavm.vm.java25.packagestaticargs;
 
-    static void main() {
-        System.out.println("static");
+// CHECKSTYLE.OFF: HideUtilityClassConstructor
+class Main {
+    static void main(String[] args) {
+        System.out.println("args=" + String.join(",", args));
     }
 }

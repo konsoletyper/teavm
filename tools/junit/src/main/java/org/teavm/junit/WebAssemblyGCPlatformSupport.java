@@ -86,6 +86,13 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     @Override
     CompileResult compile(TestEntryPointSpec entryPoint, String baseName,
             TeaVMTestConfiguration<WasmGCTarget> configuration, File path, AnnotatedElement element) {
+        if (entryPoint.entryPoint != null && entryPoint.asyncEnabled) {
+            var result = new CompileResult();
+            result.file = getOutputFile(path, baseName, configuration.getSuffix(), ".wasm");
+            result.success = false;
+            result.errorMessage = "Async @TeaVMEntryPoint is not supported by the Wasm GC test runner";
+            return result;
+        }
         var sourceMapBuilder = new SourceMapBuilder();
         var sourceMapFile = getOutputFile(path, baseName, configuration.getSuffix(), ".wasm.map");
         Supplier<WasmGCTarget> targetSupplier = () -> {
@@ -124,8 +131,8 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
                 throw new RuntimeException(e);
             }
         };
-        return compile(configuration, targetSupplier, TestWasmGCEntryPoint.class.getName(), path,
-                ".wasm", postBuild, entryPoint::install, baseName);
+        return compile(configuration, targetSupplier, entryPoint.entryPointClass(TestWasmGCEntryPoint.class.getName()),
+                path, ".wasm", postBuild, entryPoint::install, baseName);
     }
 
     @Override

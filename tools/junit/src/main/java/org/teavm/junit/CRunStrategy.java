@@ -79,7 +79,9 @@ class CRunStrategy implements TestRunStrategy {
                         runCommand.addAll(wrapperParts);
                     }
                     runCommand.add(outputFile.getPath());
-                    if (run.getArgument() != null) {
+                    if (run.getEntryPoint() != null) {
+                        runCommand.addAll(List.of(run.getEntryPoint().args()));
+                    } else if (run.getArgument() != null) {
                         runCommand.add(run.getArgument());
                     }
 
@@ -109,6 +111,8 @@ class CRunStrategy implements TestRunStrategy {
                                 : "Test failed with exit code " + exitCode;
                         throw new RuntimeException(message);
                     }
+                    run.checkOutput(stdoutBytes.toString(nativeConsoleCharset()),
+                            stderrBytes.toString(nativeConsoleCharset()));
                 } finally {
                     exceptionFile.delete();
                 }

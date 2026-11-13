@@ -13,21 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.vm.java25.instancegcsuspendingconstructor;
+
 class Main implements Answer {
     static int constructors;
-    int value = 40;
+    byte[] value = new byte[65536];
 
-    Main() {
+    Main() throws InterruptedException {
         constructors++;
-        value += 2;
+        Thread.sleep(1);
+        System.gc();
+        value[0] = 42;
         System.out.println("constructor");
     }
 
     public int answer() {
-        return value;
+        return value[0];
     }
 
-    void main() {
+    void main() throws InterruptedException {
+        Thread.sleep(1);
+        System.gc();
         Answer receiver = this;
         System.out.println(constructors + ":" + receiver.answer());
     }
