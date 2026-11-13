@@ -75,6 +75,9 @@ public class NullnessInformation {
                 }
             }
             variableMapper.applyToPhis(block);
+            for (Phi phi : block.getPhis()) {
+                removeEqualIncomings(phi);
+            }
             if (block.getExceptionVariable() != null) {
                 block.setExceptionVariable(variableMapper.map(block.getExceptionVariable()));
             }
@@ -87,6 +90,21 @@ public class NullnessInformation {
             }
         }
         program.pack();
+    }
+
+    // Versions that the extension gave to a handler phi map back to the variable the phi already had
+    private static void removeEqualIncomings(Phi phi) {
+        var incomings = phi.getIncomings();
+        for (var i = incomings.size() - 1; i > 0; --i) {
+            var incoming = incomings.get(i);
+            for (var j = 0; j < i; ++j) {
+                var other = incomings.get(j);
+                if (other.getSource() == incoming.getSource() && other.getValue() == incoming.getValue()) {
+                    incomings.remove(i);
+                    break;
+                }
+            }
+        }
     }
 
     public static NullnessInformation build(Program program, MethodDescriptor methodDescriptor) {
