@@ -630,21 +630,6 @@ public class FlowReconstruction {
         return nodeLoop != null && nodeLoop.isChildOf(loop);
     }
 
-    private int commonTryCatchSize(int a, int b) {
-        var block1 = program.basicBlockAt(a);
-        var block2 = program.basicBlockAt(b);
-        var min = Math.min(block1.getTryCatchBlocks().size(), block2.getTryCatchBlocks().size());
-        for (var i = 0; i < min; ++i) {
-            var tryCatch1 = block1.getTryCatchBlocks().get(i);
-            var tryCatch2 = block2.getTryCatchBlocks().get(i);
-            if (tryCatch1.getHandler() != tryCatch2.getHandler()
-                    || !Objects.equals(tryCatch1.getExceptionType(), tryCatch2.getExceptionType())) {
-                return i;
-            }
-        }
-        return min;
-    }
-
     private int loopDepth(int node) {
         var loop = loopGraph.loopAt(node);
         var depth = 0;
@@ -836,7 +821,7 @@ public class FlowReconstruction {
     private int extendToTryCatchStart(int position, int targetIndex) {
         var index = position / 2;
         var node = nodeOrder[index];
-        var common = outerCommonTryCatchSize(node, nodeOrder[targetIndex]);
+        var common = commonTryCatchSize(node, nodeOrder[targetIndex]);
         if (program.basicBlockAt(node).getTryCatchBlocks().size() <= common) {
             return position;
         }
@@ -848,7 +833,7 @@ public class FlowReconstruction {
         }
         var start = index;
         var lowerBound = Math.max(loop, 0);
-        while (start > lowerBound && outerCommonTryCatchSize(nodeOrder[start - 1], node) > common) {
+        while (start > lowerBound && commonTryCatchSize(nodeOrder[start - 1], node) > common) {
             --start;
         }
         if (start == index) {
@@ -858,7 +843,7 @@ public class FlowReconstruction {
     }
 
     // Number of common try/catch blocks, counting from the outermost
-    private int outerCommonTryCatchSize(int a, int b) {
+    private int commonTryCatchSize(int a, int b) {
         var tryCatches1 = program.basicBlockAt(a).getTryCatchBlocks();
         var tryCatches2 = program.basicBlockAt(b).getTryCatchBlocks();
         var min = Math.min(tryCatches1.size(), tryCatches2.size());
