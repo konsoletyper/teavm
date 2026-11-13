@@ -21,7 +21,7 @@ git archive HEAD | tar -x -C build-dir || { echo 'Git archive failed' ; exit 1; 
 
 function deploy_teavm {
   TEAVM_DEPLOY_VERSION=`sed -En 's/teavm\.project\.version\s*=\s*([0-9]+\.[0-9]+)\..*/\1/p' gradle.properties`
-  git rev-parse master >commit-id.txt
+  git rev-parse HEAD >commit-id.txt
   TEAVM_DEPLOY_COMMIT_ID=`cat commit-id.txt`
 
   if [[ "200" == `curl --output response --silent --write-out "%{http_code}" https://teavm.org/maven/versions/$TEAVM_DEPLOY_VERSION.txt` ]] ; then
