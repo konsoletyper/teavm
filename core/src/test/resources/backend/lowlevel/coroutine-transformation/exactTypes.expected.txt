@@ -2,7 +2,7 @@ var @this as this
 var @size as size
 $0
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @7 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @7 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @7 != 0 then goto $2 else goto $1
 $1
     @s := 'str'
@@ -19,7 +19,7 @@ $3
     @strings_2 := phi @strings from $1, @strings_1 from $5
     @s_2 := phi @s from $1, @s_1 from $5
     invokeStatic `Foo.suspend()V`
-    @9 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @9 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @9 != 0 then goto $6 else goto $4
 $4
     invokeStatic `Foo.useString(Ljava/lang/String;)V` @s_2

@@ -1,7 +1,7 @@
 var @this as this
 $0
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @15 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @15 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @15 != 0 then goto $5 else goto $4
 $1
     @missingA1 := new MissingA
@@ -33,7 +33,7 @@ $6
     @ba_2 := phi @ba from $3, @ba_1 from $8
     @ab_2 := phi @ab from $3, @ab_1 from $8
     invokeStatic `Foo.suspend()V`
-    @17 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @17 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @17 != 0 then goto $9 else goto $7
 $7
     invokeStatic `Foo.useObject(Ljava/lang/Object;)V` @ab_2

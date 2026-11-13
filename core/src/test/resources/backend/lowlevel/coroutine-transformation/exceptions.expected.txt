@@ -1,7 +1,7 @@
 var @this as this
 $0
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @4 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @4 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @4 != 0 then goto $5 else goto $4
     catch java.lang.IllegalStateException goto $2
 $1
@@ -24,7 +24,7 @@ $5
 $6
     @typedException_2 := phi @typedException from $2, @typedException_1 from $8
     invokeStatic `Foo.suspend()V`
-    @6 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @6 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @6 != 0 then goto $9 else goto $7
 $7
     invokeStatic `Foo.useIllegalState(Ljava/lang/IllegalStateException;)V` @typedException_2
@@ -41,7 +41,7 @@ $9
 $10
     @anyException_2 := phi @anyException from $3, @anyException_1 from $12
     invokeStatic `Foo.suspend()V`
-    @9 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @9 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @9 != 0 then goto $13 else goto $11
 $11
     throw @anyException_2

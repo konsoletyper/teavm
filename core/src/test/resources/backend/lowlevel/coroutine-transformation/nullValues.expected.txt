@@ -1,7 +1,7 @@
 var @this as this
 $0
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @21 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @21 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @21 != 0 then goto $9 else goto $8
 $1
     @s := 'str'
@@ -51,7 +51,7 @@ $10
     @one_2 := phi @one from $3, @one_1 from $12, @one_2 from $14
     @null_2 := phi @null from $3, @null_1 from $12, @null_2 from $14
     invokeStatic `Foo.suspend()V`
-    @23 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @23 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @23 != 0 then goto $13 else goto $11
 $11
     @base := new Base

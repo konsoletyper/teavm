@@ -3,7 +3,7 @@ var @size as size
 
 $start
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @7 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @7 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @7 != 0 then goto $resume else goto $create
 $create
     @array := newArray F[@size]
@@ -14,7 +14,7 @@ $resume
 $call
     @array_2 := phi @array from $create, @array_1 from $restore
     invokeStatic `Foo.suspend()V`
-    @9 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @9 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @9 != 0 then goto $save else goto $load
 $load
     @data := data @array_2 as float

@@ -2,7 +2,7 @@ var @this as this
 var @size as size
 $0
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @7 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @7 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @7 != 0 then goto $2 else goto $1
 $1
     @array := newArray F[@size]
@@ -14,7 +14,7 @@ $2
 $3
     @data_2 := phi @data from $1, @data_1 from $5
     invokeStatic `Foo.suspend()V`
-    @9 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @9 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @9 != 0 then goto $6 else goto $4
 $4
     @index := 0

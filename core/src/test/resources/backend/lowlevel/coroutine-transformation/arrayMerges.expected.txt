@@ -2,7 +2,7 @@ var @this as this
 var @size as size
 $0
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @16 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @16 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @16 != 0 then goto $5 else goto $4
 $1
     @subs := newArray `LSub;`[@size]
@@ -34,7 +34,7 @@ $6
     @unrelatedArray_2 := phi @unrelatedArray from $3, @unrelatedArray_1 from $8
     @refArray_2 := phi @refArray from $3, @refArray_1 from $8
     invokeStatic `Foo.suspend()V`
-    @18 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @18 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @18 != 0 then goto $9 else goto $7
 $7
     invokeStatic `Foo.useBases([LBase;)V` @refArray_2

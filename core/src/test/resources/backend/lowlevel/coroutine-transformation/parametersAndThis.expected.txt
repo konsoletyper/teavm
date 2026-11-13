@@ -1,6 +1,6 @@
 $0
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @3 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @3 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @3 != 0 then goto $2 else goto $1
 $1
     goto $3
@@ -11,7 +11,7 @@ $3
     @param_2 := phi @param from $1, @param_1 from $5
     @this_2 := phi @this from $1, @this_1 from $5
     invokeStatic `Foo.suspend()V`
-    @5 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @5 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @5 != 0 then goto $6 else goto $4
 $4
     invoke `TestClass.run()V` @this_2

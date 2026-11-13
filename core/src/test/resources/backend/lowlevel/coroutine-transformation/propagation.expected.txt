@@ -1,7 +1,7 @@
 var @this as this
 $0
     @fiber := invokeStatic `org.teavm.runtime.Fiber.current()Lorg/teavm/runtime/Fiber;`
-    @13 := invoke `org.teavm.runtime.Fiber.isResuming()Z` @fiber
+    @13 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndResuming(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @13 != 0 then goto $3 else goto $2
 $1
     return
@@ -25,7 +25,7 @@ $4
     @checked_2 := phi @checked from $2, @checked_1 from $6, @checked_2 from $8
     @assigned_2 := phi @assigned from $2, @assigned_1 from $6, @assigned_2 from $8
     invokeStatic `Foo.suspend()V`
-    @15 := invoke `org.teavm.runtime.Fiber.isSuspending()Z` @fiber
+    @15 := invokeStatic `org.teavm.runtime.Fiber.isPresentAndSuspending(Lorg/teavm/runtime/Fiber;)Z` @fiber
     if @15 != 0 then goto $7 else goto $5
 $5
     invokeStatic `Foo.useLeft(LLeft;)V` @assigned_2
