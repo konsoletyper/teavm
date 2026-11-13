@@ -13,8 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-public class Main {
-    public static void main(String[] args) {
+package org.teavm.vm.java25.overloaded;
+
+// CHECKSTYLE.OFF: HideUtilityClassConstructor
+class Main {
+    Main() {
+        throw new AssertionError("String[] main must take precedence over instance main()");
+    }
+
+    static void main(String[] args) {
         System.out.println("args=" + String.join(",", args));
+    }
+
+    void main() {
+        throw new AssertionError("Wrong main overload selected");
     }
 }

@@ -13,16 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-class Main {
-    static {
-        System.out.println("initialized");
-    }
+package org.teavm.vm.java25.instancenoargs;
+
+class Main implements Answer {
+    static int constructors;
+    int value = 40;
 
     Main() {
-        throw new AssertionError("Static main must not construct its class");
+        constructors++;
+        value += 2;
+        System.out.println("constructor");
     }
 
-    static void main() {
-        System.out.println("static");
+    public int answer() {
+        return value;
     }
+
+    void main() {
+        Answer receiver = this;
+        System.out.println(constructors + ":" + receiver.answer());
+    }
+}
+
+interface Answer {
+    int answer();
 }

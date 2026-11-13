@@ -13,16 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-class Main {
+package org.teavm.vm.java25.instanceargs;
+
+class Main implements Answer {
+    static int constructors;
+    int value = 40;
+
     Main() {
-        throw new AssertionError("String[] main must take precedence over instance main()");
+        constructors++;
+        value += 2;
+        System.out.println("constructor");
     }
 
-    static void main(String[] args) {
-        System.out.println("args=" + String.join(",", args));
+    public int answer() {
+        return value;
     }
 
-    void main() {
-        throw new AssertionError("Wrong main overload selected");
+    void main(String[] args) {
+        Answer receiver = this;
+        System.out.println(constructors + ":" + receiver.answer() + ":" + String.join(",", args));
     }
+}
+
+interface Answer {
+    int answer();
 }

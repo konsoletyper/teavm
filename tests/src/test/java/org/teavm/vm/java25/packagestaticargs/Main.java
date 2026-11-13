@@ -13,26 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-class Main implements Answer {
-    static int constructors;
-    int value = 40;
+package org.teavm.vm.java25.packagestaticargs;
 
-    Main() {
-        constructors++;
-        value += 2;
-        System.out.println("constructor");
+// CHECKSTYLE.OFF: HideUtilityClassConstructor
+class Main {
+    static void main(String[] args) {
+        System.out.println("args=" + String.join(",", args));
     }
-
-    public int answer() {
-        return value;
-    }
-
-    void main() {
-        Answer receiver = this;
-        System.out.println(constructors + ":" + receiver.answer());
-    }
-}
-
-interface Answer {
-    int answer();
 }

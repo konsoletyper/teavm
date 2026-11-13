@@ -1,5 +1,5 @@
 /*
- *  Copyright 2026 TeaVM contributors.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-class Main {
-    Main(int value) {
-        throw new AssertionError("Static main must not require a default constructor");
+package org.teavm.vm.java25.unterminatedoutput;
+
+public class Main {
+    private Main() {
     }
 
-    static void main() {
-        System.out.println("static");
+    public static void main(String[] args) {
+        System.out.print("prefix:");
+        System.out.println(args.length);
+        System.out.print(args[0] + "/" + args[1]);
     }
 }

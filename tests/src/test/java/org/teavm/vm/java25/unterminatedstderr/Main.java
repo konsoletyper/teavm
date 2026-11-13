@@ -1,5 +1,5 @@
 /*
- *  Copyright 2026 TeaVM contributors.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,8 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-class Main {
-    static void main(String[] args) {
-        System.out.println("args=" + String.join(",", args));
+package org.teavm.vm.java25.unterminatedstderr;
+
+public class Main {
+    private Main() {
+    }
+
+    public static void main(String[] args) {
+        System.out.print("visible");
+        System.err.print("unterminated error");
     }
 }
