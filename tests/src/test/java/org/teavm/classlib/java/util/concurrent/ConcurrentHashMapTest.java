@@ -312,4 +312,27 @@ public class ConcurrentHashMapTest {
         assertFalse(map.containsKey("a"));
         assertEquals(0, map.size());
     }
+
+    @Test
+    public void computeIfAbsentDoesNotInsertNull() {
+        var map = new ConcurrentHashMap<String, String>();
+
+        assertNull(map.computeIfAbsent("key", _ -> null));
+
+        assertFalse(map.containsKey("key"));
+        assertEquals(0, map.size());
+        assertEquals("default", map.getOrDefault("key", "default"));
+    }
+
+    @Test
+    public void computeIfPresentRemovesMappingOnNull() {
+        var map = new ConcurrentHashMap<String, String>();
+        map.put("key", "value");
+
+        assertNull(map.computeIfPresent("key", (_, _) -> null));
+
+        assertFalse(map.containsKey("key"));
+        assertEquals(0, map.size());
+        assertEquals("default", map.getOrDefault("key", "default"));
+    }
 }

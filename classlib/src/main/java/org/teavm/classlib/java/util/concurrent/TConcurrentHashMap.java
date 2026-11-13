@@ -464,6 +464,9 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
         }
 
         var newValue = mappingFunction.apply(key);
+        if (newValue == null) {
+            return null;
+        }
         entry = getEntry(key, hash);
         if (entry != null) {
             return entry.getValue();
@@ -495,6 +498,10 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
             if (entry == null) {
                 return null;
             } else if (entry.getValue() == oldValue) {
+                if (newValue == null) {
+                    removeEntry(entry);
+                    return null;
+                }
                 entry.setValue(newValue);
                 return newValue;
             }
