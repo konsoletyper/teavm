@@ -383,20 +383,23 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         dependencyAnalyzer.defer(() -> {
             var mainMethodReader = cls.getMethod(MAIN_METHOD_DESC);
+            if (mainMethodReader == null) {
+                mainMethodReader = cls.getMethod(SHORT_MAIN_METHOD_DESC);
+            }
             dependencyAnalyzer.linkClass(entryPoint).initClass(null);
             if (mainMethodReader != null) {
-                var mainMethod = dependencyAnalyzer.linkMethod(new MethodReference(entryPoint, MAIN_METHOD_DESC));
-                mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType(ValueType.arrayOf(
-                        ValueType.object("java.lang.String"))));
-                mainMethod.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getClassType("java.lang.String"));
+                var mainMethod = dependencyAnalyzer.linkMethod(new MethodReference(entryPoint,
+                        mainMethodReader.getDescriptor()));
+                if (mainMethodReader.parameterCount() == 1) {
+                    mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType(ValueType.arrayOf(
+                            ValueType.object("java.lang.String"))));
+                    mainMethod.getVariable(1).getArrayItem().propagate(
+                            dependencyAnalyzer.getClassType("java.lang.String"));
+                }
                 if (!mainMethodReader.hasModifier(ElementModifier.STATIC)) {
                     mainMethod.getVariable(0).propagate(dependencyAnalyzer.getClassType(entryPoint));
                     initMainClassConstructor();
                 }
-                mainMethod.use();
-            } else if (cls.getMethod(SHORT_MAIN_METHOD_DESC) != null) {
-                var mainMethod = dependencyAnalyzer.linkMethod(new MethodReference(entryPoint, SHORT_MAIN_METHOD_DESC));
-                initMainClassConstructor();
                 mainMethod.use();
             }
         });

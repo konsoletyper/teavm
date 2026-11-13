@@ -529,7 +529,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             ref = new MethodReference(controller.getEntryPoint(), TeaVM.SHORT_MAIN_METHOD_DESC);
             mainMethod = classes.resolve(ref);
             if (mainMethod != null) {
-                instanceEntryPoint = true;
+                instanceEntryPoint = !mainMethod.hasModifier(ElementModifier.STATIC);
                 hasMainMethod = true;
             }
         }
