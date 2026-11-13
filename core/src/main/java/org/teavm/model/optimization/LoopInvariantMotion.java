@@ -41,7 +41,6 @@ import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.util.BasicBlockMapper;
-import org.teavm.model.util.ControlFlowUtils;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ProgramUtils;
@@ -79,14 +78,10 @@ public class LoopInvariantMotion implements NullnessAwareOptimization {
         UsageExtractor useExtractor = new UsageExtractor();
         LoopInvariantAnalyzer analyzer = new LoopInvariantAnalyzer(nullness);
         CopyConstantVisitor constantCopier = new CopyConstantVisitor();
-        int[][] loopExits = ControlFlowUtils.findLoopExits(graph);
 
         while (!stack.isEmpty()) {
             int v = stack.pop();
             Loop defLoop = graph.loopAt(v);
-            int[] exits = loopExits[v];
-            boolean dominatesExits = exits != null && Arrays.stream(exits)
-                    .allMatch(exit -> dom.dominates(v, exit));
             BasicBlock block = program.basicBlockAt(v);
             Instruction nextInsn;
             insnLoop: for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
@@ -107,7 +102,7 @@ public class LoopInvariantMotion implements NullnessAwareOptimization {
                 if (defLoop == null) {
                     continue;
                 }
-                if (analyzer.sideEffect && !dominatesExits) {
+                if (analyzer.sideEffect) {
                     continue;
                 }
                 insn.acceptVisitor(useExtractor);
