@@ -30,14 +30,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import javax.tools.ToolProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
+import org.teavm.backend.c.CTarget;
+import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmGCTarget;
@@ -56,6 +61,7 @@ public class Java25EntryPointTest {
     private static final boolean JS_ENABLED = Boolean.parseBoolean(System.getProperty("teavm.junit.js", "true"));
     private static final boolean WASM_GC_ENABLED = Boolean.parseBoolean(
             System.getProperty("teavm.junit.wasm-gc", "true"));
+    private static final boolean C_ENABLED = Boolean.parseBoolean(System.getProperty("teavm.junit.c", "true"));
     private static final boolean OPTIMIZED = Boolean.parseBoolean(
             System.getProperty("teavm.junit.optimized", "true"));
     private static final List<Fixture> FIXTURES = List.of(
@@ -67,26 +73,36 @@ public class Java25EntryPointTest {
             new Fixture("static-throwing-constructor", "initialized\nstatic\n"),
             new Fixture("static-no-default-constructor", "static\n"),
             new Fixture("overloaded", "args=first,second\n"),
-            new Fixture("compact", "42\n"));
+            new Fixture("compact", "42\n"),
+            new Fixture("instance-gc-suspending-constructor", "constructor\n1:42\n", true));
     private static BrowserRunner browser;
+    private static Map<String, String> nativeEnvironment = Map.of();
 
     @BeforeAll
     public static void prepare() throws IOException, InterruptedException {
-        if (!JS_ENABLED && !WASM_GC_ENABLED) {
+        if (!JS_ENABLED && !WASM_GC_ENABLED && !C_ENABLED) {
             return;
         }
         Files.createDirectories(TARGET);
         for (var fixture : FIXTURES) {
+            if (fixture.nativeOnly() && !C_ENABLED) {
+                continue;
+            }
             compileJava(fixture);
             runOnJvm(fixture);
         }
-        var runnerProperty = JS_ENABLED ? "teavm.junit.js.runner" : "teavm.junit.wasm-gc.runner";
-        var chromium = System.getenv("TEAVM_TEST_CHROMIUM");
-        browser = new BrowserRunner(TARGET.toFile(), "JAVASCRIPT",
-                chromium == null || chromium.isBlank()
-                        ? BrowserRunner.pickBrowser(System.getProperty(runnerProperty))
-                        : params -> startChromium(chromium, params), false);
-        browser.start();
+        if (C_ENABLED) {
+            nativeEnvironment = nativeCompilerEnvironment();
+        }
+        if (JS_ENABLED || WASM_GC_ENABLED) {
+            var runnerProperty = JS_ENABLED ? "teavm.junit.js.runner" : "teavm.junit.wasm-gc.runner";
+            var chromium = System.getenv("TEAVM_TEST_CHROMIUM");
+            browser = new BrowserRunner(TARGET.toFile(), "JAVASCRIPT",
+                    chromium == null || chromium.isBlank()
+                            ? BrowserRunner.pickBrowser(System.getProperty(runnerProperty))
+                            : params -> startChromium(chromium, params), false);
+            browser.start();
+        }
     }
 
     @AfterAll
@@ -99,8 +115,8 @@ public class Java25EntryPointTest {
     @TestFactory
     public Stream<DynamicTest> launchers() {
         var tests = new ArrayList<DynamicTest>();
-        for (var backend : List.of("js", "wasm-gc")) {
-            if (backend.equals("js") ? !JS_ENABLED : !WASM_GC_ENABLED) {
+        for (var backend : List.of("js", "wasm-gc", "c")) {
+            if (!backendEnabled(backend)) {
                 continue;
             }
             for (var level : TeaVMOptimizationLevel.values()) {
@@ -108,12 +124,24 @@ public class Java25EntryPointTest {
                     continue;
                 }
                 for (var fixture : FIXTURES) {
+                    if (fixture.nativeOnly() && !backend.equals("c")) {
+                        continue;
+                    }
                     var name = backend + "/" + level.name().toLowerCase() + "/" + fixture.name();
                     tests.add(DynamicTest.dynamicTest(name, () -> compileAndRun(backend, level, fixture, name)));
                 }
             }
         }
         return tests.stream();
+    }
+
+    private static boolean backendEnabled(String backend) {
+        return switch (backend) {
+            case "js" -> JS_ENABLED;
+            case "wasm-gc" -> WASM_GC_ENABLED;
+            case "c" -> C_ENABLED;
+            default -> false;
+        };
     }
 
     private static void compileJava(Fixture fixture) throws IOException {
@@ -158,7 +186,7 @@ public class Java25EntryPointTest {
         var output = TARGET.resolve(name);
         Files.createDirectories(output);
         var target = createTarget(backend);
-        var extension = backend.equals("js") ? ".js" : ".wasm";
+        var extension = backend.equals("c") ? "" : backend.equals("js") ? ".js" : ".wasm";
         try (var loader = new URLClassLoader(new java.net.URL[] { fixture.classes().toUri().toURL() },
                 Java25EntryPointTest.class.getClassLoader())) {
             var resources = new ClasspathResourceProvider(loader);
@@ -173,12 +201,17 @@ public class Java25EntryPointTest {
             vm.installPlugins();
             // The fixture itself, never the JUnit wrapper, must be the entry point.
             vm.setEntryPoint("Main");
+            vm.setAsyncEnabled(true);
             vm.setOptimizationLevel(level);
             vm.build(output.toFile(), "program" + extension);
             if (!vm.getProblemProvider().getSevereProblems().isEmpty()) {
                 TeaVMProblemRenderer.describeProblems(vm, new ConsoleTeaVMToolLog(false));
             }
             assertTrue(vm.getProblemProvider().getSevereProblems().isEmpty(), "Compilation failed for " + name);
+        }
+        if (backend.equals("c")) {
+            compileAndRunNative(output, fixture);
+            return;
         }
         var stdout = new StringBuffer();
         var stderr = new StringBuffer();
@@ -191,6 +224,9 @@ public class Java25EntryPointTest {
     }
 
     private static TeaVMTarget createTarget(String backend) {
+        if (backend.equals("c")) {
+            return new CTarget(new CNameProvider());
+        }
         if (backend.equals("js")) {
             var target = new JavaScriptTarget();
             target.setModuleType(JSModuleType.ES2015);
@@ -201,6 +237,91 @@ public class Java25EntryPointTest {
         target.setObfuscated(false);
         target.setStrict(true);
         return target;
+    }
+
+    private static void compileAndRunNative(Path output, Fixture fixture) throws IOException {
+        var compiler = new File(System.getProperty("teavm.junit.c.compiler")).getAbsolutePath();
+        var compilerProcess = new ProcessBuilder(compiler).directory(output.toFile());
+        compilerProcess.environment().putAll(nativeEnvironment);
+        runProcess(compilerProcess, output.resolve("compile.log"), 120);
+        var executable = System.getProperty("os.name").startsWith("Windows") ? "run_test.exe" : "run_test";
+        var stdout = output.resolve("stdout.log");
+        var stderr = output.resolve("stderr.log");
+        var process = new ProcessBuilder(output.resolve(executable).toAbsolutePath().toString(), "first", "second")
+                .redirectOutput(stdout.toFile()).redirectError(stderr.toFile()).start();
+        try {
+            assertTrue(process.waitFor(30, TimeUnit.SECONDS), "Native launcher timed out for " + fixture.name());
+            assertEquals("", Files.readString(stderr, StandardCharsets.UTF_8), fixture.name());
+            assertEquals(0, process.exitValue(), fixture.name());
+            assertEquals(fixture.output(), Files.readString(stdout, StandardCharsets.UTF_8).replace("\r\n", "\n"),
+                    "C launcher: " + fixture.name());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } finally {
+            process.destroyForcibly();
+        }
+    }
+
+    private static Map<String, String> nativeCompilerEnvironment() throws IOException, InterruptedException {
+        var script = System.getProperty("teavm.junit.c.envScript", "");
+        if (script.isEmpty()) {
+            return Map.of();
+        }
+        var file = new File(script);
+        var path = file.exists() ? file.getAbsolutePath() : script;
+        var windows = System.getProperty("os.name").startsWith("Windows");
+        var builder = windows
+                ? new ProcessBuilder("cmd", "/c", "call \"" + path + "\" && set")
+                : new ProcessBuilder("bash", "-c", "source \"$1\" && env", "teavm-c-env", path);
+        var process = builder.redirectError(TARGET.resolve("compiler-env.stderr.log").toFile()).start();
+        var bytes = new ByteArrayOutputStream();
+        var readError = new AtomicReference<IOException>();
+        var reader = Thread.ofVirtual().start(() -> {
+            try {
+                process.getInputStream().transferTo(bytes);
+            } catch (IOException e) {
+                readError.set(e);
+            }
+        });
+        try {
+            assertTrue(process.waitFor(15, TimeUnit.SECONDS), "C compiler environment setup timed out");
+            reader.join(15_000);
+            assertTrue(!reader.isAlive(), "C compiler environment output did not finish");
+            assertEquals(0, process.exitValue(), "C compiler environment setup failed");
+            if (readError.get() != null) {
+                throw readError.get();
+            }
+            var environment = new HashMap<String, String>();
+            for (var line : bytes.toString(StandardCharsets.UTF_8).split("\\r?\\n")) {
+                var separator = line.indexOf('=');
+                if (separator > 0) {
+                    environment.put(line.substring(0, separator), line.substring(separator + 1));
+                }
+            }
+            return environment;
+        } finally {
+            process.destroyForcibly();
+        }
+    }
+
+    private static void runProcess(ProcessBuilder builder, Path log, int timeoutSeconds) throws IOException {
+        var process = builder.redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        try {
+            assertTrue(process.waitFor(timeoutSeconds, TimeUnit.SECONDS), "C compiler timed out");
+            assertEquals(0, process.exitValue(), () -> {
+                try {
+                    return Files.readString(log, StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } finally {
+            process.destroyForcibly();
+        }
     }
 
     private static Process startChromium(String executable, BrowserRunParams params) {
@@ -218,7 +339,11 @@ public class Java25EntryPointTest {
         }
     }
 
-    private record Fixture(String name, String output) {
+    private record Fixture(String name, String output, boolean nativeOnly) {
+        Fixture(String name, String output) {
+            this(name, output, false);
+        }
+
         Path classes() {
             return TARGET.resolve("sources").resolve(name).resolve("classes");
         }
