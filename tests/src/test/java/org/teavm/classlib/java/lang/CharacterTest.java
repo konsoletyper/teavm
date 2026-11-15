@@ -286,4 +286,13 @@ public class CharacterTest {
             // ok
         }
     }
+
+    @Test
+    public void offsetByCodePointsWithUnpairedSurrogates() {
+        assertEquals(0, Character.offsetByCodePoints("\uDC00", 1, -1));
+        assertEquals(0, Character.offsetByCodePoints(new char[] {'\uDC00'}, 0, 1, 1, -1));
+        char[] chars = {'\uD800', '\uDC00'};
+        // Only the low surrogate belongs to the slice [1, 2).
+        assertEquals(1, Character.offsetByCodePoints(chars, 1, 1, 2, -1));
+    }
 }

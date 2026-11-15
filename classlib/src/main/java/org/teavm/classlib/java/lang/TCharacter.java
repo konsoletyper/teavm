@@ -475,7 +475,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         } else {
             int i;
             for (i = codePointOffset; i < 0 && index > 0; ++i) {
-                if (index > 0 && isLowSurrogate(seq.charAt(index - 1))
+                if (index > 1 && isLowSurrogate(seq.charAt(index - 1))
                         && isHighSurrogate(seq.charAt(index - 2))) {
                     index -= 2;
                 } else {
@@ -510,7 +510,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         } else {
             int i;
             for (i = codePointOffset; i < 0 && index > start; ++i) {
-                if (index > start && isLowSurrogate(a[index - 1])
+                if (index > start + 1 && isLowSurrogate(a[index - 1])
                         && isHighSurrogate(a[index - 2])) {
                     index -= 2;
                 } else {
