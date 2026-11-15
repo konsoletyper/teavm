@@ -17,9 +17,12 @@ package org.teavm.flow;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Program;
@@ -1398,10 +1401,112 @@ public class FlowReconstructionTest {
         );
     }
 
+    // Handler 7 is shared by node 1 before the loop and node 4 inside the loop. DFS reaches it through the loop
+    // first, so unless it's treated as loop's outer target, it's placed inside loop's range, and block_7 would
+    // cross the loop.
+    @Test
+    public void handlerSharedByLoopAndCodeBeforeLoop() {
+        var program = buildProgram(new int[][] {
+                { 1, 2 }, { 3 }, { 3 }, { 4, 5 }, { 3 }, { 3, 6 }, null, null
+        });
+        addExceptionHandler(program, 1, 2, null, 7);
+        addExceptionHandler(program, 4, 5, null, 7);
+        assertFlow(
+                program,
+                """
+                block_7: block
+                  block_3: block
+                    block_2: block
+                      0: br 1 block_2
+                      try
+                        1: br block_3
+                      catch null block_7
+                    end
+                    2: br block_3
+                  end
+                  loop_3: loop
+                    block_5: block
+                      3: br 4 block_5
+                      try
+                        4: br loop_3
+                      catch null block_7
+                    end
+                    5: br loop_3 6
+                  end
+                  6: terminate
+                end
+                7: terminate
+                """.stripIndent()
+        );
+    }
+
     private void assertFlow(Program program, String expected) {
         var flow = new FlowReconstruction().reconstruct(program);
         assertEquals(expected, formatFlow(flow));
+        checkFlow(flow);
+    }
+
+    private void checkFlow(List<FlowTreeNode> flow) {
         checkBlockAfter(flow, null);
+        checkJumps(flow, null, new HashSet<>());
+    }
+
+    // Ensures that each block is followed by its jump target, and that each jump either refers to enclosing
+    // block or loop, or falls through to the next block
+    private void checkJumps(List<FlowTreeNode> nodes, BasicBlock continuation, Set<BasicBlock> labels) {
+        for (var i = 0; i < nodes.size(); ++i) {
+            var next = i + 1 < nodes.size() ? firstBlock(nodes.get(i + 1)) : continuation;
+            checkJumps(nodes.get(i), next, labels);
+        }
+    }
+
+    private void checkJumps(FlowTreeNode node, BasicBlock continuation, Set<BasicBlock> labels) {
+        node.acceptVisitor(new FlowTreeNodeVisitor() {
+            @Override
+            public void visit(FlowTreeNode.Region node) {
+                var transitionExtractor = new TransitionExtractor();
+                for (var i = 0; i < node.blocks.size(); ++i) {
+                    var block = node.blocks.get(i);
+                    var next = i + 1 < node.blocks.size() ? node.blocks.get(i + 1) : continuation;
+                    block.getLastInstruction().acceptVisitor(transitionExtractor);
+                    var targets = transitionExtractor.getTargets();
+                    if (targets == null) {
+                        continue;
+                    }
+                    for (var target : targets) {
+                        assertTrue("jump from " + block.getIndex() + " to " + target.getIndex()
+                                + " is neither break nor fall through", labels.contains(target) || target == next);
+                    }
+                }
+            }
+
+            @Override
+            public void visit(FlowTreeNode.TryCatch node) {
+                assertTrue("handler " + node.catchBlock.getIndex() + " is not reachable from try/catch",
+                        labels.contains(node.catchBlock) || node.catchBlock == continuation);
+                checkJumps(node.tryBody, continuation, labels);
+            }
+
+            @Override
+            public void visit(FlowTreeNode.Loop node) {
+                var added = labels.add(node.head);
+                checkJumps(node.body, continuation, labels);
+                if (added) {
+                    labels.remove(node.head);
+                }
+            }
+
+            @Override
+            public void visit(FlowTreeNode.Block node) {
+                assertEquals("block is not followed by its jump target", node.jumpTarget.getIndex(),
+                        continuation != null ? continuation.getIndex() : -1);
+                var added = labels.add(node.jumpTarget);
+                checkJumps(node.body, node.jumpTarget, labels);
+                if (added) {
+                    labels.remove(node.jumpTarget);
+                }
+            }
+        });
     }
 
     // Ensures that blockAfter of each try/catch is the block which receives control

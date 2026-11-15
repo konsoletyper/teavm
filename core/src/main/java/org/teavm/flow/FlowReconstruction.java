@@ -448,14 +448,16 @@ public class FlowReconstruction {
 
     // For each loop head H find nodes X not dominated by H, such that some node dominated by H jumps to X.
     // Such X never belongs to the loop of H, and may join with code before the loop, so it must be placed
-    // after the loop's range. Back edges to enclosing loops are not considered, since their targets
-    // dominate H and are already placed before it.
+    // after the loop's range. This includes exception handlers shared by code inside and outside of the loop:
+    // otherwise DFS may reach handler through the loop and place it inside loop's range, so that the block
+    // jumping to the handler from the code before the loop would cross loop's range. Back edges to enclosing
+    // loops are not considered, since their targets dominate H and are already placed before it.
     private void findLoopOuterTargets() {
         var count = program.basicBlockCount();
         var targetLists = new IntArrayList[count];
         for (var node = 0; node < count; ++node) {
             for (var successor : cfg.outgoingEdges(node)) {
-                if (handlers[successor] || domTree.dominates(successor, node)) {
+                if (domTree.dominates(successor, node)) {
                     continue;
                 }
                 for (var dominator = node; dominator >= 0 && !domTree.dominates(dominator, successor);
