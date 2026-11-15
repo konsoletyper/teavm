@@ -195,6 +195,16 @@ public class RandomTest {
     }
 
     @Test
+    public void intsBoundsWithSeed() {
+        var rand = new Random(1);
+        var array = new int[10];
+        for (var i = 0; i < 10; ++i) {
+            array[i] = rand.nextInt(11);
+        }
+        assertArrayEquals(new int[] { 4, 6, 8, 8, 9, 2, 6, 3, 1, 4 }, array);
+    }
+
+    @Test
     public void longsWithSeed() {
         var rand = new Random(1);
         var array = new long[10];

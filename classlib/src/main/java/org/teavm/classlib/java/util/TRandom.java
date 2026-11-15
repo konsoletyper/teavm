@@ -47,6 +47,22 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
         return next(32);
     }
 
+    @Override
+    public int nextInt(int bound) {
+        RandomUtils.checkBound(bound);
+        if ((bound & -bound) == bound) {
+            return (int) ((bound * (long) next(31)) >> 31);
+        }
+
+        int bits;
+        int val;
+        do {
+            bits = next(31);
+            val = bits % bound;
+        } while (bits - val + (bound - 1) < 0);
+        return val;
+    }
+
     protected int next(int bits) {
         var newSeed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
         seed = newSeed;
