@@ -152,24 +152,21 @@ public final class ExceptionHandling {
         }
     }
 
-    @Unmanaged
+    // These four are managed, so that the new exception is a GC root while its constructor allocates
     public static void throwClassCastException() {
         throwException(new ClassCastException());
     }
 
-    @Unmanaged
     @Export(name = "teavm_throwNullPointerException")
     public static void throwNullPointerException() {
         throwException(new NullPointerException());
     }
 
-    @Unmanaged
     @Export(name = "teavm_throwArrayIndexOutOfBoundsException")
     public static void throwArrayIndexOutOfBoundsException() {
         throwException(new ArrayIndexOutOfBoundsException());
     }
 
-    @Unmanaged
     @Export(name = "teavm_throwArithmeticException")
     public static void throwArithmeticException() {
         throwException(new ArithmeticException());

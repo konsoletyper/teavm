@@ -18,7 +18,9 @@ package org.teavm.runtime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.lang.ref.WeakReference;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -34,7 +36,13 @@ public class GCTest {
     private static final int GARBAGE_COUNT = 2000;
     private static final int MULTI_ARRAY_ROWS = 4096;
     private static final int MULTI_ARRAY_COLUMNS = 1024;
+    private static final int CHECK_GC_COUNT = 5;
     private static Object sink;
+    private static int[] checkedArray = new int[1];
+    private static int[] checkedNull;
+    private static Object checkedNotString = new Object();
+    private static int checkedQuotient = 1;
+    private static int checkedZero;
 
     @Test
     public void youngMonitorSurvivesGc() {
@@ -191,6 +199,53 @@ public class GCTest {
             assertEquals(i, array[i][MULTI_ARRAY_COLUMNS - 1]);
         }
         sink = filler;
+    }
+
+    @Test
+    @SkipJVM
+    public void failedChecksSurviveGcDuringExceptionConstruction() {
+        for (var i = 0; i < CHECK_GC_COUNT; ++i) {
+            var caught = new Throwable[4];
+            var canary = new WeakReference<>(new Object());
+            // Only failed checks allocate here, so the GC that clears the canary ran inside one of them
+            while (canary.get() != null) {
+                try {
+                    checkedArray[checkedArray.length] = 1;
+                    fail();
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    caught[0] = e;
+                }
+                try {
+                    checkedNull[0] = 1;
+                    fail();
+                } catch (NullPointerException e) {
+                    caught[1] = e;
+                }
+                try {
+                    sink = (String) checkedNotString;
+                    fail();
+                } catch (ClassCastException e) {
+                    caught[2] = e;
+                }
+                try {
+                    checkedQuotient = checkedQuotient / checkedZero;
+                    fail();
+                } catch (ArithmeticException e) {
+                    caught[3] = e;
+                }
+            }
+            // A collected exception is now free memory, which these overwrite
+            forceGc();
+            var filler = overwriteFreeMemory();
+            assertSame(ArrayIndexOutOfBoundsException.class, caught[0].getClass());
+            assertSame(NullPointerException.class, caught[1].getClass());
+            assertSame(ClassCastException.class, caught[2].getClass());
+            assertSame(ArithmeticException.class, caught[3].getClass());
+            for (var e : caught) {
+                assertTrue(e.getStackTrace().length > 0);
+            }
+            sink = filler;
+        }
     }
 
     static class Worker {
