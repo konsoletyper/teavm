@@ -50,6 +50,16 @@ public class PhiUpdaterTest {
     }
 
     @Test
+    public void exceptionPhiAfterBlockPhi() {
+        doTest();
+    }
+
+    @Test
+    public void existingExceptionPhiTwoVariables() {
+        doTest();
+    }
+
+    @Test
     public void phiIncoming() {
         doTest();
     }

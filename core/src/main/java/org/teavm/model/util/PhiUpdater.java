@@ -332,8 +332,6 @@ public class PhiUpdater {
         }
 
         while (!stack.isEmpty()) {
-            Collections.fill(definedVersions, null);
-
             currentBlock = stack.pop();
             int index = currentBlock.getIndex();
             variableMap = pendingVariableMap[index];
@@ -354,6 +352,8 @@ public class PhiUpdater {
             for (Phi phi : currentBlock.getPhis()) {
                 phi.setReceiver(define(phi.getReceiver()));
             }
+            // Phis and exception variable are assigned before any instruction can throw
+            Collections.fill(definedVersions, null);
 
             if (renamingListener != null) {
                 for (var insn : currentBlock) {
