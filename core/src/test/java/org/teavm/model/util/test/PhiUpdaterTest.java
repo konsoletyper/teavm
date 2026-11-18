@@ -60,6 +60,11 @@ public class PhiUpdaterTest {
     }
 
     @Test
+    public void existingExceptionPhiInLoop() {
+        doTest();
+    }
+
+    @Test
     public void phiIncoming() {
         doTest();
     }
