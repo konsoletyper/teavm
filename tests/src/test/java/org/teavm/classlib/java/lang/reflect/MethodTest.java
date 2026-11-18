@@ -37,9 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
-import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 @EachTestCompiledSeparately
@@ -279,7 +277,6 @@ public class MethodTest {
     
     @Test
     @AsyncEnabled
-    @SkipPlatform(TestPlatform.C)
     public void asyncReflection() throws Exception {
         var method = ClassWithAsyncMethod.class.getMethod("foo", int.class);
         var result = method.invoke(null, 23);
@@ -293,7 +290,6 @@ public class MethodTest {
 
     @Test
     @AsyncEnabled
-    @SkipPlatform(TestPlatform.C)
     public void asyncReflectionWithSeveralParameters() throws Exception {
         var method = ClassWithAsyncMethodWithSeveralParameters.class.getMethod("foo", int.class, int.class);
         var result = method.invoke(null, 23, 42);

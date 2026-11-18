@@ -26,9 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTest;
-import org.teavm.junit.TestPlatform;
 
 @TeaVMTest
 @EachTestCompiledSeparately
@@ -191,8 +189,6 @@ public class ObjectTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
-    // Does not pass in C due to bug in coroutine transformation
     @AsyncEnabled
     public void allQueuedThreadsEnterMonitor() throws InterruptedException {
         var lock = new Object();
