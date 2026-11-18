@@ -8,7 +8,7 @@ $start
     goto $end
     catch java.lang.RuntimeException goto $catch
 $catch
-    @b := phi @a_1 from $start, @c_1 from $start, @a from $start, @c from $start
+    @b := phi @a from $start, @c from $start, @a_1 from $start, @c_1 from $start
     return @b
 $end
     return @a_1

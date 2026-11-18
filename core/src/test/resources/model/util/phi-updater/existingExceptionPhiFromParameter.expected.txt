@@ -5,7 +5,7 @@ $start
     goto $end
     catch java.lang.RuntimeException goto $catch
 $catch
-    @q := phi @p_1 from $start, @p from $start
+    @q := phi @p from $start, @p_1 from $start
     invokeVirtual `Foo.baz()V` @q
     goto $end
 $end

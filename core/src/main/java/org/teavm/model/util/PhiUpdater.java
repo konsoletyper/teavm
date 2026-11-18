@@ -88,7 +88,10 @@ public class PhiUpdater {
     private Variable[] variableMap;
     private boolean[] variableDefined;
     private int[] variableDefinitionCount;
-    private List<List<Variable>> definedVersions = new ArrayList<>();
+    // Handler phis of the block being renamed, see startExceptionEdges()
+    private List<ExceptionPhi> exceptionPhis = new ArrayList<>();
+    private List<List<ExceptionPhi>> exceptionPhisBySource = new ArrayList<>();
+    private IntegerArray watchedSources = new IntegerArray(16);
     private BasicBlock currentBlock;
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
@@ -183,7 +186,8 @@ public class PhiUpdater {
         for (int i = 0; i < program.variableCount(); ++i) {
             variableToSourceMap.add(-1);
         }
-        definedVersions.addAll(Collections.nCopies(program.variableCount(), null));
+        exceptionPhisBySource.clear();
+        exceptionPhisBySource.addAll(Collections.nCopies(program.variableCount(), null));
 
         phiMap = new Phi[program.basicBlockCount()][];
         phiIndexMap = new int[program.basicBlockCount()][];
@@ -352,9 +356,14 @@ public class PhiUpdater {
             for (Phi phi : currentBlock.getPhis()) {
                 phi.setReceiver(define(phi.getReceiver()));
             }
-            // Phis and exception variable are assigned before any instruction can throw
-            Collections.fill(definedVersions, null);
+            IntSet exceptionHandlingSuccessors = new IntHashSet();
+            for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
+                exceptionHandlingSuccessors.add(tryCatch.getHandler().getIndex());
+            }
 
+            // Phis and exception variable are assigned before any instruction can throw,
+            // so exception edges start here
+            startExceptionEdges();
             if (renamingListener != null) {
                 for (var insn : currentBlock) {
                     insn.acceptVisitor(consumer);
@@ -365,6 +374,7 @@ public class PhiUpdater {
                     insn.acceptVisitor(consumer);
                 }
             }
+            finishExceptionEdges();
 
             int[] successors = domGraph.outgoingEdges(index);
 
@@ -384,11 +394,6 @@ public class PhiUpdater {
                 variableMap = variables;
             }
 
-            IntSet exceptionHandlingSuccessors = new IntHashSet();
-            for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
-                exceptionHandlingSuccessors.add(tryCatch.getHandler().getIndex());
-            }
-
             for (int successor : cfg.outgoingEdges(index)) {
                 variableMap = domTree.immediateDominatorOf(successor) == currentBlock.getIndex()
                         ? pendingVariableMap[successor]
@@ -402,8 +407,122 @@ public class PhiUpdater {
                         }
                     }
                 }
-                renameOutgoingPhis(successor, exceptionHandlingSuccessors.contains(successor));
+                if (!exceptionHandlingSuccessors.contains(successor)) {
+                    renameOutgoingPhis(successor);
+                }
             }
+        }
+    }
+
+    /*
+     * Each instruction of a protected block is treated as if it ended the block with an edge to the handler
+     * (like LLVM's invoke), i.e. the handler observes the state before every instruction. Merging these
+     * virtual edges back gives one incoming per edge, in order of assignment, without repetitions.
+     * The state changes only when a variable is assigned, so instead of flushing state to handler phis
+     * after every instruction, a handler phi receives a new incoming when one of its variables is defined.
+     */
+    private void startExceptionEdges() {
+        IntSet visitedHandlers = new IntHashSet();
+        for (var tryCatch : currentBlock.getTryCatchBlocks()) {
+            int handler = tryCatch.getHandler().getIndex();
+            if (!visitedHandlers.add(handler)) {
+                continue;
+            }
+
+            int[] phiIndexes = phiIndexMap[handler];
+            var synthesizedPhis = synthesizedPhisByBlock.get(handler);
+            for (int j = 0; j < synthesizedPhis.size(); ++j) {
+                var phi = synthesizedPhis.get(j);
+                startExceptionPhi(new ExceptionPhi(phi, phi.getIncomings().size(), null), new int[] { phiIndexes[j] });
+            }
+
+            // Existing incomings from this block refer to variables, each of them stands for its versions
+            // assigned in the block. Only the first one may be assigned before the block.
+            for (var phi : program.basicBlockAt(handler).getPhis()) {
+                var incomings = phi.getIncomings();
+                List<Incoming> replacedIncomings = null;
+                var sources = new IntegerArray(2);
+                int position = -1;
+                for (int i = 0; i < incomings.size(); ++i) {
+                    var incoming = incomings.get(i);
+                    if (incoming.getSource() != currentBlock) {
+                        continue;
+                    }
+                    if (replacedIncomings == null) {
+                        replacedIncomings = new ArrayList<>();
+                        position = i;
+                    }
+                    replacedIncomings.add(incoming);
+                    if (!sources.contains(incoming.getValue().getIndex())) {
+                        sources.add(incoming.getValue().getIndex());
+                    }
+                }
+                if (replacedIncomings != null) {
+                    startExceptionPhi(new ExceptionPhi(phi, position, replacedIncomings), sources.getAll());
+                }
+            }
+        }
+    }
+
+    private void startExceptionPhi(ExceptionPhi exceptionPhi, int[] sources) {
+        exceptionPhis.add(exceptionPhi);
+        addExceptionIncoming(exceptionPhi, variableMap[sources[0]]);
+        for (int source : sources) {
+            var watchers = exceptionPhisBySource.get(source);
+            if (watchers == null) {
+                watchers = new ArrayList<>(1);
+                exceptionPhisBySource.set(source, watchers);
+                watchedSources.add(source);
+            }
+            watchers.add(exceptionPhi);
+        }
+    }
+
+    private void addExceptionIncoming(ExceptionPhi exceptionPhi, Variable version) {
+        if (version == null) {
+            return;
+        }
+        addIncoming(exceptionPhi.phi.getIncomings(), exceptionPhi.position++, version);
+        exceptionPhi.lastVersion = version;
+        if (exceptionPhi.replacedIncomings != null) {
+            usedPhis.set(version.getIndex());
+        }
+    }
+
+    private void finishExceptionEdges() {
+        for (int i = 0; i < watchedSources.size(); ++i) {
+            exceptionPhisBySource.set(watchedSources.get(i), null);
+        }
+        watchedSources.clear();
+
+        for (var exceptionPhi : exceptionPhis) {
+            if (exceptionPhi.replacedIncomings != null) {
+                for (var incoming : exceptionPhi.replacedIncomings) {
+                    int source = incoming.getValue().getIndex();
+                    if (variableMap[source] != null) {
+                        exceptionPhi.phi.getIncomings().remove(incoming);
+                    } else {
+                        usedPhis.set(source);
+                    }
+                }
+            } else if (exceptionPhi.lastVersion != null) {
+                exceptionPhi.phi.getReceiver().setDebugName(exceptionPhi.lastVersion.getDebugName());
+            }
+        }
+        exceptionPhis.clear();
+    }
+
+    private static class ExceptionPhi {
+        final Phi phi;
+        int position;
+        // Null for synthesized phis
+        final List<Incoming> replacedIncomings;
+        Variable lastVersion;
+
+        ExceptionPhi(Phi phi, int position, List<Incoming> replacedIncomings) {
+            this.phi = phi;
+            this.position = position;
+            this.replacedIncomings = replacedIncomings;
         }
     }
 
@@ -448,7 +567,7 @@ public class PhiUpdater {
         }
     }
 
-    private void renameOutgoingPhis(int successor, boolean allVersions) {
+    private void renameOutgoingPhis(int successor) {
         int[] phiIndexes = phiIndexMap[successor];
         List<Phi> phis = synthesizedPhisByBlock.get(successor);
 
@@ -456,52 +575,29 @@ public class PhiUpdater {
             Phi phi = phis.get(j);
             Variable var = variableMap[phiIndexes[j]];
             if (var != null) {
-                List<Variable> versions = definedVersions.get(phiIndexes[j]);
-                if (versions != null && allVersions) {
-                    for (Variable version : versions) {
-                        Incoming incoming = new Incoming();
-                        incoming.setSource(currentBlock);
-                        incoming.setValue(version);
-                        phi.getIncomings().add(incoming);
-                    }
-                }
-
-                Incoming incoming = new Incoming();
-                incoming.setSource(currentBlock);
-                incoming.setValue(var);
-                phi.getIncomings().add(incoming);
+                addIncoming(phi.getIncomings(), phi.getIncomings().size(), var);
                 phi.getReceiver().setDebugName(var.getDebugName());
             }
         }
 
         for (var phi : program.basicBlockAt(successor).getPhis()) {
-            var incomings = phi.getIncomings();
-            var incomingCount = incomings.size();
-            for (var i = 0; i < incomingCount; ++i) {
-                var incoming = incomings.get(i);
+            for (var incoming : phi.getIncomings()) {
                 if (incoming.getSource() == currentBlock) {
                     var value = variableMap[incoming.getValue().getIndex()];
                     if (value != null) {
-                        // An exception can leave the block before any later version is assigned,
-                        // so the handler needs every version
-                        var versions = allVersions ? definedVersions.get(incoming.getValue().getIndex()) : null;
-                        if (versions != null) {
-                            for (var version : versions) {
-                                var versionIncoming = new Incoming();
-                                versionIncoming.setSource(currentBlock);
-                                versionIncoming.setValue(version);
-                                incomings.add(versionIncoming);
-                                usedPhis.set(version.getIndex());
-                            }
-                        }
                         incoming.setValue(value);
-                        usedPhis.set(value.getIndex());
-                    } else {
-                        usedPhis.set(incoming.getValue().getIndex());
                     }
+                    usedPhis.set(incoming.getValue().getIndex());
                 }
             }
         }
+    }
+
+    private void addIncoming(List<Incoming> incomings, int index, Variable value) {
+        var incoming = new Incoming();
+        incoming.setSource(currentBlock);
+        incoming.setValue(value);
+        incomings.add(index, incoming);
     }
 
     private void markAssignment(Variable var, BasicBlock targetBlock) {
@@ -595,18 +691,16 @@ public class PhiUpdater {
     }
 
     private Variable define(Variable var) {
-        Variable old = variableMap[var.getIndex()];
-        if (old != null) {
-            if (definedVersions.get(var.getIndex()) == null) {
-                definedVersions.set(var.getIndex(), new ArrayList<>());
+        int source = var.getIndex();
+        Variable version = introduce(var);
+        mapVariable(source, version);
+        var watchers = exceptionPhisBySource.get(source);
+        if (watchers != null) {
+            for (var exceptionPhi : watchers) {
+                addExceptionIncoming(exceptionPhi, version);
             }
-            definedVersions.get(var.getIndex()).add(old);
         }
-
-        Variable original = var;
-        var = introduce(var);
-        mapVariable(original.getIndex(), var);
-        return var;
+        return version;
     }
 
     private void mapVariable(int index, Variable var) {
