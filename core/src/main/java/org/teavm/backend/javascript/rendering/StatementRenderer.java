@@ -519,10 +519,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             pushLocation(expr.getLocation());
         }
         if (guarded) {
-            visitBinary(BinaryOperation.OR, "|", () -> visitBinary(expr, op, false),
+            visitBinary(BinaryOperation.OR, "|", true, () -> visitBinary(expr, op, false),
                     () -> writer.append("0"));
         } else {
-            visitBinary(expr.getOperation(), op, () -> expr.getFirstOperand().acceptVisitor(this),
+            visitBinary(expr.getOperation(), op, isAssociative(expr), () -> expr.getFirstOperand().acceptVisitor(this),
                     () -> expr.getSecondOperand().acceptVisitor(this));
         }
         if (expr.getLocation() != null) {
@@ -530,7 +530,16 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
     }
 
-    private void visitBinary(BinaryOperation operation, String infixText, Runnable a, Runnable b) {
+    /**
+     * Whether an operation gives the same result however a chain of it is grouped. Integer arithmetic does,
+     * floating point does not: {@code a + (b + c)} and {@code (a + b) + c} round differently, so the parentheses
+     * Java code puts round the right operand must be kept.
+     */
+    private static boolean isAssociative(BinaryExpr expr) {
+        return expr.getType() != OperationType.FLOAT && expr.getType() != OperationType.DOUBLE;
+    }
+
+    private void visitBinary(BinaryOperation operation, String infixText, boolean associative, Runnable a, Runnable b) {
         Precedence outerPrecedence = precedence;
         Precedence innerPrecedence = getPrecedence(operation);
         if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
@@ -562,6 +571,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         switch (operation) {
             case ADD:
             case MULTIPLY:
+                precedence = associative ? innerPrecedence : innerPrecedence.next();
+                break;
             case AND:
             case OR:
             case BITWISE_AND:
@@ -643,7 +654,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
         writer.appendFunction("Long_asIntN").append("(64,").ws();
         precedence = Precedence.min();
-        visitBinary(expr.getOperation(), op, () -> expr.getFirstOperand().acceptVisitor(this),
+        visitBinary(expr.getOperation(), op, isAssociative(expr), () -> expr.getFirstOperand().acceptVisitor(this),
                 () -> expr.getSecondOperand().acceptVisitor(this));
         writer.append(")");
         if (expr.getLocation() != null) {
@@ -675,7 +686,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 writer.append(")").ws().append(">>").ws().append(shift + "n");
             } else {
                 precedence = Precedence.min();
-                visitBinary(expr.getOperation(), expr.getOperation() == BinaryOperation.LEFT_SHIFT ? "<<" : ">>",
+                visitBinary(expr.getOperation(), expr.getOperation() == BinaryOperation.LEFT_SHIFT ? "<<" : ">>", true,
                         () -> expr.getFirstOperand().acceptVisitor(this), () -> writer.append(shift + "n"));
             }
             writer.append(")");
