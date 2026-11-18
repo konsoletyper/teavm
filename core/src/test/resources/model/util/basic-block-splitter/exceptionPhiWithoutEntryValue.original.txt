@@ -1,0 +1,14 @@
+$start
+    goto $b
+$b
+    @x := invokeStatic `Foo.foo()I`
+    invokeStatic `Split.here()V`
+    @x_1 := invokeStatic `Foo.foo()I`
+    invokeStatic `Foo.baz()V`
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+$catch
+    @y := phi @x from $b, @x_1 from $b
+    return @y
+$end
+    return @x_1

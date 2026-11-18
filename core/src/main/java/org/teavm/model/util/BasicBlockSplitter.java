@@ -22,9 +22,11 @@ import com.carrotsearch.hppc.IntIndexedContainer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
@@ -39,7 +41,6 @@ public class BasicBlockSplitter {
     private IntIndexedContainer previousPtr;
     private IntIndexedContainer firstPtr;
     private ByteIndexedContainer isLastInSequence;
-    private BasicBlock[] variableDefinedAt;
 
     public BasicBlockSplitter(Program program) {
         this.program = program;
@@ -60,8 +61,6 @@ public class BasicBlockSplitter {
             firstPtr.add(i);
             isLastInSequence.add((byte) 1);
         }
-
-        variableDefinedAt = ProgramUtils.getVariableDefinitionPlaces(program);
     }
 
     public BasicBlock split(BasicBlock block, Instruction afterInstruction) {
@@ -126,7 +125,7 @@ public class BasicBlockSplitter {
                 boolean isExceptionHandler = source.getTryCatchBlocks().stream()
                         .anyMatch(tryCatch -> tryCatch.getHandler() == block);
                 if (isExceptionHandler) {
-                    fixIncomingsInExceptionHandler(source, incomingsBySource.get(source));
+                    fixIncomingsInExceptionHandler(source, block);
                 } else {
                     BasicBlock newSource = program.basicBlockAt(mappings[source.getIndex()]);
                     for (Incoming incoming : incomingsBySource.get(source)) {
@@ -139,39 +138,75 @@ public class BasicBlockSplitter {
         RedundantJumpElimination.optimize(program);
     }
 
-    private void fixIncomingsInExceptionHandler(BasicBlock source, List<Incoming> incomings) {
+    /*
+     * Incomings of a handler phi that come from one protected block are ordered: first goes the value
+     * that is visible at the beginning of the block, then go values defined in the block, in order
+     * of their definitions. After split, each part of the block gets the same structure: the value visible
+     * at the beginning of the part (i.e. the last value of the previous part), followed by values
+     * defined in the part.
+     */
+    private void fixIncomingsInExceptionHandler(BasicBlock source, BasicBlock handler) {
         List<BasicBlock> sourceParts = buildBasicBlocksSequence(source);
         assert sourceParts.get(0) == source;
-        Map<Variable, List<Incoming>> incomingsByValue = groupIncomingsByValue(incomings);
-        Map<Phi, Variable> lastDefinedValues = new HashMap<>();
-
-        for (Incoming incoming : incomings) {
-            if (variableDefinedAt[incoming.getValue().getIndex()] != source) {
-                lastDefinedValues.put(incoming.getPhi(), incoming.getValue());
-            }
-        }
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
-        for (BasicBlock block : sourceParts) {
-            if (block != source) {
-                for (Map.Entry<Phi, Variable> lastDefinedEntry : lastDefinedValues.entrySet()) {
-                    Incoming incomingCopy = new Incoming();
-                    incomingCopy.setSource(block);
-                    incomingCopy.setValue(lastDefinedEntry.getValue());
-                    lastDefinedEntry.getKey().getIncomings().add(incomingCopy);
+        List<List<Variable>> definedVarsByPart = new ArrayList<>(sourceParts.size());
+        Set<Variable> definedVars = new HashSet<>();
+        for (BasicBlock part : sourceParts) {
+            List<Variable> definedVarsInPart = ProgramUtils.getVariablesDefinedInBlock(part, defExtractor);
+            definedVarsByPart.add(definedVarsInPart);
+            definedVars.addAll(definedVarsInPart);
+        }
+
+        for (Phi phi : handler.getPhis()) {
+            int insertionIndex = -1;
+            List<Incoming> group = new ArrayList<>();
+            for (int i = 0; i < phi.getIncomings().size(); ++i) {
+                Incoming incoming = phi.getIncomings().get(i);
+                if (incoming.getSource() == source) {
+                    if (insertionIndex < 0) {
+                        insertionIndex = i;
+                    }
+                    group.add(phi.getIncomings().remove(i--));
+                }
+            }
+            if (insertionIndex < 0) {
+                continue;
+            }
+
+            List<Incoming> newGroup = new ArrayList<>();
+            Map<Variable, List<Incoming>> incomingsByValue = new HashMap<>();
+            Variable lastValue = null;
+            for (Incoming incoming : group) {
+                if (definedVars.contains(incoming.getValue())) {
+                    incomingsByValue.computeIfAbsent(incoming.getValue(), v -> new ArrayList<>()).add(incoming);
+                } else {
+                    newGroup.add(incoming);
+                    lastValue = incoming.getValue();
                 }
             }
 
-            List<Variable> definedVars = ProgramUtils.getVariablesDefinedInBlock(block, defExtractor);
-            for (Variable definedVar : definedVars) {
-                List<Incoming> incomingsOfDefinedVar = incomingsByValue.get(definedVar);
-                if (incomingsOfDefinedVar != null) {
-                    for (Incoming incoming : incomingsOfDefinedVar) {
-                        incoming.setSource(block);
-                        lastDefinedValues.put(incoming.getPhi(), definedVar);
+            for (int i = 0; i < sourceParts.size(); ++i) {
+                BasicBlock part = sourceParts.get(i);
+                if (i > 0 && lastValue != null) {
+                    Incoming entryIncoming = new Incoming();
+                    entryIncoming.setSource(part);
+                    entryIncoming.setValue(lastValue);
+                    newGroup.add(entryIncoming);
+                }
+                for (Variable definedVar : definedVarsByPart.get(i)) {
+                    List<Incoming> incomingsOfDefinedVar = incomingsByValue.get(definedVar);
+                    if (incomingsOfDefinedVar != null) {
+                        for (Incoming incoming : incomingsOfDefinedVar) {
+                            incoming.setSource(part);
+                            newGroup.add(incoming);
+                        }
+                        lastValue = definedVar;
                     }
                 }
             }
+
+            phi.getIncomings().addAll(insertionIndex, newGroup);
         }
     }
 
@@ -185,13 +220,5 @@ public class BasicBlockSplitter {
         result.add(block);
         Collections.reverse(result);
         return result;
-    }
-
-    private Map<Variable, List<Incoming>> groupIncomingsByValue(List<Incoming> incomings) {
-        Map<Variable, List<Incoming>> incoingsByValue = new HashMap<>();
-        for (Incoming incoming : incomings) {
-            incoingsByValue.computeIfAbsent(incoming.getValue(), i -> new ArrayList<>()).add(incoming);
-        }
-        return incoingsByValue;
     }
 }
