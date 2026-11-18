@@ -1,0 +1,6 @@
+$start
+    invokeStatic `Foo.bar()V`
+    goto $catch
+    catch java.lang.RuntimeException goto $catch
+$catch
+    return

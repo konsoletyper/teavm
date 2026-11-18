@@ -105,6 +105,7 @@ import org.teavm.model.text.ListingBuilder;
 import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.util.ModelUtils;
+import org.teavm.model.util.ProgramChecker;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.RegisterAllocator;
 import org.teavm.parsing.resource.ResourceProvider;
@@ -818,6 +819,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     var context = new MethodOptimizationContextImpl(method);
                     inlining.apply(program, method.getReference());
                     new UnusedVariableElimination().optimize(context, program);
+                    if (ProgramChecker.ENABLED) {
+                        ProgramChecker.verify(program, method, "after inlining");
+                    }
                 }
             }
 
@@ -874,9 +878,15 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     for (MethodOptimization optimization : getOptimizations()) {
                         changed |= optimization.optimize(context, optimizedProgram);
                     }
+                    if (ProgramChecker.ENABLED) {
+                        ProgramChecker.verify(optimizedProgram, method, "after optimization round");
+                    }
                 } while (changed);
 
                 target.afterOptimizations(optimizedProgram, method);
+                if (ProgramChecker.ENABLED) {
+                    ProgramChecker.verify(optimizedProgram, method, "after backend transformations");
+                }
                 var categoryProvider = target.variableCategoryProvider();
                 if (categoryProvider != null) {
                     var allocator = new RegisterAllocator(categoryProvider);

@@ -1,0 +1,4 @@
+$start
+    @a := phi @b from $start
+    @b := invokeStatic `Foo.foo()I`
+    goto $start

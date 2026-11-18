@@ -121,6 +121,9 @@ tasks.withType<Test>().configureEach {
     systemProperty("teavm.junit.wasm-gc.disasm", localProperties.get("teavm.tests.wasm-gc.disasm")
         .orElse("false").get())
 
+    // Checks IR invariants at some points of compilation pipeline, see ProgramChecker
+    systemProperty("teavm.checkIr", localProperties.get("teavm.tests.checkIr").orElse("false").get())
+
     systemProperty("teavm.junit.bootstrap-wasm-gc", bootstrapWasmGCEnabled.toString())
     systemProperty("teavm.junit.bootstrap-wasm-gc.runner", browser)
     if (bootstrapWasmGCEnabled) {

@@ -62,6 +62,9 @@ Also, setting `teavm.tests.optimized` to true will compile each test twice: once
 
 ALWAYS pass all of these properties to Gradle, since user may override their value in local Gradle config.
 
+When you write or update a pass that *can* change IR, you SHOULD run tests with `teavm.tests.checkIr`.
+This will make tests run longer, but this option will turn verification of IR integrity after each pass.
+
 
 # Performance benchmarks
 

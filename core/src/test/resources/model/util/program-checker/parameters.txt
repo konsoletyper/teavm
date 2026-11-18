@@ -1,0 +1,4 @@
+$start
+    invokeStatic `Foo.bar(II)V` @p0, @p1
+    @p1 := invokeStatic `Foo.foo()I`
+    return @p2

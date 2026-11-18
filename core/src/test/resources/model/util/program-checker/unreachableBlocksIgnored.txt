@@ -1,0 +1,7 @@
+$start
+    @a := invokeStatic `Foo.foo()I`
+    return @a
+$dead
+    @b := phi @c from $start
+    @a := invokeStatic `Foo.foo()I`
+    return @undefined
