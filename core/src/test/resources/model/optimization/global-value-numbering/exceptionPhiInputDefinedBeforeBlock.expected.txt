@@ -1,0 +1,18 @@
+$start
+    @a := invokeStatic `Foo.foo()I`
+    @b := invokeStatic `Foo.foo()I`
+    @v := 0
+    @c := @a + @b as int
+    goto $body
+$body
+    invokeStatic `Foo.bar()V`
+    @v_1 := @c
+    invokeStatic `Foo.baz()V`
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+$catch
+    @w := phi @v from $body, @v_1 from $body
+    return @w
+$end
+    @u := @v_1 + @c as int
+    return @u

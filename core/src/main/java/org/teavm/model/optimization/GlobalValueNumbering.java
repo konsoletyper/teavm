@@ -30,6 +30,7 @@ import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
@@ -70,6 +71,9 @@ import org.teavm.model.util.ProgramUtils;
 public class GlobalValueNumbering implements MethodOptimization {
     private Map<String, KnownValue> knownValues = new HashMap<>();
     private boolean eliminate;
+    private int assignReceiver = -1;
+    private int assignValue;
+    private boolean[] exceptionPhiInputs;
     private int[] map;
     private int[] replaceMap;
     private boolean[] deletedVars;
@@ -111,6 +115,7 @@ public class GlobalValueNumbering implements MethodOptimization {
             replaceMap[i] = i;
         }
         deletedVars = new boolean[program.variableCount()];
+        exceptionPhiInputs = new boolean[program.variableCount()];
         preprocessConstants();
         List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
 
@@ -133,6 +138,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                     block.setExceptionVariable(program.variableAt(var));
                 }
 
+                markExceptionPhiInputs(block, outgoings.get(blockIndex), true);
                 for (Instruction currentInsn : block) {
                     evaluatedConstant = null;
                     currentInsn.acceptVisitor(optimizer);
@@ -140,6 +146,14 @@ public class GlobalValueNumbering implements MethodOptimization {
                         affected = true;
                         currentInsn.delete();
                         eliminate = false;
+                    } else if (assignReceiver >= 0) {
+                        affected = true;
+                        AssignInstruction newInsn = new AssignInstruction();
+                        newInsn.setAssignee(program.variableAt(assignValue));
+                        newInsn.setReceiver(program.variableAt(assignReceiver));
+                        newInsn.setLocation(currentInsn.getLocation());
+                        currentInsn.replace(newInsn);
+                        assignReceiver = -1;
                     } else if (evaluatedConstant != null) {
                         if (evaluatedConstant instanceof Integer) {
                             IntegerConstantInstruction newInsn = new IntegerConstantInstruction();
@@ -168,6 +182,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                         }
                     }
                 }
+                markExceptionPhiInputs(block, outgoings.get(blockIndex), false);
                 for (Incoming incoming : outgoings.get(blockIndex)) {
                     int value = replaceMap[incoming.getValue().getIndex()];
                     incoming.setValue(program.variableAt(value));
@@ -189,6 +204,24 @@ public class GlobalValueNumbering implements MethodOptimization {
         return affected;
     }
 
+    /*
+     * Inputs of exception handler phis that are defined by instructions of the protected block are bound
+     * to the position of their definitions. We can't replace them with an equivalent value defined somewhere else,
+     * since this would change the value the handler sees when an exception is thrown in the middle of the block.
+     * Instead, we keep an assignment at the original position.
+     */
+    private void markExceptionPhiInputs(BasicBlock block, List<Incoming> outgoings, boolean value) {
+        for (Incoming incoming : outgoings) {
+            BasicBlock target = incoming.getPhi().getBasicBlock();
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                if (tryCatch.getHandler() == target) {
+                    exceptionPhiInputs[incoming.getValue().getIndex()] = value;
+                    break;
+                }
+            }
+        }
+    }
+
     private void preprocessConstants() {
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Instruction instruction : block) {
@@ -198,10 +231,6 @@ public class GlobalValueNumbering implements MethodOptimization {
     }
 
     private void bind(int var, String value) {
-        bind(var, value, false);
-    }
-
-    private void bind(int var, String value, boolean noReplace) {
         String name = program.variableAt(map[var]).getDebugName();
         if (name == null || namesPreserved) {
             name = "";
@@ -221,7 +250,10 @@ public class GlobalValueNumbering implements MethodOptimization {
         }
         if (known != null && dominates(known.location, currentBlockIndex) && known.value != var && namesCompatible) {
             map[var] = known.value;
-            if (!noReplace) {
+            if (exceptionPhiInputs[var]) {
+                assignReceiver = var;
+                assignValue = known.value;
+            } else {
                 replaceMap[var] = known.value;
                 deletedVars[var] = true;
                 eliminate = true;
@@ -580,6 +612,11 @@ public class GlobalValueNumbering implements MethodOptimization {
                         return;
                     }
                 }
+            }
+            if (exceptionPhiInputs[insn.getReceiver().getIndex()]) {
+                insn.setAssignee(program.variableAt(replaceMap[insn.getAssignee().getIndex()]));
+                map[insn.getReceiver().getIndex()] = map[insn.getAssignee().getIndex()];
+                return;
             }
             if (insn.getReceiver().getDebugName() != null) {
                 insn.getAssignee().setDebugName(insn.getReceiver().getDebugName());
