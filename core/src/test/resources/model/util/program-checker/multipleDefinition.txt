@@ -1,0 +1,4 @@
+$start
+    @a := invokeStatic `Foo.foo()I`
+    @a := invokeStatic `Foo.foo()I`
+    return @a

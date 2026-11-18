@@ -1,0 +1,15 @@
+$start
+    @c := invokeStatic `Foo.foo()I`
+    if @c == 0 then goto $left else goto $try
+$left
+    @v := invokeStatic `Foo.foo()I`
+    goto $try
+$try
+    invokeStatic `Foo.bar()V`
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+$catch
+    @w := phi @v from $try
+    return @w
+$end
+    return @c

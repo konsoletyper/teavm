@@ -1,0 +1,12 @@
+$start
+    @c := invokeStatic `Foo.foo()I`
+    if @c == 0 then goto $left else goto $right
+$left
+    @a := invokeStatic `Foo.foo()I`
+    @a_1 := invokeStatic `Foo.foo()I`
+    goto $join
+$right
+    goto $join
+$join
+    @b := phi @a from $left, @a_1 from $left, @c from $right
+    return @b

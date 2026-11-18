@@ -50,6 +50,7 @@ import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.model.util.PhiUpdater;
+import org.teavm.model.util.ProgramChecker;
 import org.teavm.model.util.ProgramNodeSplittingBackend;
 import org.teavm.model.util.ProgramUtils;
 
@@ -109,6 +110,9 @@ public class Parser {
 
             while (program.variableCount() <= method.parameterCount()) {
                 program.createVariable();
+            }
+            if (ProgramChecker.ENABLED) {
+                ProgramChecker.verify(program, method, "after parsing");
             }
         }
 
