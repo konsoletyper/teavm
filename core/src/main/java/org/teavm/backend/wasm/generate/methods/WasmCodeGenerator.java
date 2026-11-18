@@ -148,6 +148,10 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
     // For each variable defined by a constant: emitter of this constant. Such instructions are not emitted
     // at the place of definition, instead, constant is materialized at each usage
     private ConstantEmitter[] constants;
+    // Variables defined by null constants. When such variable is used as a phi input, the type of null
+    // is taken from phi receiver rather than from the type inferred for the variable, since the same
+    // null constant may be shared between phis of incompatible types.
+    private boolean[] nullConstants;
     private UsageExtractor usageExtractor = new UsageExtractor();
     private List<Variable> handlerPhiValues = new ArrayList<>();
     private List<Variable> handlerPhiReceivers = new ArrayList<>();
@@ -200,11 +204,15 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         branchConditionCounts = new int[program.variableCount()];
         comparisons = new Comparison[program.variableCount()];
         constants = new ConstantEmitter[program.variableCount()];
+        nullConstants = new boolean[program.variableCount()];
         for (var block : program.getBasicBlocks()) {
             for (var tryCatch : block.getTryCatchBlocks()) {
                 exceptionHandlers[tryCatch.getHandler().getIndex()] = true;
             }
             for (var insn : block) {
+                if (insn instanceof NullConstantInstruction nullConstant) {
+                    nullConstants[nullConstant.getReceiver().getIndex()] = true;
+                }
                 insn.acceptVisitor(usageExtractor);
                 if (usageExtractor.getUsedVariables() != null) {
                     for (var usage : usageExtractor.getUsedVariables()) {
@@ -249,6 +257,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         branchConditionCounts = null;
         comparisons = null;
         constants = null;
+        nullConstants = null;
         targetPhis.clear();
         this.currentMethod = null;
         this.currentProgram = null;
@@ -429,7 +438,8 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
             for (var i = 0; i < handlerPhiValues.size(); ++i) {
                 var value = handlerPhiValues.get(i);
                 if (!handlerDefinedVariables.contains(value.getIndex())) {
-                    emitLocal(builder, value).setLocal(mapToLocal(handlerPhiReceivers.get(i)));
+                    var receiver = handlerPhiReceivers.get(i);
+                    emitPhiInput(builder, value, receiver).setLocal(mapToLocal(receiver));
                 }
             }
         }
@@ -476,7 +486,8 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         for (var definedVar : handlerDefinitionExtractor.getDefinedVariables()) {
             for (var i = 0; i < handlerPhiValues.size(); ++i) {
                 if (handlerPhiValues.get(i) == definedVar) {
-                    emitLocal(builder, definedVar).setLocal(mapToLocal(handlerPhiReceivers.get(i)));
+                    var receiver = handlerPhiReceivers.get(i);
+                    emitPhiInput(builder, definedVar, receiver).setLocal(mapToLocal(receiver));
                 }
             }
         }
@@ -1797,10 +1808,22 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
                 builder.setCurrentLocation(builder.list.getBreakTarget().getLocation());
             }
         }
-        for (var arg : extractPhiArgs(target)) {
-            emitLocal(builder, arg);
+        for (var phi : target.getPhis()) {
+            for (var incoming : phi.getIncomings()) {
+                if (incoming.getSource() == currentBlock) {
+                    emitPhiInput(builder, incoming.getValue(), phi.getReceiver());
+                }
+            }
         }
         readPhis(builder, target);
+    }
+
+    private WasmInstructionBuilder emitPhiInput(WasmInstructionBuilder builder, Variable value, Variable receiver) {
+        if (nullConstants[value.getIndex()]) {
+            var type = mapToLocal(receiver).getType();
+            return type instanceof WasmType.Reference ref ? builder.nullConst(ref) : builder.i32Const(0);
+        }
+        return emitLocal(builder, value);
     }
 
     private void readPhis(WasmInstructionBuilder builder, BasicBlock target) {

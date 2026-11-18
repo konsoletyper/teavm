@@ -406,9 +406,17 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                 .call(classInfoType.classObjectFunction());
     }
 
+    /*
+     * Null constant shared between several instructions may get contradictory types (since in Wasm GC
+     * even null has a type), so we give each instruction its own null constant, inserted right before it.
+     * Phi inputs are left intact: WasmCodeGenerator takes type of null from the phi receiver.
+     * We don't insert anything for phi inputs, since otherwise we'd have to care about position of
+     * definition of exception handler phi inputs within protected block.
+     */
     private void eliminateMultipleNullConstantUsages(Program program) {
         var nulls = new boolean[program.variableCount()];
-        var usageCount = new int[program.variableCount()];
+        var insnUsageCount = new int[program.variableCount()];
+        var phiUsageCount = new int[program.variableCount()];
         var locations = new TextLocation[program.variableCount()];
         var usageExtractor = new UsageExtractor();
         for (var block : program.getBasicBlocks()) {
@@ -417,7 +425,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                 var usedVars = usageExtractor.getUsedVariables();
                 if (usedVars != null) {
                     for (var usedVar : usedVars) {
-                        usageCount[usedVar.getIndex()]++;
+                        insnUsageCount[usedVar.getIndex()]++;
                     }
                 }
                 if (insn instanceof NullConstantInstruction) {
@@ -428,26 +436,19 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             }
             for (var phi : block.getPhis()) {
                 for (var input : phi.getIncomings()) {
-                    usageCount[input.getValue().getIndex()]++;
+                    phiUsageCount[input.getValue().getIndex()]++;
                 }
-            }
-        }
-
-        for (var i = 0; i < program.variableCount(); ++i) {
-            if (nulls[i]) {
-                if (usageCount[i] <= 1) {
-                    nulls[i] = false;
-                }
-            } else {
-                usageCount[i] = 0;
             }
         }
 
         var hasSomethingToUpdate = false;
-        for (var i = program.variableCount() - 1; i >= 0; --i) {
-            if (nulls[i] && usageCount[i] > 1) {
-                hasSomethingToUpdate = true;
-                break;
+        for (var i = 0; i < program.variableCount(); ++i) {
+            if (nulls[i]) {
+                if (insnUsageCount[i] == 0 || insnUsageCount[i] + phiUsageCount[i] <= 1) {
+                    nulls[i] = false;
+                } else {
+                    hasSomethingToUpdate = true;
+                }
             }
         }
         if (!hasSomethingToUpdate) {
@@ -459,8 +460,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
 
             @Override
             public Variable apply(Variable variable) {
-                if (variable.getIndex() >= nulls.length || !nulls[variable.getIndex()]
-                        || usageCount[variable.getIndex()] == 0) {
+                if (variable.getIndex() >= nulls.length || !nulls[variable.getIndex()]) {
                     return variable;
                 }
                 var nullConstant = new NullConstantInstruction();
@@ -475,26 +475,13 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         for (var block : program.getBasicBlocks()) {
             for (var insn : block) {
                 if (insn instanceof NullConstantInstruction nullConst) {
-                    var variable = nullConst.getReceiver();
-                    if (variable.getIndex() < nulls.length && nulls[variable.getIndex()]
-                            && usageCount[variable.getIndex()] > 1) {
+                    var index = nullConst.getReceiver().getIndex();
+                    if (index < nulls.length && nulls[index] && phiUsageCount[index] == 0) {
                         insn.delete();
                     }
                 } else {
                     mapFunction.instruction = insn;
                     insn.acceptVisitor(mapper);
-                }
-            }
-            for (var phi : block.getPhis()) {
-                for (var input : phi.getIncomings()) {
-                    var index = input.getValue().getIndex();
-                    if (index < nulls.length && nulls[index] && usageCount[index]++ > 0) {
-                        var nullConstant = new NullConstantInstruction();
-                        nullConstant.setReceiver(program.createVariable());
-                        nullConstant.setLocation(locations[index]);
-                        input.setValue(nullConstant.getReceiver());
-                        input.getSource().getLastInstruction().insertPrevious(nullConstant);
-                    }
                 }
             }
         }
