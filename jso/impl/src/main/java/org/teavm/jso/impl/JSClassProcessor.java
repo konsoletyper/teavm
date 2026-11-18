@@ -90,6 +90,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
@@ -389,7 +390,7 @@ class JSClassProcessor {
                             wrap.setMethod(new MethodReference(JS_WRAPPER_CLASS, "wrap", JS_OBJECT, OBJECT));
                             wrap.setArguments(incoming.getValue());
                             wrap.setReceiver(program.createVariable());
-                            incoming.getSource().getLastInstruction().insertPrevious(wrap);
+                            insertPhiInputWrap(block, incoming.getSource(), incoming.getValue(), wrap);
                             incoming.setValue(wrap.getReceiver());
                         }
                     }
@@ -400,6 +401,35 @@ class JSClassProcessor {
             types = new JSTypeInference(typeHelper, classSource, program, methodReference, wasmGC);
             types.ensure();
         }
+    }
+
+    private void insertPhiInputWrap(BasicBlock target, BasicBlock source, Variable value, Instruction wrap) {
+        var isExceptionEdge = false;
+        for (var tryCatch : source.getTryCatchBlocks()) {
+            if (tryCatch.getHandler() == target) {
+                isExceptionEdge = true;
+                break;
+            }
+        }
+        if (!isExceptionEdge) {
+            source.getLastInstruction().insertPrevious(wrap);
+            return;
+        }
+
+        // Value of exception handler phi input is bound to the position of its definition within
+        // protected block, so wrapper must go immediately after the definition. If value is defined
+        // outside of the protected block, it's the value at block entry, so wrapper goes first.
+        var definitionExtractor = new DefinitionExtractor();
+        for (var insn : source) {
+            insn.acceptVisitor(definitionExtractor);
+            for (var definedVar : definitionExtractor.getDefinedVariables()) {
+                if (definedVar == value) {
+                    insn.insertNext(wrap);
+                    return;
+                }
+            }
+        }
+        source.addFirst(wrap);
     }
 
     private void processInvokeArgs(InvokeInstruction invoke, MethodReader methodToInvoke) {

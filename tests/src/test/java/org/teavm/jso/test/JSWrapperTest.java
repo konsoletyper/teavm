@@ -408,6 +408,30 @@ public class JSWrapperTest {
         }
     }
 
+    @Test
+    public void wrapExceptionHandlerPhiInput() {
+        assertEquals("java", String.valueOf(jsValueInTry(true, false)));
+        assertEquals("js", String.valueOf(jsValueInTry(false, true)));
+    }
+
+    private static Object jsValueInTry(boolean throwBefore, boolean throwAfter) {
+        Object o = "java";
+        try {
+            throwIf(throwBefore);
+            o = JSString.valueOf("js");
+            throwIf(throwAfter);
+        } catch (IllegalStateException e) {
+            return o;
+        }
+        return null;
+    }
+
+    private static void throwIf(boolean condition) {
+        if (condition) {
+            throw new IllegalStateException();
+        }
+    }
+
     interface JArraySupplier extends JSObject {
         J[] get();
     }

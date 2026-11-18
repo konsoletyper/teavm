@@ -1047,6 +1047,38 @@ public class VMTest {
         }
     }
 
+    @Test
+    public void nullConstantAsExceptionHandlerPhiInput() {
+        var result = new ArrayList<String>();
+        var nulls = new ArrayList<Object>();
+        for (var i = 0; i < 3; ++i) {
+            // the same null constant is used both by instruction and by exception handler phi
+            String s = null;
+            nulls.add(s);
+            try {
+                s = valueOrThrow(i);
+                throwIfZero(i);
+            } catch (IllegalStateException e) {
+                result.add(String.valueOf(s));
+            }
+        }
+        assertEquals(List.of("v0", "null"), result);
+        assertEquals(3, nulls.size());
+    }
+
+    private static String valueOrThrow(int i) {
+        if (i == 1) {
+            throw new IllegalStateException();
+        }
+        return "v" + i;
+    }
+
+    private static void throwIfZero(int i) {
+        if (i == 0) {
+            throw new IllegalStateException();
+        }
+    }
+
     static class Key {
         boolean valid = true;
         Object attachment;
