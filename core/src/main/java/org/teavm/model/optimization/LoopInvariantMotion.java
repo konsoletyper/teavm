@@ -29,9 +29,11 @@ import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.Variable;
 import org.teavm.model.analysis.NullnessInformation;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
+import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
@@ -78,11 +80,14 @@ public class LoopInvariantMotion implements NullnessAwareOptimization {
         UsageExtractor useExtractor = new UsageExtractor();
         LoopInvariantAnalyzer analyzer = new LoopInvariantAnalyzer(nullness);
         CopyConstantVisitor constantCopier = new CopyConstantVisitor();
+        var outgoings = ProgramUtils.getPhiOutputs(program);
+        boolean[] exceptionPhiInputs = new boolean[program.variableCount()];
 
         while (!stack.isEmpty()) {
             int v = stack.pop();
             Loop defLoop = graph.loopAt(v);
             BasicBlock block = program.basicBlockAt(v);
+            markExceptionPhiInputs(block, outgoings.get(v), exceptionPhiInputs, true);
             Instruction nextInsn;
             insnLoop: for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
                 nextInsn = insn.getNext();
@@ -103,6 +108,10 @@ public class LoopInvariantMotion implements NullnessAwareOptimization {
                     continue;
                 }
                 if (analyzer.sideEffect) {
+                    continue;
+                }
+                boolean exceptionPhiInput = exceptionPhiInputs[defs[0].getIndex()];
+                if (exceptionPhiInput && insn instanceof AssignInstruction) {
                     continue;
                 }
                 insn.acceptVisitor(useExtractor);
@@ -130,7 +139,21 @@ public class LoopInvariantMotion implements NullnessAwareOptimization {
                     }
                 }
 
-                insn.delete();
+                if (exceptionPhiInput) {
+                    // Exception handler sees the value at the position of its definition,
+                    // so leave an assignment there and move computation to a new variable
+                    Variable receiver = defs[0];
+                    Variable movedReceiver = program.createVariable();
+                    movedReceiver.setLabel(receiver.getLabel());
+                    AssignInstruction assign = new AssignInstruction();
+                    assign.setAssignee(movedReceiver);
+                    assign.setReceiver(receiver);
+                    assign.setLocation(insn.getLocation());
+                    insn.replace(assign);
+                    insn.acceptVisitor(new InstructionVariableMapper(var -> var == receiver ? movedReceiver : var));
+                } else {
+                    insn.delete();
+                }
                 BasicBlock preheader = program.basicBlockAt(getPreheader(defLoop.getHead()));
                 List<Instruction> newInstructions = new ArrayList<>();
                 Variable[] variableMap = null;
@@ -155,15 +178,31 @@ public class LoopInvariantMotion implements NullnessAwareOptimization {
                 }
                 newInstructions.add(insn);
                 preheader.getLastInstruction().insertPreviousAll(newInstructions);
-                defLocation[defs[0].getIndex()] = commonUseLoop != null ? commonUseLoop.getHead() : 0;
+                if (!exceptionPhiInput) {
+                    defLocation[defs[0].getIndex()] = commonUseLoop != null ? commonUseLoop.getHead() : 0;
+                }
                 affected = true;
             }
+            markExceptionPhiInputs(block, outgoings.get(v), exceptionPhiInputs, false);
             for (int succ : domGraph.outgoingEdges(v)) {
                 stack.push(succ);
             }
         }
 
         return affected;
+    }
+
+    private static void markExceptionPhiInputs(BasicBlock block, List<Incoming> outgoings, boolean[] inputs,
+            boolean value) {
+        for (Incoming incoming : outgoings) {
+            BasicBlock target = incoming.getPhi().getBasicBlock();
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                if (tryCatch.getHandler() == target) {
+                    inputs[incoming.getValue().getIndex()] = value;
+                    break;
+                }
+            }
+        }
     }
 
     private int getPreheader(int header) {

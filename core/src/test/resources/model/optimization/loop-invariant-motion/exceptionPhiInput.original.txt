@@ -1,0 +1,22 @@
+$start
+    @a := invokeStatic `Foo.foo()I`
+    @b := invokeStatic `Foo.foo()I`
+    @v := 0
+    goto $head
+$head
+    @p := phi @v from $start, @q from $next
+    invokeStatic `Foo.bar()V`
+    @q := @a + @b as int
+    invokeStatic `Foo.baz()V`
+    @r := @a * @b as int
+    goto $next
+    catch java.lang.RuntimeException goto $catch
+$next
+    @c := invokeStatic `Foo.foo()I`
+    if @c == 0 then goto $exit else goto $head
+$catch
+    @w := phi @p from $head, @q from $head
+    return @w
+$exit
+    @u := @q + @r as int
+    return @u
