@@ -533,7 +533,7 @@ public final class Duration
             boolean hasDigits = false;
             while (ptr < text.length()) {
                 char c = text.charAt(ptr);
-                if (c < '0' || c >= '9') {
+                if (c < '0' || c > '9') {
                     break;
                 }
                 ++ptr;
