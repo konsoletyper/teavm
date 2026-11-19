@@ -46,6 +46,7 @@ class AllBlocksCountVisitor implements StatementVisitor {
         if (statements == null) {
             return;
         }
+        exits = true;
         for (var statement : statements) {
             statement.acceptVisitor(this);
         }
@@ -93,7 +94,7 @@ class AllBlocksCountVisitor implements StatementVisitor {
         var outerBlock = currentBlock;
         currentBlock = statement;
         visit(statement.getBody());
-        exits = getCount(statement) > 0;
+        exits = statement.getCondition() != null || getCount(statement) > 0;
         currentBlock = outerBlock;
     }
 
@@ -110,12 +111,14 @@ class AllBlocksCountVisitor implements StatementVisitor {
     public void visit(BreakStatement statement) {
         var target = statement.getTarget();
         incrementBlock(target != null ? target : currentBlock);
+        exits = false;
     }
 
     @Override
     public void visit(ContinueStatement statement) {
         var target = statement.getTarget();
         incrementBlock(target != null ? target : currentBlock);
+        exits = false;
     }
 
     private void incrementBlock(IdentifiedStatement statement) {
