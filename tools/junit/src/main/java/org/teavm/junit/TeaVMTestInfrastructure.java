@@ -28,6 +28,7 @@ import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.parsing.resource.SPITransformingResourceProvider;
 
 /**
@@ -39,6 +40,9 @@ import org.teavm.parsing.resource.SPITransformingResourceProvider;
 final class TeaVMTestInfrastructure {
     static final ReferenceCache referenceCache = new ReferenceCache();
     static final ClassLoader classLoader;
+    // Shared across compilations, since some compiler plugins cache data (e.g. CLDR, Unicode tables)
+    // as long as they get the same resource provider
+    static final ResourceProvider resourceProvider;
     static final ClassHolderSource classSource;
     static final File outputDir;
     static final List<TestPlatformSupport<?>> platforms = new ArrayList<>();
@@ -46,6 +50,7 @@ final class TeaVMTestInfrastructure {
 
     static {
         classLoader = TeaVMTestInfrastructure.class.getClassLoader();
+        resourceProvider = new ClasspathResourceProvider(classLoader);
         classSource = getClassSource(classLoader);
 
         String outputPath = System.getProperty(PropertyNames.PATH_PARAM);
