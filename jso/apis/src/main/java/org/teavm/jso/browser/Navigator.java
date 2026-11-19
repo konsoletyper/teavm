@@ -38,6 +38,9 @@ public final class Navigator implements JSObject {
     public static native boolean isGeolocationAvailable();
 
     @JSProperty
+    public static native String getUserAgent();
+
+    @JSProperty
     public static native String getLanguage();
 
     @JSProperty
