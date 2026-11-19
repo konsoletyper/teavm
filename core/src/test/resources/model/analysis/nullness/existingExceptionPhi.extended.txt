@@ -10,7 +10,7 @@ $try
     goto $join
     catch java.lang.RuntimeException goto $handler
 $handler
-    @handled := phi @bar from $1, @bar_1 from $1
+    @handled := phi @bar from $try, @bar_1 from $try
     goto $join
 $join
     @joined := phi @bar_1 from $try, @handled from $handler
