@@ -34,6 +34,10 @@ jobs:
             args+=("-Pteavm.tests.${v}=false")
           fi
         done
+        # Running tests on JVM gives the same result in each job, so do it only once
+        if [[ "${{ matrix.platform }}" != "wasm-gc" ]]; then
+          args+=("-Pteavm.tests.jvm=false")
+        fi
         args+=("-Pteavm.localNodeJS=true")
         args+=("-Pteavm.tests.c.runWrapper=none")
         args+=("-Pteavm.tests.checkIr=true")

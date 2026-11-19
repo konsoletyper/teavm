@@ -83,8 +83,8 @@ public final class TeaVMJupiterExtension implements InvocationInterceptor, Execu
 
         if (skipJvm && !hasBackend) {
             return ConditionEvaluationResult.disabled("Neither the JVM nor any TeaVM backend would run this "
-                    + "test (teavm.junit.target is not set, @SkipJVM is present, or no backend is enabled "
-                    + "for it)");
+                    + "test (teavm.junit.target is not set, @SkipJVM is present or JVM runs are disabled, "
+                    + "or no backend is enabled for it)");
         }
         return ConditionEvaluationResult.enabled("TeaVM test");
     }

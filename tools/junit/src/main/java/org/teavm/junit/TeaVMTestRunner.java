@@ -113,8 +113,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             return;
         }
 
-        var skipJvmForClass = !testClass.isAnnotationPresent(SkipJVM.class);
-
         for (var child : children) {
             var description = describeChild(child);
 
@@ -123,7 +121,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             } else {
                 notifier.fireTestStarted(description);
                 var success = true;
-                if (skipJvmForClass && !child.isAnnotationPresent(SkipJVM.class)) {
+                if (!TeaVMTestExecutionSupport.isSkipJvm(child, testClass)) {
                     ClassHolder classHolder = classSource.get(child.getDeclaringClass().getName());
                     MethodHolder methodHolder = classHolder.getMethod(TeaVMTestExecutionSupport.getDescriptor(child));
                     success = runInJvm(child, notifier, TestEntryPointTransformer.getExpectedExceptions(methodHolder));
@@ -224,7 +222,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         boolean ran = false;
         boolean success = true;
 
-        if (!child.isAnnotationPresent(SkipJVM.class) && !testClass.isAnnotationPresent(SkipJVM.class)) {
+        if (!TeaVMTestExecutionSupport.isSkipJvm(child, testClass)) {
             ran = true;
             ClassHolder classHolder = classSource.get(child.getDeclaringClass().getName());
             MethodHolder methodHolder = classHolder.getMethod(TeaVMTestExecutionSupport.getDescriptor(child));

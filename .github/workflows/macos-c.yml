@@ -17,6 +17,7 @@ jobs:
           -Pteavm.tests.c=true \
           -Pteavm.tests.js=false \
           -Pteavm.tests.wasm-gc=false \
+          -Pteavm.tests.jvm=false \
           -Pteavm.tests.optimized=false \
           -Pteavm.tests.c.compiler=compile-c-macos-fast.sh \
           -Pteavm.tests.c.runWrapper=none \

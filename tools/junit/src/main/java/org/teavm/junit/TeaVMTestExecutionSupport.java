@@ -69,8 +69,16 @@ final class TeaVMTestExecutionSupport {
         return false;
     }
 
+    /**
+     * Whether tests run on JVM in addition to TeaVM backends. Can be turned off by {@code teavm.junit.jvm}
+     * system property, for example, when several jobs run the same tests with different backends,
+     * and it's enough to run them on JVM in only one of these jobs.
+     */
+    static final boolean JVM_ENABLED = Boolean.parseBoolean(System.getProperty(PropertyNames.JVM_ENABLED, "true"));
+
     static boolean isSkipJvm(Method method, Class<?> testClass) {
-        return method.isAnnotationPresent(SkipJVM.class) || testClass.isAnnotationPresent(SkipJVM.class);
+        return !JVM_ENABLED || method.isAnnotationPresent(SkipJVM.class)
+                || testClass.isAnnotationPresent(SkipJVM.class);
     }
 
     /** Compiles, runs, and cleans up one test method against every enabled backend. */

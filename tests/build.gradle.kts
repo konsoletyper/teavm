@@ -121,6 +121,9 @@ tasks.withType<Test>().configureEach {
     systemProperty("teavm.junit.wasm-gc.disasm", localProperties.get("teavm.tests.wasm-gc.disasm")
         .orElse("false").get())
 
+    // Whether to run tests on JVM in addition to TeaVM backends
+    systemProperty("teavm.junit.jvm", localProperties.get("teavm.tests.jvm").orElse("true").get())
+
     // Checks IR invariants at some points of compilation pipeline, see ProgramChecker
     systemProperty("teavm.checkIr", localProperties.get("teavm.tests.checkIr").orElse("false").get())
 
