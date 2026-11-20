@@ -18,6 +18,9 @@ package org.teavm.classlib.impl;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,7 +80,7 @@ public class ResourceBundleTransformer implements ClassHolderTransformer {
             if (resource != null) {
                 var properties = new Properties();
                 try (var input = resource.open()) {
-                    properties.load(input);
+                    properties.load(new StringReader(decodeProperties(input.readAllBytes())));
                 } catch (IOException e) {
                     // do nothing
                 }
@@ -85,6 +88,16 @@ public class ResourceBundleTransformer implements ClassHolderTransformer {
             }
         }
         return bundles;
+    }
+
+    private static String decodeProperties(byte[] bytes) {
+        // Since Java 9, properties resource bundles are read as UTF-8,
+        // falling back to ISO-8859-1 if the file is not valid UTF-8 (JEP 226)
+        try {
+            return StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
+        } catch (CharacterCodingException e) {
+            return new String(bytes, StandardCharsets.ISO_8859_1);
+        }
     }
 
     private Set<String> readImplementations() {
