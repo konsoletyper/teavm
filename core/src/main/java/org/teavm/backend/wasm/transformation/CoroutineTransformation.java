@@ -281,7 +281,7 @@ public class CoroutineTransformation {
                 outputTypes.addAll(conditional.getType().getOutputTypes());
             }
             var wrapper = new WasmBlock(false);
-            if (!outputTypes.isEmpty() || inputTypes.isEmpty()) {
+            if (!outputTypes.isEmpty() || !inputTypes.isEmpty()) {
                 wrapper.setType(functionTypes.get(new WasmSignature(outputTypes, List.copyOf(inputTypes)))
                         .asBlock());
             }

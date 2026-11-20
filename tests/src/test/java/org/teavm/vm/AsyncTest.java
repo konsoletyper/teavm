@@ -52,6 +52,18 @@ public class AsyncTest {
         assertEquals(23, getPrimitive());
     }
 
+    @Test
+    @AsyncEnabled
+    public void suspensionInNestedConditionalAfterSuspendingOperand() {
+        assertEquals(24, addNestedConditional(true, true));
+        assertEquals(25, addNestedConditional(false, true));
+        assertEquals(46, addNestedConditional(false, false));
+    }
+
+    private int addNestedConditional(boolean first, boolean second) {
+        return getPrimitive() + (first ? 1 : (second ? 2 : getPrimitive()));
+    }
+
     @Async
     private native int getPrimitive();
 
