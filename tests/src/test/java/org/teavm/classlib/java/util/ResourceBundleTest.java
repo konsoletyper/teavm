@@ -86,6 +86,18 @@ public class ResourceBundleTest {
         }
     }
 
+    @Test
+    public void utf8Bundle() {
+        ResourceBundle bundle = ResourceBundle.getBundle("testBundle", Locale.ENGLISH);
+        assertEquals("Gr\u00FC\u00DFe", bundle.getString("umlauts"));
+    }
+
+    @Test
+    public void latin1Bundle() {
+        ResourceBundle bundle = ResourceBundle.getBundle("testLatin1Bundle", Locale.ENGLISH);
+        assertEquals("Gr\u00FC\u00DFe", bundle.getString("umlauts"));
+    }
+
     /*
      * the class and constructor must be public so ResourceBundle has the
      * possibility to instantiate
