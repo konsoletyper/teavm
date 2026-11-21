@@ -184,7 +184,7 @@ public class WasmInstructionsOptimizer {
         new BranchRefCollector().visitMany(function.getBody());
         reconstructConditionals(function.getBody());
         writesByLocal = new Write[function.getLocalVariables().size()];
-        processList(function.getBody(), 0);
+        processList(function.getBody(), null);
         writesByLocal = null;
         branchRefs.clear();
         this.function = null;
@@ -748,11 +748,13 @@ public class WasmInstructionsOptimizer {
 
     /**
      * Processes the list in a new frame of the simulated stack. Values that were on the stack before the list
-     * are not visible, except for {@code inputCount} block parameters. Instructions that compute parameters
+     * are not visible, except for parameters of the block of the given type. Instructions that compute parameters
      * are outside of the list, so parameters can't be moved and are pushed with unknown first instruction.
      */
-    private void processList(WasmInstructionList list, int inputCount) {
-        arrayConstructionOptimizer.process(list, catchingTryDepth > 0);
+    private void processList(WasmInstructionList list, WasmBlockType type) {
+        arrayConstructionOptimizer.process(list, type, catchingTryDepth > 0);
+
+        var inputCount = WasmBlockType.inputCount(type);
 
         var savedStackTop = stackTop;
         stackTop = new StackEntry(list, null);
@@ -1096,7 +1098,7 @@ public class WasmInstructionsOptimizer {
         public void visit(WasmBlock instruction) {
             var inputs = WasmBlockType.inputCount(instruction.getType());
             var startInsn = pop(inputs, instruction);
-            processList(instruction.getBody(), inputs);
+            processList(instruction.getBody(), instruction.getType());
             push(startInsn, instruction.getType());
         }
 
@@ -1104,8 +1106,8 @@ public class WasmInstructionsOptimizer {
         public void visit(WasmConditional instruction) {
             var inputs = WasmBlockType.inputCount(instruction.getType());
             var startInsn = pop(1 + inputs, instruction);
-            processList(instruction.getThenBlock(), inputs);
-            processList(instruction.getElseBlock(), inputs);
+            processList(instruction.getThenBlock(), instruction.getType());
+            processList(instruction.getElseBlock(), instruction.getType());
             swapEmptyThen(instruction);
             removeConditionInversion(instruction);
             if (replaceWithBranch(instruction)) {
@@ -1334,7 +1336,7 @@ public class WasmInstructionsOptimizer {
             if (catching) {
                 catchingTryDepth++;
             }
-            processList(instruction.getBody(), 0);
+            processList(instruction.getBody(), null);
             if (catching) {
                 catchingTryDepth--;
             }
