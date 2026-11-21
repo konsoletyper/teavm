@@ -440,6 +440,70 @@ public class WasmArrayConstructionOptimizerTest {
         );
     }
 
+    @Test
+    public void overlappingConstructionsOptimizedTwice() {
+        var other = local(struct.getReference(), "other");
+        var otherData = local(data.getReference(), "otherData");
+        body.i32Const(1).setLocal(size).getGlobal(classInfo).getLocal(size).call(newArray).setLocal(array);
+        body.i32Const(1).setLocal(size).getGlobal(classInfo).getLocal(size).call(newArray).setLocal(other);
+        body.getLocal(array).structGet(struct, 1).teeLocal(arrayData).i32Const(0).i32Const(5).arraySet();
+        body.getLocal(other).structGet(struct, 1).teeLocal(otherData).i32Const(0).i32Const(6).arraySet();
+        body.getLocal(array).call(consume);
+        // Keep data of the second array alive, so that the second run can recognize its construction
+        body.getLocal(otherData).drop();
+        body.getLocal(other).return_();
+
+        // The first run leaves header of the first array on the stack across allocation of the second one,
+        // the second run must not place header of the second array below the first array's elements
+        new WasmInstructionsOptimizer().optimize(function);
+        new WasmDeadStoreOptimizer().optimize(function);
+        new WasmInstructionsOptimizer().optimize(function);
+        new WasmDeadStoreOptimizer().optimize(function);
+        assertCode(
+                "global.get $vt",
+                "global.get $cls",
+                "i32.const 1",
+                "call $newArray",
+                "local.set $other",
+                "i32.const 5",
+                "array.new_fixed $data 1",
+                "struct.new $Array",
+                "local.get $other",
+                "struct.get $Array $data",
+                "local.tee $otherData",
+                "i32.const 0",
+                "i32.const 6",
+                "array.set $data",
+                "call $consume",
+                "local.get $otherData",
+                "drop",
+                "local.get $other",
+                "return"
+        );
+    }
+
+    @Test
+    public void notOptimizedWhenStackChangesBeforeElement() {
+        body.allocate(1);
+        body.call(compute);
+        body.element(0, 7);
+        body.drop();
+        body.getLocal(array).return_();
+
+        assertNotOptimized();
+    }
+
+    @Test
+    public void notOptimizedWhenValueBelowAllocationConsumed() {
+        body.call(compute);
+        body.allocate(1);
+        body.drop();
+        body.element(0, 7);
+        body.getLocal(array).return_();
+
+        assertNotOptimized();
+    }
+
     private static WasmFunction function(String name, WasmType returnType, WasmType... parameterTypes) {
         var function = new WasmFunction(new WasmFunctionType(name, returnType, List.of(parameterTypes)));
         function.setName(name);

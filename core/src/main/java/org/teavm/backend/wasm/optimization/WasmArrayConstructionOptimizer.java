@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.backend.wasm.model.WasmArrayConstructor;
+import org.teavm.backend.wasm.model.WasmBlockType;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.instruction.WasmArrayNewFixed;
@@ -53,6 +54,7 @@ import org.teavm.backend.wasm.model.instruction.WasmSwitch;
 import org.teavm.backend.wasm.model.instruction.WasmTeeLocal;
 import org.teavm.backend.wasm.model.instruction.WasmThrow;
 import org.teavm.backend.wasm.model.instruction.WasmTry;
+import org.teavm.backend.wasm.model.instruction.WasmTypeInference;
 
 /**
  * <p>Replaces construction of an array of constant length, followed by assignments to all its elements,
@@ -103,6 +105,13 @@ import org.teavm.backend.wasm.model.instruction.WasmTry;
  * don't access neither array nor its data. Values of elements are kept on the operand stack, so constructions
  * may be nested, i.e. element can be another array, constructed between assignments.</p>
  *
+ * <p>Code generator spills all values to locals between statements, but it's not the case for code that was
+ * already optimized, e.g. by previous run of this optimization, which leaves header of the array on
+ * the stack. To handle this, height of the operand stack is tracked with {@link WasmTypeInference}.
+ * Instructions between allocation and the last assignment must not consume values that were on the stack
+ * before allocation, and each assignment must start at the same height as allocation, so that values
+ * of elements are placed right above header and previous elements.</p>
+ *
  * <p>Assignments to array and data locals are postponed, not removed, so it does not matter whether these
  * locals are read afterwards. Stores that turn out to be dead are removed by {@link WasmDeadStoreOptimizer}.
  * The same applies to locals that hold length and indexes: only reads of these locals are removed.
@@ -124,18 +133,27 @@ class WasmArrayConstructionOptimizer {
     private final List<Construction> completed = new ArrayList<>();
     private final Map<WasmLocal, Integer> constants = new HashMap<>();
     private final EffectVisitor effectVisitor = new EffectVisitor();
+    private WasmTypeInference typeInference;
     private boolean insideTry;
 
     /**
      * Processes top-level instructions of the given list.
      *
+     * @param type type of the block that owns the list, {@code null} if the block takes no parameters.
      * @param insideTry whether the list is (transitively) inside {@code try} that catches exceptions.
      */
-    void process(WasmInstructionList list, boolean insideTry) {
+    void process(WasmInstructionList list, WasmBlockType type, boolean insideTry) {
         this.insideTry = insideTry;
+        typeInference = new WasmTypeInference();
+        if (type != null) {
+            typeInference.typeStack.addAll(type.getInputTypes());
+        }
         var insn = list.getFirst();
         while (insn != null) {
-            insn = step(insn);
+            var next = step(insn);
+            for (; insn != next; insn = insn.getNext()) {
+                updateDepth(insn);
+            }
         }
         for (var construction : completed) {
             apply(construction);
@@ -143,6 +161,25 @@ class WasmArrayConstructionOptimizer {
         pending.clear();
         completed.clear();
         constants.clear();
+        typeInference = null;
+    }
+
+    /*
+     * Instructions between allocation and assignments must not consume values that were on the stack before
+     * allocation, since header of the array is placed above these values and consumed by struct.new
+     * after the last assignment. Matched instructions never do this, so it's safe to check this after matching.
+     */
+    private void updateDepth(WasmInstruction insn) {
+        insn.acceptVisitor(typeInference);
+        if (!pending.isEmpty()) {
+            var lowest = typeInference.getDepthBeforeLastInstructionOut();
+            pending.removeIf(construction -> construction.depth > lowest);
+        }
+    }
+
+    // Height of the operand stack before the current instruction
+    private int depth() {
+        return typeInference.typeStack.size();
     }
 
     private WasmInstruction step(WasmInstruction insn) {
@@ -151,9 +188,9 @@ class WasmArrayConstructionOptimizer {
                 var construction = pending.get(i);
                 WasmInstruction next = null;
                 if (construction.dataLocal == null && construction.arrayLocal == get.getLocal()) {
-                    next = matchUnwrap(get, get.getNext(), construction);
+                    next = matchUnwrap(get, get.getNext(), construction, depth());
                 } else if (construction.dataLocal == get.getLocal()) {
-                    next = matchElement(get, get.getNext(), construction);
+                    next = matchElement(get, get.getNext(), construction, depth());
                 }
                 if (next != null) {
                     return next;
@@ -193,11 +230,12 @@ class WasmArrayConstructionOptimizer {
 
         handleGeneric(call);
         write(arrayLocal);
-        var construction = new Construction(constructor, call, store, arrayLocal, length);
+        var construction = new Construction(constructor, call, store, arrayLocal, length,
+                depth() - call.getFunction().getType().getParameterTypes().size());
         pending.add(construction);
         if (store instanceof WasmTeeLocal) {
             // Code generator merges local.set and subsequent local.get of the same local into local.tee
-            var next = matchUnwrap(null, store.getNext(), construction);
+            var next = matchUnwrap(null, store.getNext(), construction, construction.depth);
             if (next == null) {
                 pending.remove(construction);
                 next = store.getNext();
@@ -207,7 +245,12 @@ class WasmArrayConstructionOptimizer {
         return store.getNext();
     }
 
-    private WasmInstruction matchUnwrap(WasmGetLocal get, WasmInstruction insn, Construction construction) {
+    /**
+     * @param startDepth height of the stack before the array is pushed, either by {@code get},
+     *     or by allocation.
+     */
+    private WasmInstruction matchUnwrap(WasmGetLocal get, WasmInstruction insn, Construction construction,
+            int startDepth) {
         var constructor = construction.constructor;
         if (!(insn instanceof WasmStructGet structGet) || structGet.getType() != constructor.getStructure()
                 || structGet.getFieldIndex() != constructor.getDataField()) {
@@ -231,7 +274,7 @@ class WasmArrayConstructionOptimizer {
         construction.dataStore = store;
         construction.dataLocal = dataLocal;
         if (store instanceof WasmTeeLocal) {
-            var next = matchElement(null, store.getNext(), construction);
+            var next = matchElement(null, store.getNext(), construction, startDepth);
             if (next == null) {
                 pending.remove(construction);
                 next = store.getNext();
@@ -241,7 +284,16 @@ class WasmArrayConstructionOptimizer {
         return store.getNext();
     }
 
-    private WasmInstruction matchElement(WasmGetLocal get, WasmInstruction index, Construction construction) {
+    /**
+     * @param startDepth height of the stack before data is pushed, either by {@code get}, or by the chain
+     *     of instructions starting from allocation.
+     */
+    private WasmInstruction matchElement(WasmGetLocal get, WasmInstruction index, Construction construction,
+            int startDepth) {
+        // Value of element is placed right above header and previous elements
+        if (startDepth != construction.depth) {
+            return null;
+        }
         var indexValue = constantValue(index);
         if (indexValue == null || indexValue != construction.elements.size()) {
             return null;
@@ -396,6 +448,8 @@ class WasmArrayConstructionOptimizer {
         final WasmInstruction arrayStore;
         final WasmLocal arrayLocal;
         final int length;
+        // Height of the stack before allocation, excluding arguments of allocating function
+        final int depth;
         WasmGetLocal unwrapGet;
         WasmStructGet unwrap;
         WasmInstruction dataStore;
@@ -403,8 +457,9 @@ class WasmArrayConstructionOptimizer {
         final List<Element> elements = new ArrayList<>();
 
         Construction(WasmArrayConstructor constructor, WasmCall call, WasmInstruction arrayStore,
-                WasmLocal arrayLocal, int length) {
+                WasmLocal arrayLocal, int length, int depth) {
             this.constructor = constructor;
+            this.depth = depth;
             this.call = call;
             this.arrayStore = arrayStore;
             this.arrayLocal = arrayLocal;
