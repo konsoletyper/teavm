@@ -19,6 +19,7 @@
 Error.stackTraceLimit = 250;
 
 let lastLauncher = null;
+let programOutput = false;
 
 window.addEventListener("message", event => {
     let request = event.data;
@@ -27,7 +28,7 @@ window.addEventListener("message", event => {
             processRequest(event, async () => {
                 const files = request.additionalFiles ? [...request.additionalFiles, request.file] : [request.file];
                 await appendFiles(files);
-                let launcher = prepareJsLauncher();
+                let launcher = prepareJsLauncher(request.programArguments);
                 lastLauncher = launcher;
                 await launcher(request.argument);
             });
@@ -48,7 +49,7 @@ window.addEventListener("message", event => {
                 const runtimeFileObj = { path: runtimeFile, type: "regular" };
                 const files = request.additionalFiles ? [...request.additionalFiles, runtimeFileObj] : [runtimeFileObj];
                 await appendFiles(files);
-                let launcher = await prepareWasmGCLauncher(request.file);
+                let launcher = await prepareWasmGCLauncher(request.file, request.programArguments);
                 lastLauncher = launcher;
                 await launcher(request.argument);
             });
@@ -79,6 +80,7 @@ window.addEventListener("unhandledrejection", event => {
 });
 
 function processRequest(event, processor) {
+    programOutput = event.data.programArguments !== undefined;
     (async function() {
         try {
             await new Promise((resolve, reject) => {
@@ -93,6 +95,7 @@ function processRequest(event, processor) {
             );
         } finally {
             uncaughtErrorHandler = null;
+            programOutput = false;
         }
     })();
 }
@@ -134,11 +137,11 @@ async function appendFileSingleAttempt(file) {
     }
 }
 
-function prepareJsLauncher() {
+function prepareJsLauncher(programArguments) {
     return async argument => {
         await new Promise((resolve, reject) => {
             let m = typeof main === "undefined" ? window.main : main;
-            m(argument ? [argument] : [], result => {
+            m(programArguments ?? (argument ? [argument] : []), result => {
                 if (result instanceof Error) {
                     reject(new Error(buildErrorMessage(result)));
                 } else {
@@ -236,14 +239,16 @@ async function prepareWasmLauncher(file) {
     }
 }
 
-async function prepareWasmGCLauncher(file) {
+async function prepareWasmGCLauncher(file, programArguments) {
     let outputBuffer = "";
     let outputBufferStderr = "";
     let resolveCallback = null;
     let rejectCallback = null;
 
     function putchar(charCode) {
-        if (charCode === 10) {
+        if (programArguments !== undefined) {
+            outputBuffer += String.fromCharCode(charCode);
+        } else if (charCode === 10) {
             log.push({ message: outputBuffer, type: "stdout" });
             outputBuffer = "";
         } else {
@@ -252,7 +257,9 @@ async function prepareWasmGCLauncher(file) {
     }
 
     function putcharStderr(charCode) {
-        if (charCode === 10) {
+        if (programArguments !== undefined) {
+            outputBufferStderr += String.fromCharCode(charCode);
+        } else if (charCode === 10) {
             log.push({ message: outputBufferStderr, type: "stderr" });
             outputBufferStderr = "";
         } else {
@@ -280,6 +287,19 @@ async function prepareWasmGCLauncher(file) {
     return async argument => {
         outputBuffer = "";
         outputBufferStderr = "";
+        if (programArguments !== undefined) {
+            try {
+                await teavm.exports.main(programArguments);
+            } finally {
+                if (outputBuffer !== "") {
+                    log.push({ message: outputBuffer, type: "stdout" });
+                }
+                if (outputBufferStderr !== "") {
+                    log.push({ message: outputBufferStderr, type: "stderr" });
+                }
+            }
+            return;
+        }
         let promise = new Promise((resolve, reject) => {
             resolveCallback = resolve;
             rejectCallback = reject;
@@ -313,6 +333,10 @@ let $rt_putStderrCustom = createOutputFunction(msg => {
 function createOutputFunction(printFunction) {
     let buffer = "";
     return msg => {
+        if (programOutput) {
+            printFunction(msg);
+            return;
+        }
         let index = 0;
         while (true) {
             let next = msg.indexOf('\n', index);

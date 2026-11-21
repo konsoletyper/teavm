@@ -38,6 +38,11 @@ java {
     }
 }
 
+// Compact source files require the Java 25 toolchain but are not supported by Checkstyle's parser.
+tasks.compileTestJava {
+    source("src/test/java25")
+}
+
 kotlin {
     jvmToolchain(25)
 }

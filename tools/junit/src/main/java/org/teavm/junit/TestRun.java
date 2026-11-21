@@ -22,11 +22,13 @@ class TestRun {
     private String name;
     private Method method;
     private String argument;
+    private TeaVMEntryPoint entryPoint;
 
     public TestRun(String name, Method method, String argument) {
         this.name = name;
         this.method = method;
         this.argument = argument;
+        entryPoint = method.getAnnotation(TeaVMEntryPoint.class);
     }
 
     TestRunGroup getGroup() {
@@ -43,5 +45,23 @@ class TestRun {
 
     String getArgument() {
         return argument;
+    }
+
+    TeaVMEntryPoint getEntryPoint() {
+        return entryPoint;
+    }
+
+    void checkOutput(String stdout, String stderr) {
+        if (entryPoint == null) {
+            return;
+        }
+        if (!stderr.isEmpty()) {
+            throw new AssertionError("Unexpected stderr from " + entryPoint.value() + ": " + stderr);
+        }
+        var actual = stdout.replace("\r\n", "\n");
+        if (!entryPoint.stdout().equals(actual)) {
+            throw new AssertionError("Unexpected stdout from " + entryPoint.value()
+                    + ": expected <" + entryPoint.stdout() + ">, got <" + actual + ">");
+        }
     }
 }

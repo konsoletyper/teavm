@@ -244,6 +244,7 @@ public class BrowserRunner {
     /**
      * Runs code in browser, passing every line it writes to stdout or stderr to the given listener
      * instead of printing it to stdout/stderr of the current process.
+     * Program-mode descriptors pass exact output chunks, including line terminators and final partial lines.
      */
     public void runTest(BrowserRunDescriptor run, BrowserOutputListener outputListener) throws IOException {
         while (!runTestOnce(run, outputListener)) {
@@ -300,6 +301,11 @@ public class BrowserRunner {
 
         if (run.getArgument() != null) {
             testNode.set("argument", nf.stringNode(run.getArgument()));
+        }
+        if (run.getProgramArguments() != null) {
+            var arguments = nf.arrayNode();
+            run.getProgramArguments().forEach(arguments::add);
+            testNode.set("programArguments", arguments);
         }
         array.add(testNode);
 
