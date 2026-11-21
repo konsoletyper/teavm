@@ -128,7 +128,8 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
                 }
             };
         }
-        return compile(configuration, targetSupplier, TestJsEntryPoint.class.getName(), path, ".js",
+        return compile(configuration, targetSupplier, entryPoint.entryPointClass(TestJsEntryPoint.class.getName()),
+                path, ".js",
                 postBuild, entryPoint::install, baseName);
     }
 

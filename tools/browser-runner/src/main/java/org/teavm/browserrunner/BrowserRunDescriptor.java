@@ -24,15 +24,22 @@ public class BrowserRunDescriptor {
     private final Collection<String> additionalFiles;
     private final String argument;
     private final boolean cached;
+    private final Collection<String> programArguments;
 
     public BrowserRunDescriptor(String name, String testPath, boolean module, Collection<String> additionalFiles,
             String argument, boolean cached) {
+        this(name, testPath, module, additionalFiles, argument, cached, null);
+    }
+
+    public BrowserRunDescriptor(String name, String testPath, boolean module, Collection<String> additionalFiles,
+            String argument, boolean cached, Collection<String> programArguments) {
         this.name = name;
         this.testPath = testPath;
         this.module = module;
         this.additionalFiles = additionalFiles;
         this.argument = argument;
-        this.cached = cached;
+        this.cached = cached && programArguments == null;
+        this.programArguments = programArguments;
     }
 
     public String getName() {
@@ -57,5 +64,9 @@ public class BrowserRunDescriptor {
 
     public boolean isCached() {
         return cached;
+    }
+
+    public Collection<String> getProgramArguments() {
+        return programArguments;
     }
 }

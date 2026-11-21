@@ -95,7 +95,8 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
                 throw new RuntimeException(e);
             }
         };
-        var result = compile(configuration, this::createCTarget, TestNativeEntryPoint.class.getName(), path, "",
+        var result = compile(configuration, this::createCTarget,
+                entryPoint.entryPointClass(TestNativeEntryPoint.class.getName()), path, "",
                 postBuild, entryPoint::install, baseName);
         if (result.success) {
             includeAndAttachAdditionalFiles(element, result.file);
