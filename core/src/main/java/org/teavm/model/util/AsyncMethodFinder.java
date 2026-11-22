@@ -27,6 +27,7 @@ import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.interop.Async;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
@@ -41,9 +42,11 @@ import org.teavm.runtime.Fiber;
 public class AsyncMethodFinder {
     private Set<MethodReference> asyncMethods = new HashSet<>();
     private DependencyInfo dependency;
-    private Map<MethodReference, Boolean> asyncFamilyMethods = new HashMap<>();
+    private Set<MethodReference> asyncFamilyMethods = new HashSet<>();
     private Set<MethodReference> readonlyAsyncMethods = Collections.unmodifiableSet(asyncMethods);
-    private Set<MethodReference> readonlyAsyncFamilyMethods = Collections.unmodifiableSet(asyncFamilyMethods.keySet());
+    private Set<MethodReference> readonlyAsyncFamilyMethods = Collections.unmodifiableSet(asyncFamilyMethods);
+    private Map<String, List<String>> subclasses = new HashMap<>();
+    private Set<MethodReference> methodVisitedByImplicitOverridesPass = new HashSet<>();
     private CallGraph callGraph;
     private ListableClassReaderSource classSource;
     private boolean hasAsyncMethods;
@@ -90,19 +93,55 @@ public class AsyncMethodFinder {
                 }
             }
         }
-        for (MethodReference method : asyncMethods) {
-            addOverriddenToFamily(method);
-        }
-        for (String clsName : classSource.getClassNames()) {
-            ClassReader cls = classSource.get(clsName);
-            for (MethodReader method : cls.getMethods()) {
-                addToFamily(method.getReference());
+        if (!asyncMethods.isEmpty()) {
+            for (var clsName : classSource.getClassNames()) {
+                var cls = classSource.get(clsName);
+                if (cls.getParent() != null && !cls.hasModifier(ElementModifier.INTERFACE)) {
+                    subclasses.computeIfAbsent(cls.getParent(), k -> new ArrayList<>()).add(clsName);
+                }
+                for (var itf : cls.getInterfaces()) {
+                    subclasses.computeIfAbsent(itf, k -> new ArrayList<>()).add(clsName);
+                }
             }
-        }
-        for (Map.Entry<MethodReference, Boolean> entry : new ArrayList<>(asyncFamilyMethods.entrySet())) {
-            if (!entry.getValue()) {
-                asyncFamilyMethods.remove(entry.getKey());
+            for (var methodRef : asyncMethods) {
+                var method = classSource.getMethod(methodRef);
+                if (method == null || method.hasModifier(ElementModifier.STATIC)
+                        || method.getLevel() == AccessLevel.PRIVATE || method.getName().equals("<init>")) {
+                    // Not virtual: no overridden methods, but it's still a call target that can suspend
+                    asyncFamilyMethods.add(methodRef);
+                } else {
+                    addOverriddenToFamily(methodRef);
+                    addImplicitOverrides(method, method.getOwnerName());
+                }
             }
+            subclasses.clear();
+            methodVisitedByImplicitOverridesPass.clear();
+        }
+    }
+
+    private void addImplicitOverrides(MethodReader method, String className) {
+        if (!methodVisitedByImplicitOverridesPass.add(new MethodReference(className, method.getDescriptor()))) {
+            return;
+        }
+        var clsSubclasses = subclasses.get(className);
+        if (clsSubclasses == null) {
+            return;
+        }
+        for (var subclassName : clsSubclasses) {
+            var subclass = classSource.get(subclassName);
+            var subclassMethod = subclass.getMethod(method.getDescriptor());
+            if (subclassMethod != null) {
+                continue;
+            }
+            for (var itfName : subclass.getInterfaces()) {
+                var itf = classSource.get(itfName);
+                var itfMethod = itf != null ? itf.getMethod(method.getDescriptor()) : null;
+                if (itfMethod == null || !(itfMethod.hasModifier(ElementModifier.STATIC)
+                        || itfMethod.getLevel() == AccessLevel.PRIVATE)) {
+                    addOverriddenToFamily(new MethodReference(itfName, method.getDescriptor()));
+                }
+            }
+            addImplicitOverrides(method, subclassName);
         }
     }
 
@@ -199,7 +238,9 @@ public class AsyncMethodFinder {
     }
 
     private void addOverriddenToFamily(MethodReference methodRef) {
-        asyncFamilyMethods.put(methodRef, true);
+        if (!asyncFamilyMethods.add(methodRef)) {
+            return;
+        }
         ClassReader cls = classSource.get(methodRef.getClassName());
         if (cls == null) {
             return;
@@ -207,32 +248,6 @@ public class AsyncMethodFinder {
         for (MethodReference overriddenMethod : findOverriddenMethods(cls, methodRef.getDescriptor())) {
             addOverriddenToFamily(overriddenMethod);
         }
-    }
-
-    private boolean addToFamily(MethodReference methodRef) {
-        Boolean cachedResult = asyncFamilyMethods.get(methodRef);
-        if (cachedResult != null) {
-            return cachedResult;
-        }
-        boolean result = addToFamilyCacheMiss(methodRef);
-        asyncFamilyMethods.put(methodRef, result);
-        return result;
-    }
-
-    private boolean addToFamilyCacheMiss(MethodReference methodRef) {
-        if (asyncMethods.contains(methodRef)) {
-            return true;
-        }
-        ClassReader cls = classSource.get(methodRef.getClassName());
-        if (cls == null) {
-            return false;
-        }
-        for (MethodReference overriddenMethod : findOverriddenMethods(cls, methodRef.getDescriptor())) {
-            if (addToFamily(overriddenMethod)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Set<MethodReference> findOverriddenMethods(ClassReader cls, MethodDescriptor methodDesc) {
@@ -263,12 +278,11 @@ public class AsyncMethodFinder {
             return;
         }
         MethodReader method = cls.getMethod(methodDesc);
-        if (method != null) {
-            if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL)) {
-                result.add(method.getReference());
-            }
+        if (method != null && !method.hasModifier(ElementModifier.STATIC)
+                && !method.hasModifier(ElementModifier.FINAL) && method.getLevel() != AccessLevel.PRIVATE) {
+            result.add(method.getReference());
         } else {
-            if (cls.getParent() != null) {
+            if (cls.getParent() != null && !cls.hasModifier(ElementModifier.INTERFACE)) {
                 findOverriddenMethods(cls.getParent(), methodDesc, result, visited);
             }
             for (String iface : cls.getInterfaces()) {
