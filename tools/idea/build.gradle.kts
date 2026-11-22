@@ -50,6 +50,12 @@ dependencies {
 }
 
 tasks {
+    // Checkstyle 13+ requires Java 21, while this module is built with Java 17 toolchain
+    withType<Checkstyle>().configureEach {
+        javaLauncher = project.javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
     composedJar {
         archiveFileName = "teavm-plugin.jar"
     }

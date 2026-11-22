@@ -3,7 +3,7 @@
 asm = "9.10.1"
 jetty = "12.1.9"
 shadow = "9.1.0"
-checkstyle = "10.21.0"
+checkstyle = "14.4.0"
 idea = "2024.1"
 idea-scala = "2024.1.25"
 maven = "3.5.4"

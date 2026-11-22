@@ -89,7 +89,7 @@ public final class TestComparator {
                                         functionNames.put(index, name);
                                     }
                                 };
-                            };
+                            }
                         });
                         nameParser.parse(new WasmBinaryReader(AddressListener.EMPTY, sectionBytes));
                     };
@@ -106,7 +106,7 @@ public final class TestComparator {
                 } else {
                     return null;
                 }
-            };
+            }
         };
         input.readFully(nameExtractor::parse);
 

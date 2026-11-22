@@ -2,6 +2,12 @@
     "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
 <module name="Checker">
   <property name="fileExtensions" value="java"/>
+  <property name="localeLanguage" value="en"/>
+  <!-- Checkstyle 13+ fails on malformed Javadoc; we only parse Javadoc to find imports used there -->
+  <module name="SuppressionSingleFilter">
+    <property name="checks" value="UnusedImports"/>
+    <property name="message" value="^Javadoc comment at column \d+ has parse error"/>
+  </module>
   <module name="LineLength">
     <property name="max" value="120"/>
   </module>
