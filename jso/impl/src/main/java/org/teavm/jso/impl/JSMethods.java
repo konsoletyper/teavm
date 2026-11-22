@@ -168,6 +168,8 @@ public final class JSMethods {
             JS_OBJECT);
     public static final MethodReference MAYBE_UNWRAP = new MethodReference(JS_WRAPPER_CLASS, "maybeUnwrap",
             OBJECT, JS_OBJECT);
+    public static final MethodReference MARSHALL_JAVA_TO_JS = new MethodReference(JS_WRAPPER_CLASS,
+            "marshallJavaToJs", OBJECT, JS_OBJECT);
     public static final MethodReference IS_JS = new MethodReference(JS_WRAPPER_CLASS, "isJs",
             OBJECT, ValueType.BOOLEAN);
     public static final MethodReference WRAPPER_IS_PRIMITIVE = new MethodReference(JS_WRAPPER_CLASS, "isPrimitive",

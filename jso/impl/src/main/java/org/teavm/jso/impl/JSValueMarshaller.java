@@ -98,10 +98,12 @@ class JSValueMarshaller {
         }
 
         if (jsType == JSType.JAVA) {
+            // A value of JAVA type here is an instance of a Java class implementing the functor interface,
+            // which is never a JSWrapper, so it only needs marshalling (identity in JS, wrapping in Wasm GC)
             var unwrapNative = new InvokeInstruction();
             unwrapNative.setLocation(location.getSourceLocation());
             unwrapNative.setType(InvocationType.SPECIAL);
-            unwrapNative.setMethod(JSMethods.UNWRAP);
+            unwrapNative.setMethod(JSMethods.MARSHALL_JAVA_TO_JS);
             unwrapNative.setArguments(var);
             unwrapNative.setReceiver(program.createVariable());
             replacement.add(unwrapNative);
@@ -167,10 +169,12 @@ class JSValueMarshaller {
                     return unwrapNative.getReceiver();
                 }
                 if (typeHelper.isJavaScriptClass(className) && jsType == JSType.JAVA) {
+                    // Same as in wrapFunctor: JAVA type means Java class implementing JS interface,
+                    // which can't be a JSWrapper
                     var unwrapNative = new InvokeInstruction();
                     unwrapNative.setLocation(location);
                     unwrapNative.setType(InvocationType.SPECIAL);
-                    unwrapNative.setMethod(JSMethods.UNWRAP);
+                    unwrapNative.setMethod(JSMethods.MARSHALL_JAVA_TO_JS);
                     unwrapNative.setArguments(var);
                     unwrapNative.setReceiver(program.createVariable());
                     replacement.add(unwrapNative);
