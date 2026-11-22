@@ -51,7 +51,7 @@ public class DOMParser implements JSObject {
      *
      * @param s The string to be parsed. It must contain either HTML, xml, xhtml+xml,
      *        or svg document.
-     * @param mimeType This string determines a class of the the method's return
+     * @param mimeType This string determines a class of the method's return
      *        value. The possible values are the following: text/html, text/xml,
      *        application/xml, application/xhtml+xml, image/svg+xml
      * @return Newly created {@link Document} or {@link HTMLDocument}
