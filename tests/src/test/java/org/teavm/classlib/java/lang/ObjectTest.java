@@ -22,9 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.teavm.classlib.support.GCSupport;
 import org.teavm.junit.AsyncEnabled;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTest;
@@ -368,4 +370,52 @@ public class ObjectTest {
         watchdog.start();
         return watchdog;
     }
+
+    private Thread keptWaiter;
+
+    @Test
+    @AsyncEnabled
+    public void notifiedWaitDoesNotKeepItsLock() throws InterruptedException {
+        var ref = runNotifiedWaiterAndDropLock();
+        if (ref.get() != null) {
+            GCSupport.tryToTriggerGC(ref);
+        }
+        assertNotNull(keptWaiter);
+        assertNull(ref.get(), "an ended thread whose wait notify() ended kept the lock alive");
+    }
+
+    // Only the waiter's interrupt handler may keep the lock: the waiter takes the lock from a holder that it clears,
+    // so neither its Runnable nor the test refers to the lock once the waiter has ended.
+    private WeakReference<Object> runNotifiedWaiterAndDropLock() throws InterruptedException {
+        Object[] holder = { new Object() };
+        var ref = new WeakReference<>(holder[0]);
+        boolean[] state = new boolean[2];
+        keptWaiter = new Thread(() -> waitUntilNotified(holder, state));
+        keptWaiter.start();
+        waitUntil(ref.get(), state, 0);
+        synchronized (ref.get()) {
+            state[1] = true;
+            ref.get().notify();
+        }
+        keptWaiter.join(2000);
+        assertTrue(!keptWaiter.isAlive(), "the waiter did not end");
+        assertNull(holder[0]);
+        return ref;
+    }
+
+    private static void waitUntilNotified(Object[] holder, boolean[] state) {
+        Object lock = holder[0];
+        holder[0] = null;
+        synchronized (lock) {
+            state[0] = true;
+            try {
+                while (!state[1]) {
+                    lock.wait();
+                }
+            } catch (InterruptedException e) {
+                // ends the thread
+            }
+        }
+    }
+
 }
