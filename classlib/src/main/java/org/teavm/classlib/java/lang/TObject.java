@@ -441,6 +441,11 @@ public class TObject {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
+        // "InterruptedException - if any thread interrupted the current thread before or while the current thread
+        // was waiting. The interrupted status of the current thread is cleared when this exception is thrown."
+        if (TThread.interrupted()) {
+            throw new TInterruptedException();
+        }
         waitImpl(timeout, nanos);
     }
 
