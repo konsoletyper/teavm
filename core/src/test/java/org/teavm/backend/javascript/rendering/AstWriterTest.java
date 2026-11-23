@@ -273,7 +273,14 @@ public class AstWriterTest {
     public void respectsPrecedence() throws IOException {
         assertEquals("return a+b+c;", transform("return a + b + c;"));
         assertEquals("return a+b+c;", transform("return (a + b) + c;"));
-        assertEquals("return a+b+c;", transform("return a + (b + c);"));
+        // "x" + (1 + 2) is "x3", but "x" + 1 + 2 is "x12"; neither + nor * is associative in floating point
+        assertEquals("return a+(b+c);", transform("return a + (b + c);"));
+        assertEquals("return a+(b -c);", transform("return a + (b - c);"));
+        assertEquals("return a*(b*c);", transform("return a * (b * c);"));
+        assertEquals("return a*(b/c);", transform("return a * (b / c);"));
+        assertEquals("return a*(b%c);", transform("return a * (b % c);"));
+        assertEquals("return a*b/c;", transform("return (a * b) / c;"));
+        assertEquals("return a+b*c;", transform("return a + (b * c);"));
         assertEquals("return a -b+c;", transform("return a - b + c;"));
         assertEquals("return a -b+c;", transform("return (a - b) + c;"));
         assertEquals("return a -(b+c);", transform("return a - (b + c);"));
