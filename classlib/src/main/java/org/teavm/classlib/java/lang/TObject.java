@@ -528,6 +528,10 @@ public class TObject {
                 EventQueue.kill(timerId);
                 timerId = -1;
             }
+            // The completed wait must not retain its object and callback through the thread's interrupt handler.
+            if (currentThread.interruptHandler == this) {
+                currentThread.interruptHandler = null;
+            }
             removeNotifyListener(obj, this);
             TThread.setCurrentThread(currentThread);
             monitorEnterWait(obj, lockCount, callback);
