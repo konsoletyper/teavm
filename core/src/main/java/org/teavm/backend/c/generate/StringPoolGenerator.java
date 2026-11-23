@@ -73,7 +73,7 @@ public class StringPoolGenerator {
         writer.outdent().println("}");
     }
 
-    static boolean hasBadCharacters(String string) {
+    private boolean hasBadCharacters(String string) {
         for (int i = 0; i < string.length(); ++i) {
             char c = string.charAt(i);
             // C11 forbids universal character names for code points below U+00A0 (except $, @ and `),

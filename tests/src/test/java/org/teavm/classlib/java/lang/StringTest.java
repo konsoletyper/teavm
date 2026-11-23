@@ -265,6 +265,17 @@ public class StringTest {
     }
 
     @Test
+    public void c1ControlCharactersSurviveStringLiterals() {
+        String s = "a\u007f\u0080\u0085\u009f\u00a0b";
+        assertEquals(7, s.length());
+        assertEquals(0x7f, s.charAt(1));
+        assertEquals(0x80, s.charAt(2));
+        assertEquals(0x85, s.charAt(3));
+        assertEquals(0x9f, s.charAt(4));
+        assertEquals(0xa0, s.charAt(5));
+    }
+
+    @Test
     public void convertedToCharArray() {
         char[] array = "123".toCharArray();
         assertEquals(3, array.length);
