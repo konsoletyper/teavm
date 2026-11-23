@@ -76,7 +76,9 @@ public class StringPoolGenerator {
     private boolean hasBadCharacters(String string) {
         for (int i = 0; i < string.length(); ++i) {
             char c = string.charAt(i);
-            if (c == 0 || Character.isSurrogate(c)) {
+            // C11 forbids universal character names for code points below U+00A0 (except $, @ and `),
+            // so these can't be written as universal character names in a UTF-16 string literal.
+            if (c == 0 || Character.isSurrogate(c) || (c >= 0x7f && c < 0xa0)) {
                 return true;
             }
         }
