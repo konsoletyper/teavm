@@ -18,6 +18,7 @@ package org.teavm.dependency;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -113,6 +114,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private Set<String> generatedClassNames = new HashSet<>();
     DependencyType classType;
     private List<ClassFilter> classFilters = new ArrayList<>();
+    private BitSet classFilterKnownTypes = new BitSet();
+    private BitSet classFilterAcceptedTypes = new BitSet();
     boolean merging;
     private ExtensionEnvironmentImpl extensionEnv;
 
@@ -150,6 +153,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     public void addClassFilter(ClassFilter filter) {
         classFilters.add(filter);
+        classFilterKnownTypes.clear();
+        classFilterAcceptedTypes.clear();
     }
 
     public void setEntryPoint(String entryPoint) {
@@ -330,7 +335,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private int propagationDepth;
 
     void schedulePropagation(DependencyConsumer consumer, DependencyType type) {
-        if (!filterType(type.getValueType())) {
+        if (!filterType(type)) {
             return;
         }
         if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
@@ -346,7 +351,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         if (!consumer.destination.filter(type)) {
             return;
         }
-        if (!filterType(type.getValueType())) {
+        if (!filterType(type)) {
             return;
         }
 
@@ -401,7 +406,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
             ++propagationDepth;
             for (DependencyType type : types) {
-                if (filterType(type.getValueType())) {
+                if (filterType(type)) {
                     consumer.consume(type);
                 }
             }
@@ -409,7 +414,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         } else {
             tasks.add(() -> {
                 for (DependencyType type : types) {
-                    if (filterType(type.getValueType())) {
+                    if (filterType(type)) {
                         consumer.consume(type);
                     }
                 }
@@ -417,8 +422,16 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         }
     }
 
-    boolean filterType(ValueType type) {
-        return classFilters.stream().allMatch(filter -> filter.accept(filterContext, type));
+    // Class filters are asked for every propagated type, so remember their verdict per type
+    boolean filterType(DependencyType type) {
+        if (classFilterKnownTypes.get(type.index)) {
+            return classFilterAcceptedTypes.get(type.index);
+        }
+        var valueType = type.getValueType();
+        boolean result = classFilters.stream().allMatch(filter -> filter.accept(filterContext, valueType));
+        classFilterKnownTypes.set(type.index);
+        classFilterAcceptedTypes.set(type.index, result);
+        return result;
     }
 
     private ClassFilterContext filterContext = new ClassFilterContext() {
