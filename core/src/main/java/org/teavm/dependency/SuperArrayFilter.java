@@ -48,18 +48,4 @@ class SuperArrayFilter implements DependencyTypeFilter {
         var itemValueType = ((ValueType.Array) type.getValueType()).getItemType();
         return itemTypeFilter.match(analyzer.getType(itemValueType));
     }
-
-    @Override
-    public int[] tryExtract(BitSet types) {
-        int[] result = itemTypeFilter.tryExtract(types);
-        if (result == null) {
-            return null;
-        }
-
-        for (int i = 0; i < result.length; ++i) {
-            var valueType = analyzer.types.get(i).getValueType();
-            result[i] = analyzer.getType(ValueType.arrayOf(valueType)).index;
-        }
-        return result;
-    }
 }
