@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
@@ -189,6 +190,13 @@ public class MethodTest {
 
         assertEquals(TestAnnot.class, acceptMethod.getAnnotation(TestAnnot.class).annotationType());
         assertNull(barMethod.getAnnotation(TestAnnot.class));
+    }
+
+    @Test
+    public void annotationWithStaticInitializerRead() throws Exception {
+        assertNotNull(AnnotWithStaticInitializer.INSTANCE);
+        var method = ClassWithStaticInitializerAnnotation.class.getMethod("m");
+        assertEquals("a", method.getAnnotation(AnnotWithStaticInitializer.class).name());
     }
 
     @Test
@@ -475,6 +483,20 @@ public class MethodTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Inherited
     @interface TestAnnot {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface AnnotWithStaticInitializer {
+        Object INSTANCE = new Object();
+
+        String name();
+    }
+
+    static class ClassWithStaticInitializerAnnotation {
+        @Reflectable
+        @AnnotWithStaticInitializer(name = "a")
+        public void m() {
+        }
     }
 
     static class ClassWithParameterAnnotations {
