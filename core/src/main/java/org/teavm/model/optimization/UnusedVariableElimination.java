@@ -50,6 +50,7 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class UnusedVariableElimination implements MethodOptimization {
     private final boolean allDivisionsUnsafe;
+    private final boolean keepStaticFieldReads;
 
     /**
      * Creates conservative instance, which keeps every integer division, since it may throw exception.
@@ -64,7 +65,17 @@ public class UnusedVariableElimination implements MethodOptimization {
      *     so unused unchecked divisions can be eliminated.
      */
     public UnusedVariableElimination(boolean allDivisionsUnsafe) {
+        this(allDivisionsUnsafe, false);
+    }
+
+    /**
+     * @param allDivisionsUnsafe see {@link #UnusedVariableElimination(boolean)}.
+     * @param keepStaticFieldReads if {@code true}, unused static field reads are kept, since they trigger
+     *     class initialization, i.e. it's assumed that {@code InitClassInstruction}s are not inserted yet.
+     */
+    public UnusedVariableElimination(boolean allDivisionsUnsafe, boolean keepStaticFieldReads) {
         this.allDivisionsUnsafe = allDivisionsUnsafe;
+        this.keepStaticFieldReads = keepStaticFieldReads;
     }
 
     @Override
@@ -74,7 +85,8 @@ public class UnusedVariableElimination implements MethodOptimization {
 
     public boolean optimize(MethodReader method, Program program) {
         Graph graph = VariableUsageGraphBuilder.build(program);
-        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program, allDivisionsUnsafe);
+        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program, allDivisionsUnsafe,
+                keepStaticFieldReads);
         boolean[] used = new boolean[escaping.length];
 
         for (int i = 0; i <= method.parameterCount(); ++i) {

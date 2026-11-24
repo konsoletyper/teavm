@@ -32,8 +32,18 @@ public final class VariableEscapeAnalyzer {
      *     were already inserted (or are not needed).
      */
     public static boolean[] findEscapingVariables(Program program, boolean allDivisionsUnsafe) {
+        return findEscapingVariables(program, allDivisionsUnsafe, false);
+    }
+
+    /**
+     * @param allDivisionsUnsafe see {@link #findEscapingVariables(Program, boolean)}.
+     * @param keepStaticFieldReads if {@code true}, every static field read is considered as one that can't be
+     *     removed, since it triggers class initialization.
+     */
+    public static boolean[] findEscapingVariables(Program program, boolean allDivisionsUnsafe,
+            boolean keepStaticFieldReads) {
         boolean[] escaping = new boolean[program.variableCount()];
-        InstructionAnalyzer analyzer = new InstructionAnalyzer(escaping, allDivisionsUnsafe);
+        InstructionAnalyzer analyzer = new InstructionAnalyzer(escaping, allDivisionsUnsafe, keepStaticFieldReads);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
@@ -46,10 +56,12 @@ public final class VariableEscapeAnalyzer {
     private static class InstructionAnalyzer extends AbstractInstructionVisitor {
         private boolean[] escaping;
         private boolean allDivisionsUnsafe;
+        private boolean keepStaticFieldReads;
 
-        InstructionAnalyzer(boolean[] escaping, boolean allDivisionsUnsafe) {
+        InstructionAnalyzer(boolean[] escaping, boolean allDivisionsUnsafe, boolean keepStaticFieldReads) {
             this.escaping = escaping;
             this.allDivisionsUnsafe = allDivisionsUnsafe;
+            this.keepStaticFieldReads = keepStaticFieldReads;
         }
 
         @Override
@@ -99,6 +111,13 @@ public final class VariableEscapeAnalyzer {
         @Override
         public void visit(RaiseInstruction insn) {
             escaping[insn.getException().getIndex()] = true;
+        }
+
+        @Override
+        public void visit(GetFieldInstruction insn) {
+            if (keepStaticFieldReads && insn.getInstance() == null) {
+                escaping[insn.getReceiver().getIndex()] = true;
+            }
         }
 
         @Override

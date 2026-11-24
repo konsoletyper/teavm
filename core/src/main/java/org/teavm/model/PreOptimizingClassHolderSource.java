@@ -53,7 +53,7 @@ public class PreOptimizingClassHolderSource implements ClassHolderSource {
             if (method.getProgram() != null) {
                 noSuchFieldCatchElimination.apply(method.getProgram(), method.parameterCount());
                 new GlobalValueNumbering(true).optimize(method.getProgram());
-                new UnusedVariableElimination().optimize(method, method.getProgram());
+                new UnusedVariableElimination(true, true).optimize(method, method.getProgram());
             }
         }
         return cls;

@@ -420,6 +420,12 @@ public class VMTest {
         initCount = 23;
         assertEquals(23, ReadingStateInClinit.state);
     }
+
+    @Test
+    public void unusedStaticFieldReadInitializesClass() {
+        Object unused = UnusedReadClass.INSTANCE;
+        assertEquals(1, unusedReadInitCount);
+    }
     
     private static int[] createArray() {
         if (PlatformDetector.isC()) {
@@ -433,6 +439,16 @@ public class VMTest {
     private static native int[] doCreateArrayJS();
 
     static int initCount;
+
+    static int unusedReadInitCount;
+
+    private static class UnusedReadClass {
+        static final Object INSTANCE = new Object();
+
+        static {
+            unusedReadInitCount++;
+        }
+    }
 
     private static class ReadingStateInClinit {
         public static final int state = initCount;
