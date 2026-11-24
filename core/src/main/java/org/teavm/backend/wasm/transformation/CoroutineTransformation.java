@@ -259,7 +259,7 @@ public class CoroutineTransformation {
             var outputTypes = List.copyOf(typeInference.typeStack);
             moveAllPreviousTo(block, block.getBody());
             process(start);
-            if (!outputTypes.isEmpty() || inputTypes.isEmpty()) {
+            if (!outputTypes.isEmpty() || !inputTypes.isEmpty()) {
                 block.setType(functionTypes.get(new WasmSignature(outputTypes, List.copyOf(inputTypes))).asBlock());
             }
             typeInference.typeStack.clear();

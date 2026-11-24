@@ -64,6 +64,18 @@ public class AsyncTest {
         return getPrimitive() + (first ? 1 : (second ? 2 : getPrimitive()));
     }
 
+    @Test
+    @AsyncEnabled
+    public void suspensionInShortCircuitConditionAfterSuspendingOperand() {
+        assertEquals(24, addShortCircuitCondition(true, true));
+        assertEquals(25, addShortCircuitCondition(false, true));
+        assertEquals(26, addShortCircuitCondition(false, false));
+    }
+
+    private int addShortCircuitCondition(boolean first, boolean second) {
+        return getPrimitive() + (first ? 1 : (second && getPrimitive() > 1 ? 2 : 3));
+    }
+
     @Async
     private native int getPrimitive();
 
