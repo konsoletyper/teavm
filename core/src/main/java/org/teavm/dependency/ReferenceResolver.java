@@ -29,6 +29,7 @@ import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -97,6 +98,7 @@ public class ReferenceResolver {
         this.currentMethod = method.getReference();
         this.program = program;
         for (var block : program.getBasicBlocks()) {
+            removeUnavailableCatches(block);
             shouldStop = false;
             for (var insn : block) {
                 insn.acceptVisitor(visitor);
@@ -112,6 +114,20 @@ public class ReferenceResolver {
         this.program = null;
         this.currentMethod = null;
         return program;
+    }
+
+    private void removeUnavailableCatches(BasicBlock block) {
+        var tryCatches = block.getTryCatchBlocks();
+        for (var i = 0; i < tryCatches.size(); ++i) {
+            var tryCatch = tryCatches.get(i);
+            if (tryCatch.getExceptionType() != null && !classAvailable(tryCatch.getExceptionType())) {
+                tryCatches.remove(i--);
+                if (tryCatches.stream().noneMatch(other -> other.getHandler() == tryCatch.getHandler())) {
+                    tryCatch.getHandler().removeIncomingsFrom(block);
+                }
+                modified = true;
+            }
+        }
     }
 
     private InstructionVisitor visitor = new AbstractInstructionVisitor() {

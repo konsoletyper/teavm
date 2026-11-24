@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
@@ -401,6 +402,36 @@ public class VMTest {
         } catch (RuntimeException e) {
             assertEquals("OK", suspendAndReturn(e).getMessage());
         }
+    }
+
+    @Test
+    public void catchMissingClass() {
+        assertEquals(7, catchOrReturn(7));
+        assertEquals(-1, catchOrReturn(-1));
+        assertEquals(-3, catchOrReturn(101));
+    }
+
+    private static int catchOrReturn(int value) {
+        var step = 1;
+        // WasmTestClassTransformer retargets TimeoutException to a class that does not exist
+        try {
+            if (value < 0) {
+                throw new IllegalArgumentException();
+            }
+            step = 2;
+            throwsTimeout(value);
+            step = 3;
+            if (value > 100) {
+                throw new IllegalArgumentException();
+            }
+            return value;
+        } catch (TimeoutException | IllegalArgumentException e) {
+            return -step;
+        }
+    }
+
+    private static int throwsTimeout(int value) throws TimeoutException {
+        return value;
     }
 
     @Async
