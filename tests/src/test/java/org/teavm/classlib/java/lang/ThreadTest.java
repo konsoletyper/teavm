@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
@@ -165,6 +166,19 @@ public class ThreadTest {
         assertTrue(runnable.finished);
         other.join();
         assertTrue(runnable.finished);
+    }
+
+    @Test
+    public void contextClassLoader() {
+        var thread = Thread.currentThread();
+        var original = thread.getContextClassLoader();
+        var other = new ClassLoader() { };
+        thread.setContextClassLoader(other);
+        try {
+            assertSame(other, thread.getContextClassLoader());
+        } finally {
+            thread.setContextClassLoader(original);
+        }
     }
 
     abstract class A {

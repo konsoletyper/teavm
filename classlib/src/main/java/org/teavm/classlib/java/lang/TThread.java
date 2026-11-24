@@ -41,6 +41,7 @@ public class TThread extends TObject implements TRunnable {
 
     private String name;
     private boolean alive = true;
+    private TClassLoader contextClassLoader;
     TRunnable target;
 
     public TThread() {
@@ -259,7 +260,11 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public TClassLoader getContextClassLoader() {
-        return TClassLoader.getSystemClassLoader();
+        return contextClassLoader != null ? contextClassLoader : TClassLoader.getSystemClassLoader();
+    }
+
+    public void setContextClassLoader(TClassLoader contextClassLoader) {
+        this.contextClassLoader = contextClassLoader;
     }
     
     public UncaughtExceptionHandler getUncaughtExceptionHandler() {
