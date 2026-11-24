@@ -384,4 +384,34 @@ public class ArrayListTest {
             // ok
         }
     }
+
+    @Test
+    public void retainAllWithSubListOfSelf() {
+        List<String> list = new ArrayList<>();
+        for (int i = 0; i < 11; ++i) {
+            list.add("p" + i);
+        }
+        assertTrue(list.retainAll(list.subList(0, 5)));
+        assertEquals(Arrays.asList("p0", "p1", "p2", "p3", "p4"), list);
+    }
+
+    @Test
+    public void removeAllWithSubListOfSelf() {
+        List<String> list = new ArrayList<>(Arrays.asList("a", "b", "c", "d", "e"));
+        assertTrue(list.removeAll(list.subList(1, 3)));
+        assertEquals(Arrays.asList("a", "d", "e"), list);
+    }
+
+    @Test
+    public void removeAllAndRetainAllReportChanges() {
+        List<String> list = new ArrayList<>(Arrays.asList("a", "b", "a", "c"));
+        assertFalse(list.removeAll(Arrays.asList("x", "y")));
+        assertFalse(list.retainAll(Arrays.asList("a", "b", "c")));
+        assertTrue(list.removeAll(Arrays.asList("a")));
+        assertEquals(Arrays.asList("b", "c"), list);
+        assertTrue(list.retainAll(Arrays.asList("c", "z")));
+        assertEquals(Arrays.asList("c"), list);
+        assertTrue(list.retainAll(Arrays.<String>asList()));
+        assertTrue(list.isEmpty());
+    }
 }

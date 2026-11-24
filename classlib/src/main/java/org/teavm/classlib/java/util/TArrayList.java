@@ -267,6 +267,45 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
     }
 
     @Override
+    public boolean removeAll(TCollection<?> c) {
+        TObjects.requireNonNull(c);
+        return batchRemove(c, false);
+    }
+
+    @Override
+    public boolean retainAll(TCollection<?> c) {
+        TObjects.requireNonNull(c);
+        return batchRemove(c, true);
+    }
+
+    private boolean batchRemove(TCollection<?> c, boolean retain) {
+        // Decide on every element before modifying the list, since c may be a view of this very list.
+        boolean[] keep = new boolean[size];
+        int kept = 0;
+        for (int i = 0; i < size; ++i) {
+            keep[i] = c.contains(array[i]) == retain;
+            if (keep[i]) {
+                kept++;
+            }
+        }
+        if (kept == size) {
+            return false;
+        }
+        int j = 0;
+        for (int i = 0; i < size; ++i) {
+            if (keep[i]) {
+                array[j++] = array[i];
+            }
+        }
+        for (int i = j; i < size; ++i) {
+            array[i] = null;
+        }
+        size = j;
+        ++modCount;
+        return true;
+    }
+
+    @Override
     public void sort(TComparator<? super E> comp) {
         TArrays.sort(array, 0, size, comp);
         modCount++;
