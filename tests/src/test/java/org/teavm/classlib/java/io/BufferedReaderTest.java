@@ -18,6 +18,7 @@ package org.teavm.classlib.java.io;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -28,6 +29,27 @@ import org.teavm.junit.TeaVMTest;
 
 @TeaVMTest
 public class BufferedReaderTest {
+    @Test
+    public void repeatedCloseDoesNotCloseInnerReaderAgain() throws IOException {
+        var inner = new TestReader();
+        var reader = new BufferedReader(inner);
+        reader.close();
+        reader.close();
+        assertEquals(1, inner.closes);
+        assertThrows(IOException.class, reader::read);
+    }
+
+    @Test
+    public void closeFailureStillClosesReader() throws IOException {
+        var inner = new TestReader();
+        inner.failClose = true;
+        var reader = new BufferedReader(inner);
+        assertThrows(IOException.class, reader::close);
+        reader.close();
+        assertEquals(1, inner.closes);
+        assertThrows(IOException.class, reader::read);
+    }
+
     @Test
     public void readsCharacters() throws IOException {
         String str = "foo bar baz";
@@ -138,6 +160,8 @@ public class BufferedReaderTest {
 
     private static class TestReader extends Reader {
         int reads;
+        int closes;
+        boolean failClose;
         private byte lastRead;
 
         @Override
@@ -161,7 +185,11 @@ public class BufferedReaderTest {
         }
 
         @Override
-        public void close() {
+        public void close() throws IOException {
+            closes++;
+            if (failClose) {
+                throw new IOException("close failed");
+            }
         }
     }
 }
