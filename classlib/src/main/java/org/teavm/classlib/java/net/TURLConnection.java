@@ -59,6 +59,10 @@ public abstract class TURLConnection {
         return getHeaderFieldInt("Content-Length", -1);
     }
 
+    public long getContentLengthLong() {
+        return getHeaderFieldLong("Content-Length", -1);
+    }
+
     public String getContentType() {
         return getHeaderField("Content-Type");
     }
@@ -150,6 +154,14 @@ public abstract class TURLConnection {
     public int getHeaderFieldInt(String field, int defaultValue) {
         try {
             return Integer.parseInt(getHeaderField(field));
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    public long getHeaderFieldLong(String field, long defaultValue) {
+        try {
+            return Long.parseLong(getHeaderField(field));
         } catch (NumberFormatException e) {
             return defaultValue;
         }
