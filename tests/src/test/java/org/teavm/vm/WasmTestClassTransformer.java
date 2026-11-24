@@ -15,6 +15,7 @@
  */
 package org.teavm.vm;
 
+import java.util.concurrent.TimeoutException;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
@@ -34,6 +35,9 @@ import org.teavm.model.instructions.RaiseInstruction;
 public class WasmTestClassTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
+        if (cls.getName().equals(VMTest.class.getName())) {
+            replaceMissingCatch(cls);
+        }
         if (cls.getName().equals(WasmTest.class.getName())) {
             var method = cls.getMethod(new MethodDescriptor("tryCatchWithReturnInside", int.class));
             method.getModifiers().remove(ElementModifier.NATIVE);
@@ -41,6 +45,21 @@ public class WasmTestClassTransformer implements ClassHolderTransformer {
         }
     }
     
+    private void replaceMissingCatch(ClassHolder cls) {
+        for (var method : cls.getMethods()) {
+            if (method.getProgram() == null) {
+                continue;
+            }
+            for (var block : method.getProgram().getBasicBlocks()) {
+                for (var tryCatch : block.getTryCatchBlocks()) {
+                    if (TimeoutException.class.getName().equals(tryCatch.getExceptionType())) {
+                        tryCatch.setExceptionType("java.util.concurrent.NoSuchException");
+                    }
+                }
+            }
+        }
+    }
+
     private Program createTryCatchWithReturnInside() {
         var program = new Program();
         program.createVariable();
