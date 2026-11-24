@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.reflection.AnnotationGenerationHelper;
@@ -73,6 +74,9 @@ public class AnnotationDataStruct {
         }
 
         for (var method : cls.getMethods()) {
+            if (method.hasModifier(ElementModifier.STATIC)) {
+                continue;
+            }
             var index = fields.size();
             var field = new WasmField(reflectionTypes.typeForAnnotation(method.getResultType()), method.getName());
             fields.add(field);
