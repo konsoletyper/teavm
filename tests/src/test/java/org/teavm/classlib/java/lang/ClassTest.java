@@ -54,6 +54,11 @@ public class ClassTest {
     }
 
     @Test
+    public void packageNameEvaluated() {
+        assertEquals("java.lang", Object.class.getPackage().getName());
+    }
+
+    @Test
     public void objectClassNameEvaluated() {
         assertEquals("java.lang.Object", new Object().getClass().getName());
     }
