@@ -147,6 +147,9 @@ public abstract class TCharset implements Comparable<TCharset> {
                     TStandardCharsets.UTF_16LE };
             for (TCharset charset : charsets) {
                 value.put(charset.name(), charset);
+                for (String alias : charset.aliases()) {
+                    value.put(alias.toUpperCase(), charset);
+                }
             }
         }
     }

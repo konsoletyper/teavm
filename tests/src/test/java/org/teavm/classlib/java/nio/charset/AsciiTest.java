@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
@@ -74,6 +76,13 @@ public class AsciiTest {
     public void decodeMalformed() {
         Charset charset = StandardCharsets.US_ASCII;
         CharsetTestCommon.checkMalformed(charset, new byte[] { (byte) 0xA3 }, 1);
+    }
+
+    @Test
+    public void lookupByAlias() {
+        assertSame(StandardCharsets.US_ASCII, Charset.forName("ASCII"));
+        assertSame(StandardCharsets.US_ASCII, Charset.forName("csASCII"));
+        assertTrue(StandardCharsets.US_ASCII.aliases().contains("ASCII"));
     }
 
     private void runEncode(int inSize, int outSize) {

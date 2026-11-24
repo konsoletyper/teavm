@@ -21,7 +21,8 @@ import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
 
 public class TAsciiCharset extends TCharset {
     public TAsciiCharset() {
-        super("US-ASCII", new String[0]);
+        super("US-ASCII", new String[] { "646", "ANSI_X3.4-1968", "ANSI_X3.4-1986", "ASCII", "IBM367", "ISO646-US",
+                "ISO_646.irv:1991", "ascii7", "cp367", "csASCII", "iso-ir-6", "iso_646.irv:1983", "us" });
     }
 
     @Override
