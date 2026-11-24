@@ -551,6 +551,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             case SUBTRACT:
             case MULTIPLY:
             case DIVIDE:
+            case MODULO:
             case AND:
             case OR:
             case BITWISE_AND:
@@ -598,9 +599,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 return Precedence.ADDITION;
             case MULTIPLY:
             case DIVIDE:
-                return Precedence.MULTIPLICATION;
             case MODULO:
-                return Precedence.MODULO;
+                return Precedence.MULTIPLICATION;
             case AND:
                 return Precedence.LOGICAL_AND;
             case OR:
