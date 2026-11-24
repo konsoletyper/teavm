@@ -149,6 +149,9 @@ public class ClassGenerator {
         var result = new ArrayList<MethodReader>();
         if (cls != null) {
             for (var method : cls.getMethods()) {
+                if (method.hasModifier(ElementModifier.STATIC)) {
+                    continue;
+                }
                 if (context.getDependencies().getMethod(method.getReference()) != null) {
                     result.add(method);
                 }
