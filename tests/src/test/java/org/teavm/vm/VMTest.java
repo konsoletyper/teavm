@@ -426,6 +426,47 @@ public class VMTest {
         Object unused = UnusedReadClass.INSTANCE;
         assertEquals(1, unusedReadInitCount);
     }
+
+    @Test
+    public void unusedInstanceFieldReadOnNullThrows() {
+        UnusedReadHolder holder = nullableHolder(true);
+        try {
+            int unused = holder.value;
+            fail("NullPointerException expected");
+        } catch (NullPointerException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void unusedArrayLengthOnNullThrows() {
+        int[] array = nullableArray(true);
+        try {
+            int unused = array.length;
+            fail("NullPointerException expected");
+        } catch (NullPointerException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void unusedArrayElementReadOnNullThrows() {
+        int[] array = nullableArray(true);
+        try {
+            int unused = array[0];
+            fail("NullPointerException expected");
+        } catch (NullPointerException e) {
+            // expected
+        }
+    }
+
+    private static int[] nullableArray(boolean isNull) {
+        return isNull ? null : new int[1];
+    }
+
+    private static UnusedReadHolder nullableHolder(boolean isNull) {
+        return isNull ? null : new UnusedReadHolder();
+    }
     
     private static int[] createArray() {
         if (PlatformDetector.isC()) {
@@ -448,6 +489,10 @@ public class VMTest {
         static {
             unusedReadInitCount++;
         }
+    }
+
+    private static class UnusedReadHolder {
+        int value;
     }
 
     private static class ReadingStateInClinit {

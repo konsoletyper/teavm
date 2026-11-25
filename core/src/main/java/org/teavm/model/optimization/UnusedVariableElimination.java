@@ -50,7 +50,6 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class UnusedVariableElimination implements MethodOptimization {
     private final boolean allDivisionsUnsafe;
-    private final boolean keepStaticFieldReads;
 
     /**
      * Creates conservative instance, which keeps every integer division, since it may throw exception.
@@ -60,22 +59,14 @@ public class UnusedVariableElimination implements MethodOptimization {
     }
 
     /**
-     * @param allDivisionsUnsafe if {@code false}, only checked divisions are considered to throw exceptions,
-     *     i.e. it's assumed that checks for division by zero were already inserted (or are not needed),
-     *     so unused unchecked divisions can be eliminated.
+     * @param allDivisionsUnsafe if {@code true}, explicit checks (division by zero, null, bounds, class
+     *     initialization) are not inserted yet, so instructions with implicit effects are kept: integer
+     *     divisions, field reads, array length and array element reads (may throw on null or out of bounds;
+     *     static reads trigger class initialization). If {@code false}, the checks were already inserted
+     *     (or are not needed), so such instructions can be eliminated when unused.
      */
     public UnusedVariableElimination(boolean allDivisionsUnsafe) {
-        this(allDivisionsUnsafe, false);
-    }
-
-    /**
-     * @param allDivisionsUnsafe see {@link #UnusedVariableElimination(boolean)}.
-     * @param keepStaticFieldReads if {@code true}, unused static field reads are kept, since they trigger
-     *     class initialization, i.e. it's assumed that {@code InitClassInstruction}s are not inserted yet.
-     */
-    public UnusedVariableElimination(boolean allDivisionsUnsafe, boolean keepStaticFieldReads) {
         this.allDivisionsUnsafe = allDivisionsUnsafe;
-        this.keepStaticFieldReads = keepStaticFieldReads;
     }
 
     @Override
@@ -85,8 +76,7 @@ public class UnusedVariableElimination implements MethodOptimization {
 
     public boolean optimize(MethodReader method, Program program) {
         Graph graph = VariableUsageGraphBuilder.build(program);
-        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program, allDivisionsUnsafe,
-                keepStaticFieldReads);
+        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program, allDivisionsUnsafe);
         boolean[] used = new boolean[escaping.length];
 
         for (int i = 0; i <= method.parameterCount(); ++i) {
