@@ -327,6 +327,25 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classSource.addTransformer(transformer);
     }
 
+    // Scratch array for TypeSet.getTypesForNode, so it does not allocate an array as large as the whole set.
+    // takeTypeBuffer clears it while in use, since a filter, or a class it loads, can call getTypesForNode again.
+    private DependencyType[] typeBuffer;
+
+    DependencyType[] takeTypeBuffer(int capacity) {
+        var buffer = typeBuffer;
+        typeBuffer = null;
+        if (buffer == null || buffer.length < capacity) {
+            buffer = new DependencyType[Math.max(capacity, buffer == null ? 64 : buffer.length * 2)];
+        }
+        return buffer;
+    }
+
+    DependencyType[] giveTypeBuffer(DependencyType[] buffer, int length) {
+        var result = length == 0 ? TypeSet.EMPTY_TYPES : Arrays.copyOf(buffer, length);
+        typeBuffer = buffer;
+        return result;
+    }
+
     private int propagationDepth;
 
     void schedulePropagation(DependencyConsumer consumer, DependencyType type) {

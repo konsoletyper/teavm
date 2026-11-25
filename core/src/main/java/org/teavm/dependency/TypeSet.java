@@ -142,7 +142,7 @@ class TypeSet {
                 }
             }
             if (filteredTypes != null) {
-                types = new DependencyType[filteredTypes.length];
+                types = dependencyAnalyzer.takeTypeBuffer(filteredTypes.length);
                 for (int index : filteredTypes) {
                     DependencyType type = dependencyAnalyzer.types.get(index);
                     if (sourceNode.filter(type) && !targetNode.hasType(type) && targetNode.filter(type)
@@ -151,7 +151,7 @@ class TypeSet {
                     }
                 }
             } else {
-                types = new DependencyType[typesCount];
+                types = dependencyAnalyzer.takeTypeBuffer(typesCount);
                 for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
                     DependencyType type = dependencyAnalyzer.types.get(index);
                     if (sourceNode.filter(type) && !targetNode.hasType(type) && targetNode.filter(type)
@@ -161,8 +161,8 @@ class TypeSet {
                 }
             }
         } else if (this.smallTypes != null) {
-            types = new DependencyType[smallTypes.length];
-            for (int i = 0; i < types.length; ++i) {
+            types = dependencyAnalyzer.takeTypeBuffer(smallTypes.length);
+            for (int i = 0; i < smallTypes.length; ++i) {
                 DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
                 if (sourceNode.filter(type) && !targetNode.hasType(type) && targetNode.filter(type)
                         && (filter == null || filter.match(type))) {
@@ -173,13 +173,7 @@ class TypeSet {
             return EMPTY_TYPES;
         }
 
-        if (j == 0) {
-            return EMPTY_TYPES;
-        }
-        if (j < types.length) {
-            types = Arrays.copyOf(types, j);
-        }
-        return types;
+        return dependencyAnalyzer.giveTypeBuffer(types, j);
     }
 
     boolean hasType(DependencyType type) {
