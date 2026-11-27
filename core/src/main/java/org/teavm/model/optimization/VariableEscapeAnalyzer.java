@@ -27,15 +27,15 @@ public final class VariableEscapeAnalyzer {
     }
 
     /**
-     * @param allDivisionsUnsafe if {@code true}, explicit checks (division by zero, null, bounds, class
-     *     initialization) are not inserted yet, so instructions with implicit effects are kept: integer
+     * @param preliminary if {@code true}, the program is optimized before explicit checks (division by zero,
+     *     null, bounds, class initialization) are inserted, so instructions with implicit effects are kept: integer
      *     divisions, field reads, array length and array element reads (may throw on null or out of bounds;
      *     static reads trigger class initialization). If {@code false}, the checks were already inserted
      *     (or are not needed), so such instructions can be eliminated when unused.
      */
-    public static boolean[] findEscapingVariables(Program program, boolean allDivisionsUnsafe) {
+    public static boolean[] findEscapingVariables(Program program, boolean preliminary) {
         boolean[] escaping = new boolean[program.variableCount()];
-        InstructionAnalyzer analyzer = new InstructionAnalyzer(escaping, allDivisionsUnsafe);
+        InstructionAnalyzer analyzer = new InstructionAnalyzer(escaping, preliminary);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
@@ -47,11 +47,11 @@ public final class VariableEscapeAnalyzer {
 
     private static class InstructionAnalyzer extends AbstractInstructionVisitor {
         private boolean[] escaping;
-        private boolean allDivisionsUnsafe;
+        private boolean preliminary;
 
-        InstructionAnalyzer(boolean[] escaping, boolean allDivisionsUnsafe) {
+        InstructionAnalyzer(boolean[] escaping, boolean preliminary) {
             this.escaping = escaping;
-            this.allDivisionsUnsafe = allDivisionsUnsafe;
+            this.preliminary = preliminary;
         }
 
         @Override
@@ -65,7 +65,7 @@ public final class VariableEscapeAnalyzer {
                     break;
                 case DIVIDE:
                 case MODULO:
-                    if (allDivisionsUnsafe && (insn.getOperandType() == NumericOperandType.INT
+                    if (preliminary && (insn.getOperandType() == NumericOperandType.INT
                             || insn.getOperandType() == NumericOperandType.LONG)) {
                         escaping[insn.getReceiver().getIndex()] = true;
                     }
@@ -105,21 +105,21 @@ public final class VariableEscapeAnalyzer {
 
         @Override
         public void visit(GetFieldInstruction insn) {
-            if (allDivisionsUnsafe) {
+            if (preliminary) {
                 escaping[insn.getReceiver().getIndex()] = true;
             }
         }
 
         @Override
         public void visit(ArrayLengthInstruction insn) {
-            if (allDivisionsUnsafe) {
+            if (preliminary) {
                 escaping[insn.getReceiver().getIndex()] = true;
             }
         }
 
         @Override
         public void visit(GetElementInstruction insn) {
-            if (allDivisionsUnsafe) {
+            if (preliminary) {
                 escaping[insn.getReceiver().getIndex()] = true;
             }
         }
