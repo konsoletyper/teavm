@@ -83,7 +83,7 @@ class TBitLevel {
     }
 
     /**
-     * Performs a fast bit testing for positive numbers. The bit to to be tested
+     * Performs a fast bit testing for positive numbers. The bit to be tested
      * must be in the range {@code [0, val.bitLength()-1]}
      */
     static boolean testBit(TBigInteger val, int n) {
@@ -302,7 +302,7 @@ class TBitLevel {
     }
 
     /**
-     * Performs a flipBit on the BigInteger, returning a BigInteger with the the
+     * Performs a flipBit on the BigInteger, returning a BigInteger with the
      * specified bit flipped.
      *
      * @param val

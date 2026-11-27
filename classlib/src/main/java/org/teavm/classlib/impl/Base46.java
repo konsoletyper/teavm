@@ -16,7 +16,7 @@
 package org.teavm.classlib.impl;
 
 /**
- * <p>Base47 encoding is best fit for encoding varible length numbers in JavaScript strings.</p>
+ * <p>Base47 encoding is best fit for encoding variable length numbers in JavaScript strings.</p>
  *
  * <p>47 = (int)(93 / 2), where 94 is the number of ASCII characters representable in JavaScript string
  * without escaping. These characters are encoded by one byte in UTF-8 charset. All other character require

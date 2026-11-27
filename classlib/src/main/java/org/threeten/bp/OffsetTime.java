@@ -513,7 +513,7 @@ public final class OffsetTime
      * <p>
      * This method returns an object with the specified {@code ZoneOffset} and a {@code LocalTime}
      * adjusted by the difference between the two offsets.
-     * This will result in the old and new objects representing the same instant an an implied day.
+     * This will result in the old and new objects representing the same instant an implied day.
      * This is useful for finding the local time in a different offset.
      * For example, if this time represents {@code 10:30+02:00} and the offset specified is
      * {@code +03:00}, then this method will return {@code 11:30+03:00}.

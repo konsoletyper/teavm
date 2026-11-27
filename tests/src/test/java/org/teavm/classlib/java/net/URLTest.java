@@ -100,7 +100,7 @@ public class URLTest {
         assertTrue(u3b.getFile().equals(""), "u3b returns a wrong file");
         assertNull(u3b.getRef(), "u3b returns a wrong anchor");
 
-        // test for non-port ":" and wierd characters occurrences
+        // test for non-port ":" and weird characters occurrences
         u4 = new URL("http://www.yahoo5.com/di!@$%^&*()_+r1/di:::r2/test.cgi?point1.html#anchor1");
         assertEquals("http", u4.getProtocol(), "u4 returns a wrong protocol");
         assertEquals("www.yahoo5.com", u4.getHost(), "u4 returns a wrong host");
