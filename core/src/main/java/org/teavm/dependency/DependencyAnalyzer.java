@@ -360,7 +360,11 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                 pendingTransitions.add(consumer);
                 consumer.pendingTypes = new PendingTypes();
             }
-            consumer.pendingTypes.add(type.index);
+            // A node's types only grow, so consume would reject this type anyway. The transition is still
+            // queued as before, which keeps the order of the analysis and therefore the output unchanged
+            if (!consumer.destination.hasType(type)) {
+                consumer.pendingTypes.add(type.index);
+            }
         }
     }
 
@@ -384,7 +388,9 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                 consumer.pendingTypes = new PendingTypes();
             }
             for (DependencyType type : types) {
-                consumer.pendingTypes.add(type.index);
+                if (!consumer.destination.hasType(type)) {
+                    consumer.pendingTypes.add(type.index);
+                }
             }
         }
     }
