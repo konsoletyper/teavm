@@ -49,22 +49,24 @@ import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class UnusedVariableElimination implements MethodOptimization {
-    private final boolean allDivisionsUnsafe;
+    private final boolean preliminary;
 
     /**
-     * Creates conservative instance, which keeps every integer division, since it may throw exception.
+     * Creates preliminary-mode instance, which keeps instructions with implicit effects.
      */
     public UnusedVariableElimination() {
         this(true);
     }
 
     /**
-     * @param allDivisionsUnsafe if {@code false}, only checked divisions are considered to throw exceptions,
-     *     i.e. it's assumed that checks for division by zero were already inserted (or are not needed),
-     *     so unused unchecked divisions can be eliminated.
+     * @param preliminary if {@code true}, the program is optimized before explicit checks (division by zero,
+     *     null, bounds, class initialization) are inserted, so instructions with implicit effects are kept: integer
+     *     divisions, field reads, array length and array element reads (may throw on null or out of bounds;
+     *     static reads trigger class initialization). If {@code false}, the checks were already inserted
+     *     (or are not needed), so such instructions can be eliminated when unused.
      */
-    public UnusedVariableElimination(boolean allDivisionsUnsafe) {
-        this.allDivisionsUnsafe = allDivisionsUnsafe;
+    public UnusedVariableElimination(boolean preliminary) {
+        this.preliminary = preliminary;
     }
 
     @Override
@@ -74,7 +76,7 @@ public class UnusedVariableElimination implements MethodOptimization {
 
     public boolean optimize(MethodReader method, Program program) {
         Graph graph = VariableUsageGraphBuilder.build(program);
-        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program, allDivisionsUnsafe);
+        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program, preliminary);
         boolean[] used = new boolean[escaping.length];
 
         for (int i = 0; i <= method.parameterCount(); ++i) {

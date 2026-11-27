@@ -42,14 +42,14 @@ public class UnusedVariableEliminationTest {
         doTest(false);
     }
 
-    private void doTest(boolean allDivisionsUnsafe) {
+    private void doTest(boolean preliminary) {
         String originalPath = PREFIX + name.getMethodName() + ".original.txt";
         String expectedPath = PREFIX + name.getMethodName() + ".expected.txt";
         Program original = ListingParseUtils.parseFromResource(originalPath);
         Program expected = ListingParseUtils.parseFromResource(expectedPath);
 
         var method = new MethodHolder(new MethodDescriptor("test", ValueType.INTEGER));
-        new UnusedVariableElimination(allDivisionsUnsafe).optimize(method, original);
+        new UnusedVariableElimination(preliminary).optimize(method, original);
 
         String originalText = new ListingBuilder().buildListing(original, "");
         String expectedText = new ListingBuilder().buildListing(expected, "");
