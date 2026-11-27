@@ -326,9 +326,10 @@ public class CoroutineTransformation {
                 minDepth = backupMinDepth;
                 process(thenWrapper.getNext());
 
+                // Original arm exits leave the entire conditional, rather than falling through into else.
                 var replacement = new BreakTargetReplacement(target -> {
                     if (target == conditional.getThenBlock()) {
-                        return thenWrapper.getBody();
+                        return wrapper.getBody();
                     } else if (target == conditional.getElseBlock()) {
                         return wrapper.getBody();
                     } else {
@@ -529,7 +530,7 @@ public class CoroutineTransformation {
             var thenWrapper = new WasmBlock(false);
             thenWrapper.setType(functionTypes.get(new WasmSignature(Collections.emptyList(), inputTypes)).asBlock());
             thenWrapper.getBody().add(new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ));
-            thenWrapper.getBody().add(new WasmBranch(conditional.getThenBlock()));
+            thenWrapper.getBody().add(new WasmBranch(thenWrapper.getBody()));
             thenWrapper.getBody().transferFrom(conditional.getThenBlock());
             var splitter = new ListSplitter(inputTypes, outputTypes, wrapper.getBody());
             var first = thenWrapper.getBody().getFirst();
@@ -546,9 +547,10 @@ public class CoroutineTransformation {
             }
             splitter.process(wrapper.getBody().getFirst().getNext());
 
+            // Original arm exits leave the entire conditional. Only the synthetic branch above enters else.
             var replacement = new BreakTargetReplacement(target -> {
                 if (target == conditional.getThenBlock()) {
-                    return thenWrapper.getBody();
+                    return wrapper.getBody();
                 } else if (target == conditional.getElseBlock()) {
                     return wrapper.getBody();
                 } else {
