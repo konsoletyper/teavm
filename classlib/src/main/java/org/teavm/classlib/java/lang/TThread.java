@@ -170,9 +170,11 @@ public class TThread extends TObject implements TRunnable {
 
     public void interrupt() {
         interruptedFlag = true;
-        if (interruptHandler != null) {
-            interruptHandler.interrupted();
+        var handler = interruptHandler;
+        if (handler != null) {
+            // The callback can resume the thread, which can install a new handler before this call returns.
             interruptHandler = null;
+            handler.interrupted();
         }
     }
 
