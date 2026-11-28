@@ -1230,6 +1230,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         dontExpectBasicBlock = true;
         if (insn.getValueToReturn() != null) {
             emitLocal(builder, insn.getValueToReturn());
+            forceType(insn.getValueToReturn(), currentMethod.getReturnType());
         }
         if (returnBlock == null) {
             builder.return_();
@@ -1290,6 +1291,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
             }
             var classInfo = context.classInfoProvider().getClassInfo(cls.getName());
             emitLocal(builder, insn.getInstance());
+            forceType(insn.getInstance(), ValueType.object(cls.getName()));
             if (classInfo.isHeapStructure()) {
                 var offset = context.classInfoProvider().getHeapFieldOffset(insn.getField());
                 var fieldReader = cls.getField(insn.getField().getFieldName());
@@ -1373,6 +1375,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         if (insn.getInstance() == null) {
             var global = context.classInfoProvider().getStaticFieldLocation(insn.getField());
             emitLocal(builder, insn.getValue());
+            forceType(insn.getValue(), insn.getFieldType());
             builder.setGlobal(global);
         } else {
             var cls = context.classes().get(insn.getField().getClassName());
@@ -1385,7 +1388,10 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
                 builder.unreachable();
                 return;
             }
-            emitLocals(builder, insn.getInstance(), insn.getValue());
+            emitLocal(builder, insn.getInstance());
+            forceType(insn.getInstance(), ValueType.object(cls.getName()));
+            emitLocal(builder, insn.getValue());
+            forceType(insn.getValue(), insn.getFieldType());
             var classInfo = context.classInfoProvider().getClassInfo(insn.getField().getClassName());
             if (!classInfo.isHeapStructure()) {
                 storeNormalField(classInfo, insn.getField());
@@ -1541,9 +1547,7 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
                 emitLocal(builder, insn.getInstance());
                 forceType(insn.getInstance(), ValueType.object(method.getOwnerName()));
             }
-            for (var arg : insn.getArguments()) {
-                emitLocal(builder, arg);
-            }
+            emitArguments(reference, insn.getArguments());
             builder.call(function, isAsyncSplit(reference));
         } else {
             virtualCall(insn.getMethod(), insn.getInstance(), insn.getArguments());
@@ -1581,12 +1585,11 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         var instanceStruct = (WasmStructure) instanceType.composite;
 
         emitLocal(builder, instance);
+        forceType(instance, instanceValueType);
         if (!expectedInstanceClassStruct.isSupertypeOf(instanceStruct)) {
             builder.cast(expectedInstanceClassStruct.getNonNullReference());
         }
-        for (var arg : args) {
-            emitLocal(builder, arg);
-        }
+        emitArguments(methodRef, args);
         emitLocal(builder, instance);
 
         builder
@@ -1598,18 +1601,26 @@ public class WasmCodeGenerator implements InstructionVisitor, FlowTreeNodeVisito
         builder.callReference((WasmFunctionType) functionTypeRef.composite, isAsyncSplit(methodRef));
     }
 
+    private void emitArguments(MethodReference methodRef, List<? extends Variable> args) {
+        for (var i = 0; i < args.size(); ++i) {
+            emitLocal(builder, args.get(i));
+            forceType(args.get(i), methodRef.parameterType(i));
+        }
+    }
+
     private void forceType(Variable variable, ValueType expectedValueType) {
         var actualValueType = typeInference.typeOf(variable).valueType;
         if (expectedValueType.equals(actualValueType)) {
             return;
         }
-        var expectedType = context.typeMapper().mapType(actualValueType);
+        var expectedType = context.typeMapper().mapType(expectedValueType);
         var actualWasmType = context.typeMapper().mapType(actualValueType);
-        if (!(actualWasmType instanceof WasmType.CompositeReference actualWasmRef)) {
+        if (!(actualWasmType instanceof WasmType.CompositeReference actualWasmRef)
+                || !(expectedType instanceof WasmType.CompositeReference expectedWasmRef)) {
             return;
         }
         var actualComposite = actualWasmRef.composite;
-        var expectedComposite = ((WasmType.CompositeReference) expectedType).composite;
+        var expectedComposite = expectedWasmRef.composite;
         if (!(actualComposite instanceof WasmStructure actualStruct)
                 || !(expectedComposite instanceof WasmStructure expectedStruct)) {
             return;
