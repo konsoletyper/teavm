@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
@@ -1155,6 +1156,105 @@ public class VMTest {
         }
         assertEquals(List.of("v0", "null"), result);
         assertEquals(3, nulls.size());
+    }
+
+    @Test
+    public void nullOnlyVariableUsedAsObjectAndAsReceiver() {
+        assertEquals(-1, readField(true));
+        writeField(true);
+        assertEquals(-1, callFinalMethod(true));
+        assertEquals(-1, callMethod(true));
+    }
+
+    @Test
+    public void nullOnlyVariableUsedAsObjectAndAsValue() {
+        assertEquals(-1, passArgumentToStatic(true));
+        assertEquals(-1, passArgumentToInstance(true));
+        assertNull(returnValue(true));
+        assertNull(storeStaticField(true));
+        assertNull(storeInstanceField(true));
+    }
+
+    private static int readField(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        return box != null ? box.value : -1;
+    }
+
+    private static void writeField(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        if (box != null) {
+            box.value = 1;
+        }
+    }
+
+    private static int callMethod(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        return box != null ? box.doubled() : -1;
+    }
+
+    private static int callFinalMethod(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        return box != null ? box.tripled() : -1;
+    }
+
+    private static int passArgumentToStatic(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        return box != null ? NullBox.read(box) : -1;
+    }
+
+    private static int passArgumentToInstance(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        return box != null ? new NullBox().readOther(box) : -1;
+    }
+
+    private static NullBox returnValue(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        return box;
+    }
+
+    private static NullBox storeStaticField(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        staticNullBox = box;
+        return staticNullBox;
+    }
+
+    private static NullBox storeInstanceField(boolean c) {
+        NullBox box = c ? null : null;
+        assertEquals("null", String.valueOf((Object) box));
+        var holder = new NullBox();
+        holder.next = box;
+        return holder.next;
+    }
+
+    private static NullBox staticNullBox;
+
+    static class NullBox {
+        int value;
+        NullBox next;
+
+        static int read(NullBox box) {
+            return box.value;
+        }
+
+        int doubled() {
+            return value * 2;
+        }
+
+        final int tripled() {
+            return value * 3;
+        }
+
+        int readOther(NullBox other) {
+            return other.value;
+        }
     }
 
     private static String valueOrThrow(int i) {
