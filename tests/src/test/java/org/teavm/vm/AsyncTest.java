@@ -17,6 +17,7 @@ package org.teavm.vm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -62,6 +63,59 @@ public class AsyncTest {
 
     private int addNestedConditional(boolean first, boolean second) {
         return getPrimitive() + (first ? 1 : (second ? 2 : getPrimitive()));
+    }
+
+    @Test
+    @AsyncEnabled
+    @SkipPlatform(TestPlatform.C)
+    public void suspensionInTryCatchInsideLoop() throws InterruptedException {
+        var queue = new ArrayDeque<Runnable>();
+        var running = new boolean[] { true };
+        var ran = new int[1];
+        var sb = new StringBuilder();
+        var worker = new Thread(() -> {
+            while (running[0]) {
+                var task = queue.poll();
+                if (task != null) {
+                    task.run();
+                    running[0] = false;
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            sb.append("exited;");
+        });
+        worker.start();
+        Thread.sleep(5);
+        queue.add(() -> {
+            ran[0]++;
+            sb.append("ran;");
+        });
+        worker.join(2000);
+        sb.append("count:").append(ran[0]);
+        assertEquals("ran;exited;count:1", sb.toString());
+    }
+
+    @Test
+    @AsyncEnabled
+    public void suspensionInTryCatchInsideConditional() {
+        var sb = new StringBuilder();
+        Object task = null;
+        if (task != null) {
+            sb.append(task.toString());
+        } else {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        sb.append("end");
+        assertEquals("end", sb.toString());
     }
 
     @Test
